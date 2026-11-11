@@ -27,11 +27,19 @@ namespace Project1.Presentation
         [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 시야 상하 각도(도).")]
         [SerializeField] private float fallbackPitch = 0f;
 
+        [Header("구도")]
+        [Tooltip("켜면 캐릭터 발이 항상 화면 아래쪽 일정 높이에 오도록 카메라 시선 각도를 맞춘다.")]
+        [SerializeField] private bool frameFeet = true;
+        [Tooltip("발이 놓일 화면 높이(0 = 맨 아래, 1 = 맨 위).")]
+        [Range(0.02f, 0.5f)]
+        [SerializeField] private float feetViewportY = 0.07f;
+
         [Header("감쇠 (초, 0이면 즉시)")]
         [SerializeField] private float followSmoothTime = 0.08f;
         [SerializeField] private float rotationSmoothTime = 0.05f;
 
         private ICharacterState state;
+        private Camera cam;
         private Vector3 pivot;
         private Vector3 pivotVelocity;
         private float yaw, pitch, yawVelocity, pitchVelocity;
@@ -59,8 +67,32 @@ namespace Project1.Presentation
                 pivot = Vector3.SmoothDamp(pivot, targetPivot, ref pivotVelocity, followSmoothTime);
             }
 
-            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-            transform.SetPositionAndRotation(pivot - rotation * Vector3.forward * distance, rotation);
+            Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
+            Vector3 position = pivot - orbit * Vector3.forward * distance;
+            Quaternion rotation = frameFeet ? FrameFeet(position) : orbit;
+            transform.SetPositionAndRotation(position, rotation);
+        }
+
+        /// <summary>카메라 자리는 그대로 두고, 발이 화면 feetViewportY 높이에 오도록 상하 시선만 맞춘다.</summary>
+        private Quaternion FrameFeet(Vector3 position)
+        {
+            if (cam == null) cam = GetComponent<Camera>();
+            float halfFov = (cam != null ? cam.fieldOfView : 60f) * 0.5f * Mathf.Deg2Rad;
+
+            Vector3 feet = pivot - Vector3.up * pivotHeight;
+            Vector3 toFeet = feet - position;
+            float horizontal = new Vector2(toFeet.x, toFeet.z).magnitude;
+            float feetDown = Mathf.Atan2(-toFeet.y, Mathf.Max(horizontal, 0.01f)) * Mathf.Rad2Deg;
+            // 화면 중앙에서 발까지 내려가야 하는 각도
+            float offset = Mathf.Atan((0.5f - feetViewportY) * 2f * Mathf.Tan(halfFov)) * Mathf.Rad2Deg;
+            return Quaternion.Euler(feetDown - offset, yaw, 0f);
+        }
+
+        /// <summary>감쇠 없이 바로 제자리로 옮긴다. 에디터에서 시작 화면을 맞출 때도 쓴다.</summary>
+        public void SnapNow()
+        {
+            initialized = false;
+            LateUpdate();
         }
 
         private bool EnsureTarget()
