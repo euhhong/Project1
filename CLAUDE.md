@@ -35,4 +35,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Unity\unity.ps1 tool <
 ## 프로젝트 메모
 - 메인 씬: `Assets/Scenes/SampleScene.unity`
 - 캐릭터 모델: `Assets/Models/IdentityV/` (제5인격 공식 PMX → Blender로 FBX 변환, URP Lit 머티리얼). 씬에는 늘어놓지 않는다.
+  - 모델 방향: 얼굴이 캐릭터 루트의 앞(+Z)을 보게 넣는다. 새 모델은 리깅 후 `blender -b --python Tools/Blender/fix_model_facing.py -- <FBX 또는 폴더>`로 맞춘다. 씬 회전값으로 맞추지 않는다.
 - 메인 캐릭터: 생존자 의사(`Survivor_Doctor`) — 빈 루트 + Model 자식 구조.
