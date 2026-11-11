@@ -4,6 +4,11 @@
 > 모션 출처: **VARCO 3D** (플로우 `Identity5Fight`, Rig 노드 → Animate 노드). GameDesign Q9 확정.
 > 키 이름은 VARCO 3D 애니메이션 카탈로그(전체 864개)에서 확인했다. `*` 표시는 PLUS 등급 모션이다. 계정 등급은 CREATOR이고, Rig·Animate는 0포인트다. PLUS 모션을 쓸 수 있는지는 첫 실행 때 확인한다. 쓸 수 없으면 "대체" 열의 무료 모션으로 바꾼다.
 
+> **현재 상태 (2026-11-11):** VARCO 모션이 나오기 전까지 **임시 모션**이 연결되어 있다. FE가 Humanoid 근육 커브로 만들었다.
+> - 임시 모션: 대기, 걷기 4방향, 달리기 4방향, 공중 (`Assets/Models/IdentityV/_Motions/Procedural/`)
+> - Controller: `_Motions/CharacterLocomotion.controller`
+> - VARCO 모션이 나오면 같은 Controller의 블렌드 트리 클립만 아래 1장의 키로 바꾼다.
+
 ## 1. M1 필수 모션
 
 조작 규칙(GameDesign 2.1): 캐릭터는 항상 시야 방향을 바라본다. 그래서 A/D는 옆걸음, S는 뒷걸음이다.

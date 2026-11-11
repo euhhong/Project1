@@ -65,12 +65,12 @@
 |---|---|---|---|
 | FE-1 | **3인칭 뒤쪽 카메라** — 캐릭터의 시야 Yaw/Pitch(BE-5)를 읽어 등 뒤 일정 거리·높이에 자리 잡고 캐릭터를 바라본다. 부드러운 추적(약간의 감쇠). | 완료 (컴파일 OK) | `Presentation/Camera/ThirdPersonCamera.cs`. **Cinemachine 미사용** — 필요한 기능이 "시야 값 읽어 등 뒤 배치 + 감쇠"뿐이라 스크립트로 충분하고 패키지 의존을 늘리지 않는다. 벽 충돌이 필요해지는 M2 이후 재검토. |
 | FE-2 | **메인 캐릭터 모델 준비 (Doctor)** — `Survivor_Doctor`를 Humanoid로 전환하고 Avatar 뼈 매핑을 확인한다(A포즈). 스케일, 피벗(발이 바닥에 닿는지), 머티리얼도 확인한다. | 완료 (Avatar 확인은 FE-6) | 15명 전원 Humanoid로 전환. Doctor: Biped 뼈대 완비, 발 피벗 z≈0, Model 자식 스케일 3.865 → 키 1.70m, 텍스처 3장 연결. |
-| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | 스크립트 완료 (컴파일 OK), **Controller 에셋은 클립 대기** | `Presentation/Animation/CharacterAnimatorDriver.cs`. Controller는 MAIN-1 → FE-4 이후에 만든다. 모션 목록과 파라미터는 [Animations.md](Animations.md). Apply Root Motion 끄기: **완료** — `CharacterAnimatorDriver`가 Awake에서 끈다(씬 수정 없음, 모델 교체에도 적용, 커밋 9bc0a07). 이동은 BE `CharacterMotor`가 코드로 한다. |
+| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | **임시 모션으로 연결 완료** (커밋 7837f5a, 사용자 Play 확인 대기) | `Presentation/Animation/CharacterAnimatorDriver.cs`. 사용자 요청("애니메이션이 없어 어색하니 어서 작업하자")으로 VARCO를 기다리지 않고 임시 모션을 먼저 연결했다. 임시 모션 10개(대기, 걷기 4방향, 달리기 4방향, 공중)는 Humanoid 근육 커브로 만들었다 → `Assets/Models/IdentityV/_Motions/Procedural/`. 생성기는 `Presentation/Editor/ProceduralMotionBuilder.cs`(메뉴 Tools > FE > 기본 모션 다시 만들기). Controller `_Motions/CharacterLocomotion.controller`: MoveX/MoveZ 2D 블렌드(걷기 ±1, 달리기 ±2.5)와 Air 상태(Jump 트리거나 IsGrounded=false → Air, 착지 시 복귀). Doctor/Model에 연결했다. VARCO 모션이 나오면 블렌드 트리 클립만 바꾼다. 모션 목록과 파라미터는 [Animations.md](Animations.md). Apply Root Motion 끄기: **완료** — `CharacterAnimatorDriver`가 Awake에서 끈다(씬 수정 없음, 모델 교체에도 적용, 커밋 9bc0a07). 이동은 BE `CharacterMotor`가 코드로 한다. |
 | FE-4 | **모션 임포트 설정** — VARCO 모션 클립의 Rig를 Humanoid로 설정하고 Avatar를 확인한다. 루프 모션은 Loop Time을 켠다. | 대기 | MAIN-1 이후. 임포트 위치 제안: `Assets/Models/IdentityV/_Motions/` (메인 세션과 협의 중). |
 | FE-5 | **뼈 없던 6명 리깅 (Blender)** — Antonio, Geisha, SmileyFace, Cowboy, Mercenary, Thief에 Humanoid 뼈대와 가중치를 넣어 FBX 교체. | 완료 (사용자 지시) | 이로써 15명 전원이 Humanoid 리타겟 대상이다. |
 | FE-6 | **Avatar 유효성 확인** — `unity.ps1`로 확인한다. `Survivor_Doctor` 우선, 가능하면 15명 전부. 확인 항목: Avatar isValid / isHuman, 필수 뼈 매핑, 씬 `Model`의 Animator에 Avatar가 들어가 있는지. | **완료** (2026-11-11, 메인 세션이 확인) | 15명 전원 Human, isValid·isHuman = True, 필수 뼈 15개 누락 없음(매핑 19~43개). 씬 `Survivor_Doctor/Model`의 Animator에 `Survivor_DoctorAvatar`가 들어가 있다. 재확인: `unity.ps1 run Library\ClaudeUnity\check_avatars.cs`. FE도 확인했다. 빠진 선택 뼈(Biped 9명 Neck, Blender 6명 Chest, SmileyFace RightToes)는 모션 재생에 영향이 없다. |
 | FE-7 | **모델 앞뒤 방향 바로잡기** — 지금 의사 모델이 이동할 때 원하는 방향의 **정반대**를 보고 있다(사용자 보고). 모델이 캐릭터 루트의 앞(+Z, 시야 방향)을 보도록 180° 뒤집는다. **앞으로 넣는 모든 캐릭터 모델도 같은 방향으로 들어가게** 한다. | **완료** (커밋 c8e0dbd) | 15명 모두 Blender에서 뼈대·메시 최상위 노드를 Z축 180° 회전해 다시 내보냈다. 씬과 BE 코드는 수정하지 않았다. 재임포트 후 15명 Avatar valid·human, 발끝 +Z, 루트 앞에서 의사 얼굴 정면 확인, 콘솔 에러 0. 새 모델용 스크립트 `Tools/Blender/fix_model_facing.py` 추가(위 "모델 방향 규칙"). 주의: 씬에 옛 배치 모델이 남아 있다면 그쪽도 함께 돌아 보인다. 사용자 확인: **지금 방향 유지** (2026-11-11). |
-| FE-8 | **카메라 구도 조정** — 기본 시점에서 캐릭터 발이 화면 맨 아래보다 조금 위(화면 높이의 약 5~10%)에 오게 맞춘다. 캐릭터는 화면 아래쪽에 서고, 앞 공간이 넓게 보이는 구도. | 대기 (2026-11-11 사용자 요청) | `ThirdPersonCamera`의 거리, 높이, 바라보는 지점 오프셋, 기본 Pitch를 조정한다. 우클릭으로 Pitch를 바꿔도 발이 화면 밖으로 크게 나가지 않으면 좋다. capture로 확인한다. |
+| FE-8 | **카메라 구도 조정** — 기본 시점에서 캐릭터 발이 화면 맨 아래보다 조금 위(화면 높이의 약 5~10%)에 오게 맞춘다. 캐릭터는 화면 아래쪽에 서고, 앞 공간이 넓게 보이는 구도. | 진행 중 — 기본값 변경됨(Pitch 32°, 바라보는 높이 1.3m, 거리 4.2m, 커밋 7837f5a). 목표 구도(발이 화면 아래 5~10%)를 맞췄는지 확인 대기 | `ThirdPersonCamera`의 거리, 높이, 바라보는 지점 오프셋, 기본 Pitch를 조정한다. 우클릭으로 Pitch를 바꿔도 발이 화면 밖으로 크게 나가지 않으면 좋다. capture로 확인한다. |
 
 ### 메인 세션 작업
 
@@ -89,7 +89,7 @@ MAIN-1 은 사용자의 VARCO GLB 업로드 후 시작
 ```
 
 - **M1a (조작·카메라):** 완료 기준 1~5, 7. 모션 없이 끝낼 수 있다. → **구현·씬 구성 완료, 사용자 Play 확인 대기** (2026-11-11)
-- **M1b (모션):** 완료 기준 6. VARCO 3D 모션(MAIN-1) → 임포트(FE-4) → 연결(FE-3).
+- **M1b (모션):** 완료 기준 6. VARCO 3D 모션(MAIN-1) → 임포트(FE-4) → 연결(FE-3). → **임시 모션으로 먼저 동작 중** (FE-3). VARCO 모션은 나중에 클립만 교체한다.
 
 ---
 
