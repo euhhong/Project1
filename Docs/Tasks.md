@@ -59,11 +59,11 @@
 | # | 작업 | 상태 | 비고 |
 |---|---|---|---|
 | FE-1 | **3인칭 뒤쪽 카메라** — 캐릭터의 시야 Yaw/Pitch(BE-5)를 읽어 등 뒤 일정 거리·높이에 자리 잡고 캐릭터를 바라본다. 부드러운 추적(약간의 감쇠). | 완료 (컴파일 OK) | `Presentation/Camera/ThirdPersonCamera.cs`. **Cinemachine 미사용** — 필요한 기능이 "시야 값 읽어 등 뒤 배치 + 감쇠"뿐이라 스크립트로 충분하고 패키지 의존을 늘리지 않는다. 벽 충돌이 필요해지는 M2 이후 재검토. |
-| FE-2 | **메인 캐릭터 모델 준비 (Doctor)** — `Survivor_Doctor`를 Humanoid로 전환하고 Avatar 뼈 매핑을 확인한다(A포즈). 스케일, 피벗(발이 바닥에 닿는지), 머티리얼도 확인한다. | 거의 완료 — **Avatar 유효성 확인만 남음** (메인 세션, Unity MCP) | 15명 전원 Humanoid로 전환. Doctor: Biped 뼈대 완비, 발 피벗 z≈0, Model 자식 스케일 3.865 → 키 1.70m, 텍스처 3장 연결. |
-| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | 스크립트 완료 (컴파일 OK), **Controller 에셋은 클립 대기** | `Presentation/Animation/CharacterAnimatorDriver.cs`. Controller는 MAIN-1 → FE-4 이후에 만든다. 모션 목록과 파라미터는 [Animations.md](Animations.md). |
+| FE-2 | **메인 캐릭터 모델 준비 (Doctor)** — `Survivor_Doctor`를 Humanoid로 전환하고 Avatar 뼈 매핑을 확인한다(A포즈). 스케일, 피벗(발이 바닥에 닿는지), 머티리얼도 확인한다. | 완료 (Avatar 확인은 FE-6) | 15명 전원 Humanoid로 전환. Doctor: Biped 뼈대 완비, 발 피벗 z≈0, Model 자식 스케일 3.865 → 키 1.70m, 텍스처 3장 연결. |
+| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | 스크립트 완료 (컴파일 OK), **Controller 에셋은 클립 대기** | `Presentation/Animation/CharacterAnimatorDriver.cs`. Controller는 MAIN-1 → FE-4 이후에 만든다. 모션 목록과 파라미터는 [Animations.md](Animations.md). **`Model`의 Animator에서 Apply Root Motion을 끈다.** 지금은 켜져 있다. 이동은 BE `CharacterMotor`가 코드로 하므로, 켜 두면 모션이 들어왔을 때 이중 이동·미끄러짐이 생긴다. |
 | FE-4 | **모션 임포트 설정** — VARCO 모션 클립의 Rig를 Humanoid로 설정하고 Avatar를 확인한다. 루프 모션은 Loop Time을 켠다. | 대기 | MAIN-1 이후. 임포트 위치 제안: `Assets/Models/IdentityV/_Motions/` (메인 세션과 협의 중). |
 | FE-5 | **뼈 없던 6명 리깅 (Blender)** — Antonio, Geisha, SmileyFace, Cowboy, Mercenary, Thief에 Humanoid 뼈대와 가중치를 넣어 FBX 교체. | 완료 (사용자 지시) | 이로써 15명 전원이 Humanoid 리타겟 대상이다. |
-| FE-6 | **Avatar 유효성 확인** — `unity.ps1`로 확인한다. `Survivor_Doctor` 우선, 가능하면 15명 전부. 확인 항목: Avatar isValid / isHuman, 필수 뼈 매핑, 씬 `Model`의 Animator에 Avatar가 들어가 있는지. | 대기 — **바로 시작 가능** | 구 MAIN-2에서 옮겼다. 컴파일 OK·콘솔 에러 0은 BE가 확인했다. 문제가 있으면 FE가 바로 고친다. |
+| FE-6 | **Avatar 유효성 확인** — `unity.ps1`로 확인한다. `Survivor_Doctor` 우선, 가능하면 15명 전부. 확인 항목: Avatar isValid / isHuman, 필수 뼈 매핑, 씬 `Model`의 Animator에 Avatar가 들어가 있는지. | **완료** (2026-11-11, 메인 세션이 확인) | 15명 전원 Human, isValid·isHuman = True, 필수 뼈 15개 누락 없음(매핑 19~43개). 씬 `Survivor_Doctor/Model`의 Animator에 `Survivor_DoctorAvatar`가 들어가 있다. 재확인: `unity.ps1 run Library\ClaudeUnity\check_avatars.cs`. |
 
 ### 메인 세션 작업
 
@@ -77,7 +77,7 @@
 BE-1 → BE-2 → BE-3 → BE-4 → BE-5 ─┬→ FE-1 (최종 연결)
                                   └→ FE-3 (모션 연결) ← FE-4 (임포트 설정) ← MAIN-1 (VARCO 모션 생성)
                     BE-6 (씬 구성)은 BE-5 이후 — 완료
-FE-6 (Avatar 확인)은 지금 바로 가능 → FE-3 모션 연결 전에 끝낸다
+FE-6 (Avatar 확인) — 완료
 MAIN-1 은 사용자의 VARCO GLB 업로드 후 시작
 ```
 
