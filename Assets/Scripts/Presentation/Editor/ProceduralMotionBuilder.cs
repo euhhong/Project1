@@ -183,6 +183,20 @@ namespace Project1.Presentation.EditorTools
             c.Add("Right Forearm Stretch", _ => forearm);
             c.Add("Left Shoulder Down-Up", _ => -0.1f);
             c.Add("Right Shoulder Down-Up", _ => -0.1f);
+            AddRightGrip(c);
+        }
+
+        // 오른손은 주사기 같은 소품을 쥔 손 모양으로 둔다.
+        private const float RightGrip = 0.7f;
+
+        private static void AddRightGrip(CurveSet c)
+        {
+            foreach (var finger in new[] { "Index", "Middle", "Ring", "Little" })
+                for (int j = 1; j <= 3; j++)
+                    c.Add($"RightHand.{finger}.{j} Stretched", _ => RightGrip);
+            c.Add("RightHand.Thumb.1 Stretched", _ => RightGrip * 0.5f);
+            c.Add("RightHand.Thumb.2 Stretched", _ => RightGrip * 0.5f);
+            c.Add("RightHand.Thumb.3 Stretched", _ => RightGrip * 0.5f);
         }
 
         // ---------- Animator Controller ----------
