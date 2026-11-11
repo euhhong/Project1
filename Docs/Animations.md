@@ -70,5 +70,5 @@
 | `IsGrounded` | bool | `IsGrounded` | 땅에 닿았는지 |
 | `Jump` | trigger | `Jumped` 이벤트 | 점프 시작 |
 
-- BE가 확인했다(2026-11-11). `WalkSpeed`와 `RunSpeed` 속성은 BE가 추가했다. FE 이견이 없으면 확정이다.
+- **확정** (2026-11-11, BE·FE 합의). `WalkSpeed`와 `RunSpeed` 속성은 BE가 추가했다.
 - 그 밖에 쓸 수 있는 상태: `MoveState`(Idle/Walk/Run), `VerticalSpeed`(위가 +), `Landed` 이벤트, `LookYaw`, `LookPitch`(아래가 +, -30~60). 카메라 회전은 `Quaternion.Euler(LookPitch, LookYaw, 0)`이다.

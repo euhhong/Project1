@@ -9,11 +9,16 @@
 |---|---|---|
 | BE | `Assets/Scripts/Core/`, `Assets/Scripts/Systems/` | 입력 데이터, 캐릭터 이동·전투 로직, 게임 상태 |
 | FE | `Assets/Scripts/UI/`, `Assets/Scripts/Presentation/`, `Assets/UI/`, `Assets/Models/IdentityV/` | 카메라, UI, 애니메이션·연출, 캐릭터 모델 에셋 관리 |
-| 메인 | Unity 에디터 연결, 에셋 파이프라인 | 씬 작업, 에디터 쪽 연결 |
+| 메인 | `Tools/`, `CLAUDE.md` | 공용 Unity 도구, 공통 규칙, VARCO 3D 파이프라인 |
 
 - 공통 규칙은 `CLAUDE.md`를 따른다. Unity 6 API, 스크립트 하나에 역할 하나, 인스펙터 연결 최소화.
 - 씬(`SampleScene.unity`)의 `IdentityV_Characters` 배치는 바꾸기 전에 사용자에게 확인한다.
 - 다른 역할의 폴더를 고쳐야 하면 먼저 그 세션에 알린다.
+- **Unity 확인과 커밋은 각 담당 세션이 직접 한다** (2026-11-11 사용자 지시).
+  - 컴파일, 콘솔, Avatar, 씬 캡처는 메인 세션에 부탁하지 않는다. 각자 `Tools\Unity\unity.ps1`로 확인한다.
+  - 작업이 끝날 때마다 자기 담당 파일만 `git add <경로>` → `git commit -m "[역할] ..."` → `git push`.
+  - 자세한 규칙은 `CLAUDE.md`의 "Unity 에디터 확인", "Git" 섹션.
+- 이 원칙에 따라 Unity 확인이 필요한 작업은 **그 영역의 담당**에게 배정한다. 예: Avatar·모델은 FE, 이동 코드는 BE.
 
 ---
 
@@ -42,41 +47,41 @@
 
 | # | 작업 | 상태 | 비고 |
 |---|---|---|---|
-| BE-1 | **입력 데이터 구조** — `move`(Vector2), `run`(bool, 누르고 있는 중), `jump`(bool, 이번 틱에 눌림), `lookYaw`·`lookPitch`(float, 시야 각도). | 코드 완료 (컴파일 미확인) | `Core/`. 네트워크로 보낼 수 있게 단순한 값만 담는다. |
-| BE-2 | **키보드·마우스 입력 소스** — 입력 인터페이스(예: `ICharacterInputSource`)와 New Input System 구현. WASD, Shift, Space, 우클릭을 누른 동안의 마우스 델타 → 시야 각도 누적(Pitch 제한 포함), 우클릭 중 커서 잠금. | 코드 완료 (컴파일 미확인) | 마우스 감도는 인스펙터 노출. 커서 잠금도 입력 소스가 맡는다. |
-| BE-3 | **캐릭터 이동 로직** — 입력 데이터만 받아서 처리. 시야 Yaw 기준 이동 방향 계산, 걷기/달리기 속도, 대각선 정규화, 몸을 시야 Yaw로 회전. | 코드 완료 (컴파일 미확인) | 회전 기준이 "이동 방향"에서 "**시야 방향**"으로 바뀌었다. 키보드·카메라를 직접 읽지 않는다. |
-| BE-4 | **점프와 중력** — 땅 체크, 땅에 있을 때만 점프, 중력 적용, 착지 처리. | 코드 완료 (컴파일 미확인) | `FixedUpdate` 기준. |
-| BE-5 | **캐릭터 상태 노출** — 읽기 전용으로 공개: 이동 상태(Idle/Walk/Run), 땅에 닿았는지, 수직 속도, 현재 수평 속도(로컬 기준 x/z), 시야 Yaw/Pitch. 상태 변화 이벤트(점프 시작, 착지)도 둔다. | 코드 완료 (컴파일 미확인) | FE가 카메라(FE-1)와 모션(FE-3)에 쓴다. **FE와 이름을 먼저 맞춘다.** |
-| BE-6 | **에디터 연결 안내** — 메인 캐릭터에 붙일 컴포넌트, Input Actions 설정(Move/Run/Jump/Look/LookHold), 물리 컴포넌트 설정을 단계별로 정리해 전달한다. | 진행 중 (Doctor 기준) | CLAUDE.md 규칙. |
+| BE-1 | **입력 데이터 구조** — `move`(Vector2), `run`(bool, 누르고 있는 중), `jump`(bool, 이번 틱에 눌림), `lookYaw`·`lookPitch`(float, 시야 각도). | 완료 (컴파일 OK) | `Core/`. 네트워크로 보낼 수 있게 단순한 값만 담는다. |
+| BE-2 | **키보드·마우스 입력 소스** — 입력 인터페이스(예: `ICharacterInputSource`)와 New Input System 구현. WASD, Shift, Space, 우클릭을 누른 동안의 마우스 델타 → 시야 각도 누적(Pitch 제한 포함), 우클릭 중 커서 잠금. | 완료 (컴파일 OK) | 마우스 감도는 인스펙터 노출. 커서 잠금도 입력 소스가 맡는다. |
+| BE-3 | **캐릭터 이동 로직** — 입력 데이터만 받아서 처리. 시야 Yaw 기준 이동 방향 계산, 걷기/달리기 속도, 대각선 정규화, 몸을 시야 Yaw로 회전. | 완료 (컴파일 OK) | 회전 기준이 "이동 방향"에서 "**시야 방향**"으로 바뀌었다. 키보드·카메라를 직접 읽지 않는다. |
+| BE-4 | **점프와 중력** — 땅 체크, 땅에 있을 때만 점프, 중력 적용, 착지 처리. | 완료 (컴파일 OK) | `FixedUpdate` 기준. |
+| BE-5 | **캐릭터 상태 노출** — 읽기 전용으로 공개: 이동 상태(Idle/Walk/Run), 땅에 닿았는지, 수직 속도, 현재 수평 속도(로컬 기준 x/z), 시야 Yaw/Pitch. 상태 변화 이벤트(점프 시작, 착지)도 둔다. | 완료 (컴파일 OK) | FE가 카메라(FE-1)와 모션(FE-3)에 쓴다. **FE와 이름을 먼저 맞춘다.** |
+| BE-6 | **에디터 연결 안내** — 메인 캐릭터에 붙일 컴포넌트, Input Actions 설정(Move/Run/Jump/Look/LookHold), 물리 컴포넌트 설정을 단계별로 정리해 전달한다. | 완료 — 안내 대신 BE가 직접 씬 구성 | SampleScene: `Survivor_Doctor` 루트(CharacterMotor, LocalPlayerInput, CharacterController, CharacterAnimatorDriver) + `Model` 자식(스케일 3.865), `Ground`, Main Camera(ThirdPersonCamera). |
 
 ### FE 작업
 
 | # | 작업 | 상태 | 비고 |
 |---|---|---|---|
-| FE-1 | **3인칭 뒤쪽 카메라** — 캐릭터의 시야 Yaw/Pitch(BE-5)를 읽어 등 뒤 일정 거리·높이에 자리 잡고 캐릭터를 바라본다. 부드러운 추적(약간의 감쇠). | 코드 완료 (컴파일 미확인) | `Presentation/Camera/ThirdPersonCamera.cs`. **Cinemachine 미사용** — 필요한 기능이 "시야 값 읽어 등 뒤 배치 + 감쇠"뿐이라 스크립트로 충분하고 패키지 의존을 늘리지 않는다. 벽 충돌이 필요해지는 M2 이후 재검토. |
+| FE-1 | **3인칭 뒤쪽 카메라** — 캐릭터의 시야 Yaw/Pitch(BE-5)를 읽어 등 뒤 일정 거리·높이에 자리 잡고 캐릭터를 바라본다. 부드러운 추적(약간의 감쇠). | 완료 (컴파일 OK) | `Presentation/Camera/ThirdPersonCamera.cs`. **Cinemachine 미사용** — 필요한 기능이 "시야 값 읽어 등 뒤 배치 + 감쇠"뿐이라 스크립트로 충분하고 패키지 의존을 늘리지 않는다. 벽 충돌이 필요해지는 M2 이후 재검토. |
 | FE-2 | **메인 캐릭터 모델 준비 (Doctor)** — `Survivor_Doctor`를 Humanoid로 전환하고 Avatar 뼈 매핑을 확인한다(A포즈). 스케일, 피벗(발이 바닥에 닿는지), 머티리얼도 확인한다. | 거의 완료 — **Avatar 유효성 확인만 남음** (메인 세션, Unity MCP) | 15명 전원 Humanoid로 전환. Doctor: Biped 뼈대 완비, 발 피벗 z≈0, Model 자식 스케일 3.865 → 키 1.70m, 텍스처 3장 연결. |
-| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | 스크립트 완료 (컴파일 미확인), **Controller 에셋은 클립 대기** | `Presentation/Animation/CharacterAnimatorDriver.cs`. Controller는 MAIN-1 → FE-4 이후에 만든다. 모션 목록과 파라미터는 [Animations.md](Animations.md). |
+| FE-3 | **모션 연결** — Animator Controller(대기 / 이동 Blend Tree 걷기·달리기 4방향 / 점프), BE-5 상태를 Animator 파라미터로 넘기는 스크립트. | 스크립트 완료 (컴파일 OK), **Controller 에셋은 클립 대기** | `Presentation/Animation/CharacterAnimatorDriver.cs`. Controller는 MAIN-1 → FE-4 이후에 만든다. 모션 목록과 파라미터는 [Animations.md](Animations.md). |
 | FE-4 | **모션 임포트 설정** — VARCO 모션 클립의 Rig를 Humanoid로 설정하고 Avatar를 확인한다. 루프 모션은 Loop Time을 켠다. | 대기 | MAIN-1 이후. 임포트 위치 제안: `Assets/Models/IdentityV/_Motions/` (메인 세션과 협의 중). |
 | FE-5 | **뼈 없던 6명 리깅 (Blender)** — Antonio, Geisha, SmileyFace, Cowboy, Mercenary, Thief에 Humanoid 뼈대와 가중치를 넣어 FBX 교체. | 완료 (사용자 지시) | 이로써 15명 전원이 Humanoid 리타겟 대상이다. |
+| FE-6 | **Avatar 유효성 확인** — `unity.ps1`로 확인한다. `Survivor_Doctor` 우선, 가능하면 15명 전부. 확인 항목: Avatar isValid / isHuman, 필수 뼈 매핑, 씬 `Model`의 Animator에 Avatar가 들어가 있는지. | 대기 — **바로 시작 가능** | 구 MAIN-2에서 옮겼다. 컴파일 OK·콘솔 에러 0은 BE가 확인했다. 문제가 있으면 FE가 바로 고친다. |
 
 ### 메인 세션 작업
 
 | # | 작업 | 상태 | 비고 |
 |---|---|---|---|
 | MAIN-1 | **VARCO 3D 모션 생성** — 기준 모델 1명 Rig(humanoid) → Animate로 [Animations.md](Animations.md) 1장의 10개 모션 생성 → 다운로드 → Unity로 임포트(`Assets/Models/IdentityV/_Motions/` 제안, FE와 협의). | **막힘** — 사용자 GLB 업로드 대기 | 게임에 쓰는 모델은 Blender 리깅(FE-5)으로 끝났다. 그래서 VARCO Rig는 **모션을 뽑기 위한 기준 모델용**으로만 필요하다(VARCO Animate는 VARCO Rig 결과만 받음). MCP로는 3D 파일을 올릴 수 없어 사용자가 VARCO 웹 에디터에서 GLB 1개를 올려야 한다. PLUS 모션이 막히면 대체 키를 쓴다. |
-| MAIN-2 | **컴파일·Avatar 확인** — Unity 콘솔에서 BE·FE 스크립트 컴파일 에러 확인, `Survivor_Doctor` Avatar 유효성(✓) 확인. | 대기 | BE·FE 세션은 Unity MCP 연결이 없거나 불안정하다. |
 
 ### 순서와 의존 관계
 
 ```
 BE-1 → BE-2 → BE-3 → BE-4 → BE-5 ─┬→ FE-1 (최종 연결)
                                   └→ FE-3 (모션 연결) ← FE-4 (임포트 설정) ← MAIN-1 (VARCO 모션 생성)
-                    BE-6 (에디터 연결 안내)는 BE-5 이후
-FE-1(임시 연결), FE-2, MAIN-1 은 바로 시작 가능
-MAIN-2 (컴파일·Avatar 확인)는 지금 바로 가능 → 통과하면 M1a 플레이 테스트
+                    BE-6 (씬 구성)은 BE-5 이후 — 완료
+FE-6 (Avatar 확인)은 지금 바로 가능 → FE-3 모션 연결 전에 끝낸다
+MAIN-1 은 사용자의 VARCO GLB 업로드 후 시작
 ```
 
-- **M1a (조작·카메라):** 완료 기준 1~5, 7. 모션 없이 끝낼 수 있다.
+- **M1a (조작·카메라):** 완료 기준 1~5, 7. 모션 없이 끝낼 수 있다. → **구현·씬 구성 완료, 사용자 Play 확인 대기** (2026-11-11)
 - **M1b (모션):** 완료 기준 6. VARCO 3D 모션(MAIN-1) → 임포트(FE-4) → 연결(FE-3).
 
 ---
