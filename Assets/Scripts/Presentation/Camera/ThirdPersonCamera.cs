@@ -15,12 +15,17 @@ namespace Project1.Presentation
         [SerializeField] private Transform target;
 
         [Header("자리")]
-        [Tooltip("캐릭터 발에서 바라볼 지점까지의 높이(m).")]
-        [SerializeField] private float pivotHeight = 1.4f;
+        [Tooltip("캐릭터 발에서 바라볼 지점(어깨~머리)까지의 높이(m).")]
+        [SerializeField] private float pivotHeight = 1.55f;
         [Tooltip("바라볼 지점에서 카메라까지의 거리(m).")]
-        [SerializeField] private float distance = 3.5f;
-        [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 상하 각도(도).")]
-        [SerializeField] private float fallbackPitch = 15f;
+        [SerializeField] private float distance = 3.6f;
+        [Tooltip("시야 상하 각도에 더해 카메라를 더 내려다보게 하는 기본 각도(도). 시야 Pitch 0일 때 이 각도로 내려다본다.")]
+        [SerializeField] private float pitchOffset = 20f;
+        [Tooltip("카메라 상하 각도 제한(도). + = 내려다봄.")]
+        [SerializeField] private float minCameraPitch = -10f;
+        [SerializeField] private float maxCameraPitch = 75f;
+        [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 시야 상하 각도(도).")]
+        [SerializeField] private float fallbackPitch = 0f;
 
         [Header("감쇠 (초, 0이면 즉시)")]
         [SerializeField] private float followSmoothTime = 0.08f;
@@ -38,7 +43,8 @@ namespace Project1.Presentation
 
             // BE-5가 있으면 시야 값을, 없으면 캐릭터 회전을 쓴다(임시 연결).
             float targetYaw = state != null ? state.LookYaw : target.eulerAngles.y;
-            float targetPitch = state != null ? state.LookPitch : fallbackPitch;
+            float lookPitch = state != null ? state.LookPitch : fallbackPitch;
+            float targetPitch = Mathf.Clamp(lookPitch + pitchOffset, minCameraPitch, maxCameraPitch);
             Vector3 targetPivot = target.position + Vector3.up * pivotHeight;
 
             if (!initialized)

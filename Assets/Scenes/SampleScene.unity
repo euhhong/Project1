@@ -206,8 +206,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.047458027, y: 0, z: 0, w: 0.99887323}
-  m_LocalPosition: {x: -1.35, y: 2.34, z: -7.89}
+  m_LocalRotation: {x: 0.1736482, y: 0, z: 0, w: 0.9848078}
+  m_LocalPosition: {x: 0, y: 2.7812724, z: -3.3828933}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -270,9 +270,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.ThirdPersonCamera
   target: {fileID: 0}
-  pivotHeight: 1.4
-  distance: 3.5
-  fallbackPitch: 15
+  pivotHeight: 1.55
+  distance: 3.6
+  pitchOffset: 20
+  minCameraPitch: -10
+  maxCameraPitch: 75
+  fallbackPitch: 0
   followSmoothTime: 0.08
   rotationSmoothTime: 0.05
 --- !u!1 &410087039
