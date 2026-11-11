@@ -1,0 +1,27 @@
+using System;
+using UnityEngine;
+
+namespace Project1.Core
+{
+    /// <summary>
+    /// 한 틱 동안 캐릭터에게 들어가는 입력. 네트워크로 보낼 수 있게 단순한 값만 담는다.
+    /// </summary>
+    [Serializable]
+    public struct CharacterInputFrame
+    {
+        /// <summary>x = 좌(-)/우(+), y = 뒤(-)/앞(+). 시야 Yaw 기준. 크기 0~1.</summary>
+        public Vector2 Move;
+
+        /// <summary>달리기 키를 누르고 있는 중.</summary>
+        public bool Run;
+
+        /// <summary>지난 틱 이후 점프 키가 눌렸다.</summary>
+        public bool Jump;
+
+        /// <summary>시야 좌우 각도(도). 월드 Y축 기준, 0 = +Z.</summary>
+        public float LookYaw;
+
+        /// <summary>시야 상하 각도(도). Unity X 회전 규칙: + = 아래를 봄, - = 위를 봄.</summary>
+        public float LookPitch;
+    }
+}
