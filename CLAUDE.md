@@ -30,7 +30,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Unity\unity.ps1 tool <
 - 자기 담당 파일만 경로를 지정해서 올린다: `git add <내 파일/폴더>` (`git add -A`, `git add .` 금지 — 다른 세션의 작업 중인 파일이 섞인다). Unity `.meta` 파일도 같이 올린다.
 - `git commit -m "[BE|FE|PM|MAIN] 무엇을 했는지"` → `git push`.
 - push가 거절되면 `git pull --rebase --autostash` 후 다시 push. `index.lock` 에러는 다른 세션이 커밋 중인 것이니 몇 초 뒤 다시 시도.
-- 담당 폴더: BE `Assets/Scripts/Core`, `Assets/Scripts/Systems` / FE `Assets/Scripts/UI`, `Assets/Scripts/Presentation`, `Assets/UI`, `Assets/Models` / PM `Docs` / MAIN `Tools`, `CLAUDE.md`. 씬 파일(`Assets/Scenes`)은 수정한 세션이 커밋한다.
+- 담당 폴더: BE `Assets/Scripts/Core`, `Assets/Scripts/Systems` / FE `Assets/Scripts/UI`, `Assets/Scripts/Presentation`, `Assets/UI`, `Assets/Models`(캐릭터), 카메라 / BG(배경) `Assets/Environment`, `Assets/Scripts/Environment`, 맵·조명·하늘 / PM `Docs` / MAIN `Tools`, `CLAUDE.md`. 씬 파일(`Assets/Scenes`)은 수정한 세션이 커밋한다.
 
 ## 프로젝트 메모
 - 메인 씬: `Assets/Scenes/SampleScene.unity`
