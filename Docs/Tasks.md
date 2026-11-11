@@ -9,6 +9,7 @@
 |---|---|---|
 | BE | `Assets/Scripts/Core/`, `Assets/Scripts/Systems/` | 입력 데이터, 캐릭터 이동·전투 로직, 게임 상태 |
 | FE | `Assets/Scripts/UI/`, `Assets/Scripts/Presentation/`, `Assets/UI/`, `Assets/Models/IdentityV/` | 카메라, UI, 애니메이션·연출, 캐릭터 모델 에셋 관리 |
+| BG | `Assets/Environment/`, `Assets/Scripts/Environment/` | 맵·지형·배경 소품·조명·하늘 (2026-11-11 FE에서 분리, 커밋 접두어 `[BG]`) |
 | 메인 | `Tools/`, `CLAUDE.md` | 공용 Unity 도구, 공통 규칙, VARCO 3D 파이프라인 |
 
 - 공통 규칙은 `CLAUDE.md`를 따른다. Unity 6 API, 스크립트 하나에 역할 하나, 인스펙터 연결 최소화.
@@ -93,6 +94,7 @@ MAIN-1 은 사용자의 VARCO GLB 업로드 후 시작
 
 ## 다음 마일스톤 (미정 — GameDesign 4장 질문에 답이 오면 구체화)
 
+- **BG-1. 아레나 맵 (M2와 같이 진행):** 지금의 임시 `Ground`를 대전 맵으로 교체한다. 담당 BG. 형태·크기·분위기는 GameDesign Q5·Q12에 따라 정한다. 답이 오기 전에는 BG가 배경 폴더·조명·하늘의 기본 틀만 잡아 둘 수 있다.
 - **M2. 상대 등장:** 두 번째 캐릭터(AI 또는 허수아비) 배치. Q3에 따라 결정. 상대를 향한 록온 시점이 필요한지도 이때 정한다.
 - **M3. 공격과 피격:** 공격 입력, 히트 판정, 체력. Q1·Q2에 따라 결정.
 - **M4. 라운드와 승패:** 게임 상태 매니저, 승패 처리, HUD(체력바, 타이머). Q6에 따라 결정.
