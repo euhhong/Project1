@@ -29,6 +29,8 @@ namespace Project1.Presentation
             animator = GetComponentInChildren<Animator>();
             if (state == null) Debug.LogWarning($"{name}: ICharacterState가 없어 모션을 연결하지 않습니다.", this);
             if (animator == null) Debug.LogWarning($"{name}: 자식에서 Animator를 찾지 못했습니다.", this);
+            // 이동은 BE의 CharacterMotor가 맡는다. 모션의 루트 이동이 겹치지 않게 끈다.
+            else animator.applyRootMotion = false;
         }
 
         private void OnEnable()
