@@ -16,11 +16,11 @@ namespace Project1.Presentation
 
         [Header("자리")]
         [Tooltip("캐릭터 발에서 바라볼 지점(어깨~머리)까지의 높이(m).")]
-        [SerializeField] private float pivotHeight = 1.55f;
+        [SerializeField] private float pivotHeight = 1.3f;
         [Tooltip("바라볼 지점에서 카메라까지의 거리(m).")]
-        [SerializeField] private float distance = 3.6f;
+        [SerializeField] private float distance = 4.2f;
         [Tooltip("시야 상하 각도에 더해 카메라를 더 내려다보게 하는 기본 각도(도). 시야 Pitch 0일 때 이 각도로 내려다본다.")]
-        [SerializeField] private float pitchOffset = 20f;
+        [SerializeField] private float pitchOffset = 32f;
         [Tooltip("카메라 상하 각도 제한(도). + = 내려다봄.")]
         [SerializeField] private float minCameraPitch = -10f;
         [SerializeField] private float maxCameraPitch = 75f;
