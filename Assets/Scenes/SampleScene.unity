@@ -1628,6 +1628,7 @@ GameObject:
   - component: {fileID: 1846143977}
   - component: {fileID: 1846143976}
   - component: {fileID: 1846143980}
+  - component: {fileID: 1846143981}
   m_Layer: 0
   m_Name: Survivor_Doctor
   m_TagString: Untagged
@@ -1722,6 +1723,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterAnimatorDriver
   moveDampTime: 0.1
+--- !u!114 &1846143981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48b2d43af699673429728549e529d5bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.StrafeBodyTwist
+  maxBodyTwist: 35
+  twistAmount: 0.6
+  smoothTime: 0.12
+  headCounter: 1
+  minSpeed: 0.2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
