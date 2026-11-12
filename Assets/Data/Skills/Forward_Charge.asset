@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Forward_Charge
   displayName: "\uB7ED\uBE44\uACF5 \uB3CC\uC9C4"
   castTime: 6
-  cooldown: 15
+  cooldown: 0
   castMoveSpeed: 0
   chargeSpeed: 16
   obstacleGrace: 0.1

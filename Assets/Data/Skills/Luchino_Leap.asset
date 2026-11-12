@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Luchino_Leap
   displayName: "\uB3C4\uC57D \uB0B4\uB824\uCC0D\uAE30"
   castTime: 5
-  cooldown: 12
+  cooldown: 0
   castMoveSpeed: 0
   leapHeight: 12
   forwardSpeed: 9

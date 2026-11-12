@@ -15,6 +15,6 @@ MonoBehaviour:
   id: Doctor_SelfHeal
   displayName: "\uC790\uAC00\uCE58\uB8CC"
   castTime: 1.5
-  cooldown: 12
+  cooldown: 0
   castMoveSpeed: 0
   healFraction: 0.4
