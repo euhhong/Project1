@@ -16,6 +16,7 @@ namespace Project1.Presentation.EditorTools
         public const string Folder = "Assets/Models/IdentityV/_Motions/Procedural";
         public const string ControllerPath = "Assets/Models/IdentityV/_Motions/CharacterLocomotion.controller";
         public const string AttackLayer = "Attack";
+        public const string AirAttackLayer = "AirAttack";
 
         private const int Samples = 24;
 
@@ -74,6 +75,8 @@ namespace Project1.Presentation.EditorTools
             clips["Attack_Light"] = Save("Attack_Light", BuildLightAttack());
             clips["Attack_HeavyCharge"] = Save("Attack_HeavyCharge", BuildHeavyCharge());
             clips["Attack_Heavy"] = Save("Attack_Heavy", BuildHeavyAttack());
+            clips["Attack_AirStomp"] = Save("Attack_AirStomp", BuildAirStomp());
+            clips["Attack_AirCharge"] = Save("Attack_AirCharge", BuildAirCharge());
 
             BuildController(clips);
             AssetDatabase.SaveAssets();
@@ -286,6 +289,54 @@ namespace Project1.Presentation.EditorTools
             return c.ToClip(false);
         }
 
+        // 공중 내려찍기: 준비 0~0.25(무릎을 가슴으로 당김), 판정 0.25~0.45(두 발을 아래로 쭉 뻗음), 후딜레이 0.45~1
+        public const float AirStompLength = 0.6f, AirChargeLength = 1.0f;
+
+        private static void AddAirArms(CurveSet c, Func<float, float> up)
+        {
+            foreach (var side in new[] { "Left", "Right" })
+            {
+                c.Add($"{side} Arm Down-Up", up);
+                c.Add($"{side} Arm Front-Back", _ => 0.15f); // 살짝 뒤로(균형)
+                c.Add($"{side} Forearm Stretch", _ => 0.5f);
+            }
+        }
+
+        private static AnimationClip BuildAirStomp()
+        {
+            var c = new CurveSet(AirStompLength);
+            // 다리 값은 기본 자세에 더하는 변화량(+ = 다리를 앞/위로, 무릎 Stretch - = 굽힘)
+            foreach (var side in new[] { "Left", "Right" })
+            {
+                c.Add($"{side} Upper Leg Front-Back", Keys(0f, 0.15f, 0.22f, 0.45f, 0.33f, -0.05f, 0.45f, -0.05f, 1f, 0.15f));
+                c.Add($"{side} Lower Leg Stretch", Keys(0f, -0.4f, 0.22f, -1.6f, 0.33f, 0f, 0.45f, 0f, 1f, -0.4f));
+                c.Add($"{side} Foot Up-Down", Keys(0f, 0f, 0.22f, 0.3f, 0.33f, -0.4f, 0.45f, -0.4f, 1f, 0f));
+            }
+            c.Add("Spine Front-Back", Keys(0f, 0.1f, 0.22f, 0.35f, 0.33f, -0.05f, 0.45f, 0f, 1f, 0.1f));
+            c.Add("Chest Front-Back", Keys(0f, 0f, 0.22f, 0.2f, 0.33f, -0.1f, 1f, 0f));
+            c.Add("Head Nod Down-Up", Keys(0f, -0.1f, 0.33f, -0.35f, 1f, -0.1f));
+            AddAirArms(c, Keys(0f, -0.2f, 0.22f, 0.25f, 0.33f, 0.45f, 0.45f, 0.4f, 1f, -0.2f));
+            AddRightGrip(c);
+            return c.ToClip(false);
+        }
+
+        private static AnimationClip BuildAirCharge()
+        {
+            var c = new CurveSet(AirChargeLength);
+            // 공중에서 무릎을 바짝 당기고 팔을 들어 힘을 모은다.
+            foreach (var side in new[] { "Left", "Right" })
+            {
+                c.Add($"{side} Upper Leg Front-Back", p => 0.4f + 0.03f * Mathf.Sin(p * 2f));
+                c.Add($"{side} Lower Leg Stretch", _ => -1.5f);
+                c.Add($"{side} Foot Up-Down", _ => 0.3f);
+            }
+            c.Add("Spine Front-Back", p => 0.3f + 0.02f * Mathf.Sin(p * 2f));
+            c.Add("Head Nod Down-Up", _ => -0.25f);
+            AddAirArms(c, p => 0.35f + 0.03f * Mathf.Sin(p * 3f));
+            AddRightGrip(c);
+            return c.ToClip(true);
+        }
+
         private static void BuildUpperBodyMask(out AvatarMask mask)
         {
             string path = "Assets/Models/IdentityV/_Motions/UpperBodyMask.mask";
@@ -376,6 +427,17 @@ namespace Project1.Presentation.EditorTools
             asm.AddState("Light").motion = clips["Attack_Light"];
             asm.AddState("HeavyCharge").motion = clips["Attack_HeavyCharge"];
             asm.AddState("Heavy").motion = clips["Attack_Heavy"];
+
+            // 공중 공격 레이어(전신, 마스크 없음): 발 내려찍기
+            ac.AddLayer(AirAttackLayer);
+            var layers2 = ac.layers;
+            var air2 = layers2[layers2.Length - 1];
+            air2.defaultWeight = 0f; air2.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = layers2;
+            var airSm = ac.layers[ac.layers.Length - 1].stateMachine;
+            airSm.defaultState = airSm.AddState("Empty");
+            airSm.AddState("AirStomp").motion = clips["Attack_AirStomp"];
+            airSm.AddState("AirCharge").motion = clips["Attack_AirCharge"];
 
             EditorUtility.SetDirty(ac);
         }
