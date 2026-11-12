@@ -44,7 +44,7 @@
 | SelectIdle_Hunter | 캐릭터 선택 화면 감시자 대기(반복) | **받음** — `_Motions/HunterSelect.controller` | Idle |
 | SelectIdle_Survivor | 캐릭터 선택 화면 생존자 대기(반복) | **받음** — `_Motions/SurvivorSelect.controller` | Standing Idle |
 | Idle | 대기 | 대기(임시 모션) | |
-| Air | 제자리 점프·떨어짐(공통) | **받음** — 14~34프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Standing Jump |
+| Air | 제자리 점프·떨어짐(공통) | **받음** — 0~22프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Jump (1) (전: Standing Jump) |
 | Air_F | 걸어서 점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 25~44프레임, 0.69초에 맞춰 재생 | Jumping |
 | Air_Run | 뛰면서 점프(공통) — 점프할 때 MoveZ > 1.75 | **받음** — 0~20프레임, 0.69초에 맞춰 재생 | Running Jump |
 | Attack_HeavyCharge / Attack_Heavy | 강공격 모으기 / 내려치기 | 대기(임시 모션) | |
