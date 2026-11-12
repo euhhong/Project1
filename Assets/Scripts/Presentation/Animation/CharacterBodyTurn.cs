@@ -27,10 +27,10 @@ namespace Project1.Presentation
         [SerializeField, Min(0f)] private float returnSmoothTime = 0.45f;
 
         [Header("고개·상체 보정 (몸을 튼 각도 대비 시야 쪽으로 되돌리는 비율)")]
-        [SerializeField, Range(0f, 1f)] private float spineCompensation = 0.12f;
-        [SerializeField, Range(0f, 1f)] private float chestCompensation = 0.18f;
-        [SerializeField, Range(0f, 1f)] private float neckCompensation = 0.15f;
-        [SerializeField, Range(0f, 1f)] private float headCompensation = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float spineCompensation = 0.15f;
+        [SerializeField, Range(0f, 1f)] private float chestCompensation = 0.2f;
+        [SerializeField, Range(0f, 1f)] private float neckCompensation = 0.25f;
+        [SerializeField, Range(0f, 1f)] private float headCompensation = 0.3f;
 
         /// <summary>모델이 캐릭터 루트 기준으로 틀어진 각도(도). + = 오른쪽.</summary>
         public float YawOffset => yaw;

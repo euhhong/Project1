@@ -28,10 +28,13 @@ namespace Project1.Presentation.EditorTools
             public float forearm;    // 팔꿈치 굽힘(1 = 폄)
             public float lean;       // 상체 숙임
             public float bounce;     // 상체 위아래 출렁임(근육값)
+            public float armDown;    // 팔 내림(-1 = 몸에 붙임). 0이면 기본값 사용
         }
 
-        private static readonly Gait Walk = new Gait { duration = 0.8f, legSwing = 0.4f, kneeBend = 0.35f, armSwing = 0.22f, forearm = 0.8f, lean = 0.05f, bounce = 0.05f };
-        private static readonly Gait Run = new Gait { duration = 0.5f, legSwing = 0.6f, kneeBend = 0.55f, armSwing = 0.4f, forearm = 0.15f, lean = 0.2f, bounce = 0.1f };
+        // 걷기: 가볍게 뛰는 정도(조깅)
+        private static readonly Gait Walk = new Gait { duration = 0.56f, legSwing = 0.6f, kneeBend = 0.55f, armSwing = 0.4f, forearm = 0.15f, lean = 0.18f, bounce = 0.1f };
+        // 달리기: 전력질주. 팔을 크게 흔들고 팔꿈치를 굽히고 상체를 숙인다.
+        private static readonly Gait Run = new Gait { duration = 0.42f, legSwing = 0.85f, kneeBend = 0.85f, armSwing = 0.62f, forearm = -0.3f, lean = 0.38f, bounce = 0.13f, armDown = -0.45f };
 
         private const float ArmDown = -0.62f;   // 팔을 몸 옆으로 내림 (A포즈 → 차렷에 가깝게)
 
@@ -127,7 +130,7 @@ namespace Project1.Presentation.EditorTools
                 c.Add("Spine Left-Right", _ => 0f);
                 c.Add("Chest Twist Left-Right", p => 0.08f * Mathf.Sin(phase(p)));
                 // 팔은 다리와 반대로 흔든다.
-                AddRelaxedArms(c, p => -g.armSwing * Mathf.Sin(phase(p)), g.forearm);
+                AddRelaxedArms(c, p => -g.armSwing * Mathf.Sin(phase(p)), g.forearm, g.armDown);
             }
             else
             {
@@ -141,7 +144,7 @@ namespace Project1.Presentation.EditorTools
                 c.Add("Right Upper Leg Front-Back", p => 0.15f * Mathf.Max(0f, -Mathf.Cos(p) * s));
                 c.Add("Spine Front-Back", p => g.lean * 0.6f + g.bounce * Mathf.Cos(2f * p));
                 c.Add("Spine Left-Right", _ => -0.05f * s);
-                AddRelaxedArms(c, p => 0.1f * g.armSwing * Mathf.Sin(p), g.forearm);
+                AddRelaxedArms(c, p => 0.1f * g.armSwing * Mathf.Sin(p), g.forearm, g.armDown);
             }
 
             c.Add("Head Nod Down-Up", _ => -0.05f);
@@ -173,10 +176,11 @@ namespace Project1.Presentation.EditorTools
             return 0.9f - g.kneeBend * 2f * bend;
         }
 
-        private static void AddRelaxedArms(CurveSet c, Func<float, float> leftFrontBack, float forearm)
+        private static void AddRelaxedArms(CurveSet c, Func<float, float> leftFrontBack, float forearm, float armDown = 0f)
         {
-            c.Add("Left Arm Down-Up", _ => ArmDown);
-            c.Add("Right Arm Down-Up", _ => ArmDown);
+            float down = armDown != 0f ? armDown : ArmDown;
+            c.Add("Left Arm Down-Up", _ => down);
+            c.Add("Right Arm Down-Up", _ => down);
             c.Add("Left Arm Front-Back", p => -0.05f + leftFrontBack(p));
             c.Add("Right Arm Front-Back", p => -0.05f - leftFrontBack(p));
             c.Add("Left Forearm Stretch", _ => forearm);
@@ -233,7 +237,7 @@ namespace Project1.Presentation.EditorTools
             tree.blendType = BlendTreeType.FreeformDirectional2D;
             tree.blendParameter = "MoveX";
             tree.blendParameterY = "MoveZ";
-            const float runR = 2.5f; // 달리기 속도 / 걷기 속도 (BE CharacterMotor 기본값 비율)
+            const float runR = Project1.Presentation.CharacterAnimatorDriver.RunBlendValue; // 드라이버가 달리기 속도를 이 값으로 맞춘다
             tree.AddChild(clips["Idle"], Vector2.zero);
             tree.AddChild(clips["Walk_F"], new Vector2(0, 1));
             tree.AddChild(clips["Walk_B"], new Vector2(0, -1));

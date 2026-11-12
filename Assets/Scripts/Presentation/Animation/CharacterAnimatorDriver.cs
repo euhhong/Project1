@@ -14,6 +14,9 @@ namespace Project1.Presentation
         [Tooltip("MoveX/MoveZ 값 변화의 감쇠 시간(초).")]
         [SerializeField] private float moveDampTime = 0.1f;
 
+        /// <summary>Animator 블렌드 트리에서 달리기 모션이 놓인 MoveX/MoveZ 값.</summary>
+        public const float RunBlendValue = 2.5f;
+
         private static readonly int MoveXId = Animator.StringToHash("MoveX");
         private static readonly int MoveZId = Animator.StringToHash("MoveZ");
         private static readonly int SpeedId = Animator.StringToHash("Speed");
@@ -57,9 +60,16 @@ namespace Project1.Presentation
                 float r = -bodyTurn.YawOffset * Mathf.Deg2Rad;
                 v = new Vector2(v.x * Mathf.Cos(r) + v.y * Mathf.Sin(r), -v.x * Mathf.Sin(r) + v.y * Mathf.Cos(r));
             }
-            animator.SetFloat(MoveXId, v.x / walk, moveDampTime, Time.deltaTime);
-            animator.SetFloat(MoveZId, v.y / walk, moveDampTime, Time.deltaTime);
-            animator.SetFloat(SpeedId, v.magnitude);
+            // 블렌드 트리 기준: 걷기 속도 = 1, 달리기 속도 = RunBlendValue. 두 속도 비율이 바뀌어도 모션이 맞게 구간별로 바꾼다.
+            float speed = v.magnitude;
+            float run = Mathf.Max(state.RunSpeed, walk + 0.01f);
+            float blend = speed <= walk
+                ? speed / walk
+                : 1f + (RunBlendValue - 1f) * Mathf.Clamp01((speed - walk) / (run - walk));
+            Vector2 move = speed > 0.001f ? v / speed * blend : Vector2.zero;
+            animator.SetFloat(MoveXId, move.x, moveDampTime, Time.deltaTime);
+            animator.SetFloat(MoveZId, move.y, moveDampTime, Time.deltaTime);
+            animator.SetFloat(SpeedId, speed);
             animator.SetBool(IsGroundedId, state.IsGrounded);
         }
 

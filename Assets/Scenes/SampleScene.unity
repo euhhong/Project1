@@ -784,10 +784,10 @@ MonoBehaviour:
   turnSmoothTime: 0.1
   returnDelay: 0.35
   returnSmoothTime: 0.45
-  spineCompensation: 0.12
-  chestCompensation: 0.18
-  neckCompensation: 0.15
-  headCompensation: 0.25
+  spineCompensation: 0.15
+  chestCompensation: 0.2
+  neckCompensation: 0.25
+  headCompensation: 0.3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
