@@ -8,6 +8,7 @@ namespace Project1.Systems
     /// 입력(LightAttack / HeavyCharging / HeavyRelease)을 받아 공격 상태를 진행한다.
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
+    ///   땅: 약=오른손, 강=오른손+소품. 공중(발로 내려찍기): 약·강 모두 양발. 구간 길이는 공격마다 따로.
     /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
     /// - 땅에서 강공격을 모으는 동안에는 걷기 속도로 제한한다(IMoveSpeedLimit). 공중에서는 점프 궤적을 건드리지 않는다.
     /// 공격 방향은 몸 방향(= 시야 Yaw, CharacterMotor가 맞춘다)이다. 데미지는 다루지 않는다.
@@ -18,6 +19,10 @@ namespace Project1.Systems
     {
         [SerializeField] private AttackSpec lightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.RightHand);
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
+
+        [Header("공중 공격 (발로 내려찍기)")]
+        [SerializeField] private AttackSpec airLightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
+        [SerializeField] private AttackSpec airHeavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
 
         private ICharacterInputSource inputSource;
         private ICharacterState characterState;
@@ -37,6 +42,8 @@ namespace Project1.Systems
 
         public AttackSpec LightAttack => lightAttack;
         public AttackSpec HeavyAttack => heavyAttack;
+        public AttackSpec AirLightAttack => airLightAttack;
+        public AttackSpec AirHeavyAttack => airHeavyAttack;
 
         public bool TryGetSpeedLimit(out float maxSpeed)
         {
@@ -108,7 +115,9 @@ namespace Project1.Systems
             }
         }
 
-        private AttackSpec CurrentSpec => AttackState == CharacterAttackState.Heavy ? heavyAttack : lightAttack;
+        private AttackSpec CurrentSpec => AttackState == CharacterAttackState.Heavy
+            ? (IsAirAttack ? airHeavyAttack : heavyAttack)
+            : (IsAirAttack ? airLightAttack : lightAttack);
 
         private void StartAttack(CharacterAttackState state)
         {
