@@ -30,8 +30,8 @@ namespace Project1.Presentation.EditorTools
             public float bounce;     // 상체 위아래 출렁임(근육값)
         }
 
-        private static readonly Gait Walk = new Gait { duration = 1.0f, legSwing = 0.4f, kneeBend = 0.35f, armSwing = 0.22f, forearm = 0.8f, lean = 0.05f, bounce = 0.05f };
-        private static readonly Gait Run = new Gait { duration = 0.62f, legSwing = 0.6f, kneeBend = 0.55f, armSwing = 0.4f, forearm = 0.15f, lean = 0.2f, bounce = 0.1f };
+        private static readonly Gait Walk = new Gait { duration = 0.8f, legSwing = 0.4f, kneeBend = 0.35f, armSwing = 0.22f, forearm = 0.8f, lean = 0.05f, bounce = 0.05f };
+        private static readonly Gait Run = new Gait { duration = 0.5f, legSwing = 0.6f, kneeBend = 0.55f, armSwing = 0.4f, forearm = 0.15f, lean = 0.2f, bounce = 0.1f };
 
         private const float ArmDown = -0.62f;   // 팔을 몸 옆으로 내림 (A포즈 → 차렷에 가깝게)
 
@@ -203,8 +203,21 @@ namespace Project1.Presentation.EditorTools
 
         private static void BuildController(Dictionary<string, AnimationClip> clips)
         {
-            AssetDatabase.DeleteAsset(ControllerPath);
-            var ac = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
+            // 기존 Controller가 있으면 지우지 않고 비워서 다시 채운다(GUID 유지 → 씬 연결이 끊기지 않음).
+            var ac = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+            if (ac == null)
+            {
+                ac = AnimatorController.CreateAnimatorControllerAtPath(ControllerPath);
+            }
+            else
+            {
+                ac.parameters = new AnimatorControllerParameter[0];
+                var oldSm = ac.layers[0].stateMachine;
+                foreach (var s in oldSm.states) oldSm.RemoveState(s.state);
+                foreach (var t in oldSm.anyStateTransitions) oldSm.RemoveAnyStateTransition(t);
+                foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(ControllerPath))
+                    if (sub is BlendTree bt) UnityEngine.Object.DestroyImmediate(bt, true);
+            }
             ac.AddParameter("MoveX", AnimatorControllerParameterType.Float);
             ac.AddParameter("MoveZ", AnimatorControllerParameterType.Float);
             ac.AddParameter("Speed", AnimatorControllerParameterType.Float);
@@ -220,7 +233,7 @@ namespace Project1.Presentation.EditorTools
             tree.blendType = BlendTreeType.FreeformDirectional2D;
             tree.blendParameter = "MoveX";
             tree.blendParameterY = "MoveZ";
-            const float runR = 2.5f; // 달리기 5 m/s / 걷기 2 m/s
+            const float runR = 2.5f; // 달리기 속도 / 걷기 속도 (BE CharacterMotor 기본값 비율)
             tree.AddChild(clips["Idle"], Vector2.zero);
             tree.AddChild(clips["Walk_F"], new Vector2(0, 1));
             tree.AddChild(clips["Walk_B"], new Vector2(0, -1));
