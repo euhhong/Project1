@@ -23,6 +23,7 @@ namespace Project1.Presentation
         private static readonly Dictionary<string, Vector2> Timing = new()
         {
             ["Attack_Light"] = new Vector2(6f / 25f, 12f / 25f),            // Boxing 잽(원본 5~30): 뻗기 11, 당기기 17
+            ["Attack_Light_Hunter"] = new Vector2(14f / 44f, 22f / 44f),    // Melee Attack Downward(원본 6~50): 내려치기 20~28
             ["Attack_RunJump_Survivor"] = new Vector2(8f / 30f, 19f / 30f), // Flying Kick(0~30): 왼발 뻗기 8~19
             ["Attack_RunJump_Hunter"] = new Vector2(11f / 34f, 19f / 34f),  // Run Jump Attack(원본 36~70): 내려치기 47~55
             // 아직 임시 모션(_Motions/Procedural)

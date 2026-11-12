@@ -22,6 +22,8 @@
 | Run_F | 앞 달리기(생존자·감시자 공통) | **받음** | Standard Run |
 | Run_B / Run_L / Run_R | 뒤·옆 달리기 | 대기 — 지금은 같은 방향 걷기를 1.7배속으로 빌려 씀 | |
 | Attack_Light | 기본 공격(생존자) | **받음** — 왼손 잽을 좌우 반전해 오른손(BE 판정 손)으로 씀, 5~30프레임 | Boxing |
+| Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼·광대) | **받음** — 6~50프레임, 오른손 내려치기 20~28. 감시자 Override 전체에 들어가므로 게이샤·하스터·루키노도 지금은 이 모션 | Standing Melee Attack Downward |
+| (스킬) 사냥터지기 그랩 던지기 | 사냥터지기(노루) 스킬 | **받음, 연결 대기** — `Attack_Light_Hunter.fbx`를 같이 쓴다. 스킬 시스템(BE)이 생기면 Animator에 스킬 상태를 붙인다 | Standing Melee Attack Downward |
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |

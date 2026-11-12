@@ -29,7 +29,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Air", "Air_F", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
-            "Attack_RunJump_Survivor", "Attack_RunJump_Hunter",
+            "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
         };
 
         // 감시자용 Override Controller: 생존자 Controller에서 아래 자리만 감시자 모션으로 바꾼다.
@@ -37,6 +37,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly (string survivor, string hunter)[] HunterOverrides =
         {
             ("Attack_RunJump_Survivor", "Attack_RunJump_Hunter"),
+            ("Attack_Light", "Attack_Light_Hunter"),
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]

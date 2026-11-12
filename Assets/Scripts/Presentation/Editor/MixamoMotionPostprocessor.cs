@@ -33,6 +33,7 @@ namespace Project1.Presentation.EditorTools
         {
             ["Attack_Light"] = new Vector2(5, 30),
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
+            ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_RunJump_Hunter"] = new Vector2(36, 70),   // 무기를 든 자세 → 내려치기 → 마무리(앞의 달리기·마지막 대기는 뺌)
             ["Air"] = new Vector2(14, 34),                     // Standing Jump: 발이 떨어짐(14) → 꼭대기(23) → 착지(34). 0.67초 ≈ 게임 점프 0.69초
             ["Air_F"] = new Vector2(0, 16),                    // Jump(앞점프): 공중(0) → 꼭대기(8) → 착지(15~16)
