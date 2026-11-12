@@ -28,11 +28,20 @@ namespace Project1.UI
             Ensure<CharacterHitReactionAnimator>(player);
             Ensure<SkillAreaIndicator>(player);
 
+            // 캐릭터별 소품(무기). 다른 캐릭터로 바꾸면 지운다.
+            SetProp<FanWeapon>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 접는 부채
+
             var hud = Object.FindAnyObjectByType<PlayerHud>();
             if (hud == null) hud = new GameObject("PlayerHud").AddComponent<PlayerHud>();
             hud.SetTarget(player, entry.displayName);
 
             if (Debug.isDebugBuild) Ensure<HealthDebugKeys>(player);
+        }
+
+        private static void SetProp<T>(GameObject go, bool use) where T : Component
+        {
+            if (use) Ensure<T>(go);
+            else if (go.TryGetComponent(out T c)) Object.Destroy(c);
         }
 
         private static T Ensure<T>(GameObject go) where T : Component =>
