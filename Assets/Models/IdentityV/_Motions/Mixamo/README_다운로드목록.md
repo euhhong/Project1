@@ -6,8 +6,9 @@
 - 받은 파일을 **이 폴더**에 아래 "저장 이름"으로 넣으면 끝이다. 임포트 설정(Humanoid, Loop, 제자리, 자르기)과
   Animator Controller 재구성은 자동으로 된다(`Presentation/Editor/MixamoMotionPostprocessor.cs`,
   `CharacterMotionControllerBuilder.cs`, 메뉴 Tools > FE > 모션 컨트롤러 다시 만들기).
-- 생존자는 `_Motions/CharacterLocomotion.controller`, 감시자는 `_Motions/HunterLocomotion.overrideController`를 쓴다.
-  감시자 Controller는 생존자 Controller에서 `_Hunter` 모션만 바꾼다.
+- 생존자는 `_Motions/CharacterLocomotion.controller`를 쓴다. 감시자는 Override Controller를 쓴다:
+  공장장·사냥터지기·안토니오·리퍼·광대 = `HunterLocomotion`, 루키노 = `LuchinoLocomotion`,
+  붉은나비(게이샤) = `GeishaLocomotion`, 하스터 = `HasturLocomotion`. 감시자 공통 모션(`_Hunter`) 위에 캐릭터 모션(`_<이름>`)을 덮는다.
 - 공격 모션의 판정 순간(손·발이 맞는 프레임)은 `Presentation/Animation/CharacterAttackAnimator.cs`의 `Timing` 표에 적는다.
 
 ## 다운로드 설정 (모든 모션 공통)
@@ -22,7 +23,10 @@
 | Run_F | 앞 달리기(생존자·감시자 공통) | **받음** | Standard Run |
 | Run_B / Run_L / Run_R | 뒤·옆 달리기 | 대기 — 지금은 같은 방향 걷기를 1.7배속으로 빌려 씀 | |
 | Attack_Light | 기본 공격(생존자) | **받음** — 왼손 잽을 좌우 반전해 오른손(BE 판정 손)으로 씀, 5~30프레임 | Boxing |
-| Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼·광대) | **받음** — 6~50프레임, 오른손 내려치기 20~28. 감시자 Override 전체에 들어가므로 게이샤·하스터·루키노도 지금은 이 모션 | Standing Melee Attack Downward |
+| Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼·광대) → `HunterLocomotion` | **받음** — 6~50프레임, 오른손 내려치기 20~28 | Standing Melee Attack Downward |
+| Attack_Light_Luchino | 루키노 기본 공격 → `LuchinoLocomotion` | **받음** — 4~60프레임, 오른손 가로 베기 22~29 | Standing Melee Attack Horizontal |
+| Attack_Light_Geisha | 붉은나비 기본 공격 → `GeishaLocomotion` | **받음** — 6~60프레임, 오른손 찌르기 14~25(왼손은 횃불 자세) | Standing Torch Melee Attack Stab |
+| Attack_Light_Hastur | 하스터 기본 공격 → `HasturLocomotion` | **받음** — 8~44프레임, 두 손 내뻗기 28~36(뒤의 긴 유지 자세는 뺌) | Standing 2H Magic Attack 03 |
 | (스킬) 사냥터지기 그랩 던지기 | 사냥터지기(노루) 스킬 | **받음, 연결 대기** — `Attack_Light_Hunter.fbx`를 같이 쓴다. 스킬 시스템(BE)이 생기면 Animator에 스킬 상태를 붙인다 | Standing Melee Attack Downward |
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |

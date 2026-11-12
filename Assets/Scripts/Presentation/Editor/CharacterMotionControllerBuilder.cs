@@ -30,14 +30,26 @@ namespace Project1.Presentation.EditorTools
             "Idle", "Air", "Air_F", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
+            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur",
         };
 
-        // 감시자용 Override Controller: 생존자 Controller에서 아래 자리만 감시자 모션으로 바꾼다.
-        public const string HunterControllerPath = "Assets/Models/IdentityV/_Motions/HunterLocomotion.overrideController";
-        private static readonly (string survivor, string hunter)[] HunterOverrides =
+        // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
+        // 파일: _Motions/<이름>Locomotion.overrideController
+        public const string MotionsFolder = "Assets/Models/IdentityV/_Motions";
+        public const string HunterControllerPath = MotionsFolder + "/HunterLocomotion.overrideController";
+        private static readonly (string from, string to)[] HunterOverrides =
         {
             ("Attack_RunJump_Survivor", "Attack_RunJump_Hunter"),
             ("Attack_Light", "Attack_Light_Hunter"),
+        };
+        private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
+        {
+            // 감시자 공통: 공장장·사냥터지기·안토니오·리퍼·광대
+            ("Hunter", new[] { HunterOverrides }),
+            // 아래는 감시자 공통 + 기본 공격만 바꾼다
+            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기
+            ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") } }),   // 붉은나비: 오른손 찌르기
+            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]
@@ -64,7 +76,8 @@ namespace Project1.Presentation.EditorTools
             }
 
             var ac = BuildController(clips);
-            BuildHunterOverride(ac, clips);
+            foreach (var (name, tables) in OverrideControllers)
+                BuildOverride($"{MotionsFolder}/{name}Locomotion.overrideController", tables, ac, clips);
             AssetDatabase.SaveAssets();
             Debug.Log($"[FE] 모션 컨트롤러를 다시 만들었습니다. 모션 파일: {string.Join(", ", fromFile)}"
                       + $" / 임시 모션(교체 대기): {string.Join(", ", legacy)}"
@@ -78,19 +91,23 @@ namespace Project1.Presentation.EditorTools
             return null;
         }
 
-        private static void BuildHunterOverride(AnimatorController ac, Dictionary<string, AnimationClip> clips)
+        private static void BuildOverride(string path, (string from, string to)[][] tables, AnimatorController ac, Dictionary<string, AnimationClip> clips)
         {
-            var aoc = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(HunterControllerPath);
+            var aoc = AssetDatabase.LoadAssetAtPath<AnimatorOverrideController>(path);
             if (aoc == null)
             {
                 aoc = new AnimatorOverrideController(ac);
-                AssetDatabase.CreateAsset(aoc, HunterControllerPath);
+                AssetDatabase.CreateAsset(aoc, path);
             }
             aoc.runtimeAnimatorController = ac;
+            var map = new Dictionary<AnimationClip, AnimationClip>();
+            foreach (var table in tables)
+                foreach (var (from, to) in table)
+                    if (clips[from] != null && clips[to] != null) map[clips[from]] = clips[to];
             var pairs = new List<KeyValuePair<AnimationClip, AnimationClip>>();
-            foreach (var (survivor, hunter) in HunterOverrides)
-                if (clips[survivor] != null && clips[hunter] != null)
-                    pairs.Add(new KeyValuePair<AnimationClip, AnimationClip>(clips[survivor], clips[hunter]));
+            aoc.GetOverrides(pairs);
+            for (int i = 0; i < pairs.Count; i++)
+                pairs[i] = new KeyValuePair<AnimationClip, AnimationClip>(pairs[i].Key, map.TryGetValue(pairs[i].Key, out var to) ? to : null);
             aoc.ApplyOverrides(pairs);
             EditorUtility.SetDirty(aoc);
         }
