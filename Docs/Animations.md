@@ -69,11 +69,17 @@
 
 | 파라미터 | 타입 | 출처 (`ICharacterState`, BE-5) | 의미 |
 |---|---|---|---|
-| `MoveX` | float | `LocalPlanarVelocity.x / WalkSpeed` | 좌우 이동량. 걷기 1, 달리기 약 2.5 |
-| `MoveZ` | float | `LocalPlanarVelocity.y / WalkSpeed` | 앞뒤 이동량. `LocalPlanarVelocity`는 x가 오른쪽, y가 앞쪽 |
+| `MoveX` | float | `LocalPlanarVelocity` 방향 × 구간별 크기 (아래 참고) | 좌우 이동량. 걷기 1, 달리기 2.5 |
+| `MoveZ` | float | 〃 | 앞뒤 이동량. `LocalPlanarVelocity`는 x가 오른쪽, y가 앞쪽 |
 | `Speed` | float | `LocalPlanarVelocity.magnitude` | 수평 속력 (m/s) |
 | `IsGrounded` | bool | `IsGrounded` | 땅에 닿았는지 |
 | `Jump` | trigger | `Jumped` 이벤트 | 점프 시작 |
 
 - **확정** (2026-11-11, BE·FE 합의). `WalkSpeed`와 `RunSpeed` 속성은 BE가 추가했다.
+- **MoveX/MoveZ 공식 변경** (2026-11-12, FE 커밋 4b1929b). 방향은 `LocalPlanarVelocity`의 정규화 방향을 그대로 쓰고, 크기만 속력 구간별로 정한다.
+  - 속력 0 ~ `WalkSpeed` → 0 ~ 1
+  - 속력 `WalkSpeed` ~ `RunSpeed` → 1 ~ 2.5 (`CharacterAnimatorDriver.RunBlendValue` = 2.5)
+  - 이유: 걷기·달리기 속도 비율이 바뀌어도(예: 2.5 → 1.8) 블렌드 트리의 걷기(±1)·달리기(±2.5) 지점에 모션이 정확히 맞게 하려는 것이다. 이전 공식(`LocalPlanarVelocity / WalkSpeed`)은 비율이 2.5일 때만 맞았다.
+  - 좌우 이동 몸 틀기(`CharacterBodyTurn`)가 켜져 있으면, 몸을 튼 각도만큼 속도 방향을 돌려서 넘긴다. 몸을 틀 때 고개는 시선 쪽으로 90% 보정한다.
+- 모션 느낌 (2026-11-12 사용자 요청): 걷기는 조깅 수준, 달리기는 전력질주. 걷기 속도 상향(2.6 → 3.6 m/s 제안)은 BE에 요청되어 있다.
 - 그 밖에 쓸 수 있는 상태: `MoveState`(Idle/Walk/Run), `VerticalSpeed`(위가 +), `Landed` 이벤트, `LookYaw`, `LookPitch`(아래가 +, -30~60). 카메라 회전은 `Quaternion.Euler(LookPitch, LookYaw, 0)`이다.
