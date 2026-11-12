@@ -17,8 +17,8 @@ MonoBehaviour:
   castTime: 5
   cooldown: 12
   castMoveSpeed: 0
-  leapHeight: 4
-  forwardSpeed: 7
+  leapHeight: 12
+  forwardSpeed: 9
   slamSpeed: 30
   slamRadius: 3
   slamRecovery: 0.9

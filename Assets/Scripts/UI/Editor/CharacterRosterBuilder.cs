@@ -21,7 +21,7 @@ namespace Project1.UI.EditorTools
         private static readonly Dictionary<string, System.Func<Project1.Systems.SkillDefinition>> Skills = new()
         {
             ["Survivor_Doctor"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.SelfHealSkill>(); s.id = "Doctor_SelfHeal"; s.displayName = "자가치료"; s.castTime = 1.5f; s.cooldown = 12f; s.castMoveSpeed = 0f; s.healFraction = 0.4f; return s; },
-            ["Hunter_Luchino"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.LeapSkill>(); s.id = "Luchino_Leap"; s.displayName = "도약 내려찍기"; s.castTime = 5f; s.cooldown = 12f; return s; },
+            ["Hunter_Luchino"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.LeapSkill>(); s.id = "Luchino_Leap"; s.displayName = "도약 내려찍기"; s.castTime = 5f; s.cooldown = 12f; s.leapHeight = 12f; s.forwardSpeed = 9f; return s; },
             ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 15f; s.chargeSpeed = 16f; return s; },
         };
 
