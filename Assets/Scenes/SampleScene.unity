@@ -581,7 +581,187 @@ Transform:
   - {fileID: 1139480974}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1747257222
+--- !u!1 &1846143975
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1846143979}
+  - component: {fileID: 1846143978}
+  - component: {fileID: 1846143977}
+  - component: {fileID: 1846143976}
+  - component: {fileID: 1846143980}
+  - component: {fileID: 1846143982}
+  - component: {fileID: 1846143984}
+  - component: {fileID: 1846143983}
+  - component: {fileID: 1846143985}
+  m_Layer: 0
+  m_Name: Survivor_Doctor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1846143976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 600d9ddb53266a743a6212ed9183d5f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.LocalPlayerInput
+  mouseSensitivity: 0.25
+  gamepadLookSpeed: 120
+  minPitch: -30
+  maxPitch: 60
+  invertY: 0
+  heavyAttackHoldTime: 0.3
+--- !u!114 &1846143977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbcf66fd23a3d174b93b2f90b2b73e07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterMotor
+  walkSpeed: 3.6
+  runSpeed: 6.5
+  jumpHeight: 1.2
+  gravity: -20
+--- !u!143 &1846143978
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.7028837
+  m_Radius: 0.3
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0.92868465, z: 0}
+--- !u!4 &1846143979
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1983255200}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1846143980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 03b84d53526cdad4382158c2c9b2ca25, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterAnimatorDriver
+  moveDampTime: 0.1
+--- !u!114 &1846143982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85630c041e7df5541a73d82bb1f35474, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterBodyTurn
+  maxBodyTurn: 70
+  lateralThreshold: 0.3
+  turnSmoothTime: 0.1
+  returnDelay: 0.35
+  returnSmoothTime: 0.45
+  spineCompensation: 0.15
+  chestCompensation: 0.2
+  neckCompensation: 0.25
+  headCompensation: 0.3
+--- !u!114 &1846143983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b97a63c13348804ab71324da8ff01cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.AttackHitDetector
+--- !u!114 &1846143984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14dc95f5da682644f8c66c4cd4fc65e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterIdentity
+  teamId: -1
+--- !u!114 &1846143985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60e0c2f4413c2274db177ed327534093, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterAttack
+  lightAttack:
+    Windup: 0.1
+    Active: 0.1
+    Recovery: 0.25
+    Slots: 2
+  heavyAttack:
+    Windup: 0.25
+    Active: 0.15
+    Recovery: 0.5
+    Slots: 18
+--- !u!1001 &1983255199
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -641,6 +821,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 562849742452346689, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.6937776
+      objectReference: {fileID: 0}
+    - target: {fileID: 562849742452346689, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.17770489
+      objectReference: {fileID: 0}
+    - target: {fileID: 562849742452346689, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.3929457
+      objectReference: {fileID: 0}
+    - target: {fileID: 562849742452346689, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.5767906
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
       propertyPath: m_Name
       value: Model
@@ -654,140 +850,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
---- !u!4 &1747257223 stripped
+--- !u!4 &1983255200 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1c220216fa612c44c80bc24a98ec3e79, type: 3}
-  m_PrefabInstance: {fileID: 1747257222}
+  m_PrefabInstance: {fileID: 1983255199}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1846143975
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1846143979}
-  - component: {fileID: 1846143978}
-  - component: {fileID: 1846143977}
-  - component: {fileID: 1846143976}
-  - component: {fileID: 1846143980}
-  - component: {fileID: 1846143982}
-  m_Layer: 0
-  m_Name: Survivor_Doctor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1846143976
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 600d9ddb53266a743a6212ed9183d5f1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.LocalPlayerInput
-  mouseSensitivity: 0.25
-  gamepadLookSpeed: 120
-  minPitch: -30
-  maxPitch: 60
-  invertY: 0
---- !u!114 &1846143977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cbcf66fd23a3d174b93b2f90b2b73e07, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterMotor
-  walkSpeed: 3.6
-  runSpeed: 6.5
-  jumpHeight: 1.2
-  gravity: -20
---- !u!143 &1846143978
-CharacterController:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Height: 1.7028837
-  m_Radius: 0.3
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
-  m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0.92868465, z: 0}
---- !u!4 &1846143979
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1747257223}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1846143980
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 03b84d53526cdad4382158c2c9b2ca25, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterAnimatorDriver
-  moveDampTime: 0.1
---- !u!114 &1846143982
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1846143975}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 85630c041e7df5541a73d82bb1f35474, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterBodyTurn
-  maxBodyTurn: 70
-  lateralThreshold: 0.3
-  turnSmoothTime: 0.1
-  returnDelay: 0.35
-  returnSmoothTime: 0.45
-  spineCompensation: 0.15
-  chestCompensation: 0.2
-  neckCompensation: 0.25
-  headCompensation: 0.3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
