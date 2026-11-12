@@ -29,7 +29,7 @@ namespace Project1.Presentation.EditorTools
         // BodyPart 값(이름이 Hands/Feet → Arms/Legs로 바뀌어도 값은 같다)
         private const BodyPart PartHead = (BodyPart)0, PartBody = (BodyPart)1, PartArms = (BodyPart)2, PartLegs = (BodyPart)3;
 
-        public override uint GetVersion() => 4; // 4: 다리 판정 없는 캐릭터(NoLegCharacters)
+        public override uint GetVersion() => 5; // 4: 다리 판정 없는 캐릭터, 5: 그리지 않는 정점 제외(지운 부분)
 
         // 상자를 갖는 Humanoid 뼈와 부위. 손가락·눈·턱·발가락은 각각 손·머리·발 상자에 합친다.
         private static readonly (string human, BodyPart part)[] BoxBones =
@@ -71,9 +71,13 @@ namespace Project1.Presentation.EditorTools
                 var verts = mesh.vertices; var weights = mesh.boneWeights; var bones = smr.bones;
                 var ownerOfBone = new Transform[bones.Length];
                 for (int i = 0; i < bones.Length; i++) ownerOfBone[i] = FindOwner(bones[i], owners) ?? hips;
+                // 그리는 삼각형에 쓰이는 정점만 센다(ModelPartRemover가 지운 부분은 빠진다).
+                var used = new bool[verts.Length];
+                foreach (int vi in mesh.triangles) used[vi] = true;
                 var meshToWorld = smr.transform.localToWorldMatrix;
                 for (int i = 0; i < verts.Length; i++)
                 {
+                    if (!used[i]) continue;
                     int bi = weights.Length == verts.Length ? weights[i].boneIndex0 : -1;
                     var owner = bi >= 0 && bi < bones.Length ? ownerOfBone[bi] : hips;
                     Vector3 w = meshToWorld.MultiplyPoint3x4(verts[i]);
