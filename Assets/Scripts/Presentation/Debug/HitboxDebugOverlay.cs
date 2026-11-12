@@ -7,7 +7,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 판정 디버그 표시. 에디터 Play와 개발 빌드에서 Hurtbox_*(맞는 판정)·Hitbox_*(때리는 판정) BoxCollider를 선으로 그린다.
-    /// 씬에 붙일 필요 없이 자동으로 생긴다. F3으로 켜고 끈다(기본 켜짐).
+    /// 씬에 붙일 필요 없이 자동으로 생긴다. 기본은 숨김이고, 조정할 때 F3으로 켜고 끈다. 판정(Collider)은 표시와 상관없이 항상 동작한다.
     /// 색: 머리 빨강, 몸통 노랑, 팔 하늘, 다리 초록 / 공격 중 Hitbox 자홍, 평소 Hitbox 회색.
     /// </summary>
     public class HitboxDebugOverlay : MonoBehaviour
@@ -16,7 +16,7 @@ namespace Project1.Presentation
         private const string HitPrefix = "Hitbox_";
         private const float RescanInterval = 1f;
 
-        private static bool visible = true;
+        private static bool visible = false; // 게임 중에는 숨김. F3으로 켠다.
         private readonly List<BoxCollider> boxes = new();
         private float nextScan;
         private Material lineMaterial;
