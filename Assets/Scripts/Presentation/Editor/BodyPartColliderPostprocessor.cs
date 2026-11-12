@@ -29,7 +29,7 @@ namespace Project1.Presentation.EditorTools
         // BodyPart 값(이름이 Hands/Feet → Arms/Legs로 바뀌어도 값은 같다)
         private const BodyPart PartHead = (BodyPart)0, PartBody = (BodyPart)1, PartArms = (BodyPart)2, PartLegs = (BodyPart)3;
 
-        public override uint GetVersion() => 3;
+        public override uint GetVersion() => 4; // 4: 다리 판정 없는 캐릭터(NoLegCharacters)
 
         // 상자를 갖는 Humanoid 뼈와 부위. 손가락·눈·턱·발가락은 각각 손·머리·발 상자에 합친다.
         private static readonly (string human, BodyPart part)[] BoxBones =
@@ -96,11 +96,19 @@ namespace Project1.Presentation.EditorTools
                 float localMargin = margin / Mathf.Max(bone.lossyScale.x, 1e-6f);
                 Vector3 size = (mx - mn) * Padding + Vector3.one * localMargin * 2f;
                 Vector3 center = (mn + mx) * 0.5f;
-                var go = MakeChild(bone, $"{HurtPrefix}{part}_{hn}");
+                boxOf[hn] = (bone, center, size);
+                string hurtName = $"{HurtPrefix}{part}_{hn}";
+                if (part == PartLegs && HasNoLegs(assetPath))
+                {
+                    // 다리 판정이 없는 캐릭터: 다리 상자는 만들지 않는다(발 Hitbox 크기 계산에는 쓴다).
+                    var stale = bone.Find(hurtName);
+                    if (stale != null) Object.DestroyImmediate(stale.gameObject);
+                    continue;
+                }
+                var go = MakeChild(bone, hurtName);
                 var box = go.AddComponent<BoxCollider>(); box.center = center; box.size = size; box.isTrigger = true;
                 SetLayer(go, CombatLayers.HurtboxName);
                 go.AddComponent<Hurtbox>().SetPart(part);
-                boxOf[hn] = (bone, center, size);
             }
 
             // 때리는 판정: 손·발
@@ -142,6 +150,11 @@ namespace Project1.Presentation.EditorTools
                 go.AddComponent<Hitbox>().SetSlot(HitboxSlot.Weapon);
             }
         }
+
+        // 다리 판정(Legs Hurtbox)이 없는 캐릭터. 붉은나비(미치코)는 유령처럼 떠다녀 다리를 맞지 않는다(사용자 결정).
+        private static readonly string[] NoLegCharacters = { "Hunter_Geisha" };
+
+        private static bool HasNoLegs(string path) => NoLegCharacters.Any(id => path.Contains($"/{id}/"));
 
         /// <summary>손에 든 무기 오브젝트 이름 규칙: _Weapon / _Prop / _Syringe 로 끝난다.</summary>
         private static bool IsWeapon(string name) =>

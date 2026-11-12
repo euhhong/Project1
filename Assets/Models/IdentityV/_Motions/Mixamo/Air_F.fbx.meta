@@ -34,8 +34,8 @@ ModelImporter:
       name: Air_F
       takeName: mixamo.com
       internalID: -203655887218126122
-      firstFrame: 0
-      lastFrame: 16
+      firstFrame: 25
+      lastFrame: 44
       wrapMode: 0
       orientationOffsetY: 0
       level: -0.91

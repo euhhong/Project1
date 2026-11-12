@@ -45,7 +45,15 @@ namespace Project1.Presentation
         private void Awake()
         {
             state = GetComponent<ICharacterState>();
+            ResolveModel();
+        }
+
+        /// <summary>모델(Animator)과 뼈를 찾는다. 모델이 바뀌면 Update에서 다시 부른다.</summary>
+        private void ResolveModel()
+        {
             animator = GetComponentInChildren<Animator>();
+            model = null; spine = chest = neck = head = null;
+            yaw = yawVelocity = targetYaw = 0f;
             if (animator == null) return;
             model = animator.transform;
             modelBaseRotation = model.localRotation;
@@ -60,6 +68,7 @@ namespace Project1.Presentation
 
         private void Update()
         {
+            if (animator == null || !animator.isActiveAndEnabled) ResolveModel();
             if (state == null || model == null) return;
 
             Vector2 v = state.LocalPlanarVelocity; // x = 오른쪽, y = 앞

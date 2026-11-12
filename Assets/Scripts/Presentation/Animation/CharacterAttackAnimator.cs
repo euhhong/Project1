@@ -68,6 +68,13 @@ namespace Project1.Presentation
 
         private void LateUpdate()
         {
+            if (animator == null || !animator.isActiveAndEnabled)
+            {
+                // 모델이 바뀌었으면 새 Animator를 찾고, 레이어 번호도 다시 찾는다.
+                animator = GetComponentInChildren<Animator>();
+                groundLayer = airLayer = -1;
+                groundWeight = airWeight = 0f;
+            }
             if (attack == null || animator == null || animator.runtimeAnimatorController == null) return;
             if (groundLayer < 0) groundLayer = animator.GetLayerIndex(GroundLayerName);
             if (airLayer < 0) airLayer = animator.GetLayerIndex(AirLayerName);

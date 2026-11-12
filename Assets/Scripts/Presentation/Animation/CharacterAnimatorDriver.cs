@@ -30,12 +30,20 @@ namespace Project1.Presentation
         private void Awake()
         {
             state = GetComponent<ICharacterState>();
-            animator = GetComponentInChildren<Animator>();
             bodyTurn = GetComponent<CharacterBodyTurn>();
             if (state == null) Debug.LogWarning($"{name}: ICharacterState가 없어 모션을 연결하지 않습니다.", this);
-            if (animator == null) Debug.LogWarning($"{name}: 자식에서 Animator를 찾지 못했습니다.", this);
+            if (!ResolveAnimator()) Debug.LogWarning($"{name}: 자식에서 Animator를 찾지 못했습니다.", this);
+        }
+
+        /// <summary>모델이 바뀌어 Animator가 꺼지거나 지워졌으면 새 모델에서 다시 찾는다.</summary>
+        private bool ResolveAnimator()
+        {
+            if (animator != null && animator.isActiveAndEnabled) return true;
+            animator = GetComponentInChildren<Animator>();
+            if (animator == null) return false;
             // 이동은 BE의 CharacterMotor가 맡는다. 모션의 루트 이동이 겹치지 않게 끈다.
-            else animator.applyRootMotion = false;
+            animator.applyRootMotion = false;
+            return true;
         }
 
         private void OnEnable()
@@ -78,6 +86,6 @@ namespace Project1.Presentation
             if (IsReady()) animator.SetTrigger(JumpId);
         }
 
-        private bool IsReady() => state != null && animator != null && animator.runtimeAnimatorController != null;
+        private bool IsReady() => state != null && ResolveAnimator() && animator.runtimeAnimatorController != null;
     }
 }

@@ -22,12 +22,13 @@ namespace Project1.Presentation.EditorTools
         // 게임 점프의 공중 시간(초). CharacterMotor 기본값 jumpHeight 1.2, gravity -20 → 2·√(2·1.2·20)/20 ≈ 0.69초.
         // 점프 모션(도약~착지)을 이 시간에 맞춰 재생한다.
         private const float JumpAirTime = 0.69f;
-        // 점프할 때 MoveZ(걷기 = 1)가 이 값보다 크면 앞점프(Air_F)를 쓴다.
+        // 점프할 때 MoveZ(걷기 = 1, 달리기 = RunBlendValue)가 이 값보다 크면 걸어서 점프(Air_F) / 뛰면서 점프(Air_Run)를 쓴다.
         private const float ForwardJumpMoveZ = 0.5f;
+        private const float RunJumpMoveZ = (1f + CharacterAnimatorDriver.RunBlendValue) * 0.5f;
 
         private static readonly string[] Slots =
         {
-            "Idle", "Air", "Air_F", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur",
@@ -42,13 +43,20 @@ namespace Project1.Presentation.EditorTools
             ("Attack_RunJump_Survivor", "Attack_RunJump_Hunter"),
             ("Attack_Light", "Attack_Light_Hunter"),
         };
+        // 유령처럼 이동: 걷기·달리기에서도 다리를 움직이지 않고 대기 자세 그대로 미끄러진다.
+        // (옆·뒤 달리기는 같은 방향 걷기 클립을 빌려 쓰므로 걷기만 바꾸면 같이 바뀐다.)
+        private static readonly (string from, string to)[] GhostGlide =
+        {
+            ("Walk_F", "Idle"), ("Walk_B", "Idle"), ("Walk_L", "Idle"), ("Walk_R", "Idle"),
+            ("Run_F", "Idle"), ("Run_B", "Idle"), ("Run_L", "Idle"), ("Run_R", "Idle"),
+        };
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
             // 감시자 공통: 공장장·사냥터지기·안토니오·리퍼·광대
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
             ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기
-            ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") } }),   // 붉은나비: 오른손 찌르기
+            ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
         };
 
@@ -96,6 +104,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly (string path, string slot)[] SelectControllers =
         {
             (MotionsFolder + "/HunterSelect.controller", "SelectIdle_Hunter"),
+            (MotionsFolder + "/SurvivorSelect.controller", "SelectIdle_Survivor"),
         };
 
         private static void BuildSingleClip(string path, AnimationClip clip)
@@ -186,20 +195,10 @@ namespace Project1.Presentation.EditorTools
             air.motion = clips["Air"];
             if (clips["Air"] != null && !clips["Air"].isLooping) air.speed = clips["Air"].length / JumpAirTime;
 
-            // 앞점프: 앞으로 움직이며 점프하면 Air_F. 전환은 위에서부터 검사하므로 제자리 점프보다 먼저 넣는다.
-            if (clips["Air_F"] != null)
-            {
-                var airF = sm.AddState("Air_F");
-                airF.motion = clips["Air_F"];
-                airF.speed = clips["Air_F"].length / JumpAirTime;
-                var toAirF = locomotion.AddTransition(airF);
-                toAirF.hasExitTime = false; toAirF.duration = 0.1f;
-                toAirF.AddCondition(AnimatorConditionMode.If, 0, "Jump");
-                toAirF.AddCondition(AnimatorConditionMode.Greater, ForwardJumpMoveZ, "MoveZ");
-                var landF = airF.AddTransition(locomotion);
-                landF.hasExitTime = false; landF.duration = 0.12f;
-                landF.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
-            }
+            // 앞으로 움직이며 점프: 뛰면서 = Air_Run, 걸으면서 = Air_F.
+            // 전환은 위에서부터 검사하므로 빠른 쪽 → 느린 쪽 → 제자리 점프 순서로 넣는다.
+            AddForwardJump(sm, locomotion, clips["Air_Run"], "Air_Run", RunJumpMoveZ);
+            AddForwardJump(sm, locomotion, clips["Air_F"], "Air_F", ForwardJumpMoveZ);
 
             var toAirJump = locomotion.AddTransition(air);
             toAirJump.hasExitTime = false; toAirJump.duration = 0.1f;
@@ -254,6 +253,21 @@ namespace Project1.Presentation.EditorTools
 
             EditorUtility.SetDirty(ac);
             return ac;
+        }
+
+        private static void AddForwardJump(AnimatorStateMachine sm, AnimatorState locomotion, AnimationClip clip, string name, float minMoveZ)
+        {
+            if (clip == null) return;
+            var state = sm.AddState(name);
+            state.motion = clip;
+            state.speed = clip.length / JumpAirTime;
+            var enter = locomotion.AddTransition(state);
+            enter.hasExitTime = false; enter.duration = 0.1f;
+            enter.AddCondition(AnimatorConditionMode.If, 0, "Jump");
+            enter.AddCondition(AnimatorConditionMode.Greater, minMoveZ, "MoveZ");
+            var land = state.AddTransition(locomotion);
+            land.hasExitTime = false; land.duration = 0.12f;
+            land.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
         }
 
         private static AvatarMask LoadUpperBodyMask()
