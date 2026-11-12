@@ -54,6 +54,8 @@ namespace Project1.Systems
         {
             maxSpeed = float.MaxValue;
             bool limited = false;
+            // Play 중 스크립트가 다시 컴파일되면 Awake 없이 필드가 비므로 다시 모은다.
+            speedLimits ??= GetComponents<IMoveSpeedLimit>();
             foreach (IMoveSpeedLimit limit in speedLimits)
             {
                 if (limit is Behaviour { isActiveAndEnabled: false })
@@ -71,6 +73,11 @@ namespace Project1.Systems
 
         private void FixedUpdate()
         {
+            if (controller == null)
+            {
+                Awake(); // Play 중 재컴파일로 참조가 비었을 때 복구
+            }
+
             CharacterInputFrame input = inputSource != null ? inputSource.ReadInput() : default;
             if (inputSource != null)
             {
