@@ -45,6 +45,13 @@
 **캐릭터 15명 전원이 Unity Humanoid다** (2026-11-11, FE).
 - 9명(Gamekeeper, Hastur, HellEmber, Luchino, Ripper, Coordinator, Doctor, Forward, MindsEye): 원래 있던 3ds Max Biped 뼈대를 Humanoid로 전환했다(A포즈).
 - 6명(Antonio, Geisha, SmileyFace, Cowboy, Mercenary, Thief): 사용자 지시로 Blender에서 Humanoid 뼈대와 가중치를 넣어 FBX를 교체했다.
+- **변경 (2026-11-12, FE 커밋 e24b777):** Hastur는 촉수형이라 원본 뼈대를 쓰는 **Generic**으로 바꿨다. 사용자가 새로 만들 예정이다. 그래서 현재 Humanoid는 **14명**이고, Hastur에는 Humanoid 모션을 쓸 수 없다.
+- 생존자 소품 4종(신호탄 총, 막대, 럭비공, 지팡이)은 오른손 뼈에 붙였다(커밋 da8afc2).
+
+### 히트 판정용 부위 분리 (2026-11-12, FE 커밋 75d3aa3)
+- 사람형 14명은 모델 안 메시가 부위별로 나뉘어 있다. 이름 규칙: `<캐릭터>_Head`, `_Body`, `_Hands`, `_Feet` (예: `Doctor_Head`).
+- 소품은 `<캐릭터>_Prop`이고, 의사만 `Doctor_Syringe`다. 둘 다 오른손 뼈 아래에 있다.
+- 실제 판정은 렌더 메시가 아니라 부위 뼈(Head·Hand·Foot·Spine)에 붙인 Collider로 한다(Tasks.md M3 참고).
 
 정리:
 - 게임에 쓰는 모델은 **VARCO 리깅이 필요 없다.**
