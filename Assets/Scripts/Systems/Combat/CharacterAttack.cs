@@ -21,8 +21,8 @@ namespace Project1.Systems
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
 
         [Header("공중 공격 (발로 내려찍기)")]
-        [SerializeField] private AttackSpec airLightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
-        [SerializeField] private AttackSpec airHeavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
+        [SerializeField] private AttackSpec airLightAttack = new(0.12f, 0.12f, 0.30f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
+        [SerializeField] private AttackSpec airHeavyAttack = new(0.20f, 0.15f, 0.40f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
 
         private ICharacterInputSource inputSource;
         private ICharacterState characterState;
