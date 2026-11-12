@@ -709,7 +709,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbcf66fd23a3d174b93b2f90b2b73e07, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterMotor
-  walkSpeed: 2.6
+  walkSpeed: 3.6
   runSpeed: 6.5
   jumpHeight: 1.2
   gravity: -20

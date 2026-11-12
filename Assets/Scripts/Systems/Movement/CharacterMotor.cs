@@ -14,7 +14,7 @@ namespace Project1.Systems
     [RequireComponent(typeof(CharacterController))]
     public class CharacterMotor : MonoBehaviour, ICharacterState
     {
-        [SerializeField, Min(0f)] private float walkSpeed = 2.6f;
+        [SerializeField, Min(0f)] private float walkSpeed = 3.6f;
         [SerializeField, Min(0f)] private float runSpeed = 6.5f;
         [SerializeField, Min(0f)] private float jumpHeight = 1.2f;
         [SerializeField] private float gravity = -20f;
