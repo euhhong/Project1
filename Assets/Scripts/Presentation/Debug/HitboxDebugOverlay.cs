@@ -8,7 +8,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 판정 디버그 표시. 에디터 Play와 개발 빌드에서 Hurtbox_*(맞는 판정)·Hitbox_*(때리는 판정) BoxCollider를 선으로 그린다.
     /// 씬에 붙일 필요 없이 자동으로 생긴다. F3으로 켜고 끈다(기본 켜짐).
-    /// 색: 머리 빨강, 몸통 노랑, 손 하늘, 발 초록 / 켜진 Hitbox 자홍, 꺼진 Hitbox 회색.
+    /// 색: 머리 빨강, 몸통 노랑, 팔 하늘, 다리 초록 / 공격 중 Hitbox 자홍, 평소 Hitbox 회색.
     /// </summary>
     public class HitboxDebugOverlay : MonoBehaviour
     {
@@ -75,11 +75,17 @@ namespace Project1.Presentation
         /// <summary>부위·종류별 표시 색.</summary>
         public static Color ColorOf(BoxCollider b)
         {
-            if (b.name.StartsWith(HitPrefix)) return b.enabled ? new Color(1f, 0.2f, 0.9f) : new Color(0.5f, 0.5f, 0.5f, 0.6f);
-            if (b.name.EndsWith("Head")) return new Color(1f, 0.25f, 0.25f);
-            if (b.name.EndsWith("Body")) return new Color(1f, 0.85f, 0.2f);
-            if (b.name.EndsWith("Hand")) return new Color(0.3f, 0.75f, 1f);
-            if (b.name.EndsWith("Foot")) return new Color(0.3f, 1f, 0.4f);
+            if (b.name.StartsWith(HitPrefix))
+            {
+                var detector = b.GetComponentInParent<Project1.Systems.AttackHitDetector>();
+                bool attacking = detector != null && detector.IsAttacking;
+                return attacking ? new Color(1f, 0.2f, 0.9f) : new Color(0.55f, 0.55f, 0.55f, 0.5f);
+            }
+            // Hurtbox_<부위>_<뼈>
+            if (b.name.StartsWith(HurtPrefix + "Head")) return new Color(1f, 0.25f, 0.25f);
+            if (b.name.StartsWith(HurtPrefix + "Body")) return new Color(1f, 0.85f, 0.2f);
+            if (b.name.StartsWith(HurtPrefix + "Arms") || b.name.StartsWith(HurtPrefix + "Hands")) return new Color(0.3f, 0.75f, 1f);
+            if (b.name.StartsWith(HurtPrefix + "Legs") || b.name.StartsWith(HurtPrefix + "Feet")) return new Color(0.3f, 1f, 0.4f);
             return Color.white;
         }
 
