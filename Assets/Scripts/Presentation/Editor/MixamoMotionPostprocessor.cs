@@ -104,8 +104,15 @@ namespace Project1.Presentation.EditorTools
                 foreach (var p in list)
                     if (p.StartsWith(Folder + "/") && p.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase)) changed = true;
             if (!changed) return;
-            EditorApplication.delayCall -= CharacterMotionControllerBuilder.Build;
-            EditorApplication.delayCall += CharacterMotionControllerBuilder.Build;
+            EditorApplication.delayCall -= RebuildMotions;
+            EditorApplication.delayCall += RebuildMotions;
+        }
+
+        // 자세를 고친 모션을 먼저 다시 만들고(원본이 바뀌었을 수 있다), Controller를 다시 만든다.
+        private static void RebuildMotions()
+        {
+            MotionPoseAdjuster.BuildAll();
+            CharacterMotionControllerBuilder.Build();
         }
     }
 }

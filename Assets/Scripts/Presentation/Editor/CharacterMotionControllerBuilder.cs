@@ -287,10 +287,14 @@ namespace Project1.Presentation.EditorTools
                 string file = System.IO.Path.GetFileNameWithoutExtension(path);
                 if (!file.StartsWith("Skill_")) continue;
                 var clip = LoadFbxClip(path);
+                // 자세를 고친 모션(MotionPoseAdjuster)이 있으면 그것을 쓴다. 몸을 낮춘 모션이라 Foot IK로 발을 땅에 붙인다.
+                var adjusted = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{MotionPoseAdjuster.Folder}/{file}.anim");
+                if (adjusted != null) clip = adjusted;
                 if (clip == null) continue;
                 string skillId = file.Substring("Skill_".Length);
                 var state = skillSm.AddState(skillId);
                 state.motion = clip;
+                state.iKOnFeet = adjusted != null;
                 if (SkillLoopSpeed.TryGetValue(skillId, out float loopSpeed)) state.speed = loopSpeed;
             }
             foreach (var (skillId, slot) in SkillEndMotions)
