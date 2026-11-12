@@ -51,7 +51,9 @@
 ### 히트 판정용 부위 분리 (2026-11-12, FE 커밋 75d3aa3)
 - 사람형 14명은 모델 안 메시가 부위별로 나뉘어 있다. 이름 규칙: `<캐릭터>_Head`, `_Body`, `_Hands`, `_Feet` (예: `Doctor_Head`).
 - 소품은 `<캐릭터>_Prop`이고, 의사만 `Doctor_Syringe`다. 둘 다 오른손 뼈 아래에 있다.
-- 실제 판정은 렌더 메시가 아니라 부위 뼈(Head·Hand·Foot·Spine)에 붙인 Collider로 한다(Tasks.md M3 참고).
+- 실제 판정은 렌더 메시가 아니라 Collider로 한다(Tasks.md M3 참고).
+- **판정 부위는 4개다 (2026-11-12 사용자 요청): Head / Body / Arms / Legs.** 위의 메시 이름(`_Hands`, `_Feet`)은 렌더용 분리 이름이라 판정 부위 이름과 다르다.
+  - Humanoid 뼈마다 상자(BoxCollider)를 붙여 전신을 빈틈없이 덮는다(FE 커밋 024c99c). 의사 기준 Hurtbox 19개, Hitbox 5개다.
 
 정리:
 - 게임에 쓰는 모델은 **VARCO 리깅이 필요 없다.**
