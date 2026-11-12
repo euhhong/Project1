@@ -22,11 +22,13 @@ namespace Project1.Presentation
 
         private ICharacterState state;
         private Animator animator;
+        private CharacterBodyTurn bodyTurn;
 
         private void Awake()
         {
             state = GetComponent<ICharacterState>();
             animator = GetComponentInChildren<Animator>();
+            bodyTurn = GetComponent<CharacterBodyTurn>();
             if (state == null) Debug.LogWarning($"{name}: ICharacterState가 없어 모션을 연결하지 않습니다.", this);
             if (animator == null) Debug.LogWarning($"{name}: 자식에서 Animator를 찾지 못했습니다.", this);
             // 이동은 BE의 CharacterMotor가 맡는다. 모션의 루트 이동이 겹치지 않게 끈다.
@@ -49,6 +51,12 @@ namespace Project1.Presentation
 
             float walk = Mathf.Max(state.WalkSpeed, 0.01f);
             Vector2 v = state.LocalPlanarVelocity;
+            // 몸(모델)을 튼 만큼 속도를 모델 기준으로 바꿔, 튼 방향으로 걷는 모션이 나오게 한다.
+            if (bodyTurn != null && Mathf.Abs(bodyTurn.YawOffset) > 0.01f)
+            {
+                float r = -bodyTurn.YawOffset * Mathf.Deg2Rad;
+                v = new Vector2(v.x * Mathf.Cos(r) + v.y * Mathf.Sin(r), -v.x * Mathf.Sin(r) + v.y * Mathf.Cos(r));
+            }
             animator.SetFloat(MoveXId, v.x / walk, moveDampTime, Time.deltaTime);
             animator.SetFloat(MoveZId, v.y / walk, moveDampTime, Time.deltaTime);
             animator.SetFloat(SpeedId, v.magnitude);
