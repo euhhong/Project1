@@ -286,16 +286,18 @@ namespace Project1.Presentation.EditorTools
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 string file = System.IO.Path.GetFileNameWithoutExtension(path);
                 if (!file.StartsWith("Skill_")) continue;
-                var clip = LoadFbxClip(path);
-                // 자세를 고친 모션(MotionPoseAdjuster)이 있으면 그것을 쓴다. 몸을 낮춘 모션이라 Foot IK로 발을 땅에 붙인다.
-                var adjusted = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{MotionPoseAdjuster.Folder}/{file}.anim");
-                if (adjusted != null) clip = adjusted;
-                if (clip == null) continue;
-                string skillId = file.Substring("Skill_".Length);
-                var state = skillSm.AddState(skillId);
-                state.motion = clip;
-                state.iKOnFeet = adjusted != null;
-                if (SkillLoopSpeed.TryGetValue(skillId, out float loopSpeed)) state.speed = loopSpeed;
+                // 한 파일에 클립이 여럿이면(예: Skill_Luchino_Leap, Skill_Luchino_Leap_Slam) 클립마다 상태를 만든다.
+                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+                {
+                    if (o is not AnimationClip clip || clip.name.StartsWith("__preview") || !clip.name.StartsWith("Skill_")) continue;
+                    // 자세를 고친 모션(MotionPoseAdjuster)이 있으면 그것을 쓴다. 몸을 낮춘 모션이라 Foot IK로 발을 땅에 붙인다.
+                    var adjusted = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{MotionPoseAdjuster.Folder}/{clip.name}.anim");
+                    string stateName = clip.name.Substring("Skill_".Length);
+                    var state = skillSm.AddState(stateName);
+                    state.motion = adjusted != null ? adjusted : clip;
+                    state.iKOnFeet = adjusted != null;
+                    if (SkillLoopSpeed.TryGetValue(stateName, out float loopSpeed)) state.speed = loopSpeed;
+                }
             }
             foreach (var (skillId, slot) in SkillEndMotions)
                 if (clips.TryGetValue(slot, out var endClip) && endClip != null)

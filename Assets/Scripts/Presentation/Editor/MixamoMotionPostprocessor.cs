@@ -72,29 +72,69 @@ namespace Project1.Presentation.EditorTools
             var defaults = importer.defaultClipAnimations;
             if (defaults == null || defaults.Length == 0) return;
 
-            var clip = defaults[0];
+            // 한 파일을 여러 클립으로 나누는 모션(예: 루키노 도약 = 떠오름 + 내려찍기)
+            if (Splits.TryGetValue(name, out var parts))
+            {
+                var clips = new ModelImporterClipAnimation[parts.Length];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    var (clipName, range, height) = parts[i];
+                    clips[i] = Configure(CopyOf(defaults[0]), clipName, height);
+                    clips[i].firstFrame = range.x;
+                    clips[i].lastFrame = range.y;
+                }
+                importer.clipAnimations = clips;
+                return;
+            }
+
+            var clip = Configure(defaults[0], name, NoRootHeight.Contains(name) ? Height.Body : Height.Bake);
+            if (Trims.TryGetValue(name, out var trim))
+            {
+                clip.firstFrame = trim.x;
+                clip.lastFrame = trim.y;
+            }
+            importer.clipAnimations = new[] { clip };
+        }
+
+        /// <summary>몸 높이를 어떻게 다룰지. Bake = 모션 높이 그대로(쓰러짐), Body = 몸 높이 고정(공중 모션),
+        /// Feet = 발 기준(발은 땅에, 몸만 웅크림 — 내려찍고 착지).</summary>
+        private enum Height { Bake, Body, Feet }
+
+        // 파일 이름 → 나눌 클립(이름, 프레임 구간, 높이 방식).
+        private static readonly Dictionary<string, (string clip, Vector2 range, Height height)[]> Splits = new()
+        {
+            // Jump Attack: 웅크림(6~15) → 도약(16) → 꼭대기·팔 들기(30) → 내리치며 하강(39~48) → 착지(48~51) → 일어서기(~87)
+            ["Skill_Luchino_Leap"] = new[]
+            {
+                ("Skill_Luchino_Leap", new Vector2(16, 30), Height.Body),
+                ("Skill_Luchino_Leap_Slam", new Vector2(39, 87), Height.Feet),
+            },
+        };
+
+        private ModelImporterClipAnimation Configure(ModelImporterClipAnimation clip, string name, Height height)
+        {
             clip.name = name;
             clip.loopTime = Looping.Contains(name);
             clip.loopPose = false;
             clip.lockRootRotation = true;
             clip.keepOriginalOrientation = false;  // 몸 방향 기준: 옆으로 선 자세(복싱 등)도 몸이 앞(+Z)을 보게 맞춘다
-            bool keepHeight = !NoRootHeight.Contains(name);
-            clip.lockRootHeightY = keepHeight;    // 높이는 포즈에 굽는다(쓰러질 때 몸이 바닥으로 내려간다)
-            clip.keepOriginalPositionY = keepHeight;
-            // 높이를 뺄 때는 몸 중심 기준으로 몸 높이를 고정하고, 서 있을 때 높이만큼 올린다.
-            // (발 기준으로 하면 발차기처럼 두 발이 들릴 때 몸이 땅으로 꺼진다.)
-            clip.heightFromFeet = false;
-            clip.heightOffset = keepHeight ? 0f : AirHeightOffset;
+            bool bake = height == Height.Bake;
+            clip.lockRootHeightY = bake;          // 높이는 포즈에 굽는다(쓰러질 때 몸이 바닥으로 내려간다)
+            clip.keepOriginalPositionY = bake;
+            // Body: 몸 중심 기준으로 몸 높이를 고정하고 서 있을 때 높이만큼 올린다(발차기처럼 두 발이 들려도 몸이 안 꺼진다).
+            // Feet: 발 기준. 발이 땅에 붙고 몸만 웅크린다.
+            clip.heightFromFeet = height == Height.Feet;
+            clip.heightOffset = height == Height.Body ? AirHeightOffset : 0f;
             clip.lockRootPositionXZ = false;      // 수평 이동은 루트로 빼서 버린다 → 제자리 모션(Apply Root Motion 꺼짐)
             clip.keepOriginalPositionXZ = false;
             clip.mirror = Mirrored.Contains(name);
-            if (Trims.TryGetValue(name, out var range))
-            {
-                clip.firstFrame = range.x;
-                clip.lastFrame = range.y;
-            }
-            importer.clipAnimations = new[] { clip };
+            return clip;
         }
+
+        private static ModelImporterClipAnimation CopyOf(ModelImporterClipAnimation src) => new()
+        {
+            takeName = src.takeName, name = src.name, firstFrame = src.firstFrame, lastFrame = src.lastFrame,
+        };
 
         // 모션 FBX가 들어오거나 바뀌면 Animator Controller를 다시 만든다.
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)

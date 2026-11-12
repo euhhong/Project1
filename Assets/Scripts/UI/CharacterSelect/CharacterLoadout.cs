@@ -26,6 +26,7 @@ namespace Project1.UI
 
             Ensure<CharacterSkillAnimator>(player);
             Ensure<CharacterHitReactionAnimator>(player);
+            Ensure<SkillAreaIndicator>(player);
 
             var hud = Object.FindAnyObjectByType<PlayerHud>();
             if (hud == null) hud = new GameObject("PlayerHud").AddComponent<PlayerHud>();

@@ -117,7 +117,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: 8688bab82a74d7847960192d7f92890f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 75057822650dc3346b580497419e4ebe, type: 2}
   - id: Hunter_Ripper
     displayName: "\uB9AC\uD37C"
     role: 1
