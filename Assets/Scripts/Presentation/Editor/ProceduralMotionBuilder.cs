@@ -232,7 +232,7 @@ namespace Project1.Presentation.EditorTools
         private static void AddLeftArmGuard(CurveSet c)
         {
             c.Add("Left Arm Down-Up", _ => -0.45f);
-            c.Add("Left Arm Front-Back", _ => 0.2f);
+            c.Add("Left Arm Front-Back", _ => -0.2f);
             c.Add("Left Forearm Stretch", _ => 0.4f);
             c.Add("Left Shoulder Down-Up", _ => -0.1f);
         }
@@ -241,10 +241,10 @@ namespace Project1.Presentation.EditorTools
         {
             var c = new CurveSet(LightLength);
             // 오른손 찌르기: 뒤로 당겼다가(준비) 판정 구간 가운데(0.33)에 앞으로 쭉 뻗는다.
-            c.Add("Right Arm Front-Back", Keys(0f, -0.05f, 0.2f, -0.4f, 0.33f, 0.95f, 0.45f, 0.85f, 1f, -0.05f));
-            c.Add("Right Arm Down-Up", Keys(0f, -0.62f, 0.2f, -0.3f, 0.33f, 0.1f, 0.45f, 0.05f, 1f, -0.62f));
+            c.Add("Right Arm Front-Back", Keys(0f, -0.05f, 0.2f, 0.4f, 0.33f, -0.95f, 0.45f, -0.85f, 1f, -0.05f)); // 이 아바타는 - 가 앞쪽
+            c.Add("Right Arm Down-Up", Keys(0f, -0.62f, 0.2f, -0.45f, 0.33f, -0.3f, 0.45f, -0.32f, 1f, -0.62f));
             c.Add("Right Forearm Stretch", Keys(0f, 0.9f, 0.2f, -0.4f, 0.33f, 1f, 0.45f, 0.95f, 1f, 0.9f));
-            c.Add("Right Shoulder Front-Back", Keys(0f, 0f, 0.2f, -0.3f, 0.33f, 0.6f, 0.45f, 0.5f, 1f, 0f));
+            c.Add("Right Shoulder Front-Back", Keys(0f, 0f, 0.2f, 0.3f, 0.33f, -0.6f, 0.45f, -0.5f, 1f, 0f));
             c.Add("Chest Twist Left-Right", Keys(0f, 0f, 0.2f, -0.35f, 0.33f, 0.35f, 0.45f, 0.3f, 1f, 0f));
             c.Add("Spine Front-Back", Keys(0f, 0.03f, 0.2f, 0f, 0.33f, 0.15f, 0.45f, 0.12f, 1f, 0.03f));
             c.Add("Head Nod Down-Up", _ => -0.05f);
@@ -258,7 +258,7 @@ namespace Project1.Presentation.EditorTools
             var c = new CurveSet(ChargeLength);
             // 오른손(소품)을 머리 위로 치켜들고 힘을 모은다. 살짝 떨림.
             c.Add("Right Arm Down-Up", p => 0.85f + 0.03f * Mathf.Sin(p * 3f));
-            c.Add("Right Arm Front-Back", _ => 0.25f);
+            c.Add("Right Arm Front-Back", _ => -0.25f);
             c.Add("Right Forearm Stretch", p => 0.05f + 0.03f * Mathf.Sin(p * 3f + 1f));
             c.Add("Right Shoulder Down-Up", _ => 0.4f);
             c.Add("Chest Twist Left-Right", _ => -0.25f);
@@ -273,12 +273,12 @@ namespace Project1.Presentation.EditorTools
         {
             var c = new CurveSet(HeavyLength);
             // 모은 자세에서 더 높이 들었다가(준비) 판정 구간 가운데(0.36)에 앞으로 내려친다.
-            c.Add("Right Arm Down-Up", Keys(0f, 0.85f, 0.25f, 1f, 0.36f, -0.3f, 0.47f, -0.35f, 1f, -0.62f));
-            c.Add("Right Arm Front-Back", Keys(0f, 0.25f, 0.25f, 0.1f, 0.36f, 0.8f, 0.47f, 0.7f, 1f, -0.05f));
+            c.Add("Right Arm Down-Up", Keys(0f, 0.85f, 0.25f, 1f, 0.36f, -0.62f, 0.47f, -0.6f, 1f, -0.62f));
+            c.Add("Right Arm Front-Back", Keys(0f, -0.25f, 0.25f, -0.1f, 0.36f, -0.4f, 0.47f, -0.38f, 1f, -0.05f));
             c.Add("Right Forearm Stretch", Keys(0f, 0.05f, 0.25f, -0.2f, 0.36f, 1f, 0.47f, 0.95f, 1f, 0.9f));
             c.Add("Right Shoulder Down-Up", Keys(0f, 0.4f, 0.25f, 0.6f, 0.36f, -0.2f, 0.47f, -0.2f, 1f, -0.1f));
             c.Add("Chest Twist Left-Right", Keys(0f, -0.25f, 0.25f, -0.4f, 0.36f, 0.35f, 0.47f, 0.3f, 1f, 0f));
-            c.Add("Spine Front-Back", Keys(0f, -0.1f, 0.25f, -0.2f, 0.36f, 0.4f, 0.47f, 0.38f, 1f, 0.03f));
+            c.Add("Spine Front-Back", Keys(0f, -0.1f, 0.25f, -0.2f, 0.36f, 0.5f, 0.47f, 0.48f, 1f, 0.03f));
             c.Add("Chest Front-Back", Keys(0f, 0f, 0.25f, -0.15f, 0.36f, 0.3f, 0.47f, 0.28f, 1f, 0f));
             c.Add("Head Nod Down-Up", Keys(0f, -0.05f, 0.36f, -0.25f, 1f, -0.05f));
             AddLeftArmGuard(c);
