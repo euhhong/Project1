@@ -19,6 +19,12 @@ namespace Project1.Core
         /// <summary>강공격을 모은 시간(초). HeavyCharge가 아니면 0.</summary>
         float ChargeTime { get; }
 
+        /// <summary>
+        /// 지금 공격(모으기 포함)을 공중에서 시작했는지. 공격이 끝날 때까지 유지되고, 도중에 착지해도 바뀌지 않는다.
+        /// 공중 공격 모션을 고를 때 쓴다.
+        /// </summary>
+        bool IsAirAttack { get; }
+
         /// <summary>약공격(Light) 또는 강공격(Heavy)이 시작될 때(준비 구간 시작).</summary>
         event Action<CharacterAttackState> AttackStarted;
 

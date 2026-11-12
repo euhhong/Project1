@@ -8,8 +8,8 @@ namespace Project1.Systems
     /// 입력(LightAttack / HeavyCharging / HeavyRelease)을 받아 공격 상태를 진행한다.
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
-    /// - 공격 중에는 새 공격을 받지 않고, 공중에서는 공격을 시작하지 않는다.
-    /// - 강공격 모으기 중에는 걷기 속도로 제한한다(IMoveSpeedLimit).
+    /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
+    /// - 땅에서 강공격을 모으는 동안에는 걷기 속도로 제한한다(IMoveSpeedLimit). 공중에서는 점프 궤적을 건드리지 않는다.
     /// 공격 방향은 몸 방향(= 시야 Yaw, CharacterMotor가 맞춘다)이다. 데미지는 다루지 않는다.
     /// </summary>
     [RequireComponent(typeof(AttackHitDetector))]
@@ -29,6 +29,7 @@ namespace Project1.Systems
         public AttackPhase AttackPhase { get; private set; }
         public float PhaseProgress { get; private set; }
         public float ChargeTime { get; private set; }
+        public bool IsAirAttack { get; private set; }
 
         public event Action<CharacterAttackState> AttackStarted;
         public event Action ChargeStarted;
@@ -39,7 +40,7 @@ namespace Project1.Systems
 
         public bool TryGetSpeedLimit(out float maxSpeed)
         {
-            if (AttackState == CharacterAttackState.HeavyCharge && characterState != null)
+            if (AttackState == CharacterAttackState.HeavyCharge && characterState != null && characterState.IsGrounded)
             {
                 maxSpeed = characterState.WalkSpeed;
                 return true;
@@ -65,6 +66,11 @@ namespace Project1.Systems
 
         private void FixedUpdate()
         {
+            if (hitDetector == null)
+            {
+                Awake(); // Play 중 재컴파일로 참조가 비었을 때 복구
+            }
+
             CharacterInputFrame input = inputSource != null ? inputSource.ReadInput() : default;
             bool grounded = characterState == null || characterState.IsGrounded;
             float dt = Time.fixedDeltaTime;
@@ -72,16 +78,14 @@ namespace Project1.Systems
             switch (AttackState)
             {
                 case CharacterAttackState.None:
-                    if (!grounded)
-                    {
-                        break;
-                    }
                     if (input.LightAttack)
                     {
+                        IsAirAttack = !grounded;
                         StartAttack(CharacterAttackState.Light);
                     }
                     else if (input.HeavyCharging)
                     {
+                        IsAirAttack = !grounded;
                         AttackState = CharacterAttackState.HeavyCharge;
                         ChargeTime = 0f;
                         ChargeStarted?.Invoke();
@@ -90,11 +94,7 @@ namespace Project1.Systems
 
                 case CharacterAttackState.HeavyCharge:
                     ChargeTime += dt;
-                    if (!grounded)
-                    {
-                        EndAttack(); // 공중에 뜨면 모으기 취소
-                    }
-                    else if (input.HeavyRelease || !input.HeavyCharging)
+                    if (input.HeavyRelease || !input.HeavyCharging)
                     {
                         ChargeTime = 0f;
                         StartAttack(CharacterAttackState.Heavy);
@@ -174,6 +174,7 @@ namespace Project1.Systems
             PhaseProgress = 0f;
             ChargeTime = 0f;
             phaseTime = 0f;
+            IsAirAttack = false;
             AttackEnded?.Invoke();
         }
     }
