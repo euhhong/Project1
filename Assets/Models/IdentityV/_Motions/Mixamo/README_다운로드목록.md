@@ -23,6 +23,7 @@
 | Run_F | 앞 달리기(생존자·감시자 공통) | **받음** | Standard Run |
 | Run_B / Run_L / Run_R | 뒤·옆 달리기 | 대기 — 지금은 같은 방향 걷기를 1.7배속으로 빌려 씀 | |
 | Attack_Light | 기본 공격(생존자) | **받음** — 왼손 잽을 좌우 반전해 오른손(BE 판정 손)으로 씀, 5~30프레임 | Boxing |
+| Attack_Light_MindsEye | 맹인 기본 공격 → `MindsEyeLocomotion` | **받음** — 10~48프레임, 첫 타 가로 베기 24~31 후 한 바퀴 돌아 앞을 봄(두 번째 타는 뺌) | Standing Melee Combo Attack Ver. 3 |
 | Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼·광대) → `HunterLocomotion` | **받음** — 6~50프레임, 오른손 내려치기 20~28 | Standing Melee Attack Downward |
 | Attack_Light_Luchino | 루키노 기본 공격 → `LuchinoLocomotion` | **받음** — 4~60프레임, 오른손 가로 베기 22~29 | Standing Melee Attack Horizontal |
 | Attack_Light_Geisha | 붉은나비 기본 공격 → `GeishaLocomotion` | **받음** — 6~60프레임, 오른손 찌르기 14~25(왼손은 횃불 자세). 붉은나비는 유령처럼 이동(걷기·달리기도 대기 자세로 미끄러짐), 다리 Hurtbox 없음 | Standing Torch Melee Attack Stab |

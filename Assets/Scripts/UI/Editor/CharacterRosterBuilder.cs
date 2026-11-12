@@ -28,10 +28,11 @@ namespace Project1.UI.EditorTools
             ["Hunter_Ripper"] = "리퍼", ["Hunter_SmileyFace"] = "광대",
         };
 
-        // 감시자별 게임 Controller(없으면 HunterLocomotion). CharacterMotionControllerBuilder의 표와 같다.
-        private static readonly Dictionary<string, string> HunterControllers = new()
+        // 캐릭터별 게임 Controller(없으면 생존자 CharacterLocomotion / 감시자 HunterLocomotion). CharacterMotionControllerBuilder의 표와 같다.
+        private static readonly Dictionary<string, string> Controllers = new()
         {
             ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion",
+            ["Survivor_MindsEye"] = "MindsEyeLocomotion",
         };
 
         [MenuItem("Tools/FE/캐릭터 목록 다시 만들기")]
@@ -70,8 +71,8 @@ namespace Project1.UI.EditorTools
                         ? ReferenceScale * refHips * ratio / hips
                         : ReferenceScale * refBounds * ratio / Mathf.Max(bounds, 0.01f);
 
-                    string controllerName = role == CharacterRole.Survivor ? null
-                        : HunterControllers.TryGetValue(id, out var n) ? n : "HunterLocomotion";
+                    string controllerName = Controllers.TryGetValue(id, out var n) ? n
+                        : role == CharacterRole.Survivor ? null : "HunterLocomotion";
                     var game = controllerName == null ? survivorGame
                         : AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{MotionsFolder}/{controllerName}.overrideController");
 

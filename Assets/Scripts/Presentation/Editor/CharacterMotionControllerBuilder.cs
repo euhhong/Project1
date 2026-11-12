@@ -31,7 +31,7 @@ namespace Project1.Presentation.EditorTools
             "Idle", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
-            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur",
+            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -58,6 +58,8 @@ namespace Project1.Presentation.EditorTools
             ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
+            // 생존자: 생존자 Controller + 기본 공격만 바꾼다
+            ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]
