@@ -78,6 +78,7 @@ namespace Project1.Presentation.EditorTools
             var ac = BuildController(clips);
             foreach (var (name, tables) in OverrideControllers)
                 BuildOverride($"{MotionsFolder}/{name}Locomotion.overrideController", tables, ac, clips);
+            foreach (var (path, slot) in SelectControllers) BuildSingleClip(path, LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/{slot}.fbx"));
             AssetDatabase.SaveAssets();
             Debug.Log($"[FE] 모션 컨트롤러를 다시 만들었습니다. 모션 파일: {string.Join(", ", fromFile)}"
                       + $" / 임시 모션(교체 대기): {string.Join(", ", legacy)}"
@@ -89,6 +90,23 @@ namespace Project1.Presentation.EditorTools
             foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
                 if (o is AnimationClip c && !c.name.StartsWith("__preview")) return c;
             return null;
+        }
+
+        // 캐릭터 선택 화면용: 모션 하나만 반복하는 Controller. 선택 화면 모델의 Animator에 넣는다.
+        private static readonly (string path, string slot)[] SelectControllers =
+        {
+            (MotionsFolder + "/HunterSelect.controller", "SelectIdle_Hunter"),
+        };
+
+        private static void BuildSingleClip(string path, AnimationClip clip)
+        {
+            if (clip == null) return;
+            var ac = AssetDatabase.LoadAssetAtPath<AnimatorController>(path) ?? AnimatorController.CreateAnimatorControllerAtPath(path);
+            var sm = ac.layers[0].stateMachine;
+            foreach (var s in sm.states) sm.RemoveState(s.state);
+            sm.defaultState = sm.AddState("Idle");
+            sm.defaultState.motion = clip;
+            EditorUtility.SetDirty(ac);
         }
 
         private static void BuildOverride(string path, (string from, string to)[][] tables, AnimatorController ac, Dictionary<string, AnimationClip> clips)

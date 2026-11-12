@@ -32,6 +32,7 @@
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |
+| SelectIdle_Hunter | 캐릭터 선택 화면 감시자 대기(반복) | **받음** — `_Motions/HunterSelect.controller`(이 모션만 반복)를 선택 화면 감시자 모델 Animator에 넣는다. 선택 화면은 M5에서 만든다 | Idle |
 | Idle | 대기 | 대기(임시 모션) | |
 | Air | 제자리 점프·떨어짐(공통) | **받음** — 14~34프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Standing Jump |
 | Air_F | 앞점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 0~16프레임, 0.69초에 맞춰 재생 | Jump |
