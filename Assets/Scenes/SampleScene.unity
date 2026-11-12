@@ -762,6 +762,16 @@ MonoBehaviour:
     Active: 0.15
     Recovery: 0.5
     Slots: 18
+  airLightAttack:
+    Windup: 0.12
+    Active: 0.12
+    Recovery: 0.3
+    Slots: 12
+  airHeavyAttack:
+    Windup: 0.2
+    Active: 0.15
+    Recovery: 0.4
+    Slots: 12
 --- !u!114 &1846143986
 MonoBehaviour:
   m_ObjectHideFlags: 0
