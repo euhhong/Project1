@@ -40,8 +40,16 @@ namespace Project1.Systems
             return false;
         }
 
-        /// <summary>시간이 다 되기 전에 끝낼지(예: 돌진 중 장애물에 닿음). true면 Complete를 부르고 끝낸다.</summary>
-        public virtual bool ShouldEndEarly(GameObject owner, float elapsed) => false;
+        /// <summary>
+        /// 시간이 다 되기 전에 끝낼지(예: 돌진 중 장애물에 닿음). true면 Complete를 부르고 끝낸다.
+        /// recovery = 끝난 뒤 못 움직이는 시간(초, 예: 벽에 부딪혀 넘어짐). 0이면 바로 재사용 대기.
+        /// 이 데이터는 여러 캐릭터가 같이 쓰므로 캐릭터별 상태를 여기에 저장하지 않는다.
+        /// </summary>
+        public virtual bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery)
+        {
+            recovery = 0f;
+            return false;
+        }
 
         /// <summary>시전을 마쳤을 때의 효과(시간이 다 됐거나 ShouldEndEarly).</summary>
         public abstract void Complete(GameObject owner);

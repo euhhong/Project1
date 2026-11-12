@@ -29,6 +29,7 @@ namespace Project1.Systems
         private ICharacterState characterState;
         private AttackHitDetector hitDetector;
         private ICharacterSkillState skillState; // 실행 중에 붙을 수 있어 필요할 때 찾는다
+        private ICharacterStun stun;
 
         private float phaseTime;
 
@@ -87,9 +88,10 @@ namespace Project1.Systems
             switch (AttackState)
             {
                 case CharacterAttackState.None:
-                    // 다른 행동을 막는 스킬(예: 전위 돌진) 중에는 공격을 시작하지 않는다.
+                    // 다른 행동을 막는 스킬(예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
                     if (skillState == null) TryGetComponent(out skillState);
-                    if (skillState != null && skillState.LocksActions)
+                    if (stun == null) TryGetComponent(out stun);
+                    if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned))
                     {
                         break;
                     }

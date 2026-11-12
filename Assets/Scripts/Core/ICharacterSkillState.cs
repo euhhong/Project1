@@ -10,6 +10,8 @@ namespace Project1.Core
         Casting,
         /// <summary>재사용 대기.</summary>
         Cooldown,
+        /// <summary>스킬이 도중에 막혀 끝난 뒤 못 움직이는 중(예: 전위 돌진이 벽에 부딪혀 넘어짐). 끝나면 Cooldown.</summary>
+        Recovering,
     }
 
     /// <summary>
@@ -27,6 +29,9 @@ namespace Project1.Core
 
         /// <summary>시전 진행도 0~1. Casting이 아니면 0.</summary>
         float CastProgress { get; }
+
+        /// <summary>Recovering 진행도 0~1. Recovering이 아니면 0.</summary>
+        float RecoveryProgress { get; }
 
         /// <summary>남은 재사용 대기 시간(초).</summary>
         float CooldownRemaining { get; }

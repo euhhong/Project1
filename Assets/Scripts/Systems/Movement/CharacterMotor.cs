@@ -38,6 +38,9 @@ namespace Project1.Systems
         /// <summary>지난 틱 이동에서 옆으로 무언가(벽·장애물·다른 캐릭터)에 부딪혔다.</summary>
         public bool HitObstacle { get; private set; }
 
+        /// <summary>HitObstacle일 때 옆으로 부딪힌 Collider(다른 캐릭터인지 구분할 때 쓴다). 없으면 null.</summary>
+        public Collider LastObstacle { get; private set; }
+
         public event Action Jumped;
         public event Action Landed;
 
@@ -151,8 +154,10 @@ namespace Project1.Systems
             }
             vertical += gravity * dt;
 
-            CollisionFlags flags = controller.Move((worldPlanar + Vector3.up * vertical) * dt);
+            LastObstacle = null;
+            CollisionFlags flags = controller.Move((worldPlanar + Vector3.up * vertical) * dt); // 부딪히면 OnControllerColliderHit이 LastObstacle을 채운다
             HitObstacle = (flags & CollisionFlags.Sides) != 0;
+            if (!HitObstacle) LastObstacle = null;
 
             // 결과 상태 갱신.
             bool wasGrounded = IsGrounded;
@@ -177,6 +182,12 @@ namespace Project1.Systems
             {
                 Landed?.Invoke();
             }
+        }
+
+        // controller.Move 도중에 불린다. 옆으로 부딪힌 것(바닥·천장 제외)을 기억한다.
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (Mathf.Abs(hit.normal.y) < 0.5f) LastObstacle = hit.collider;
         }
 
         // 컴포넌트를 처음 붙일 때 CharacterController 크기를 자식 모델에 맞춘다.

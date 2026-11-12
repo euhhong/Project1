@@ -17,5 +17,9 @@ MonoBehaviour:
   castTime: 6
   cooldown: 15
   castMoveSpeed: 0
-  chargeSpeed: 8
+  chargeSpeed: 16
   obstacleGrace: 0.1
+  crashRecovery: 1.8
+  stunPerMeter: 0.15
+  minStun: 0.5
+  maxStun: 4
