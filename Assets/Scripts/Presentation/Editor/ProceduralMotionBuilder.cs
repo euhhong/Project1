@@ -15,6 +15,7 @@ namespace Project1.Presentation.EditorTools
     {
         public const string Folder = "Assets/Models/IdentityV/_Motions/Procedural";
         public const string ControllerPath = "Assets/Models/IdentityV/_Motions/CharacterLocomotion.controller";
+        public const string AttackLayer = "Attack";
 
         private const int Samples = 24;
 
@@ -69,6 +70,10 @@ namespace Project1.Presentation.EditorTools
                 clips[name + "_L"] = Save(name + "_L", BuildGait(gait, Direction.Left));
                 clips[name + "_R"] = Save(name + "_R", BuildGait(gait, Direction.Right));
             }
+
+            clips["Attack_Light"] = Save("Attack_Light", BuildLightAttack());
+            clips["Attack_HeavyCharge"] = Save("Attack_HeavyCharge", BuildHeavyCharge());
+            clips["Attack_Heavy"] = Save("Attack_Heavy", BuildHeavyAttack());
 
             BuildController(clips);
             AssetDatabase.SaveAssets();
@@ -203,6 +208,100 @@ namespace Project1.Presentation.EditorTools
             c.Add("RightHand.Thumb.3 Stretched", _ => RightGrip * 0.5f);
         }
 
+        // ---------- 공격 모션 ----------
+        // 시간은 0~1(정규화). 판정 구간 비율은 CharacterAttackAnimator의 값과 같다:
+        //   약공격 준비 0~0.222, 판정 0.222~0.444, 후딜레이 0.444~1 (0.1/0.1/0.25초)
+        //   강공격 준비 0~0.278, 판정 0.278~0.444, 후딜레이 0.444~1 (0.25/0.15/0.5초)
+        public const float LightLength = 0.45f, HeavyLength = 0.9f, ChargeLength = 1.2f;
+
+        /// <summary>(시간, 값) 쌍을 부드럽게 잇는 함수. 입력은 CurveSet의 위상(0~2π).</summary>
+        private static Func<float, float> Keys(params float[] tv)
+        {
+            return p =>
+            {
+                float t = Mathf.Repeat(p / (Mathf.PI * 2f), 1.0001f);
+                for (int i = 0; i + 3 < tv.Length; i += 2)
+                {
+                    float t0 = tv[i], v0 = tv[i + 1], t1 = tv[i + 2], v1 = tv[i + 3];
+                    if (t <= t1) return Mathf.Lerp(v0, v1, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(t0, t1, t)));
+                }
+                return tv[tv.Length - 1];
+            };
+        }
+
+        private static void AddLeftArmGuard(CurveSet c)
+        {
+            c.Add("Left Arm Down-Up", _ => -0.45f);
+            c.Add("Left Arm Front-Back", _ => 0.2f);
+            c.Add("Left Forearm Stretch", _ => 0.4f);
+            c.Add("Left Shoulder Down-Up", _ => -0.1f);
+        }
+
+        private static AnimationClip BuildLightAttack()
+        {
+            var c = new CurveSet(LightLength);
+            // 오른손 찌르기: 뒤로 당겼다가(준비) 판정 구간 가운데(0.33)에 앞으로 쭉 뻗는다.
+            c.Add("Right Arm Front-Back", Keys(0f, -0.05f, 0.2f, -0.4f, 0.33f, 0.95f, 0.45f, 0.85f, 1f, -0.05f));
+            c.Add("Right Arm Down-Up", Keys(0f, -0.62f, 0.2f, -0.3f, 0.33f, 0.1f, 0.45f, 0.05f, 1f, -0.62f));
+            c.Add("Right Forearm Stretch", Keys(0f, 0.9f, 0.2f, -0.4f, 0.33f, 1f, 0.45f, 0.95f, 1f, 0.9f));
+            c.Add("Right Shoulder Front-Back", Keys(0f, 0f, 0.2f, -0.3f, 0.33f, 0.6f, 0.45f, 0.5f, 1f, 0f));
+            c.Add("Chest Twist Left-Right", Keys(0f, 0f, 0.2f, -0.35f, 0.33f, 0.35f, 0.45f, 0.3f, 1f, 0f));
+            c.Add("Spine Front-Back", Keys(0f, 0.03f, 0.2f, 0f, 0.33f, 0.15f, 0.45f, 0.12f, 1f, 0.03f));
+            c.Add("Head Nod Down-Up", _ => -0.05f);
+            AddLeftArmGuard(c);
+            AddRightGrip(c);
+            return c.ToClip(false);
+        }
+
+        private static AnimationClip BuildHeavyCharge()
+        {
+            var c = new CurveSet(ChargeLength);
+            // 오른손(소품)을 머리 위로 치켜들고 힘을 모은다. 살짝 떨림.
+            c.Add("Right Arm Down-Up", p => 0.85f + 0.03f * Mathf.Sin(p * 3f));
+            c.Add("Right Arm Front-Back", _ => 0.25f);
+            c.Add("Right Forearm Stretch", p => 0.05f + 0.03f * Mathf.Sin(p * 3f + 1f));
+            c.Add("Right Shoulder Down-Up", _ => 0.4f);
+            c.Add("Chest Twist Left-Right", _ => -0.25f);
+            c.Add("Spine Front-Back", p => -0.1f + 0.02f * Mathf.Sin(p));
+            c.Add("Head Nod Down-Up", _ => -0.05f);
+            AddLeftArmGuard(c);
+            AddRightGrip(c);
+            return c.ToClip(true);
+        }
+
+        private static AnimationClip BuildHeavyAttack()
+        {
+            var c = new CurveSet(HeavyLength);
+            // 모은 자세에서 더 높이 들었다가(준비) 판정 구간 가운데(0.36)에 앞으로 내려친다.
+            c.Add("Right Arm Down-Up", Keys(0f, 0.85f, 0.25f, 1f, 0.36f, -0.3f, 0.47f, -0.35f, 1f, -0.62f));
+            c.Add("Right Arm Front-Back", Keys(0f, 0.25f, 0.25f, 0.1f, 0.36f, 0.8f, 0.47f, 0.7f, 1f, -0.05f));
+            c.Add("Right Forearm Stretch", Keys(0f, 0.05f, 0.25f, -0.2f, 0.36f, 1f, 0.47f, 0.95f, 1f, 0.9f));
+            c.Add("Right Shoulder Down-Up", Keys(0f, 0.4f, 0.25f, 0.6f, 0.36f, -0.2f, 0.47f, -0.2f, 1f, -0.1f));
+            c.Add("Chest Twist Left-Right", Keys(0f, -0.25f, 0.25f, -0.4f, 0.36f, 0.35f, 0.47f, 0.3f, 1f, 0f));
+            c.Add("Spine Front-Back", Keys(0f, -0.1f, 0.25f, -0.2f, 0.36f, 0.4f, 0.47f, 0.38f, 1f, 0.03f));
+            c.Add("Chest Front-Back", Keys(0f, 0f, 0.25f, -0.15f, 0.36f, 0.3f, 0.47f, 0.28f, 1f, 0f));
+            c.Add("Head Nod Down-Up", Keys(0f, -0.05f, 0.36f, -0.25f, 1f, -0.05f));
+            AddLeftArmGuard(c);
+            AddRightGrip(c);
+            return c.ToClip(false);
+        }
+
+        private static void BuildUpperBodyMask(out AvatarMask mask)
+        {
+            string path = "Assets/Models/IdentityV/_Motions/UpperBodyMask.mask";
+            mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(path);
+            if (mask == null) { mask = new AvatarMask(); AssetDatabase.CreateAsset(mask, path); }
+            for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++)
+            {
+                var part = (AvatarMaskBodyPart)i;
+                bool on = part == AvatarMaskBodyPart.Body || part == AvatarMaskBodyPart.Head
+                       || part == AvatarMaskBodyPart.LeftArm || part == AvatarMaskBodyPart.RightArm
+                       || part == AvatarMaskBodyPart.LeftFingers || part == AvatarMaskBodyPart.RightFingers;
+                mask.SetHumanoidBodyPartActive(part, on);
+            }
+            EditorUtility.SetDirty(mask);
+        }
+
         // ---------- Animator Controller ----------
 
         private static void BuildController(Dictionary<string, AnimationClip> clips)
@@ -221,6 +320,7 @@ namespace Project1.Presentation.EditorTools
                 foreach (var t in oldSm.anyStateTransitions) oldSm.RemoveAnyStateTransition(t);
                 foreach (var sub in AssetDatabase.LoadAllAssetsAtPath(ControllerPath))
                     if (sub is BlendTree bt) UnityEngine.Object.DestroyImmediate(bt, true);
+                while (ac.layers.Length > 1) ac.RemoveLayer(ac.layers.Length - 1);
             }
             ac.AddParameter("MoveX", AnimatorControllerParameterType.Float);
             ac.AddParameter("MoveZ", AnimatorControllerParameterType.Float);
@@ -263,6 +363,19 @@ namespace Project1.Presentation.EditorTools
             var toGround = air.AddTransition(locomotion);
             toGround.hasExitTime = false; toGround.duration = 0.12f;
             toGround.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
+
+            // 공격 레이어(상체만). 상태 전환과 재생 위치는 CharacterAttackAnimator가 코드로 정한다.
+            BuildUpperBodyMask(out var mask);
+            ac.AddLayer(AttackLayer);
+            var layers = ac.layers;
+            var atk = layers[layers.Length - 1];
+            atk.avatarMask = mask; atk.defaultWeight = 0f; atk.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = layers;
+            var asm = ac.layers[ac.layers.Length - 1].stateMachine;
+            asm.defaultState = asm.AddState("Empty");
+            asm.AddState("Light").motion = clips["Attack_Light"];
+            asm.AddState("HeavyCharge").motion = clips["Attack_HeavyCharge"];
+            asm.AddState("Heavy").motion = clips["Attack_Heavy"];
 
             EditorUtility.SetDirty(ac);
         }

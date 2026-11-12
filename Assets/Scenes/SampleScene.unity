@@ -598,6 +598,7 @@ GameObject:
   - component: {fileID: 1846143984}
   - component: {fileID: 1846143983}
   - component: {fileID: 1846143985}
+  - component: {fileID: 1846143986}
   m_Layer: 0
   m_Name: Survivor_Doctor
   m_TagString: Untagged
@@ -761,6 +762,20 @@ MonoBehaviour:
     Active: 0.15
     Recovery: 0.5
     Slots: 18
+--- !u!114 &1846143986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1846143975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c013625a9f40e604896da68dae49ab8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.CharacterAttackAnimator
+  fadeIn: 0.06
+  fadeOut: 0.15
 --- !u!1001 &1983255199
 PrefabInstance:
   m_ObjectHideFlags: 0
