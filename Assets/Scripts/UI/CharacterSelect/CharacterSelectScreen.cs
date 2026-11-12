@@ -139,7 +139,7 @@ namespace Project1.UI
             Destroy(stage);
             if (mainCamera != null) mainCamera.enabled = true;
             player.SetActive(true);
-            CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
+            CharacterLoadout.Apply(player, entry);
             Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 게임을 시작합니다.");
             Destroy(gameObject);
         }

@@ -32,6 +32,11 @@
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
+| Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
+| Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 앞·옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
+| Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |
+| Fall_1 | 넘어지기 1 | **받음, 연결 대기** — 어디에 쓸지(예: 전위 돌진 충돌) 정해지면 연결 | Rifle Hit To Back |
+| (스킬) Skill_<스킬 ID> | 고유 스킬 모션. 의사 = `Skill_Doctor_SelfHeal.fbx`(주사기 꽂기), 전위 = `Skill_Forward_Charge.fbx`(럭비공 안고 달리기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |
 | Vault_Survivor | 창틀·판자 넘기(생존자) | **받음, 연결 대기** — 넘기 기능이 아직 없어 Animator에는 넣지 않았다 | Jumping Down |
 | SelectIdle_Hunter | 캐릭터 선택 화면 감시자 대기(반복) | **받음** — `_Motions/HunterSelect.controller` | Idle |

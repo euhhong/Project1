@@ -29,6 +29,8 @@ namespace Project1.UI
             public RuntimeAnimatorController gameController;
             [Tooltip("선택 화면 Animator Controller(대기 모션).")]
             public RuntimeAnimatorController selectController;
+            [Tooltip("고유 스킬(E). 없으면 비워 둔다.")]
+            public Project1.Systems.SkillDefinition skill;
         }
 
         [Tooltip("Play를 누르면 캐릭터 선택 화면부터 띄운다.")]

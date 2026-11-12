@@ -32,6 +32,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
+            "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -252,6 +253,34 @@ namespace Project1.Presentation.EditorTools
             airSm.AddState("AirCharge").motion = clips["Attack_AirCharge"];
             // 앞으로 달리다 점프해서 공격: 생존자 Flying Kick (감시자는 Override Controller로 바꾼다)
             airSm.AddState("RunJump").motion = clips["Attack_RunJump_Survivor"] ?? clips["Attack_AirStomp"];
+
+            // 피격 레이어(상체만): 맞은 부위·방향에 맞는 모션을 CharacterHitReactionAnimator가 한 번 재생한다.
+            ac.AddLayer("HitReact");
+            var layers4 = ac.layers;
+            var hitLayer = layers4[layers4.Length - 1];
+            hitLayer.avatarMask = mask; hitLayer.defaultWeight = 0f; hitLayer.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = layers4;
+            var hitSm = ac.layers[ac.layers.Length - 1].stateMachine;
+            hitSm.defaultState = hitSm.AddState("Empty");
+            foreach (var slot in new[] { "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb" })
+                if (clips[slot] != null) hitSm.AddState(slot).motion = clips[slot];
+
+            // 고유 스킬 레이어(전신): Mixamo/Skill_<스킬 ID>.fbx마다 상태 하나. 재생 위치는 CharacterSkillAnimator가 정한다.
+            ac.AddLayer("Skill");
+            var layers3 = ac.layers;
+            var skillLayer = layers3[layers3.Length - 1];
+            skillLayer.defaultWeight = 0f; skillLayer.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = layers3;
+            var skillSm = ac.layers[ac.layers.Length - 1].stateMachine;
+            skillSm.defaultState = skillSm.AddState("Empty");
+            foreach (var guid in AssetDatabase.FindAssets("Skill_ t:Model", new[] { MixamoMotionPostprocessor.Folder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string file = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (!file.StartsWith("Skill_")) continue;
+                var clip = LoadFbxClip(path);
+                if (clip != null) skillSm.AddState(file.Substring("Skill_".Length)).motion = clip;
+            }
 
             EditorUtility.SetDirty(ac);
             return ac;

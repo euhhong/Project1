@@ -21,6 +21,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 0}
   - id: Survivor_Cowboy
     displayName: "\uCE74\uC6B0\uBCF4\uC774"
     role: 0
@@ -28,6 +29,7 @@ MonoBehaviour:
     scale: 3.85
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 0}
   - id: Survivor_Doctor
     displayName: "\uC758\uC0AC"
     role: 0
@@ -35,6 +37,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 11400000, guid: 3a7d596fdf6513b40a3d31357548b077, type: 2}
   - id: Survivor_Forward
     displayName: "\uC804\uC704"
     role: 0
@@ -42,6 +45,7 @@ MonoBehaviour:
     scale: 3.76
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 11400000, guid: c73ecf3d3d8de94458e42569d5fd0050, type: 2}
   - id: Survivor_Mercenary
     displayName: "\uC6A9\uBCD1"
     role: 0
@@ -49,6 +53,7 @@ MonoBehaviour:
     scale: 3.77
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 0}
   - id: Survivor_MindsEye
     displayName: "\uB9F9\uC778"
     role: 0
@@ -56,6 +61,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: ae1b6a18bd11e9a4c949b974c8bdd5aa, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 0}
   - id: Survivor_Thief
     displayName: "\uB3C4\uB451"
     role: 0
@@ -63,6 +69,7 @@ MonoBehaviour:
     scale: 3.88
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Antonio
     displayName: "\uC548\uD1A0\uB2C8\uC624"
     role: 1
@@ -70,6 +77,7 @@ MonoBehaviour:
     scale: 4.85
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Gamekeeper
     displayName: "\uC0AC\uB0E5\uD130\uC9C0\uAE30"
     role: 1
@@ -77,6 +85,7 @@ MonoBehaviour:
     scale: 5.17
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Geisha
     displayName: "\uBD89\uC740\uB098\uBE44"
     role: 1
@@ -84,6 +93,7 @@ MonoBehaviour:
     scale: 5.24
     gameController: {fileID: 22100000, guid: 0efa463e3c1c1284295f3bc88a322f39, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Hastur
     displayName: "\uD558\uC2A4\uD130"
     role: 1
@@ -91,6 +101,7 @@ MonoBehaviour:
     scale: 3.33
     gameController: {fileID: 22100000, guid: afbe3c662527b7a4ab1f657c7cf8a50f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_HellEmber
     displayName: "\uACF5\uC7A5\uC7A5"
     role: 1
@@ -98,6 +109,7 @@ MonoBehaviour:
     scale: 5.3
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Luchino
     displayName: "\uB8E8\uD0A4\uB178"
     role: 1
@@ -105,6 +117,7 @@ MonoBehaviour:
     scale: 4.06
     gameController: {fileID: 22100000, guid: 8688bab82a74d7847960192d7f92890f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_Ripper
     displayName: "\uB9AC\uD37C"
     role: 1
@@ -112,6 +125,7 @@ MonoBehaviour:
     scale: 4.11
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}
   - id: Hunter_SmileyFace
     displayName: "\uAD11\uB300"
     role: 1
@@ -119,3 +133,4 @@ MonoBehaviour:
     scale: 5.3
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
+    skill: {fileID: 0}

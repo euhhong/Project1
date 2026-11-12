@@ -17,6 +17,14 @@ namespace Project1.UI.EditorTools
         private const string ReferenceId = "Survivor_Doctor";
         private const float ReferenceScale = 4f;
         private const float HunterHeightRatio = 2.3f / 1.7f;
+        private const string SkillsFolder = "Assets/Data/Skills";
+
+        // 캐릭터별 고유 스킬(E). 데이터 파일이 없으면 기본값으로 만든다. 값은 파일(인스펙터)에서 바꾼다.
+        private static readonly Dictionary<string, System.Func<Project1.Systems.SkillDefinition>> Skills = new()
+        {
+            ["Survivor_Doctor"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.SelfHealSkill>(); s.id = "Doctor_SelfHeal"; s.displayName = "자가치료"; s.castTime = 1.5f; s.cooldown = 12f; s.castMoveSpeed = 0f; s.healFraction = 0.4f; return s; },
+            ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 15f; s.chargeSpeed = 8f; return s; },
+        };
 
         private static readonly Dictionary<string, string> Names = new()
         {
@@ -85,6 +93,7 @@ namespace Project1.UI.EditorTools
                         scale = Mathf.Round(scale * 100f) / 100f,
                         gameController = game,
                         selectController = role == CharacterRole.Hunter ? hunterSelect : survivorSelect,
+                        skill = LoadOrCreateSkill(id),
                     });
                     log.Add($"{id} x{scale:0.00}{(hips > 0f ? "" : "(Generic)")}");
                 }
@@ -92,6 +101,19 @@ namespace Project1.UI.EditorTools
             EditorUtility.SetDirty(roster);
             AssetDatabase.SaveAssets();
             Debug.Log($"[FE] 캐릭터 목록 {roster.entries.Count}명: {string.Join(", ", log)}");
+        }
+
+        private static Project1.Systems.SkillDefinition LoadOrCreateSkill(string id)
+        {
+            if (!Skills.TryGetValue(id, out var make)) return null;
+            var proto = make();
+            string path = $"{SkillsFolder}/{proto.id}.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<Project1.Systems.SkillDefinition>(path);
+            if (existing != null) { Object.DestroyImmediate(proto); return existing; }
+            if (!AssetDatabase.IsValidFolder("Assets/Data")) AssetDatabase.CreateFolder("Assets", "Data");
+            if (!AssetDatabase.IsValidFolder(SkillsFolder)) AssetDatabase.CreateFolder("Assets/Data", "Skills");
+            AssetDatabase.CreateAsset(proto, path);
+            return proto;
         }
 
         /// <summary>기본 자세의 골반 높이(Humanoid가 아니면 0)와 전체 높이를 잰다(크기 1 기준).</summary>
