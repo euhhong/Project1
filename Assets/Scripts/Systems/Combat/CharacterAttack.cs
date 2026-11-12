@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 입력(LightAttack / HeavyCharging / HeavyRelease)을 받아 공격 상태를 진행한다.
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
-    ///   땅: 약=오른손, 강=오른손+소품. 공중(발로 내려찍기): 약·강 모두 양발. 구간 길이는 공격마다 따로.
+    ///   땅: 약=오른손, 강=오른손+소품. 앞으로 달리다 뛴 공중 공격(IsRunJumpAttack, 플라잉킥 등): 양발. 그 밖의 공중 공격은 땅 공격과 같다.
     /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
     /// - 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 공중 공격이 한 번 나가고, 키를 뗄 때까지 새 입력을 받지 않는다.
     /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
@@ -22,7 +22,9 @@ namespace Project1.Systems
         [SerializeField] private AttackSpec lightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.RightHand);
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
 
-        [Header("공중 공격 (발로 내려찍기)")]
+        [Header("달리기 점프 공격 (앞으로 달리다 뛴 공중 공격, 발 판정)")]
+        [Tooltip("공중 공격을 시작할 때 앞으로 이 속도 비율(걷기 0 ~ 달리기 1) 이상이면 달리기 점프 공격으로 본다.")]
+        [SerializeField, Range(0f, 1f)] private float runJumpThreshold = 0.5f;
         [SerializeField] private AttackSpec airLightAttack = new(0.12f, 0.12f, 0.30f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
         [SerializeField] private AttackSpec airHeavyAttack = new(0.20f, 0.15f, 0.40f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
 
@@ -40,6 +42,7 @@ namespace Project1.Systems
         public float PhaseProgress { get; private set; }
         public float ChargeTime { get; private set; }
         public bool IsAirAttack { get; private set; }
+        public bool IsRunJumpAttack { get; private set; }
 
         public event Action<CharacterAttackState> AttackStarted;
         public event Action ChargeStarted;
@@ -151,12 +154,23 @@ namespace Project1.Systems
             }
         }
 
+        // 공중 전용 구간(발 판정)은 앞으로 달리다 뛴 공격(플라잉킥 등)에만 쓴다. 그 밖의 공중 공격은 땅 공격과 같은 구간·손 판정.
         private AttackSpec CurrentSpec => AttackState == CharacterAttackState.Heavy
-            ? (IsAirAttack ? airHeavyAttack : heavyAttack)
-            : (IsAirAttack ? airLightAttack : lightAttack);
+            ? (IsRunJumpAttack ? airHeavyAttack : heavyAttack)
+            : (IsRunJumpAttack ? airLightAttack : lightAttack);
+
+        /// <summary>앞으로 달리는 중인지(걷기~달리기 속도 사이 runJumpThreshold 이상, 앞쪽이 옆보다 큼).</summary>
+        private bool IsRunningForward()
+        {
+            if (characterState == null) return false;
+            Vector2 v = characterState.LocalPlanarVelocity;
+            float walk = characterState.WalkSpeed, run = Mathf.Max(characterState.RunSpeed, walk + 0.01f);
+            return v.y > Mathf.Abs(v.x) && v.y >= Mathf.Lerp(walk, run, runJumpThreshold);
+        }
 
         private void StartAttack(CharacterAttackState state)
         {
+            IsRunJumpAttack = IsAirAttack && IsRunningForward();
             AttackState = state;
             AttackPhase = AttackPhase.Windup;
             phaseTime = 0f;
@@ -220,6 +234,7 @@ namespace Project1.Systems
             ChargeTime = 0f;
             phaseTime = 0f;
             IsAirAttack = false;
+            IsRunJumpAttack = false;
             AttackEnded?.Invoke();
         }
     }

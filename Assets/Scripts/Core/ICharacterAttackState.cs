@@ -25,6 +25,12 @@ namespace Project1.Core
         /// </summary>
         bool IsAirAttack { get; }
 
+        /// <summary>
+        /// 앞으로 달리다 뛰어서 한 공중 공격인지(플라잉킥 등, 발 판정). IsAirAttack이어도 이게 false면 땅 공격과 같은 구간·손 판정이다.
+        /// 공격이 끝날 때까지 유지된다.
+        /// </summary>
+        bool IsRunJumpAttack { get; }
+
         /// <summary>약공격(Light) 또는 강공격(Heavy)이 시작될 때(준비 구간 시작).</summary>
         event Action<CharacterAttackState> AttackStarted;
 
