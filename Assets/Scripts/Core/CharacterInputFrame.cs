@@ -23,5 +23,14 @@ namespace Project1.Core
 
         /// <summary>시야 상하 각도(도). Unity X 회전 규칙: + = 아래를 봄, - = 위를 봄.</summary>
         public float LookPitch;
+
+        /// <summary>지난 틱 이후 공격 키를 짧게(기준 시간 미만) 눌렀다 뗐다 → 약공격.</summary>
+        public bool LightAttack;
+
+        /// <summary>공격 키를 기준 시간 이상 누르고 있는 중 → 강공격 모으기.</summary>
+        public bool HeavyCharging;
+
+        /// <summary>지난 틱 이후 기준 시간 이상 누르던 공격 키를 뗐다 → 강공격 발동.</summary>
+        public bool HeavyRelease;
     }
 }

@@ -6,8 +6,9 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 로컬 키보드·마우스(게임패드)를 읽어 CharacterInputFrame을 만든다.
-    /// - Move / Sprint / Jump / Look: 프로젝트 전역 입력 액션(InputSystem_Actions)의 Player 맵.
+    /// - Move / Sprint / Jump / Look / Attack: 프로젝트 전역 입력 액션(InputSystem_Actions)의 Player 맵.
     /// - 마우스 시점은 우클릭을 누른 동안만 돌고, 그동안 커서를 잠근다. 게임패드 오른쪽 스틱은 항상 돈다.
+    /// - 공격(좌클릭): 기준 시간 미만으로 눌렀다 떼면 약공격, 이상 누르면 강공격 모으기 → 떼면 강공격.
     /// 나중에 네트워크/AI 입력은 ICharacterInputSource를 구현한 다른 스크립트로 바꾸면 된다.
     /// </summary>
     public class LocalPlayerInput : MonoBehaviour, ICharacterInputSource
@@ -19,29 +20,58 @@ namespace Project1.Systems
         [SerializeField] private float maxPitch = 60f;
         [SerializeField] private bool invertY;
 
+        [Header("공격")]
+        [Tooltip("공격 키를 이 시간(초) 이상 누르면 강공격, 미만이면 약공격.")]
+        [SerializeField, Min(0f)] private float heavyAttackHoldTime = 0.3f;
+
         private InputAction moveAction;
         private InputAction runAction;
         private InputAction jumpAction;
         private InputAction lookAction;
+        private InputAction attackAction;
         private InputAction lookHoldAction; // 우클릭. 전역 에셋에 없어서 코드에서 만든다.
 
         private float lookYaw;
         private float lookPitch;
-        private bool jumpQueued;
         private bool cursorLocked;
+
+        // 일회성 입력: 다음 틱이 가져갈 때까지 쌓아 둔다.
+        private bool jumpQueued;
+        private bool lightAttackQueued;
+        private bool heavyReleaseQueued;
+
+        // 공격 키 누름 상태.
+        private bool attackHeld;
+        private float attackPressTime;
+
+        // 같은 틱에 여러 번 불려도 같은 값을 돌려주기 위한 캐시.
+        private int cachedTick = int.MinValue;
+        private CharacterInputFrame cachedFrame;
 
         public CharacterInputFrame ReadInput()
         {
-            var frame = new CharacterInputFrame
+            int tick = SimulationTick.Current;
+            if (tick == cachedTick)
+            {
+                return cachedFrame;
+            }
+
+            cachedTick = tick;
+            cachedFrame = new CharacterInputFrame
             {
                 Move = moveAction != null ? Vector2.ClampMagnitude(moveAction.ReadValue<Vector2>(), 1f) : Vector2.zero,
                 Run = runAction != null && runAction.IsPressed(),
                 Jump = jumpQueued,
                 LookYaw = lookYaw,
                 LookPitch = lookPitch,
+                LightAttack = lightAttackQueued,
+                HeavyCharging = attackHeld && Time.time - attackPressTime >= heavyAttackHoldTime,
+                HeavyRelease = heavyReleaseQueued,
             };
             jumpQueued = false;
-            return frame;
+            lightAttackQueued = false;
+            heavyReleaseQueued = false;
+            return cachedFrame;
         }
 
         private void Awake()
@@ -60,6 +90,7 @@ namespace Project1.Systems
             runAction = actions.FindAction("Player/Sprint", throwIfNotFound: true);
             jumpAction = actions.FindAction("Player/Jump", throwIfNotFound: true);
             lookAction = actions.FindAction("Player/Look", throwIfNotFound: true);
+            attackAction = actions.FindAction("Player/Attack", throwIfNotFound: true);
             lookHoldAction = new InputAction("LookHold", InputActionType.Button, "<Mouse>/rightButton");
         }
 
@@ -69,6 +100,7 @@ namespace Project1.Systems
             runAction?.Enable();
             jumpAction?.Enable();
             lookAction?.Enable();
+            attackAction?.Enable();
             lookHoldAction?.Enable();
         }
 
@@ -78,6 +110,9 @@ namespace Project1.Systems
             lookHoldAction?.Disable();
             SetCursorLocked(false);
             jumpQueued = false;
+            lightAttackQueued = false;
+            heavyReleaseQueued = false;
+            attackHeld = false;
         }
 
         private void OnDestroy()
@@ -92,6 +127,34 @@ namespace Project1.Systems
                 jumpQueued = true; // FixedUpdate에서 꺼내 갈 때까지 유지
             }
 
+            UpdateAttack();
+            UpdateLook();
+        }
+
+        private void UpdateAttack()
+        {
+            if (attackAction.WasPressedThisFrame())
+            {
+                attackHeld = true;
+                attackPressTime = Time.time;
+            }
+
+            if (attackHeld && attackAction.WasReleasedThisFrame())
+            {
+                attackHeld = false;
+                if (Time.time - attackPressTime >= heavyAttackHoldTime)
+                {
+                    heavyReleaseQueued = true;
+                }
+                else
+                {
+                    lightAttackQueued = true;
+                }
+            }
+        }
+
+        private void UpdateLook()
+        {
             bool holding = lookHoldAction.IsPressed();
             SetCursorLocked(holding);
 

@@ -23,6 +23,7 @@ namespace Project1.Systems
 
         private CharacterController controller;
         private ICharacterInputSource inputSource;
+        private IMoveSpeedLimit[] speedLimits;
 
         public CharacterMoveState MoveState { get; private set; }
         public bool IsGrounded { get; private set; }
@@ -44,8 +45,28 @@ namespace Project1.Systems
             {
                 Debug.LogWarning($"{name}: ICharacterInputSource(LocalPlayerInput 등)가 없어 움직이지 않습니다.", this);
             }
+            speedLimits = GetComponents<IMoveSpeedLimit>();
             LookYaw = transform.eulerAngles.y;
             IsGrounded = controller.isGrounded;
+        }
+
+        private bool TryGetSpeedLimit(out float maxSpeed)
+        {
+            maxSpeed = float.MaxValue;
+            bool limited = false;
+            foreach (IMoveSpeedLimit limit in speedLimits)
+            {
+                if (limit is Behaviour { isActiveAndEnabled: false })
+                {
+                    continue;
+                }
+                if (limit.TryGetSpeedLimit(out float value))
+                {
+                    maxSpeed = Mathf.Min(maxSpeed, value);
+                    limited = true;
+                }
+            }
+            return limited;
         }
 
         private void FixedUpdate()
@@ -67,6 +88,11 @@ namespace Project1.Systems
             bool moving = move.sqrMagnitude > 0.0001f;
             bool running = moving && input.Run;
             float speed = running ? runSpeed : walkSpeed;
+            if (TryGetSpeedLimit(out float limit) && speed > limit)
+            {
+                speed = limit;
+                running = speed > walkSpeed;
+            }
             Vector2 localPlanar = move * speed;
             Vector3 worldPlanar = transform.rotation * new Vector3(localPlanar.x, 0f, localPlanar.y);
 

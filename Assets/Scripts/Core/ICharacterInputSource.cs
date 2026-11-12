@@ -6,7 +6,10 @@ namespace Project1.Core
     /// </summary>
     public interface ICharacterInputSource
     {
-        /// <summary>이번 틱의 입력을 꺼낸다. 한 번 꺼낸 Jump 같은 일회성 값은 비워진다.</summary>
+        /// <summary>
+        /// 이번 틱의 입력을 꺼낸다. 같은 틱에 여러 컴포넌트(이동, 공격)가 불러도 같은 값을 돌려주고,
+        /// Jump·LightAttack·HeavyRelease 같은 일회성 값은 다음 틱에 비워진다.
+        /// </summary>
         CharacterInputFrame ReadInput();
     }
 }

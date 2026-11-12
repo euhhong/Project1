@@ -1,0 +1,31 @@
+using System;
+
+namespace Project1.Core
+{
+    /// <summary>
+    /// 캐릭터의 읽기 전용 공격 상태. 공격 모션(FE)이 읽는다.
+    /// 캐릭터 루트에서 GetComponent&lt;ICharacterAttackState&gt;()로 얻는다.
+    /// </summary>
+    public interface ICharacterAttackState
+    {
+        CharacterAttackState AttackState { get; }
+
+        /// <summary>Light·Heavy일 때의 구간. 그 밖에는 None.</summary>
+        AttackPhase AttackPhase { get; }
+
+        /// <summary>현재 구간 진행도 0~1.</summary>
+        float PhaseProgress { get; }
+
+        /// <summary>강공격을 모은 시간(초). HeavyCharge가 아니면 0.</summary>
+        float ChargeTime { get; }
+
+        /// <summary>약공격(Light) 또는 강공격(Heavy)이 시작될 때(준비 구간 시작).</summary>
+        event Action<CharacterAttackState> AttackStarted;
+
+        /// <summary>강공격 모으기가 시작될 때.</summary>
+        event Action ChargeStarted;
+
+        /// <summary>공격이 끝나 None으로 돌아갈 때(후딜레이 끝, 또는 모으기 취소).</summary>
+        event Action AttackEnded;
+    }
+}
