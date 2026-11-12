@@ -42,6 +42,19 @@ namespace Project1.Core
         /// <summary>시전 중이고, 그 스킬이 다른 행동(공격)을 막는지(예: 돌진).</summary>
         bool LocksActions { get; }
 
+        /// <summary>Skill 레이어에서 지금 재생할 상태 이름(예: Luchino_Leap_Slam). 없으면 빈 문자열.</summary>
+        string AnimationState { get; }
+
+        /// <summary>모션 재생 위치를 진행도(CastProgress/RecoveryProgress)에 맞출지. false면 그냥 재생한다.</summary>
+        bool SyncAnimationToProgress { get; }
+
+        /// <summary>공격 범위를 보여 줄지(예: 루키노 내려찍기 착지 지점).</summary>
+        bool ShowArea { get; }
+
+        UnityEngine.Vector3 AreaCenter { get; }
+
+        float AreaRadius { get; }
+
         /// <summary>지금 키를 누르면 쓸 수 있는지. 못 쓰면 이유(예: 체력이 가득 참)를 BlockedReason에 둔다.</summary>
         bool CanUse { get; }
 

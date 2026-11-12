@@ -32,6 +32,8 @@ namespace Project1.Systems
 
         public override bool LocksActions => true;
 
+        public override bool SyncAnimationToCast => false; // 달리기 모션은 계속 돈다
+
         public override bool CanStart(GameObject owner, out string reason)
         {
             var state = owner.GetComponent<ICharacterState>();

@@ -34,6 +34,29 @@ namespace Project1.Systems
         public float CooldownDuration => skill != null ? skill.cooldown : 0f;
         public string BlockedReason { get; private set; }
 
+        // 스킬 데이터(SkillDefinition)가 이 캐릭터의 진행 상태를 적어 두는 칸. 시전을 시작할 때 비운다.
+        /// <summary>스킬 안의 단계(예: 도약 0 = 떠오름, 1 = 내려찍기).</summary>
+        public int Phase { get; set; }
+        /// <summary>지금 단계가 시작된 뒤 지난 시간(초).</summary>
+        public float PhaseTime { get; set; }
+        /// <summary>이번 시전 번호(공격 판정 AttackId로 쓴다).</summary>
+        public int UseCount { get; private set; }
+        public bool ShowArea { get; set; }
+        public Vector3 AreaCenter { get; set; }
+        public float AreaRadius { get; set; }
+
+        public string AnimationState =>
+            skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);
+
+        public bool SyncAnimationToProgress => skill != null && (State == SkillState.Recovering ? false : skill.SyncAnimationToCast);
+
+        /// <summary>단계를 바꾼다(PhaseTime을 0으로).</summary>
+        public void SetPhase(int phase)
+        {
+            Phase = phase;
+            PhaseTime = 0f;
+        }
+
         public bool LocksActions =>
             State == SkillState.Recovering || (State == SkillState.Casting && skill != null && skill.LocksActions);
 
@@ -82,7 +105,7 @@ namespace Project1.Systems
         public bool TryGetMoveOverride(out Vector2 localMove, out float speed, out bool allowJump)
         {
             if (State == SkillState.Casting && skill != null)
-                return skill.TryGetMoveOverride(gameObject, out localMove, out speed, out allowJump);
+                return skill.TryGetMoveOverride(this, out localMove, out speed, out allowJump);
             if (State == SkillState.Recovering)
             {
                 // 넘어져 있는 동안: 제자리, 점프 불가.
@@ -125,8 +148,9 @@ namespace Project1.Systems
                     }
                     castTime += dt;
                     CastProgress = skill.castTime > 0f ? Mathf.Clamp01(castTime / skill.castTime) : 1f;
+                    PhaseTime += dt;
                     float recovery = 0f;
-                    bool early = castTime < skill.castTime && skill.ShouldEndEarly(gameObject, castTime, out recovery);
+                    bool early = castTime < skill.castTime && skill.Tick(this, input, castTime, out recovery);
                     if (castTime >= skill.castTime || early)
                     {
                         skill.Complete(gameObject);
@@ -152,12 +176,17 @@ namespace Project1.Systems
             State = SkillState.Casting;
             castTime = 0f;
             CastProgress = 0f;
+            UseCount++;
+            SetPhase(0);
+            ShowArea = false;
+            skill.OnStart(this);
             SkillStarted?.Invoke();
         }
 
         private void EndCast(bool completed, float recovery = 0f)
         {
             CastProgress = 0f;
+            ShowArea = false;
             if (completed && recovery > 0f)
             {
                 // 도중에 막혀 끝남(예: 돌진이 벽에 부딪힘) → 넘어져 있다가 재사용 대기.
