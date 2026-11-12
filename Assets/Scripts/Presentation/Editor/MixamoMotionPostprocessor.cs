@@ -103,12 +103,14 @@ namespace Project1.Presentation.EditorTools
         // 파일 이름 → 나눌 클립(이름, 프레임 구간, 높이 방식).
         private static readonly Dictionary<string, (string clip, Vector2 range, Height height)[]> Splits = new()
         {
-            // Jump Attack: 웅크림(6~15) → 도약(16) → 꼭대기·팔 들기(30) → 내리치며 하강(39~48) → 착지(48~51) → 일어서기(~87)
+            // Jump Attack: 웅크림(6~15) → 도약(16) → 꼭대기·팔 들기(30) → 내리치며 하강(39~48). 착지는 Hard Landing을 쓴다.
             ["Skill_Luchino_Leap"] = new[]
             {
                 ("Skill_Luchino_Leap", new Vector2(16, 30), Height.Body),
-                ("Skill_Luchino_Leap_Slam", new Vector2(39, 87), Height.Feet),
+                ("Skill_Luchino_Leap_Slam", new Vector2(39, 48), Height.Feet),
             },
+            // Hard Landing(루키노 내려찍기 착지): 발 닿음(3) → 손 짚고 웅크림(9~30) → 일어서기(~45)
+            ["Skill_Luchino_Leap_Land"] = new[] { ("Skill_Luchino_Leap_Land", new Vector2(2, 45), Height.Feet) },
         };
 
         private ModelImporterClipAnimation Configure(ModelImporterClipAnimation clip, string name, Height height)

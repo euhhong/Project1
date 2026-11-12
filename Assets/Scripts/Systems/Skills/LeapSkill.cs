@@ -28,8 +28,8 @@ namespace Project1.Systems
         [Min(0f)] public float slamSpeed = 30f;
         [Tooltip("착지할 때 맞히는 범위 반지름(m).")]
         [Min(0f)] public float slamRadius = 3f;
-        [Tooltip("내려찍은 뒤 못 움직이는 시간(초). 내려찍기 모션의 착지~일어서기에 맞춘다.")]
-        [Min(0f)] public float slamRecovery = 0.9f;
+        [Tooltip("내려찍은 뒤 못 움직이는 시간(초). 착지 모션(Hard Landing, 1.43초)을 이 시간에 맞춰 재생한다.")]
+        [Min(0f)] public float slamRecovery = 1.2f;
         [Tooltip("내려찍기 공격 판정이 나는 자리 표시용(HitResult.Slot).")]
         public HitboxSlot slamSlot = HitboxSlot.Weapon;
 
@@ -91,7 +91,9 @@ namespace Project1.Systems
             return true;
         }
 
-        public override string AnimationState(CharacterSkill ctx) => ctx.Phase == Slamming ? id + "_Slam" : id;
+        // 떠오름 = ID, 내리꽂는 중 = ID_Slam, 착지 후 경직 = ID_Land(Hard Landing)
+        public override string AnimationState(CharacterSkill ctx) =>
+            ctx.State == SkillState.Recovering ? id + "_Land" : ctx.Phase == Slamming ? id + "_Slam" : id;
 
         public override void Complete(GameObject owner) { }
 
