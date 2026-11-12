@@ -23,15 +23,15 @@ namespace Project1.Presentation.EditorTools
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
-        // 좌우를 뒤집어 쓰는 모션. Boxing(약공격)은 왼손 잽이라, BE 판정(오른손)에 맞춰 뒤집는다.
-        private static readonly HashSet<string> Mirrored = new() { "Attack_Light" };
+        // 좌우를 뒤집어 쓰는 모션(왼손 동작을 BE 판정 손인 오른손으로).
+        private static readonly HashSet<string> Mirrored = new(); // 예전 Boxing(왼손 잽)은 뒤집어 썼다. Mutant Punch는 오른손이라 그대로.
 
         // 원본에서 쓸 구간(프레임). 없으면 전체를 쓴다.
-        // Attack_Light: Boxing 잽 한 번(5~30). 판정 비율은 CharacterAttackAnimator.LightWindupEnd/ActiveEnd.
+        // 판정 비율은 CharacterAttackAnimator의 Timing 표.
         // Attack_RunJump_Survivor: Flying Kick 도약~착지(0~30).
         private static readonly Dictionary<string, Vector2> Trims = new()
         {
-            ["Attack_Light"] = new Vector2(5, 30),
+            ["Attack_Light"] = new Vector2(2, 30),             // Mutant Punch(생존자 기본 공격): 오른손 훅 6~11
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
             ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_Light_Luchino"] = new Vector2(4, 60),     // Standing Melee Attack Horizontal: 오른쪽 뒤로 당김 → 가로 베기(22~29) → 몸 되돌리기

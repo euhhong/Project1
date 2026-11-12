@@ -8,7 +8,8 @@ namespace Project1.Presentation
     /// 공격 상태(ICharacterAttackState, BE)를 Animator 공격 레이어로 보여 준다.
     /// - 땅: 상체 레이어(Attack) — 약공격 잽 / 강공격 모으기 / 강공격 내려치기
     /// - 공중(IsAirAttack): 전신 레이어(AirAttack) — 공중 모으기 / 발 내려찍기
-    ///   앞으로 달리다 점프한 공격은 RunJump(생존자 Flying Kick, 감시자는 Override Controller의 모션)
+    ///   앞으로 달리다 점프한 공격(BE IsRunJumpAttack)은 RunJump(생존자 Flying Kick, 감시자는 Override Controller의 모션).
+    ///   그 밖의 공중 공격은 전용 모션 파일(AirStomp)이 있을 때만 그것을, 없으면 땅과 같은 공격 모션을 쓴다.
     /// 약·강공격은 BE 구간(준비/판정/후딜레이) 진행도에 맞춰 재생 위치를 매 프레임 맞춘다.
     /// 그래서 구간 길이가 바뀌어도 손·발이 맞는 순간이 항상 판정 구간 안에 온다.
     /// 캐릭터 루트에 붙인다. Animator는 자식 모델에서 자동으로 찾는다.
@@ -22,7 +23,7 @@ namespace Project1.Presentation
         // 모션 클립마다 준비가 끝나는 지점 / 판정이 끝나는 지점(클립 전체 0~1 기준). 프레임은 잘라 낸 클립 기준(30fps).
         private static readonly Dictionary<string, Vector2> Timing = new()
         {
-            ["Attack_Light"] = new Vector2(6f / 25f, 12f / 25f),            // Boxing 잽(원본 5~30): 뻗기 11, 당기기 17
+            ["Attack_Light"] = new Vector2(4f / 28f, 9f / 28f),             // Mutant Punch(원본 2~30): 오른손 훅 6~11
             ["Attack_Light_Hunter"] = new Vector2(14f / 44f, 22f / 44f),    // Melee Attack Downward(원본 6~50): 내려치기 20~28
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(8f / 54f, 19f / 54f),     // Torch Melee Attack Stab(원본 6~60): 찌르기 14~25
@@ -40,9 +41,6 @@ namespace Project1.Presentation
         [SerializeField, Min(0.01f)] private float fadeIn = 0.06f;
         [SerializeField, Min(0.01f)] private float fadeOut = 0.15f;
 
-        [Tooltip("공중 공격을 시작할 때 앞으로 이 속도 비율(걷기 0 ~ 달리기 1) 이상이면 달리기 점프 공격(RunJump)을 쓴다.")]
-        [SerializeField, Range(0f, 1f)] private float runJumpThreshold = 0.5f;
-
         private static readonly int LightId = Animator.StringToHash("Light");
         private static readonly int ChargeId = Animator.StringToHash("HeavyCharge");
         private static readonly int HeavyId = Animator.StringToHash("Heavy");
@@ -51,19 +49,17 @@ namespace Project1.Presentation
         private static readonly int RunJumpId = Animator.StringToHash("RunJump");
 
         private ICharacterAttackState attack;
-        private ICharacterState body;
         private Animator animator;
         private int groundLayer = -1, airLayer = -1;
         private float groundWeight, airWeight;
         private CharacterAttackState shown = CharacterAttackState.None;
-        private bool shownAir, runJump;
+        private bool shownAir;
         private RuntimeAnimatorController timingFor;
         private readonly Dictionary<string, Vector2> slotTiming = new();
 
         private void Awake()
         {
             attack = GetComponent<ICharacterAttackState>();
-            body = GetComponent<ICharacterState>();
             animator = GetComponentInChildren<Animator>();
         }
 
@@ -82,9 +78,12 @@ namespace Project1.Presentation
             if (groundLayer < 0) return;
 
             var state = attack.AttackState;
-            bool air = attack.IsAirAttack && airLayer >= 0;
             bool active = state != CharacterAttackState.None;
-            if (active && shown == CharacterAttackState.None) runJump = air && IsRunningForward();
+            // 공중 전용 모션(전신 AirAttack 레이어)은 있을 때만 쓴다: 달리기 점프 공격(플라잉킥 등), 또는 제자리 공중 공격 모션 파일이 있을 때.
+            // 없으면 공중에서도 땅과 같은 공격 모션(상체 Attack 레이어)을 쓴다.
+            bool runJump = attack.IsRunJumpAttack && airLayer >= 0 && animator.HasState(airLayer, RunJumpId);
+            bool stomp = !runJump && attack.IsAirAttack && airLayer >= 0 && animator.HasState(airLayer, StompId);
+            bool air = runJump || stomp;
             groundWeight = Fade(groundWeight, active && !air);
             airWeight = Fade(airWeight, active && air);
             animator.SetLayerWeight(groundLayer, groundWeight);
@@ -120,14 +119,6 @@ namespace Project1.Presentation
                 }
             }
             shown = state; shownAir = air;
-        }
-
-        private bool IsRunningForward()
-        {
-            if (body == null) return false;
-            Vector2 v = body.LocalPlanarVelocity;
-            float walk = body.WalkSpeed, run = Mathf.Max(body.RunSpeed, walk + 0.01f);
-            return v.y > Mathf.Abs(v.x) && v.y >= Mathf.Lerp(walk, run, runJumpThreshold);
         }
 
         /// <summary>

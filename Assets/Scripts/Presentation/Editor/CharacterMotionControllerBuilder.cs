@@ -102,6 +102,8 @@ namespace Project1.Presentation.EditorTools
                       + (missing.Count > 0 ? $" / 없음: {string.Join(", ", missing)}" : ""));
         }
 
+        private static bool HasMotionFile(string slot) => LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/{slot}.fbx") != null;
+
         private static AnimationClip LoadFbxClip(string path)
         {
             foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
@@ -255,10 +257,11 @@ namespace Project1.Presentation.EditorTools
             ac.layers = layers2;
             var airSm = ac.layers[ac.layers.Length - 1].stateMachine;
             airSm.defaultState = airSm.AddState("Empty");
-            airSm.AddState("AirStomp").motion = clips["Attack_AirStomp"];
-            airSm.AddState("AirCharge").motion = clips["Attack_AirCharge"];
+            // 제자리 공중 공격·공중 모으기는 모션 파일이 있을 때만 상태를 만든다(없으면 공중에서도 땅 공격 모션을 쓴다).
+            if (HasMotionFile("Attack_AirStomp")) airSm.AddState("AirStomp").motion = clips["Attack_AirStomp"];
+            if (HasMotionFile("Attack_AirCharge")) airSm.AddState("AirCharge").motion = clips["Attack_AirCharge"];
             // 앞으로 달리다 점프해서 공격: 생존자 Flying Kick (감시자는 Override Controller로 바꾼다)
-            airSm.AddState("RunJump").motion = clips["Attack_RunJump_Survivor"] ?? clips["Attack_AirStomp"];
+            if (clips["Attack_RunJump_Survivor"] != null) airSm.AddState("RunJump").motion = clips["Attack_RunJump_Survivor"];
 
             // 피격 레이어(상체만): 맞은 부위·방향에 맞는 모션을 CharacterHitReactionAnimator가 한 번 재생한다.
             ac.AddLayer("HitReact");
