@@ -32,5 +32,8 @@ namespace Project1.Core
 
         /// <summary>지난 틱 이후 기준 시간 이상 누르던 공격 키를 뗐다 → 강공격 발동.</summary>
         public bool HeavyRelease;
+
+        /// <summary>지난 틱 이후 고유 스킬 키(E)가 눌렸다.</summary>
+        public bool Skill;
     }
 }

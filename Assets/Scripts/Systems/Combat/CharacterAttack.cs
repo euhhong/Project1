@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
     ///   땅: 약=오른손, 강=오른손+소품. 공중(발로 내려찍기): 약·강 모두 양발. 구간 길이는 공격마다 따로.
+    /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 전위 돌진) 중에는 공격을 시작하지 않는다.
     /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
     /// - 땅에서 강공격을 모으는 동안에는 걷기 속도로 제한한다(IMoveSpeedLimit). 공중에서는 점프 궤적을 건드리지 않는다.
     /// 공격 방향은 몸 방향(= 시야 Yaw, CharacterMotor가 맞춘다)이다. 데미지는 다루지 않는다.
@@ -27,6 +28,7 @@ namespace Project1.Systems
         private ICharacterInputSource inputSource;
         private ICharacterState characterState;
         private AttackHitDetector hitDetector;
+        private ICharacterSkillState skillState; // 실행 중에 붙을 수 있어 필요할 때 찾는다
 
         private float phaseTime;
 
@@ -85,6 +87,12 @@ namespace Project1.Systems
             switch (AttackState)
             {
                 case CharacterAttackState.None:
+                    // 다른 행동을 막는 스킬(예: 전위 돌진) 중에는 공격을 시작하지 않는다.
+                    if (skillState == null) TryGetComponent(out skillState);
+                    if (skillState != null && skillState.LocksActions)
+                    {
+                        break;
+                    }
                     if (input.LightAttack)
                     {
                         IsAirAttack = !grounded;

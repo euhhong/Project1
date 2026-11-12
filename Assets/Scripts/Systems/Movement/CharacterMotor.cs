@@ -24,6 +24,7 @@ namespace Project1.Systems
         private CharacterController controller;
         private ICharacterInputSource inputSource;
         private IMoveSpeedLimit[] speedLimits;
+        private IMoveOverride[] moveOverrides;
 
         public CharacterMoveState MoveState { get; private set; }
         public bool IsGrounded { get; private set; }
@@ -33,6 +34,9 @@ namespace Project1.Systems
         public float LookPitch { get; private set; }
         public float WalkSpeed => walkSpeed;
         public float RunSpeed => runSpeed;
+
+        /// <summary>지난 틱 이동에서 옆으로 무언가(벽·장애물·다른 캐릭터)에 부딪혔다.</summary>
+        public bool HitObstacle { get; private set; }
 
         public event Action Jumped;
         public event Action Landed;
@@ -46,8 +50,28 @@ namespace Project1.Systems
                 Debug.LogWarning($"{name}: ICharacterInputSource(LocalPlayerInput 등)가 없어 움직이지 않습니다.", this);
             }
             speedLimits = GetComponents<IMoveSpeedLimit>();
+            moveOverrides = GetComponents<IMoveOverride>();
             LookYaw = transform.eulerAngles.y;
             IsGrounded = controller.isGrounded;
+        }
+
+        /// <summary>속도 제한·이동 대체 컴포넌트를 다시 모은다(실행 중에 스킬 등을 붙인 뒤 호출).</summary>
+        public void RefreshSpeedLimits()
+        {
+            speedLimits = GetComponents<IMoveSpeedLimit>();
+            moveOverrides = GetComponents<IMoveOverride>();
+        }
+
+        private bool TryGetMoveOverride(out Vector2 move, out float speed, out bool allowJump)
+        {
+            moveOverrides ??= GetComponents<IMoveOverride>();
+            foreach (IMoveOverride o in moveOverrides)
+            {
+                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (o.TryGetMoveOverride(out move, out speed, out allowJump)) return true;
+            }
+            move = Vector2.zero; speed = 0f; allowJump = true;
+            return false;
         }
 
         private bool TryGetSpeedLimit(out float maxSpeed)
@@ -95,7 +119,16 @@ namespace Project1.Systems
             bool moving = move.sqrMagnitude > 0.0001f;
             bool running = moving && input.Run;
             float speed = running ? runSpeed : walkSpeed;
-            if (TryGetSpeedLimit(out float limit) && speed > limit)
+            bool allowJump = true;
+            if (TryGetMoveOverride(out Vector2 overrideMove, out float overrideSpeed, out allowJump))
+            {
+                // 스킬 등이 이동을 정한다(예: 돌진). 입력 방향·달리기 키·속도 제한은 무시한다.
+                move = Vector2.ClampMagnitude(overrideMove, 1f);
+                moving = move.sqrMagnitude > 0.0001f;
+                speed = overrideSpeed;
+                running = moving && speed > walkSpeed;
+            }
+            else if (TryGetSpeedLimit(out float limit) && speed > limit)
             {
                 speed = limit;
                 running = speed > walkSpeed;
@@ -111,14 +144,15 @@ namespace Project1.Systems
             }
 
             bool jumpedThisTick = false;
-            if (input.Jump && IsGrounded)
+            if (input.Jump && IsGrounded && allowJump)
             {
                 vertical = Mathf.Sqrt(2f * jumpHeight * -gravity);
                 jumpedThisTick = true;
             }
             vertical += gravity * dt;
 
-            controller.Move((worldPlanar + Vector3.up * vertical) * dt);
+            CollisionFlags flags = controller.Move((worldPlanar + Vector3.up * vertical) * dt);
+            HitObstacle = (flags & CollisionFlags.Sides) != 0;
 
             // 결과 상태 갱신.
             bool wasGrounded = IsGrounded;
