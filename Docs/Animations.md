@@ -53,7 +53,7 @@
 - 소품은 `<캐릭터>_Prop`이고, 의사만 `Doctor_Syringe`다. 둘 다 오른손 뼈 아래에 있다.
 - 실제 판정은 렌더 메시가 아니라 Collider로 한다(Tasks.md M3 참고).
 - **판정 부위는 4개다 (2026-11-12 사용자 요청): Head / Body / Arms / Legs.** 위의 메시 이름(`_Hands`, `_Feet`)은 렌더용 분리 이름이라 판정 부위 이름과 다르다.
-  - Humanoid 뼈마다 상자(BoxCollider)를 붙여 전신을 빈틈없이 덮는다(FE 커밋 024c99c). 의사 기준 Hurtbox 19개, Hitbox 5개다.
+  - Humanoid 뼈마다 상자(BoxCollider)를 붙여 전신을 빈틈없이 덮는다(FE 커밋 024c99c). Hurtbox는 캐릭터당 18~20개(의사 19개)다. Hitbox는 양손·양발·Weapon 5개다.
 
 정리:
 - 게임에 쓰는 모델은 **VARCO 리깅이 필요 없다.**
