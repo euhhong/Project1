@@ -34,6 +34,7 @@ namespace Project1.Systems
             pending.LightAttack = false;
             pending.HeavyRelease = false;
             pending.Skill = false;
+            pending.AttackPressed = false;
             return cachedFrame;
         }
     }

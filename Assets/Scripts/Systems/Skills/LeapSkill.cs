@@ -68,7 +68,7 @@ namespace Project1.Systems
             {
                 // 막 뛰어오른 직후에는 아직 땅에 붙어 있을 수 있다.
                 if (elapsed > 0.15f && motor.IsGrounded) return true; // 그냥 착지
-                if (input.LightAttack || input.HeavyCharging || input.HeavyRelease)
+                if (input.AttackPressed || input.LightAttack || input.HeavyCharging || input.HeavyRelease)
                 {
                     ctx.SetPhase(Slamming);
                     ctx.AreaCenter = FindGround(ctx.transform.position);

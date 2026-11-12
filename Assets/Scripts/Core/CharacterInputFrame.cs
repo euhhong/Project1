@@ -35,5 +35,8 @@ namespace Project1.Core
 
         /// <summary>지난 틱 이후 고유 스킬 키(E)가 눌렸다.</summary>
         public bool Skill;
+
+        /// <summary>지난 틱 이후 공격 키가 눌렸다(누른 순간, 짧게/길게와 상관없이). 공중 공격처럼 바로 나가야 할 때 쓴다.</summary>
+        public bool AttackPressed;
     }
 }

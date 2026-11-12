@@ -42,6 +42,7 @@ namespace Project1.Systems
         private bool lightAttackQueued;
         private bool heavyReleaseQueued;
         private bool skillQueued;
+        private bool attackPressedQueued;
 
         // 공격 키 누름 상태.
         private bool attackHeld;
@@ -71,10 +72,12 @@ namespace Project1.Systems
                 HeavyCharging = attackHeld && Time.time - attackPressTime >= heavyAttackHoldTime,
                 HeavyRelease = heavyReleaseQueued,
                 Skill = skillQueued,
+                AttackPressed = attackPressedQueued,
             };
             jumpQueued = false;
             lightAttackQueued = false;
             heavyReleaseQueued = false;
+            attackPressedQueued = false;
             skillQueued = false;
             return cachedFrame;
         }
@@ -152,6 +155,7 @@ namespace Project1.Systems
             if (attackAction.WasPressedThisFrame())
             {
                 attackHeld = true;
+                attackPressedQueued = true;
                 attackPressTime = Time.time;
             }
 
