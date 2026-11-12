@@ -19,10 +19,15 @@ namespace Project1.Presentation.EditorTools
         public const string AttackLayer = "Attack";
         public const string AirAttackLayer = "AirAttack";
         private const float BorrowedWalkSpeed = 1.7f;
+        // 게임 점프의 공중 시간(초). CharacterMotor 기본값 jumpHeight 1.2, gravity -20 → 2·√(2·1.2·20)/20 ≈ 0.69초.
+        // 점프 모션(도약~착지)을 이 시간에 맞춰 재생한다.
+        private const float JumpAirTime = 0.69f;
+        // 점프할 때 MoveZ(걷기 = 1)가 이 값보다 크면 앞점프(Air_F)를 쓴다.
+        private const float ForwardJumpMoveZ = 0.5f;
 
         private static readonly string[] Slots =
         {
-            "Idle", "Air", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Air", "Air_F", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter",
         };
@@ -143,6 +148,22 @@ namespace Project1.Presentation.EditorTools
 
             var air = sm.AddState("Air");
             air.motion = clips["Air"];
+            if (clips["Air"] != null && !clips["Air"].isLooping) air.speed = clips["Air"].length / JumpAirTime;
+
+            // 앞점프: 앞으로 움직이며 점프하면 Air_F. 전환은 위에서부터 검사하므로 제자리 점프보다 먼저 넣는다.
+            if (clips["Air_F"] != null)
+            {
+                var airF = sm.AddState("Air_F");
+                airF.motion = clips["Air_F"];
+                airF.speed = clips["Air_F"].length / JumpAirTime;
+                var toAirF = locomotion.AddTransition(airF);
+                toAirF.hasExitTime = false; toAirF.duration = 0.1f;
+                toAirF.AddCondition(AnimatorConditionMode.If, 0, "Jump");
+                toAirF.AddCondition(AnimatorConditionMode.Greater, ForwardJumpMoveZ, "MoveZ");
+                var landF = airF.AddTransition(locomotion);
+                landF.hasExitTime = false; landF.duration = 0.12f;
+                landF.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
+            }
 
             var toAirJump = locomotion.AddTransition(air);
             toAirJump.hasExitTime = false; toAirJump.duration = 0.1f;

@@ -26,6 +26,7 @@
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Idle | 대기 | 대기(임시 모션) | |
-| Air | 점프 중 | 대기(임시 모션) | |
+| Air | 제자리 점프·떨어짐(공통) | **받음** — 14~34프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Standing Jump |
+| Air_F | 앞점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 0~16프레임, 0.69초에 맞춰 재생 | Jump |
 | Attack_HeavyCharge / Attack_Heavy | 강공격 모으기 / 내려치기 | 대기(임시 모션) | |
 | Attack_AirStomp / Attack_AirCharge | 제자리 점프 공격 / 공중 모으기 | 대기(임시 모션) | |

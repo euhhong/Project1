@@ -19,8 +19,9 @@ namespace Project1.Presentation.EditorTools
         private static readonly HashSet<string> Looping = new()
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
-            "Air", "Attack_HeavyCharge", "Attack_AirCharge",
+            "Attack_HeavyCharge", "Attack_AirCharge",
         };
+        // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
         // 좌우를 뒤집어 쓰는 모션. Boxing(약공격)은 왼손 잽이라, BE 판정(오른손)에 맞춰 뒤집는다.
         private static readonly HashSet<string> Mirrored = new() { "Attack_Light" };
@@ -33,10 +34,14 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light"] = new Vector2(5, 30),
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
             ["Attack_RunJump_Hunter"] = new Vector2(36, 70),   // 무기를 든 자세 → 내려치기 → 마무리(앞의 달리기·마지막 대기는 뺌)
+            ["Air"] = new Vector2(14, 34),                     // Standing Jump: 발이 떨어짐(14) → 꼭대기(23) → 착지(34). 0.67초 ≈ 게임 점프 0.69초
+            ["Air_F"] = new Vector2(0, 16),                    // Jump(앞점프): 공중(0) → 꼭대기(8) → 착지(15~16)
         };
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
-        private static readonly HashSet<string> NoRootHeight = new() { "Attack_RunJump_Survivor", "Attack_RunJump_Hunter" };
+        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Attack_RunJump_Survivor", "Attack_RunJump_Hunter" };
+        // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
+        private const float AirHeightOffset = -0.91f;
 
         private bool IsMotion => assetPath.Replace('\\', '/').StartsWith(Folder + "/")
                                  && assetPath.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase);
@@ -70,6 +75,10 @@ namespace Project1.Presentation.EditorTools
             bool keepHeight = !NoRootHeight.Contains(name);
             clip.lockRootHeightY = keepHeight;    // 높이는 포즈에 굽는다(쓰러질 때 몸이 바닥으로 내려간다)
             clip.keepOriginalPositionY = keepHeight;
+            // 높이를 뺄 때는 몸 중심 기준으로 몸 높이를 고정하고, 서 있을 때 높이만큼 올린다.
+            // (발 기준으로 하면 발차기처럼 두 발이 들릴 때 몸이 땅으로 꺼진다.)
+            clip.heightFromFeet = false;
+            clip.heightOffset = keepHeight ? 0f : AirHeightOffset;
             clip.lockRootPositionXZ = false;      // 수평 이동은 루트로 빼서 버린다 → 제자리 모션(Apply Root Motion 꺼짐)
             clip.keepOriginalPositionXZ = false;
             clip.mirror = Mirrored.Contains(name);
