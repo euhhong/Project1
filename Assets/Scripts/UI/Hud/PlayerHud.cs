@@ -11,6 +11,7 @@ namespace Project1.UI
     {
         private ICharacterHealth health;
         private ICharacterSkillState skill;
+        private ICharacterStun stun;
         private string characterName;
         private GUIStyle label, small;
         private float blockedMessageUntil;
@@ -21,6 +22,7 @@ namespace Project1.UI
         {
             health = player.GetComponent<ICharacterHealth>();
             skill = player.GetComponent<ICharacterSkillState>();
+            stun = player.GetComponent<ICharacterStun>();
             characterName = displayName;
         }
 
@@ -55,6 +57,13 @@ namespace Project1.UI
                 GUI.Label(r, $"{Mathf.CeilToInt(health.Current)} / {Mathf.CeilToInt(health.Max)}", small);
             }
 
+            // 기절
+            if (stun != null && stun.IsStunned)
+            {
+                small.normal.textColor = new Color(1f, 0.85f, 0.3f);
+                GUI.Label(new Rect(0, Screen.height * 0.35f, Screen.width, 40 * u), $"기절  {stun.StunRemaining:0.0}초", small);
+            }
+
             // 고유 스킬
             if (skill != null && !string.IsNullOrEmpty(skill.SkillId))
             {
@@ -66,6 +75,7 @@ namespace Project1.UI
                 string status = skill.State switch
                 {
                     SkillState.Casting => "사용 중",
+                    SkillState.Recovering => "넘어짐",
                     SkillState.Cooldown => $"{skill.CooldownRemaining:0.0}초",
                     _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
                 };

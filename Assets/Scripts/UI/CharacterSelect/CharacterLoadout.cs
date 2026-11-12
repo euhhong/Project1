@@ -17,9 +17,10 @@ namespace Project1.UI
             var health = Ensure<CharacterHealth>(player);
             health.ResetToFull();
 
+            Ensure<CharacterStun>(player);
             var skill = Ensure<CharacterSkill>(player);
             skill.SetSkill(entry.skill);
-            // 스킬이 시전 중 이동 속도를 제한하므로, 이동 컴포넌트가 새 제한을 알게 한다.
+            // 스킬·기절이 이동을 제한하거나 대신 정하므로, 이동 컴포넌트가 새 컴포넌트를 알게 한다.
             var motor = player.GetComponent<CharacterMotor>();
             if (motor != null) motor.RefreshSpeedLimits();
 

@@ -7,23 +7,21 @@ namespace Project1.UI.EditorTools
     /// <summary>
     /// `Assets/Models/IdentityV/`의 Survivor_*·Hunter_* 폴더를 읽어 캐릭터 선택 목록(CharacterRoster)을 만든다.
     /// 메뉴: Tools > FE > 캐릭터 목록 다시 만들기. 결과: Assets/UI/Resources/CharacterRoster.asset
-    /// 크기: 생존자는 지금 의사(크기 4)와 골반 높이가 같게, 감시자는 그 2.3/1.7배가 되게 맞춘다(GameDesign 키 비율).
+    /// 크기: 모든 캐릭터 모델은 위치 0, 회전 0, 크기 4(캐릭터 루트의 Model 자식).
     /// </summary>
     public static class CharacterRosterBuilder
     {
         private const string ModelsFolder = "Assets/Models/IdentityV";
         private const string MotionsFolder = ModelsFolder + "/_Motions";
         private const string AssetPath = "Assets/UI/Resources/CharacterRoster.asset";
-        private const string ReferenceId = "Survivor_Doctor";
-        private const float ReferenceScale = 4f;
-        private const float HunterHeightRatio = 2.3f / 1.7f;
+        private const float ModelScale = 4f;
         private const string SkillsFolder = "Assets/Data/Skills";
 
         // 캐릭터별 고유 스킬(E). 데이터 파일이 없으면 기본값으로 만든다. 값은 파일(인스펙터)에서 바꾼다.
         private static readonly Dictionary<string, System.Func<Project1.Systems.SkillDefinition>> Skills = new()
         {
             ["Survivor_Doctor"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.SelfHealSkill>(); s.id = "Doctor_SelfHeal"; s.displayName = "자가치료"; s.castTime = 1.5f; s.cooldown = 12f; s.castMoveSpeed = 0f; s.healFraction = 0.4f; return s; },
-            ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 15f; s.chargeSpeed = 8f; return s; },
+            ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 15f; s.chargeSpeed = 16f; return s; },
         };
 
         private static readonly Dictionary<string, string> Names = new()
@@ -59,7 +57,6 @@ namespace Project1.UI.EditorTools
             var survivorSelect = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{MotionsFolder}/SurvivorSelect.controller");
             var hunterSelect = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>($"{MotionsFolder}/HunterSelect.controller");
 
-            float refHips = Measure(AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelsFolder}/{ReferenceId}/{ReferenceId}.fbx"), out float refBounds);
             var log = new List<string>();
             roster.entries.Clear();
             foreach (var role in new[] { CharacterRole.Survivor, CharacterRole.Hunter })
@@ -72,12 +69,9 @@ namespace Project1.UI.EditorTools
                     var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{id}.fbx");
                     if (model == null) continue;
 
-                    float hips = Measure(model, out float bounds);
-                    float ratio = role == CharacterRole.Hunter ? HunterHeightRatio : 1f;
-                    // Humanoid는 골반 높이로, 아니면(하스터) 전체 높이로 맞춘다.
-                    float scale = hips > 0f && refHips > 0f
-                        ? ReferenceScale * refHips * ratio / hips
-                        : ReferenceScale * refBounds * ratio / Mathf.Max(bounds, 0.01f);
+                    float hips = Measure(model, out _);
+                    // 모델 Transform은 모두 위치 0, 회전 0, 크기 4로 맞춘다(사용자 결정, 2026-11-12).
+                    float scale = ModelScale;
 
                     string controllerName = Controllers.TryGetValue(id, out var n) ? n
                         : role == CharacterRole.Survivor ? null : "HunterLocomotion";

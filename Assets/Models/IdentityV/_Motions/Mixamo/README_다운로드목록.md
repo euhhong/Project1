@@ -35,8 +35,10 @@
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
 | Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 앞·옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
 | Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |
-| Fall_1 | 넘어지기 1 | **받음, 연결 대기** — 어디에 쓸지(예: 전위 돌진 충돌) 정해지면 연결 | Rifle Hit To Back |
-| (스킬) Skill_<스킬 ID> | 고유 스킬 모션. 의사 = `Skill_Doctor_SelfHeal.fbx`(주사기 꽂기), 전위 = `Skill_Forward_Charge.fbx`(럭비공 안고 달리기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
+| Fall_1 | 넘어지기 1 — 전위 돌진이 벽·장애물에 부딪힘(`Forward_Charge_End`) | **받음** — 1.8초 동안 넘어져 못 움직임 | Rifle Hit To Back |
+| Skill_Forward_Charge | 전위 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |
+| Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
+| Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |
 | Vault_Survivor | 창틀·판자 넘기(생존자) | **받음, 연결 대기** — 넘기 기능이 아직 없어 Animator에는 넣지 않았다 | Jumping Down |
 | SelectIdle_Hunter | 캐릭터 선택 화면 감시자 대기(반복) | **받음** — `_Motions/HunterSelect.controller` | Idle |

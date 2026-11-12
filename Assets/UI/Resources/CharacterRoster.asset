@@ -26,7 +26,7 @@ MonoBehaviour:
     displayName: "\uCE74\uC6B0\uBCF4\uC774"
     role: 0
     model: {fileID: 919132149155446097, guid: 2ee6a27494ce90942b949476e24e9276, type: 3}
-    scale: 3.85
+    scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 0}
@@ -42,7 +42,7 @@ MonoBehaviour:
     displayName: "\uC804\uC704"
     role: 0
     model: {fileID: 919132149155446097, guid: ab484250811c13142a4a9a6791a7dd32, type: 3}
-    scale: 3.76
+    scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 11400000, guid: c73ecf3d3d8de94458e42569d5fd0050, type: 2}
@@ -50,7 +50,7 @@ MonoBehaviour:
     displayName: "\uC6A9\uBCD1"
     role: 0
     model: {fileID: 919132149155446097, guid: e58cd0b9b732fc440a3bba04dc442946, type: 3}
-    scale: 3.77
+    scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 0}
@@ -66,7 +66,7 @@ MonoBehaviour:
     displayName: "\uB3C4\uB451"
     role: 0
     model: {fileID: 919132149155446097, guid: 4c8055dc4bdfd604ebc95cea8a5a9663, type: 3}
-    scale: 3.88
+    scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 0}
@@ -74,7 +74,7 @@ MonoBehaviour:
     displayName: "\uC548\uD1A0\uB2C8\uC624"
     role: 1
     model: {fileID: 919132149155446097, guid: 09a20e645c0c9ff4e9374e7a5747811d, type: 3}
-    scale: 4.85
+    scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -82,7 +82,7 @@ MonoBehaviour:
     displayName: "\uC0AC\uB0E5\uD130\uC9C0\uAE30"
     role: 1
     model: {fileID: 919132149155446097, guid: 98357371cd46dc345a637c721fb3f677, type: 3}
-    scale: 5.17
+    scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -90,7 +90,7 @@ MonoBehaviour:
     displayName: "\uBD89\uC740\uB098\uBE44"
     role: 1
     model: {fileID: 919132149155446097, guid: 472f46b0e2eed804c8e8938b3d6cd1bf, type: 3}
-    scale: 5.24
+    scale: 4
     gameController: {fileID: 22100000, guid: 0efa463e3c1c1284295f3bc88a322f39, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -98,7 +98,7 @@ MonoBehaviour:
     displayName: "\uD558\uC2A4\uD130"
     role: 1
     model: {fileID: 919132149155446097, guid: 4654cc5eec1b4834197e31d2b1ec58f5, type: 3}
-    scale: 3.33
+    scale: 4
     gameController: {fileID: 22100000, guid: afbe3c662527b7a4ab1f657c7cf8a50f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -106,7 +106,7 @@ MonoBehaviour:
     displayName: "\uACF5\uC7A5\uC7A5"
     role: 1
     model: {fileID: 919132149155446097, guid: 2c988cdea0da9cb4d97f84b2da148b9f, type: 3}
-    scale: 5.3
+    scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -114,7 +114,7 @@ MonoBehaviour:
     displayName: "\uB8E8\uD0A4\uB178"
     role: 1
     model: {fileID: 919132149155446097, guid: 8196fbcd52834fa4e8a67f396ee61cc6, type: 3}
-    scale: 4.06
+    scale: 4
     gameController: {fileID: 22100000, guid: 8688bab82a74d7847960192d7f92890f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -122,7 +122,7 @@ MonoBehaviour:
     displayName: "\uB9AC\uD37C"
     role: 1
     model: {fileID: 919132149155446097, guid: 9c46b0408d20ba149a855864af46d5d3, type: 3}
-    scale: 4.11
+    scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
@@ -130,7 +130,7 @@ MonoBehaviour:
     displayName: "\uAD11\uB300"
     role: 1
     model: {fileID: 919132149155446097, guid: 3da4376414fc77c43a39d0bfde22e575, type: 3}
-    scale: 5.3
+    scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}

@@ -26,13 +26,19 @@ namespace Project1.Presentation.EditorTools
         private const float ForwardJumpMoveZ = 0.5f;
         private const float RunJumpMoveZ = (1f + CharacterAnimatorDriver.RunBlendValue) * 0.5f;
 
+        // 반복하는 스킬 모션의 재생 배속. 전위 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
+        private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f };
+
+        // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
+        private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1") };
+
         private static readonly string[] Slots =
         {
             "Idle", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
-            "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb",
+            "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -262,10 +268,12 @@ namespace Project1.Presentation.EditorTools
             ac.layers = layers4;
             var hitSm = ac.layers[ac.layers.Length - 1].stateMachine;
             hitSm.defaultState = hitSm.AddState("Empty");
-            foreach (var slot in new[] { "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb" })
+            foreach (var slot in new[] { "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun" })
                 if (clips[slot] != null) hitSm.AddState(slot).motion = clips[slot];
 
             // 고유 스킬 레이어(전신): Mixamo/Skill_<스킬 ID>.fbx마다 상태 하나. 재생 위치는 CharacterSkillAnimator가 정한다.
+            // 반복 모션(예: 돌진 달리기)은 SkillLoopSpeed 배속으로 계속 돌고, 아니면 시전 진행도에 맞춘다.
+            // 스킬이 도중에 막혀 넘어질 때는 <스킬 ID>_End 상태(SkillEndMotions)를 쓴다.
             ac.AddLayer("Skill");
             var layers3 = ac.layers;
             var skillLayer = layers3[layers3.Length - 1];
@@ -279,8 +287,15 @@ namespace Project1.Presentation.EditorTools
                 string file = System.IO.Path.GetFileNameWithoutExtension(path);
                 if (!file.StartsWith("Skill_")) continue;
                 var clip = LoadFbxClip(path);
-                if (clip != null) skillSm.AddState(file.Substring("Skill_".Length)).motion = clip;
+                if (clip == null) continue;
+                string skillId = file.Substring("Skill_".Length);
+                var state = skillSm.AddState(skillId);
+                state.motion = clip;
+                if (SkillLoopSpeed.TryGetValue(skillId, out float loopSpeed)) state.speed = loopSpeed;
             }
+            foreach (var (skillId, slot) in SkillEndMotions)
+                if (clips.TryGetValue(slot, out var endClip) && endClip != null)
+                    skillSm.AddState(skillId + "_End").motion = endClip;
 
             EditorUtility.SetDirty(ac);
             return ac;
