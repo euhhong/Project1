@@ -1,22 +1,51 @@
 """
-캐릭터 FBX 안에 섞여 있는 소품(무기·도구)을 따로 떼어 손 뼈의 자식으로 붙인다(손에 쥐게).
+캐릭터 FBX 안에 섞여 있는 무기·소품을 따로 떼어 손 뼈에 붙인다(손에 쥐게).
 
 사용법 (Blender 5.x):
-  blender -b --python Tools/Blender/attach_prop_to_hand.py -- <FBX> <소품 재질 이름(쉼표 구분)> <손 뼈 이름> <쥐는 방식> [쥐는 위치 0~1]
+  blender -b --python Tools/Blender/attach_prop_to_hand.py -- <FBX> <고르는 방법> <손 뼈 이름> <쥐는 방식> [쥐는 위치 0~1] [이름 접미사]
+고르는 방법:
+  mat:<재질 이름,...>   그 재질의 면
+  <재질 이름,...>       (예전 방식) 위와 같음
+  rootbone              뿌리 뼈에 가장 크게 묶인 면(몸에 붙지 않고 떠 있는 무기)
+  bones:<뼈 이름,...>   그 뼈와 자식 뼈에 가장 크게 묶인 면
 쥐는 방식:
-  forward  : 긴 축을 캐릭터 앞쪽으로, 가는 끝(총구·바늘)이 앞을 향하게. 쥐는 위치는 굵은 끝에서부터 비율.
+  forward  : 긴 축을 캐릭터 앞쪽으로, 가는 끝(총구·바늘·칼끝)이 앞을 향하게. 쥐는 위치는 굵은 끝에서부터 비율.
   up       : 긴 축을 위로 세운다. 쥐는 위치는 아래 끝에서부터 비율.
   ground   : 세운 채 높이는 그대로 두고 손 위치로만 옮긴다(지팡이처럼 땅에 닿게).
   palm     : 회전 없이 소품 중심을 손바닥에 붙인다(공 등).
-원본 FBX를 덮어쓴다. 소품 오브젝트 이름은 <캐릭터>_Prop 이다. 이미 붙어 있으면 건너뛴다.
+  keep     : 지금 자리 그대로 두고 손 뼈의 자식으로만 만든다(이미 손에 들려 있는 무기).
+  skinned  : 뼈 가중치를 그대로 두고 오브젝트만 따로 뗀다(이미 손 뼈를 따라 움직이는 무기).
+원본 FBX를 덮어쓴다. 오브젝트 이름은 <캐릭터>_<접미사>(기본 Prop, 무기는 Weapon). 같은 이름이 있으면 건너뛴다.
 """
 import bpy, bmesh, sys, os, math
 from mathutils import Vector, Matrix
 
 
-def separate(obj, mats, name):
+def pick_faces(obj, selector, arm):
+    """고르는 방법에 맞는 면 번호 목록."""
+    if selector.startswith("rootbone") or selector.startswith("bones:"):
+        if selector.startswith("rootbone"):
+            wanted = {b.name for b in arm.data.bones if b.parent is None}
+        else:
+            roots = set(selector[6:].split(","))
+            wanted = set()
+            for b in arm.data.bones:
+                x = b
+                while x is not None:
+                    if x.name in roots: wanted.add(b.name); break
+                    x = x.parent
+        dom = []
+        for v in obj.data.vertices:
+            g = max(v.groups, key=lambda g: g.weight, default=None)
+            dom.append(obj.vertex_groups[g.group].name if g else "")
+        return [p.index for p in obj.data.polygons if all(dom[i] in wanted for i in p.vertices)]
+    mats = set((selector[4:] if selector.startswith("mat:") else selector).split(","))
     idx = {i for i, s in enumerate(obj.material_slots) if s.material and s.material.name in mats}
-    chosen = [p.index for p in obj.data.polygons if p.material_index in idx]
+    return [p.index for p in obj.data.polygons if p.material_index in idx]
+
+
+def separate(obj, selector, name, arm):
+    chosen = pick_faces(obj, selector, arm)
     if not chosen:
         return None
     before = set(bpy.data.objects)
@@ -38,17 +67,40 @@ def separate(obj, mats, name):
     return new
 
 
-def main(path, mats, hand_bone, mode, grip):
+def main(path, selector, hand_bone, mode, grip, suffix="Prop"):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=path)
     char = os.path.splitext(os.path.basename(path))[0].split("_")[-1]
-    if any(o.name.endswith("_Prop") for o in bpy.data.objects):
-        print("PROP 이미 붙어 있음 → 건너뜀"); return
+    name = f"{char}_{suffix}"
+    if any(o.name == name for o in bpy.data.objects):
+        print(f"PROP {name} 이미 있음 → 건너뜀"); return
     arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
-    body = max((o for o in bpy.data.objects if o.type == 'MESH'), key=lambda o: len(o.data.vertices))
-    prop = separate(body, mats, f"{char}_Prop")
-    if prop is None:
-        print("PROP 재질을 찾지 못함", mats); return
+    # 부위로 나뉜 모델이면 여러 메시에서 골라 하나로 합친다.
+    pieces = []
+    for o in [o for o in bpy.data.objects if o.type == 'MESH' and o.parent_type != 'BONE']:
+        p = separate(o, selector, name + "_part", arm)
+        if p: pieces.append(p)
+    if not pieces:
+        print("PROP 고를 면을 찾지 못함", selector); return
+    bpy.ops.object.select_all(action='DESELECT')
+    for p in pieces: p.select_set(True)
+    bpy.context.view_layer.objects.active = pieces[0]
+    if len(pieces) > 1: bpy.ops.object.join()
+    prop = bpy.context.view_layer.objects.active
+    prop.name = prop.data.name = name
+
+    if mode == "skinned":
+        print(f"PROP {name}: {len(prop.data.vertices)}정점, 뼈 가중치 유지(skinned)")
+        export(path); return
+
+    if mode == "keep":
+        prop.vertex_groups.clear()
+        for md in list(prop.modifiers): prop.modifiers.remove(md)
+        mw = prop.matrix_world.copy(); prop.parent = None; prop.matrix_world = mw
+        prop.parent = arm; prop.parent_type = 'BONE'; prop.parent_bone = hand_bone
+        bpy.context.view_layer.update(); prop.matrix_world = mw
+        print(f"PROP {name}: {len(prop.data.vertices)}정점, 자리 그대로 {hand_bone}에 붙임(keep)")
+        export(path); return
 
     prop.vertex_groups.clear()
     for md in list(prop.modifiers): prop.modifiers.remove(md)
@@ -109,6 +161,10 @@ def main(path, mats, hand_bone, mode, grip):
     prop.parent = arm; prop.parent_type = 'BONE'; prop.parent_bone = hand_bone
     bpy.context.view_layer.update(); prop.matrix_world = mw
     print(f"PROP {prop.name}: {len(pts)}정점, 길이 {length:.3f}, 방식 {mode}, 손 {hand_bone}, 손바닥 {tuple(round(x,3) for x in palm)}")
+    export(path)
+
+
+def export(path):
     bpy.ops.export_scene.fbx(
         filepath=path, use_selection=False, object_types={'ARMATURE', 'MESH', 'EMPTY'},
         add_leaf_bones=False, bake_anim=False, path_mode='COPY', embed_textures=True, armature_nodetype='NULL')
@@ -116,4 +172,4 @@ def main(path, mats, hand_bone, mode, grip):
 
 if __name__ == "__main__":
     a = sys.argv[sys.argv.index("--") + 1:]
-    main(a[0], set(a[1].split(",")), a[2], a[3], float(a[4]) if len(a) > 4 else 0.5)
+    main(a[0], a[1], a[2], a[3], float(a[4]) if len(a) > 4 else 0.5, a[5] if len(a) > 5 else "Prop")

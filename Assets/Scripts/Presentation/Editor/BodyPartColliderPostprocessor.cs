@@ -29,7 +29,7 @@ namespace Project1.Presentation.EditorTools
         // BodyPart 값(이름이 Hands/Feet → Arms/Legs로 바뀌어도 값은 같다)
         private const BodyPart PartHead = (BodyPart)0, PartBody = (BodyPart)1, PartArms = (BodyPart)2, PartLegs = (BodyPart)3;
 
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         // 상자를 갖는 Humanoid 뼈와 부위. 손가락·눈·턱·발가락은 각각 손·머리·발 상자에 합친다.
         private static readonly (string human, BodyPart part)[] BoxBones =
@@ -66,6 +66,7 @@ namespace Project1.Presentation.EditorTools
             Bounds all = default; bool anyAll = false;
             foreach (var smr in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
+                if (IsWeapon(smr.name)) continue; // 무기는 맞는 판정에 넣지 않는다
                 var mesh = smr.sharedMesh; if (mesh == null) continue;
                 var verts = mesh.vertices; var weights = mesh.boneWeights; var bones = smr.bones;
                 var ownerOfBone = new Transform[bones.Length];
@@ -111,10 +112,10 @@ namespace Project1.Presentation.EditorTools
                 SetLayer(go, CombatLayers.HitboxName);
                 go.AddComponent<Hitbox>().SetSlot(slot);
             }
-            // 때리는 판정: 손에 든 소품
+            // 때리는 판정: 손에 든 무기(뼈에 붙은 고정 메시)
             foreach (var mr in root.GetComponentsInChildren<MeshRenderer>(true))
             {
-                if (!(mr.name.EndsWith("_Prop") || mr.name.EndsWith("_Syringe"))) continue;
+                if (!IsWeapon(mr.name)) continue;
                 var mf = mr.GetComponent<MeshFilter>(); if (mf == null || mf.sharedMesh == null) continue;
                 var bnd = mf.sharedMesh.bounds;
                 var go = MakeChild(mr.transform, HitPrefix + "Weapon");
@@ -122,7 +123,29 @@ namespace Project1.Presentation.EditorTools
                 SetLayer(go, CombatLayers.HitboxName);
                 go.AddComponent<Hitbox>().SetSlot(HitboxSlot.Weapon);
             }
+            // 때리는 판정: 뼈 가중치로 손을 따라 움직이는 무기(예: 칼날 손톱) → 가장 많이 묶인 뼈 아래에 상자
+            foreach (var smr in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (!IsWeapon(smr.name) || smr.sharedMesh == null) continue;
+                var mesh = smr.sharedMesh; var verts = mesh.vertices; var weights = mesh.boneWeights; var bones = smr.bones;
+                var count = new Dictionary<int, int>();
+                foreach (var bw in weights) count[bw.boneIndex0] = count.TryGetValue(bw.boneIndex0, out var c) ? c + 1 : 1;
+                if (count.Count == 0) continue;
+                int top = count.OrderByDescending(kv => kv.Value).First().Key;
+                var bone = bones[top]; if (bone == null) continue;
+                var meshToWorld = smr.transform.localToWorldMatrix;
+                Vector3 mn = bone.InverseTransformPoint(meshToWorld.MultiplyPoint3x4(verts[0])), mx = mn;
+                foreach (var v in verts) { var p = bone.InverseTransformPoint(meshToWorld.MultiplyPoint3x4(v)); mn = Vector3.Min(mn, p); mx = Vector3.Max(mx, p); }
+                var go = MakeChild(bone, HitPrefix + "Weapon");
+                var box = go.AddComponent<BoxCollider>(); box.center = (mn + mx) * 0.5f; box.size = (mx - mn) * 1.1f; box.isTrigger = true;
+                SetLayer(go, CombatLayers.HitboxName);
+                go.AddComponent<Hitbox>().SetSlot(HitboxSlot.Weapon);
+            }
         }
+
+        /// <summary>손에 든 무기 오브젝트 이름 규칙: _Weapon / _Prop / _Syringe 로 끝난다.</summary>
+        private static bool IsWeapon(string name) =>
+            name.EndsWith("_Weapon") || name.EndsWith("_Prop") || name.EndsWith("_Syringe");
 
         private static Transform FindOwner(Transform t, Dictionary<Transform, (string, BodyPart)> owners)
         {
