@@ -13,7 +13,7 @@ namespace Project1.Systems
     public class LocalPlayerInput : MonoBehaviour, ICharacterInputSource
     {
         [Header("시점")]
-        [SerializeField, Min(0f)] private float mouseSensitivity = 0.15f; // 픽셀당 도
+        [SerializeField, Min(0f)] private float mouseSensitivity = 0.25f; // 픽셀당 도
         [SerializeField, Min(0f)] private float gamepadLookSpeed = 120f;  // 초당 도
         [SerializeField] private float minPitch = -30f;
         [SerializeField] private float maxPitch = 60f;
