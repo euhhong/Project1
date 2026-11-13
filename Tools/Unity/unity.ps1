@@ -13,7 +13,7 @@ Commands
 Notes
   * One shared connection (Tools/Unity/unity-daemon.ps1) is started on demand and shared by all sessions.
   * The first connection after Unity starts may need "Accept" in Unity: Edit > Project Settings > AI > Unity MCP.
-  * Unity is briefly brought to the front for compile/run so the editor does not throttle; pass -NoFocus to skip.
+  * Unity is NOT brought to the front (it would steal the user's screen). Unity runs unthrottled in the background (Preferences > General > Interaction Mode = No Throttling). Pass -Focus only if the editor stalls.
   * Never kill relay_win.exe processes by name: Unity runs its own relay and killing it logs console errors.
 #>
 param(
@@ -22,7 +22,7 @@ param(
   [Parameter(Position = 2)] [string] $Arg2,
   [string] $Out,
   [switch] $All,
-  [switch] $NoFocus,
+  [switch] $Focus,
   [int] $TimeoutSec = 180
 )
 $ErrorActionPreference = 'Stop'
@@ -55,7 +55,7 @@ function Ensure-Daemon {
 }
 
 function Focus-Unity {
-  if ($NoFocus) { return }
+  if (-not $Focus) { return } # default: never steal the user's screen
   $u = Get-Process Unity -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*$(Split-Path $Project -Leaf)*" } | Select-Object -First 1
   if ($u) { try { (New-Object -ComObject WScript.Shell).AppActivate($u.Id) | Out-Null } catch {} }
 }

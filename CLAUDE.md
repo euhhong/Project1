@@ -24,6 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools\Unity\unity.ps1 tool <
 - 코드를 고친 뒤에는 `compile`로 에러 0을 확인하고 나서 끝났다고 보고한다.
 - 임시 `.cs` 명령 파일은 `Assets` 밖(예: `Library/ClaudeUnity/`)에 둔다. `Assets`에 두면 게임 코드로 컴파일된다.
 - `relay_win.exe` 프로세스를 이름으로 종료하지 않는다. Unity 자체 relay까지 죽어 콘솔 에러가 난다.
+- 사용자 화면을 뺏지 않는다: `unity.ps1`은 기본으로 Unity 창을 앞으로 가져오지 않는다(`-Focus`는 쓰지 않는다). Unity는 백그라운드에서도 제 속도로 돈다(Preferences > General > Interaction Mode = No Throttling). 다른 프로그램 창(Blender 등)도 `-b` 백그라운드로만 띄운다.
 
 ## Git (작업 끝날 때마다 바로 커밋·푸시)
 - 브랜치: `feat/identityv-models` 하나를 모든 세션이 같은 폴더에서 같이 쓴다. 브랜치를 바꾸지 않는다.
