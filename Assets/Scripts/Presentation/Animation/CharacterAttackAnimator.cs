@@ -29,6 +29,7 @@ namespace Project1.Presentation
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
             ["Attack_Light_Hastur"] = new Vector2(22f / 45f, 30f / 45f),    // Zombie Attack(원본 19~64): 두 손 내려찍기 41~49
+            ["Attack_Light_HasturSlam"] = new Vector2(0.42f, 0.6f),         // 하스터(Generic, HasturSlamMotionBuilder 0~1): 두 손 모아 머리 위(~0.42) → 위에서 아래로 내려치기(0.42~0.6, 맞는 순간 0.53) → 거두기
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
             ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
             ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34
@@ -163,6 +164,8 @@ namespace Project1.Presentation
             if (timingFor != rc) { slotTiming.Clear(); timingFor = rc; }
             if (slotTiming.TryGetValue(slot, out var t)) return t;
             t = DefaultTiming;
+            // Override Controller가 이 자리를 바꿨으면 바뀐 클립 기준(같은 클립을 여러 자리에 쓰는 경우 — 하스터 내려치기).
+            if (rc is AnimatorOverrideController aoc && TryOverrideTiming(aoc, slot, out var o)) { slotTiming[slot] = o; return o; }
             foreach (var clip in rc.animationClips)
             {
                 if (clip == null || !(clip.name == slot || clip.name.StartsWith(slot + "_"))) continue;
@@ -170,6 +173,22 @@ namespace Project1.Presentation
             }
             slotTiming[slot] = t;
             return t;
+        }
+
+        private static readonly List<KeyValuePair<AnimationClip, AnimationClip>> overridePairs = new();
+
+        private static bool TryOverrideTiming(AnimatorOverrideController aoc, string slot, out Vector2 timing)
+        {
+            overridePairs.Clear();
+            aoc.GetOverrides(overridePairs);
+            foreach (var pair in overridePairs)
+            {
+                var from = pair.Key;
+                if (from == null || pair.Value == null || !(from.name == slot || from.name.StartsWith(slot + "_"))) continue;
+                if (Timing.TryGetValue(pair.Value.name, out timing)) return true;
+            }
+            timing = default;
+            return false;
         }
 
         private float Fade(float w, bool on)

@@ -46,7 +46,7 @@ namespace Project1.Presentation.EditorTools
             "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_HeavyCharge_Hunter", "Attack_Heavy", "Attack_HeavyKick", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
-            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
+            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_HasturSlam", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1", "Hit_HeadKick",
         };
@@ -75,6 +75,11 @@ namespace Project1.Presentation.EditorTools
             ("Walk_F", "Move_Hastur"), ("Walk_B", "Move_Hastur"), ("Walk_L", "Move_Hastur"), ("Walk_R", "Move_Hastur"),
             ("Run_F", "Move_Hastur"), ("Run_B", "Move_Hastur"), ("Run_L", "Move_Hastur"), ("Run_R", "Move_Hastur"),
         };
+        // 하스터 공격: 하스터 모델은 Humanoid가 아닌 Generic 리그라 Mixamo 모션이 재생되지 않는다 → 모델 뼈에 직접 키를 넣은 모션
+        // (HasturSlamMotionBuilder → _Motions/Generic/Attack_Light_HasturSlam.anim). 약·강·달리기 점프 공격 모두 이것으로.
+        public static readonly string[] HasturSlamSlots = { "Attack_Light", "Attack_Heavy", "Attack_RunJump_Survivor" };
+        private static readonly (string from, string to)[] HasturSlam =
+            System.Array.ConvertAll(HasturSlamSlots, s => (s, HasturSlamMotionBuilder.ClipName));
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
             // 감시자 공통: 사냥터지기·안토니오
@@ -87,8 +92,9 @@ namespace Project1.Presentation.EditorTools
             // 안토니오: 대기 = 바이올린 켜기(Mixamo Playing The Violin의 활 긋기 부분만, 1.5배속 — Tools/Blender/make_loop_clip.py)
             ("Antonio", new[] { HunterOverrides, new[] { ("Idle", "Idle_Antonio") } }),
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
-            // 하스터: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다. 공격 = 두 손 내려찍기(Zombie Attack)
-            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl }),
+            // 하스터: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다.
+            // 공격 = 두 손을 모아 머리 위 → 아래로 내려치기(HasturSlam — Generic 모델 전용 모션, 뒤에 적어 이긴다)
+            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl, HasturSlam }),
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
             ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
             // 리퍼: 무기가 없고 왼손 자체가 무기 → 모든 공격을 왼손으로(감시자 공격을 Blender로 좌우 뒤집은 모션)
@@ -111,6 +117,8 @@ namespace Project1.Presentation.EditorTools
             foreach (var slot in Slots)
             {
                 var clip = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/{slot}.fbx");
+                // Generic 모델 전용 모션(하스터 내려치기)은 _Motions/Generic/<자리>.anim
+                if (clip == null) clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{HasturSlamMotionBuilder.Folder}/{slot}.anim");
                 // 옆·뒤 달리기 파일이 없으면 같은 방향 걷기 파일을 빠르게 돌려 쓴다(임시 모션보다 자연스럽다).
                 string walkSlot = slot.StartsWith("Run_") ? "Walk_" + slot.Substring(4) : null;
                 var walkClip = clip == null && walkSlot != null ? LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/{walkSlot}.fbx") : null;

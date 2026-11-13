@@ -8,7 +8,8 @@ namespace Project1.Presentation
     /// 모델(Hunter_Hastur, Generic 리그 — Blender로 확인): 팔 = 소매(biped L/R UpperArm·Forearm) 아래로 땅까지 닿는 검은 촉수 팔
     /// (왼쪽 biped_bone_00→01→02→03, 오른쪽 biped_bone_27→26→24→23, 아래팔에 붙음, 마디마다 무게가 따로 잡혀 있다). 어깨 = biped L/R Clavicle.
     /// 매 프레임 모션이 끝난 뒤:
-    /// - 두 팔을 번갈아 앞뒤로 휘두른다(위팔 → 아래팔은 조금 늦게) — 앞발처럼 땅을 짚으며 끌고 가는 느낌.
+    /// - 두 팔을 몸 앞 가운데로 조금 모으고 팔꿈치를 굽힌 준비 자세(공격 = 두 손을 모아 머리 위 → 아래로 내려치기와 이어지게) 위에서
+    ///   번갈아 앞뒤로 휘두른다(위팔 → 아래팔은 조금 늦게) — 앞발처럼 땅을 짚으며 끌고 가는 느낌.
     /// - 촉수 팔은 밑동에서 끝으로 흐르는 물결로 굽는다(끝으로 갈수록 크게, 늦게 따라옴 + 살짝 좌우).
     /// - 어깨는 팔을 앞으로 뻗는 쪽이 들리며 번갈아 들썩이고, 걸음마다 두 어깨가 같이 한 번 더 들썩인다.
     /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때는 아주 조금 숨 쉬듯). 공격 중에는 공격 모션을 그대로 둔다(부드럽게 꺼짐).
@@ -22,7 +23,9 @@ namespace Project1.Presentation
         private static readonly string[] RightChain = { "biped_bone_27", "biped_bone_26", "biped_bone_24", "biped_bone_23" };
 
         [Tooltip("팔을 앞뒤로 휘두르는 각도(도) — 위팔 / 아래팔.")]
-        [SerializeField, Range(0f, 60f)] private float upperArmSwing = 17f, forearmSwing = 10f;
+        [SerializeField, Range(0f, 60f)] private float upperArmSwing = 11f, forearmSwing = 7f;
+        [Tooltip("움직일 때 내려치기를 준비하는 팔 자세(도): 위팔을 앞으로 / 몸 가운데로 모음, 아래팔을 앞으로 굽힘 — 두 손이 몸 앞에 모여 언제든 머리 위로 들 수 있게.")]
+        [SerializeField, Range(0f, 60f)] private float readyForward = 16f, readyInward = 12f, readyElbow = 26f;
         [Tooltip("촉수 팔 끝 마디가 앞뒤로 굽는 각도(도) / 좌우로 흔들리는 각도(도).")]
         [SerializeField, Range(0f, 60f)] private float tentacleCurl = 15f, tentacleSway = 7f;
         [Tooltip("촉수 마디마다 물결이 늦어지는 정도(라디안).")]
@@ -50,7 +53,7 @@ namespace Project1.Presentation
             public void Restore() { if (T != null && Has) T.localRotation = Base; Has = false; }
         }
 
-        private class Arm { public Bone Clavicle, UpperArm, Forearm; public Bone[] Chain; public float Offset; }
+        private class Arm { public Bone Clavicle, UpperArm, Forearm; public Bone[] Chain; public float Offset, Side; } // Side: 왼쪽 -1 / 오른쪽 +1
 
         private Animator animator;
         private Arm left, right;
@@ -112,14 +115,16 @@ namespace Project1.Presentation
             if (a.UpperArm != null && a.Forearm != null)
             {
                 a.UpperArm.Begin();
-                Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, fwd), upperArmSwing * s * amount);
+                Vector3 upperAlong = a.Forearm.T.position - a.UpperArm.T.position;
+                Rotate(a.UpperArm.T, Raise(upperAlong, fwd), (readyForward + upperArmSwing * s) * amount);
+                Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, transform.right * -a.Side), readyInward * amount); // 몸 가운데로
                 a.UpperArm.End();
             }
             if (a.Forearm != null && a.Chain.Length > 0)
             {
                 a.Forearm.Begin();
                 Vector3 along = a.Chain[^1].T.position - a.Forearm.T.position;
-                Rotate(a.Forearm.T, Raise(along, fwd), forearmSwing * Mathf.Sin(p - 0.6f) * amount);
+                Rotate(a.Forearm.T, Raise(along, fwd), (readyElbow + forearmSwing * Mathf.Sin(p - 0.6f)) * amount);
                 a.Forearm.End();
             }
             // 촉수 팔: 밑동에서 끝으로 흐르는 물결(끝으로 갈수록 크게, 늦게) + 살짝 좌우.
@@ -177,6 +182,7 @@ namespace Project1.Presentation
                 Forearm = Wrap(Find(all, $"biped {side} Forearm")),
                 Chain = bones,
                 Offset = offset,
+                Side = side == "L" ? -1f : 1f,
             };
         }
 
