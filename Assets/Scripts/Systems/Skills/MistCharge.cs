@@ -108,9 +108,10 @@ namespace Project1.Systems
             float h = cc != null ? cc.height : 1.7f;
             Vector3 origin = transform.position + Vector3.up * h * heightRatio + fwd * forwardOffset;
             LastSwingAxis = SwingAxis(fwd);
-            HomingProjectile.Launch(BladeKind, self, null, origin, fwd, bladeSpeed, 0f,
+            var blade = HomingProjectile.Launch(BladeKind, self, null, origin, fwd, bladeSpeed, 0f,
                 weak ? weakHitRadius : fullHitRadius, wallRadius, maxRange / bladeSpeed, slot, -(300000 + ++bladeCounter),
                 weak ? weakPower : fullPower);
+            if (TryGetComponent(out MistTrailField trail)) trail.Track(blade, origin, LastSwingAxis, weak ? weakPower : fullPower); // 지나간 자리에 안개를 남긴다
         }
 
         /// <summary>최근 손톱이 지나간 방향(날아가는 방향에 수직인 면 위). 거의 안 움직였으면 위아래(내려치기).</summary>

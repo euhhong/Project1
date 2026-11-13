@@ -27,6 +27,7 @@ namespace Project1.Systems
         private IMoveOverride[] moveOverrides;
         private IFacingOverride[] facingOverrides;
         private IVelocityOverride[] velocityOverrides;
+        private readonly System.Collections.Generic.List<IMoveSpeedBoost> boostBuffer = new();
         private ICharacterHealth health; // 체력이 0이면(쓰러짐) 움직이지 않는다
 
         public CharacterMoveState MoveState { get; private set; }
@@ -153,6 +154,20 @@ namespace Project1.Systems
             return false;
         }
 
+        private bool TryGetSpeedBoost(out float multiplier)
+        {
+            multiplier = 1f;
+            bool any = false;
+            // 실행 중에 붙는 컴포넌트(캐릭터를 고를 때 RefreshSpeedLimits 뒤에 붙는 소품)도 있어 매번 찾는다.
+            GetComponents(boostBuffer);
+            foreach (var b in boostBuffer)
+            {
+                if (b is Behaviour { isActiveAndEnabled: false }) continue;
+                if (b.TryGetSpeedBoost(out float m) && m > multiplier) { multiplier = m; any = true; }
+            }
+            return any;
+        }
+
         private bool TryGetSpeedLimit(out float maxSpeed)
         {
             maxSpeed = float.MaxValue;
@@ -217,10 +232,14 @@ namespace Project1.Systems
                 speed = overrideSpeed;
                 running = moving && speed > walkSpeed;
             }
-            else if (TryGetSpeedLimit(out float limit) && speed > limit)
+            else
             {
-                speed = limit;
-                running = speed > walkSpeed;
+                if (TryGetSpeedLimit(out float limit) && speed > limit)
+                {
+                    speed = limit;
+                    running = speed > walkSpeed;
+                }
+                if (moving && TryGetSpeedBoost(out float boost)) speed *= boost; // 예: 리퍼가 안개 위에서 30% 빠름
             }
             Vector2 localPlanar = move * speed;
             Vector3 worldPlanar = transform.rotation * new Vector3(localPlanar.x, 0f, localPlanar.y);

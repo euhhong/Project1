@@ -56,6 +56,8 @@ namespace Project1.UI
             if (player.TryGetComponent(out HellEmberCloneVisual cloneVisual)) cloneVisual.SetModel(entry.model, entry.scale, entry.gameController);
             SetProp<MistCharge>(player, entry.id == "Hunter_Ripper");     // 리퍼: 공격하지 않으면 7초마다 안개 1칸(최대 2칸), 2칸에서 공격 = 안개 칼날, E = 1칸으로 약한 칼날(BE)
             SetProp<MistClawVisual>(player, entry.id == "Hunter_Ripper"); // 리퍼: 손톱에 감기는 안개·날아가는 손톱 모양 안개 칼날(FE)
+            SetProp<MistTrailField>(player, entry.id == "Hunter_Ripper");  // 리퍼: 칼날이 지나간 자리에 7초 안개, 그 위에서 30% 빠름(BE)
+            SetProp<MistTrailVisual>(player, entry.id == "Hunter_Ripper"); // 리퍼: 그 안개 — 칼날 모양 자국 + 깔리는 안개(FE)
             SetProp<CharacterCarryPose>(player, entry.id == "Hunter_SmileyFace"); // 광대: 로켓 폭죽을 두 손으로 받쳐 든 자세
             SetProp<RocketWeapon>(player, entry.id == "Hunter_SmileyFace");       // 광대: 로켓 폭죽 무기
             SetProp<WeaponBodyClearance>(player, entry.role == CharacterRole.Hunter); // 감시자: 휘두르는 무기가 자기 몸을 뚫어 보이지 않게(FE)

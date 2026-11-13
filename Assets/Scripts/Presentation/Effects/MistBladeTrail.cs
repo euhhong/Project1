@@ -188,7 +188,7 @@ namespace Project1.Presentation
         /// 단면이 + 모양(X로 펼친 띠 + Z로 펼친 띠)이라 뒤·옆 어디서 봐도 보인다. 띠 가장자리는 투명(꼭짓점 색).
         /// 가운데 줄기가 가장 길다.
         /// </summary>
-        private static Mesh BuildClawMesh()
+        internal static Mesh BuildClawMesh()
         {
             var verts = new System.Collections.Generic.List<Vector3>();
             var colors = new System.Collections.Generic.List<Color>();
