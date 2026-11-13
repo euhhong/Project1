@@ -46,6 +46,8 @@ namespace Project1.Systems
         private bool skillQueued;
         private bool attackPressedQueued;
         private int swipeQueued;      // -1 왼쪽 / +1 오른쪽 그음
+        private Vector2 lookDeltaQueued;  // 지난 틱 이후 시점 입력(도, 상하 배율 전)
+        private readonly System.Collections.Generic.List<ILookSensitivity> lookScales = new();
 
         // 공격 키 누름 상태.
         private bool attackHeld;
@@ -86,6 +88,7 @@ namespace Project1.Systems
                 Jump = jumpQueued,
                 LookYaw = lookYaw,
                 LookPitch = lookPitch,
+                LookDelta = lookDeltaQueued,
                 LightAttack = lightAttackQueued,
                 HeavyCharging = attackHeld && Time.time - attackPressTime >= heavyAttackHoldTime,
                 HeavyRelease = heavyReleaseQueued,
@@ -103,6 +106,7 @@ namespace Project1.Systems
             heavyReleaseQueued = false;
             attackPressedQueued = false;
             swipeQueued = 0;
+            lookDeltaQueued = Vector2.zero;
             skillQueued = false;
             return cachedFrame;
         }
@@ -267,6 +271,10 @@ namespace Project1.Systems
 
             lookYaw = Mathf.Repeat(lookYaw + deltaDegrees.x, 360f);
             float pitchDelta = invertY ? deltaDegrees.y : -deltaDegrees.y; // 마우스를 올리면 위를 본다(pitch 감소)
+            lookDeltaQueued += new Vector2(deltaDegrees.x, pitchDelta);
+            // 캐릭터가 상하 감도를 바꾸면(예: 안토니오 음표 고르는 중) 곱한다.
+            GetComponents(lookScales);
+            foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
             lookPitch = Mathf.Clamp(lookPitch + pitchDelta, minPitch, maxPitch);
         }
 

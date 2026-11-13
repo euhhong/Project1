@@ -24,6 +24,9 @@ namespace Project1.Core
         /// <summary>시야 상하 각도(도). Unity X 회전 규칙: + = 아래를 봄, - = 위를 봄.</summary>
         public float LookPitch;
 
+        /// <summary>지난 틱 이후 들어온 시점 입력(도): x = 좌우(+ = 오른쪽), y = 상하(+ = 아래로). 상하는 카메라 감도 배율(ILookSensitivity)을 곱하기 전 값. 예: 안토니오 음표를 시점을 돌리며 옮길 때.</summary>
+        public Vector2 LookDelta;
+
         /// <summary>지난 틱 이후 공격 키를 짧게(기준 시간 미만) 눌렀다 뗐다 → 약공격.</summary>
         public bool LightAttack;
 

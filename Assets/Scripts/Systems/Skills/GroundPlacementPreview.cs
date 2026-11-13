@@ -29,18 +29,23 @@ namespace Project1.Systems
         public bool orbitWhileTurning = true;
         [Tooltip("최대 거리보다 먼 곳을 가리키면: 켜면 그 방향 최대 거리 자리로 당겨 놓는다(붉은나비), 끄면 못 놓는 자리.")]
         public bool clampToMax;
+        [Tooltip("우클릭으로 시점을 돌릴 때(안토니오): 마우스로 자리를 직접 민다 — 위·아래 = 멀리·가까이(dragDistancePerDegree), 좌·우 = 시점보다 더 많이 돈다(dragLateralGain). 켜면 orbitWhileTurning보다 먼저.")]
+        public bool dragWhileTurning;
+        [Min(0f)] public float dragDistancePerDegree = 0.45f;
+        [Min(1f)] public float dragLateralGain = 1.6f;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
         private bool set, viewLocked;
         private Vector3 viewLocal;
         private float lastAimYaw;
+        private bool dragInit; private float dragDistance, dragAngle;
 
         public Vector3 Point { get; private set; }
         public bool Valid { get; private set; }
         public bool Cancels { get; private set; }
 
         /// <summary>새로 고르기 시작(지난 자리는 버린다).</summary>
-        public void Begin() { Valid = false; Cancels = false; set = false; viewLocked = false; }
+        public void Begin() { Valid = false; Cancels = false; set = false; viewLocked = false; dragInit = false; }
 
         /// <summary>고르기를 끝냄(놓았거나 취소).</summary>
         public void Clear() { Valid = false; Cancels = false; }
@@ -48,6 +53,8 @@ namespace Project1.Systems
         public void Update(Transform owner, in CharacterInputFrame input)
         {
             Quaternion view = Quaternion.Euler(0f, input.LookYaw, 0f);
+            if (dragWhileTurning && !(input.HasAimPoint && input.AimFromCursor)) { Drag(owner, input); return; }
+            dragInit = false;
             if (!orbitWhileTurning && input.HasAimPoint)
             {
                 // 자유롭게: 커서든 화면 가운데든 가리키는 땅을 그대로 따라간다(거리 고정 없음)
@@ -83,6 +90,31 @@ namespace Project1.Systems
             viewLocked = false;
             lastAimYaw = input.LookYaw;
             Evaluate(owner, input.AimPoint, input.AimNormal);
+        }
+
+        /// <summary>시점을 돌리는 동안: 마우스 위·아래로 멀리·가까이, 좌·우로 시점보다 많이 돌려 자리를 직접 옮긴다(카메라 상하는 거의 안 움직이게 따로 줄임).</summary>
+        private void Drag(Transform owner, in CharacterInputFrame input)
+        {
+            if (!dragInit)
+            {
+                // 시작 자리: 이미 고른 자리 → 화면 가운데가 가리키는 땅 → 앞쪽 defaultDistance
+                Vector3 start;
+                if (set) start = Point;
+                else if (input.HasAimPoint) start = input.AimPoint;
+                else start = owner.position + Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward * defaultDistance;
+                Vector3 off = start - owner.position; off.y = 0f;
+                dragDistance = Mathf.Clamp(off.magnitude, 0f, maxPlaceDistance);
+                dragAngle = off.sqrMagnitude > 1e-4f ? Vector3.SignedAngle(Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward, off, Vector3.up) : 0f;
+                dragInit = true;
+            }
+            else
+            {
+                dragDistance = Mathf.Clamp(dragDistance - input.LookDelta.y * dragDistancePerDegree, 0f, maxPlaceDistance); // 마우스를 올리면 멀리
+                dragAngle += input.LookDelta.x * (dragLateralGain - 1f); // 시점이 도는 것에 더해 더 돈다
+            }
+            Vector3 p = owner.position + Quaternion.Euler(0f, input.LookYaw + dragAngle, 0f) * Vector3.forward * dragDistance;
+            if (GroundAt(owner, p, out Vector3 gp, out Vector3 gn)) Evaluate(owner, gp, gn);
+            else { Point = p; set = true; Cancels = false; Valid = false; }
         }
 
         private void Evaluate(Transform owner, Vector3 point, Vector3 normal)

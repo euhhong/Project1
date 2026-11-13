@@ -15,7 +15,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 그리기는 FE(NoteVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride
+    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride, ILookSensitivity
     {
         [Tooltip("놓을 자리 고르기(땅 위만, 몸 근처 = 취소). 시점을 돌리는 동안에도 붉은나비처럼 거리를 지키지 않고 화면 가운데가 가리키는 땅을 자유롭게 따라간다.")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false };
@@ -55,11 +55,16 @@ namespace Project1.Systems
         public float LastHitTime { get; private set; } = -1f;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
+        [Tooltip("음표 자리를 고르는 동안 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다).")]
+        [SerializeField, Range(0f, 1f)] private float placingPitchScale = 0.1f;
+        public float PitchScale => Placing ? placingPitchScale : 1f;
+
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
             self = GetComponent<CharacterIdentity>();
             placement.orbitWhileTurning = false; // 안토니오: 자유롭게 놓기
+            placement.dragWhileTurning = true;   // 시점을 돌리며 고를 때: 마우스로 음표 자리를 직접 민다(감도 높게)
         }
 
         private void OnDisable()
