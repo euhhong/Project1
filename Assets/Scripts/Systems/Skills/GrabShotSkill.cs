@@ -67,6 +67,9 @@ namespace Project1.Systems
             switch (ctx.Phase)
             {
                 case Windup:
+                    // 준비 동안은 몸이 계속 시야를 따라 돈다 → 쏘는 순간(손을 떠날 때) 바라보는 방향으로 날린다.
+                    ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized;
+                    ctx.ReachOrigin = Origin(ctx);
                     if (ctx.PhaseTime >= windup) ctx.SetPhase(Extending);
                     return false;
 
