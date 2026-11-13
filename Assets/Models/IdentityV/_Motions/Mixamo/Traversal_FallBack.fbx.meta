@@ -32,8 +32,8 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: Traversal_FallBack
-      takeName: mixamo.com
-      internalID: -203655887218126122
+      takeName: Scene
+      internalID: -623603649343465320
       firstFrame: 1
       lastFrame: 136
       wrapMode: 0
@@ -47,7 +47,7 @@ ModelImporter:
       loopBlendOrientation: 1
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
+      keepOriginalOrientation: 1
       keepOriginalPositionY: 0
       keepOriginalPositionXZ: 0
       heightFromFeet: 0

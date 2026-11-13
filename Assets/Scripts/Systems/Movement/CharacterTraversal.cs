@@ -15,7 +15,7 @@ namespace Project1.Systems
     ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
     ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
     ///   뒤(S) → 놓고 떨어진다.
-    /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling).
+    /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
     /// - 착지: 떨어진 높이(가장 높았던 곳 → 착지)로 고른다 — 고공(hardFall 이상) = Hard Landing, 점프해서 높이 = 앞구르기(Falling To Roll),
     ///   걸어서 높이 = 깊이 웅크림(Jumping), 낮게 = 살짝 웅크림(Jumping Down). 크게 착지하면 잠깐 못 움직인다.
     /// 오르는 중·매달림·구르기·크게 착지하는 중에는 공격·스킬을 막는다(LocksActions). 기절·쓰러지면 놓친다.

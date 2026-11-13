@@ -43,7 +43,7 @@ namespace Project1.Core
         /// <summary>매달린 턱 아래가 벽이라 발로 벽을 짚고 매달렸는지(Braced Hang). 아니면 몸이 늘어진 매달림(Freehang).</summary>
         bool BracedHang { get; }
 
-        /// <summary>낙하(Fall)가 넉백·뒤로 걷다가 떨어진 것인지(허우적대며 떨어지는 모션 Falling).</summary>
+        /// <summary>낙하(Fall)가 넉백·뒤로 걷다가 떨어진 것인지(하늘을 보며 등으로 떨어지는 모션 — Falling을 뒤집음).</summary>
         bool FallBackward { get; }
 
         /// <summary>감시자인지(창틀을 감시자 모션 Jump로 뛰어넘는다).</summary>

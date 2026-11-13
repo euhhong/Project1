@@ -63,6 +63,8 @@ namespace Project1.Presentation.EditorTools
         private const float AirHeightOffset = -0.91f;
         // 발을 땅에 붙이는 모션(몸 높이는 발 기준): 광대 로켓 돌진(다리를 벌려 디딘 자세라 몸이 낮아진다).
         private static readonly HashSet<string> FeetOnGround = new(); // (광대 로켓 돌진은 다리·엉덩이 높이를 달리기 모션에서 가져와 Bake로 충분)
+        // 몸이 누운 모션은 몸 방향으로 맞추면 앞이 흔들린다 → 원래 방향 그대로(Root Rotation: Original).
+        private static readonly HashSet<string> OriginalOrientation = new() { "Traversal_FallBack" };
 
         private bool IsMotion => assetPath.Replace('\\', '/').StartsWith(Folder + "/")
                                  && assetPath.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase);
@@ -182,7 +184,7 @@ namespace Project1.Presentation.EditorTools
                 ("Traversal_PushStart", new Vector2(10, 34), Height.Bake),
                 ("Traversal_Push", new Vector2(34, 142), Height.Bake),
             },
-            // 넉백당하거나 뒤로 걷다가 떨어짐(Falling): 허우적대며 떨어지는 자세 반복.
+            // 넉백당하거나 뒤로 걷다가 떨어짐(Falling을 Tools/Blender/flip_on_back.py로 뒤집음): 하늘을 보며 등으로 떨어짐(머리가 뒤쪽), 허우적대는 자세 반복.
             ["Traversal_FallBack"] = new[] { ("Traversal_FallBack", new Vector2(1, 136), Height.Body) },
         };
 
@@ -192,7 +194,7 @@ namespace Project1.Presentation.EditorTools
             clip.loopTime = Looping.Contains(name);
             clip.loopPose = false;
             clip.lockRootRotation = true;
-            clip.keepOriginalOrientation = false;  // 몸 방향 기준: 옆으로 선 자세(복싱 등)도 몸이 앞(+Z)을 보게 맞춘다
+            clip.keepOriginalOrientation = OriginalOrientation.Contains(name); // 몸 방향 기준: 옆으로 선 자세(복싱 등)도 몸이 앞(+Z)을 보게 맞춘다. 누운 자세는 원래 방향 그대로
             bool bake = height == Height.Bake;
             clip.lockRootHeightY = bake;          // 높이는 포즈에 굽는다(쓰러질 때 몸이 바닥으로 내려간다)
             clip.keepOriginalPositionY = bake;
