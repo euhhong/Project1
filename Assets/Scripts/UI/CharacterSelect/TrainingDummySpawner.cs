@@ -17,7 +17,18 @@ namespace Project1.UI
         private const string ModelId = "Hunter_HellEmber"; // 공장장 모델
         private const float GapFromWall = 2f;                // 벽 끝에서 옆으로 떨어진 거리(m)
 
+        private static bool hooked;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetHook() => hooked = false;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void Boot()
+        {
+            if (!hooked) { hooked = true; UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => Spawn(); } // 씬을 다시 불러도 다시 세운다
+            Spawn();
+        }
+
         private static void Spawn()
         {
             var wall = GameObject.Find(WallName);

@@ -10,7 +10,8 @@ namespace Project1.UI
     /// </summary>
     public static class CharacterLoadout
     {
-        public static void Apply(GameObject player, CharacterRoster.Entry entry)
+        /// <param name="isPlayer">false = AI 봇 등(HUD·디버그 키를 붙이지 않는다).</param>
+        public static void Apply(GameObject player, CharacterRoster.Entry entry, bool isPlayer = true)
         {
             CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
 
@@ -62,6 +63,7 @@ namespace Project1.UI
             if (player.TryGetComponent(out CartoonPunch punch))
                 punch.SetPunchReach(UsesDefaultPunch(entry.gameController));
 
+            if (!isPlayer) return;
             var hud = Object.FindAnyObjectByType<PlayerHud>();
             if (hud == null) hud = new GameObject("PlayerHud").AddComponent<PlayerHud>();
             hud.SetTarget(player, entry.displayName);

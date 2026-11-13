@@ -9,9 +9,22 @@ namespace Project1.UI
     /// </summary>
     public static class CharacterSelectBootstrap
     {
+        private static bool hooked;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
+            // 씬을 다시 불러도(예: 게임 시작 모드에서 R로 다시 하기) 다시 띄운다.
+            if (!hooked) { hooked = true; UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => Show(); }
+            Show();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetHook() => hooked = false;
+
+        private static void Show()
+        {
+            if (Object.FindAnyObjectByType<CharacterSelectScreen>() != null) return;
             var roster = CharacterRoster.Load();
             if (roster == null || !roster.showOnStart || roster.entries.Count == 0) return;
             var player = Object.FindAnyObjectByType<Project1.Systems.LocalPlayerInput>();

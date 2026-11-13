@@ -125,9 +125,15 @@ namespace Project1.UI
                     index[role] = (index[role] - 1 + shown.Count) % shown.Count;
                 if (kb.dKey.wasPressedThisFrame || kb.rightArrowKey.wasPressedThisFrame)
                     index[role] = (index[role] + 1) % shown.Count;
-                if (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)
+                // 1·Space·Enter = 연습 모드(훈련 상대), 2·G = 게임 시작(AI 봇과 전투). 화면 아래 버튼으로도 고를 수 있다.
+                if (kb.digit1Key.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)
                 {
-                    StartGame(shown[index[role]]);
+                    StartGame(shown[index[role]], battle: false);
+                    return;
+                }
+                if (kb.digit2Key.wasPressedThisFrame || kb.gKey.wasPressedThisFrame)
+                {
+                    StartGame(shown[index[role]], battle: true);
                     return;
                 }
             }
@@ -137,14 +143,15 @@ namespace Project1.UI
             cam.LookAt(new Vector3(cam.position.x, StageOrigin.y + LookHeight, StageOrigin.z));
         }
 
-        /// <summary>고른 캐릭터로 게임을 시작한다(키 입력 또는 나중에 UI 버튼에서 부른다).</summary>
-        public void StartGame(CharacterRoster.Entry entry)
+        /// <summary>고른 캐릭터로 시작한다. battle = false: 연습 모드(지금 테스트 화면 — 훈련 상대), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
+        public void StartGame(CharacterRoster.Entry entry, bool battle = false)
         {
             Destroy(stage);
             if (mainCamera != null) mainCamera.enabled = true;
             player.SetActive(true);
             CharacterLoadout.Apply(player, entry);
-            Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 게임을 시작합니다.");
+            if (battle) BattleMatch.Begin(roster, player, entry);
+            Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
             Destroy(gameObject);
         }
 
@@ -179,7 +186,12 @@ namespace Project1.UI
             var e = shown[index[role]];
             GUI.Label(new Rect(0, h * 0.78f, w, 80 * u), $"◀  {e.displayName}  ▶", nameStyle);
             GUI.Label(new Rect(0, h * 0.78f + 70 * u, w, 40 * u), $"{index[role] + 1} / {shown.Count}", tabStyle);
-            GUI.Label(new Rect(0, h - 70 * u, w, 50 * u), "A·D  캐릭터 바꾸기      W·S  감시자/생존자      Space·Enter  시작", hintStyle);
+            // 모드 고르기(임시 UI — 대충): 연습 모드 / 게임 시작
+            float bw = 260 * u, bh = 64 * u, by = h - 170 * u;
+            var btn = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(28 * u), fontStyle = FontStyle.Bold };
+            if (GUI.Button(new Rect(w * 0.5f - bw - 20 * u, by, bw, bh), "1  연습 모드", btn)) { StartGame(e, battle: false); return; }
+            if (GUI.Button(new Rect(w * 0.5f + 20 * u, by, bw, bh), "2  게임 시작", btn)) { StartGame(e, battle: true); return; }
+            GUI.Label(new Rect(0, h - 70 * u, w, 50 * u), "A·D  캐릭터 바꾸기      W·S  감시자/생존자      1·Enter  연습 모드      2·G  게임 시작(AI 봇)", hintStyle);
         }
 
         private void OnDestroy()
