@@ -134,7 +134,9 @@ namespace Project1.Presentation
             if (identity == null) identity = GetComponent<CharacterIdentity>();
             if (p.Kind != MistCharge.BladeKind || identity == null || p.OwnerId != identity.Id) return;
             if (mist == null) mist = GetComponent<IMistCharge>();
-            Vector3 start = FindClaw(out Vector3 c, out _) ? c : p.Position;
+            // 벽에 붙어 날려 건너편 면에서 생긴 칼날은 손톱에서 날아오지 않고 그 자리에서 바로 생긴다
+            bool throughWall = mist != null && mist.LastBladeThroughWall;
+            Vector3 start = !throughWall && FindClaw(out Vector3 c, out _) ? c : p.Position;
             MistBladeTrail.Create(p, start, mist != null ? mist.LastSwingAxis : Vector3.up);
             if (fog != null) fog.Clear(); // 감겨 있던 안개가 칼날로 떨어져 나간다
         }

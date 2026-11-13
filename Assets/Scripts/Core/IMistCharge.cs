@@ -21,5 +21,8 @@ namespace Project1.Core
 
         /// <summary>마지막으로 날린 안개 칼날의 휘두른 방향(월드, 크기 1 — 날아가는 방향에 수직, 손톱이 지나간 방향). 칼날 모양을 이 방향으로 세운다.</summary>
         Vector3 LastSwingAxis { get; }
+
+        /// <summary>마지막 칼날이 붙어 선 벽을 넘어 건너편 면에서 생겼는지. 그렇다면 FE는 손톱 자리가 아니라 칼날 자리(건너편)에서 바로 그린다.</summary>
+        bool LastBladeThroughWall { get; }
     }
 }
