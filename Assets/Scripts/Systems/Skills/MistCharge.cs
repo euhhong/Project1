@@ -5,9 +5,8 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 리퍼 손톱에 감기는 안개(BE).
-    /// - 스킬을 쓰지 않는 동안 chargeInterval(7초)마다 안개가 한 칸씩 모인다(최대 maxCharges = 2칸).
-    ///   칼날이 나가지 않은 평타(약·강·모으기)는 모으던 시간을 건드리지 않고, 그동안에도 계속 모인다.
-    ///   스킬(E 칼날 등)을 쓰면 다음 칸까지 모으던 시간은 처음부터 다시 센다(이미 찬 칸은 그대로).
+    /// - chargeInterval(7초)마다 안개가 한 칸씩 모인다(최대 maxCharges = 2칸). 2칸이 다 차 있지 않으면 언제나 계속 모인다 —
+    ///   평타·스킬·칼날을 쏘는 것과 상관없이 멈추거나 처음부터 다시 세지 않는다(칼날을 쏘면 칸만 줄고, 모으던 시간은 그대로 이어진다).
     /// - 2칸이 다 찬 상태에서 공격하면: 판정이 나는 순간(Active) 2칸을 모두 쓰고, 손톱 모양 안개 칼날이 공격 방향으로
     ///   맵 끝까지(maxRange) 일자로 날아간다(HomingProjectile, 목표 없음). 가장 먼저 닿은 것(상대·벽·바닥)에 맞고 부서진다.
     ///   덜 찬 상태의 공격은 칼날이 나가지 않는다.
@@ -22,7 +21,7 @@ namespace Project1.Systems
     {
         public const string BladeKind = "MistBlade";
 
-        [Tooltip("안개 한 칸이 모이는 시간(초) — 평타 중에도 모이고, 스킬을 쓰면 다음 칸까지 처음부터.")]
+        [Tooltip("안개 한 칸이 모이는 시간(초) — 다 차 있지 않으면 무엇을 하든 멈추지 않고 계속 모인다.")]
         [SerializeField, Min(0.1f)] private float chargeInterval = 7f;
         [Tooltip("모을 수 있는 칸 수. 다 찬 상태에서 공격해야 칼날이 나간다.")]
         [SerializeField, Min(1)] private int maxCharges = 2;
@@ -54,7 +53,6 @@ namespace Project1.Systems
         private readonly Vector3[] clawSamples = new Vector3[Samples];
         private int sampleCount, sampleHead;
         private CharacterAttack attack;
-        private ICharacterSkillState skillState;
         private CharacterIdentity self;
         private Hitbox claw;
         private AttackPhase lastPhase;
@@ -90,11 +88,9 @@ namespace Project1.Systems
         private void FixedUpdate()
         {
             if (attack == null) Awake();
-            if (skillState == null) TryGetComponent(out skillState);
             SampleClaw();
 
             bool attacking = attack != null && attack.AttackState != CharacterAttackState.None;
-            bool casting = skillState != null && skillState.State != SkillState.Ready && skillState.State != SkillState.Cooldown;
 
             // 다 찬 상태의 공격 → 판정이 나는 순간 2칸을 쓰고 칼날
             AttackPhase phase = attack != null ? attack.AttackPhase : AttackPhase.None;
@@ -105,9 +101,8 @@ namespace Project1.Systems
             }
             lastPhase = phase;
 
-            // 칼날이 안 나간 평타는 상관없이 계속 모인다. 스킬을 쓰는 동안은 멈추고 다음 칸까지 처음부터
+            // 다 차 있지 않으면 무엇을 하든(평타·스킬·칼날) 멈추지 않고 계속 모인다
             if (Charges >= maxCharges) { NextProgress = 0f; return; }
-            if (casting) { NextProgress = 0f; return; }
             NextProgress += Time.fixedDeltaTime / chargeInterval;
             if (NextProgress >= 1f) { Charges++; NextProgress = 0f; }
         }
