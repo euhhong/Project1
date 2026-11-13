@@ -12,8 +12,8 @@ namespace Project1.Map.EditorTools
     /// 씬의 "MapBlockout" 하나를 지우고 다시 세운다(다른 씬 오브젝트는 건드리지 않음). 맵을 바꾸려면 이 파일 숫자를 고치고 다시 실행한다.
     ///
     /// 크기 기준: 캐릭터 키 약 2.1m(감시자 ~2.7m), 반지름 0.4~0.5, 점프 1.2m, stepOffset 0.3, slopeLimit 45°.
-    ///   층고 4.3m(1F 천장 높이 4.0m), 문 2.4×3.4m, 창문 1.8m 폭·턱 1.0m·위 3.8m(점프로 넘음, 틈 높이 2.8m), 아치 3.0×3.6m,
-    ///   통로 2.5m 이상, 계단 폭 2.6~2.8m·단 0.27m·디딤 0.45m(약 31°, 위에 보이지 않는 경사 Collider로 미끄럽게),
+    ///   층고 5.5m(천장 높이 5.2m, 3인칭 카메라가 실내에서 답답하지 않게), 문 2.4×3.8m, 창문 1.8m 폭·턱 1.0m·위 4.0m(점프로 넘음, 틈 높이 3.0m), 아치 3.0×4.4m,
+    ///   통로 2.5m 이상, 계단 폭 2.6~2.8m·단 0.28m·디딤 0.4m(약 35°, 위에 보이지 않는 경사 Collider로 미끄럽게),
     ///   난간·낮은 벽 1.0m(점프로 넘음), 큰 벽 3m 이상(못 넘음, 시야 가림).
     /// 루키노 도약(머리 위 6m 천장 검사): 실내 1F·2F·창고는 못 뜀, 안뜰·발코니·야외 마당은 뜀.
     ///
@@ -31,21 +31,21 @@ namespace Project1.Map.EditorTools
 
         // 높이
         private const float G = 0.15f;      // 1F 바닥 윗면(지형 ≈ 0)
-        private const float Story = 4.3f;   // 층고(바닥 윗면 → 다음 바닥 윗면)
+        private const float Story = 5.5f;   // 층고(바닥 윗면 → 다음 바닥 윗면). 1F 천장 높이 5.2m
         private const float SlabT = 0.3f;    // 바닥·지붕 두께
         private const float F2 = G + Story; // 2F 바닥 윗면
         private const float RoofTop = F2 + Story;
 
         // 벽·개구부
         private const float WallT = 0.4f;
-        private const float DoorW = 2.4f, DoorH = 3.4f;
-        private const float WinW = 1.8f, WinSill = 1.0f, WinTop = 3.8f;
-        private const float ArchW = 3f, ArchH = 3.6f;
+        private const float DoorW = 2.4f, DoorH = 3.8f;
+        private const float WinW = 1.8f, WinSill = 1.0f, WinTop = 4.0f;
+        private const float ArchW = 3f, ArchH = 4.4f;
         private const float RailH = 1f, RailT = 0.15f;
 
         // 계단
-        private const int StairSteps = 16;
-        private const float StairRun = 0.45f;
+        private const int StairSteps = 20;
+        private const float StairRun = 0.4f;
 
         private static readonly Vector3 BuildingOrigin = new(-19f, 0f, -21f);
 
@@ -259,7 +259,7 @@ namespace Project1.Map.EditorTools
         private static void Shack(Transform parent, string name, Vector3 corner, float sx, float sz,
             Opening[] s, Opening[] n, Opening[] w, Opening[] e)
         {
-            const float h = 3.6f, t = 0.35f;
+            const float h = 4.4f, t = 0.35f;
             var g = Group(parent, name, corner);
             Slab(g, "Floor", new Rect2(0f, 0f, sx, sz), G, 0.35f, floorMat);
             Slab(g, "Roof", new Rect2(-0.5f, -0.5f, sx + 0.5f, sz + 0.5f), G + h + 0.25f, 0.25f, accentMat);
