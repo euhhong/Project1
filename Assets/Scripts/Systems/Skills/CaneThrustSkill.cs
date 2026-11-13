@@ -19,9 +19,9 @@ namespace Project1.Systems
         [Min(0.01f)] public float active = 0.14f;
         [Min(0f)] public float recovery = 0.45f;
         [Tooltip("찌르기가 닿는 거리(몸 앞, m).")]
-        [Min(0.3f)] public float reach = 2.4f;
+        [Min(0.3f)] public float reach = 3.2f;
         [Tooltip("판정 굵기(반지름, m).")]
-        [Min(0.05f)] public float hitRadius = 0.45f;
+        [Min(0.05f)] public float hitRadius = 0.55f;
         [Tooltip("판정 높이(캐릭터 키 대비, 가슴쯤).")]
         [Range(0.1f, 1f)] public float heightRatio = 0.62f;
         [Tooltip("넉백 처음 속도(m/s) / 시간(초). 거리 ≈ 속도 × 시간 ÷ 2.")]
