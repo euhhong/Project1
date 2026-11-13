@@ -61,7 +61,11 @@ namespace Project1.Presentation
         [Tooltip("벽이 사라진 뒤 원래 거리로 돌아가는 시간(초). 당길 때는 바로 당긴다.")]
         [SerializeField, Min(0f)] private float obstacleReleaseTime = 0.25f;
         [Tooltip("뒤가 벽에 막히면 당기기 전에 먼저 카메라를 머리 위로 들어 올리는 최대 각도(도). 0이면 끔. 캐릭터가 화면을 가리지 않게.")]
-        [SerializeField, Range(0f, 60f)] private float maxCraneAngle = 35f;
+        [SerializeField, Range(0f, 70f)] private float maxCraneAngle = 60f;
+        [Tooltip("벽에 막혀 카메라가 당겨진 만큼 시야각(FOV)을 넓힌다(도, 다 당겨졌을 때) — 바로 뒤가 벽이어도 넓게 보이게.")]
+        [SerializeField, Range(0f, 40f)] private float blockedFovAdd = 25f;
+        [Tooltip("시야각이 바뀌는 데 걸리는 시간(초).")]
+        [SerializeField, Min(0f)] private float fovSmoothTime = 0.12f;
         [Tooltip("들어 올리는/내리는 데 걸리는 시간(초).")]
         [SerializeField, Min(0f)] private float craneUpTime = 0.12f, craneDownTime = 0.35f;
 
@@ -83,7 +87,9 @@ namespace Project1.Presentation
 
         // 이번 프레임 구도(야외·실내를 섞은 값)
         private float curPivotHeight, curFeetViewportY;
-        private float baseFov = -1f; // 처음 시야각(실내에서 넓힌 뒤 되돌릴 값)
+        private float baseFov = -1f; // 처음 시야각(실내·벽에 막힘으로 넓힌 뒤 되돌릴 값)
+        private float fovVelocity;
+        private bool snapFov = true;
 
         private void LateUpdate()
         {
@@ -96,7 +102,6 @@ namespace Project1.Presentation
             float indoor = SenseIndoor(!initialized);
             curPivotHeight = Mathf.Lerp(pivotHeight, indoorPivotHeight, indoor);
             curFeetViewportY = Mathf.Lerp(feetViewportY, indoorFeetViewportY, indoor);
-            ApplyFov(indoor);
             float wantDistance = Mathf.Lerp(distance, indoorDistance, indoor);
             float wantPitchOffset = Mathf.Lerp(pitchOffset, indoorPitchOffset, indoor);
 
@@ -108,6 +113,7 @@ namespace Project1.Presentation
                 yaw = targetYaw; pitch = targetPitch; pivot = targetPivot;
                 currentDistance = wantDistance;
                 snapCrane = true;
+                snapFov = true;
                 initialized = true;
             }
             else
@@ -132,6 +138,9 @@ namespace Project1.Presentation
             else currentDistance = Mathf.SmoothDamp(currentDistance, allowed, ref distanceVelocity, obstacleReleaseTime);
 
             transform.SetPositionAndRotation(pivot + back * currentDistance, rotation);
+            float blocked = wantDistance > 0.01f ? Mathf.Clamp01(1f - currentDistance / wantDistance) : 0f;
+            ApplyFov(indoor, blocked, snapFov);
+            snapFov = false;
         }
 
         private float SenseIndoor(bool snap)
@@ -143,13 +152,17 @@ namespace Project1.Presentation
             return indoorSensor.Indoor01;
         }
 
-        /// <summary>실내 정도(0~1)만큼 시야각을 넓힌다. 처음 시야각을 기억해 두고 거기에 더한다.</summary>
-        private void ApplyFov(float indoor)
+        /// <summary>
+        /// 시야각 = 처음 시야각 + 실내 정도(0~1) × indoorFovAdd + 벽에 막혀 당겨진 정도(0~1) × blockedFovAdd.
+        /// 바로 뒤가 벽이라 카메라가 붙어도 넓게 보이게(줌아웃처럼). 부드럽게 바뀐다(fovSmoothTime).
+        /// </summary>
+        private void ApplyFov(float indoor, float blocked, bool snap)
         {
             if (cam == null) cam = GetComponent<Camera>();
             if (cam == null) return;
             if (baseFov < 0f) baseFov = cam.fieldOfView;
-            cam.fieldOfView = baseFov + indoorFovAdd * indoor;
+            float goal = Mathf.Min(baseFov + indoorFovAdd * indoor + blockedFovAdd * blocked, 110f);
+            cam.fieldOfView = snap ? goal : Mathf.SmoothDamp(cam.fieldOfView, goal, ref fovVelocity, fovSmoothTime);
         }
 
         /// <summary>
