@@ -79,14 +79,19 @@ namespace Project1.UI
                     SkillState.Cooldown => $"{skill.CooldownRemaining:0.0}초",
                     _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
                 };
-                if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 "벽에 닿음 — 이동하면 도약!")
+                if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 = 재사용 대기 남은 초만)
                 small.normal.textColor = skill.State == SkillState.Ready && skill.CanUse ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
                 GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {skill.SkillName}", small);
                 small.normal.textColor = Color.white;
                 GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), status, small);
 
                 var bar = new Rect(box.x, box.yMax - 6 * u, w, 6 * u);
-                if (skill.State == SkillState.Casting) Bar(bar, skill.CastProgress, new Color(0.4f, 0.9f, 0.5f));
+                if (skill.State == SkillState.Casting)
+                {
+                    float fill = skill.StatusBarFill; // 스킬이 정한 막대(예: 용병 아대 = 도약 재사용 대기, 준비되면 없음)
+                    if (float.IsNaN(fill)) Bar(bar, skill.CastProgress, new Color(0.4f, 0.9f, 0.5f));
+                    else if (fill >= 0f) Bar(bar, fill, new Color(0.5f, 0.6f, 0.9f));
+                }
                 else if (skill.State == SkillState.Cooldown) Bar(bar, 1f - skill.CooldownRemaining / Mathf.Max(skill.CooldownDuration, 0.01f), new Color(0.5f, 0.6f, 0.9f));
 
                 if (Time.time < blockedMessageUntil)

@@ -15,7 +15,7 @@ namespace Project1.Systems
     /// - 도약이 끝나도 꺼지지 않는다(켜진 채 그대로, E로만 끈다). 대신 한 번 도약하면 dashCooldown(5초) 동안 재사용 대기 —
     ///   그동안은 벽에 닿아도 도약 준비가 되지 않는다. 대기는 캐릭터마다 따로 재고, E로 껐다 켜도 이어진다.
     /// 켜져 있어도 걷기·달리기·공격·창틀 넘기·턱 오르기는 평소대로 한다(모션 그대로, 공격해도 꺼지지 않는다). 창틀 넘기·오르기·매달리기·착지 중에는
-    /// 아대가 쉰다(도약 준비 안 함, E도 무시) — 끝나고 afterTraversalGrace(0.35초) 동안도 넘은 창틀에 튕기지 않는다. 상태 설명 글자는 띄우지 않는다.
+    /// 아대가 쉰다(도약 준비 안 함, E도 무시) — 끝나고 afterTraversalGrace(0.35초) 동안도 넘은 창틀에 튕기지 않는다. 상태 글자·막대는 도약 재사용 대기만 보여 준다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Wall Dash")]
     public class WallDashSkill : SkillDefinition
@@ -203,8 +203,15 @@ namespace Project1.Systems
 
         public override bool Afterimage(CharacterSkill ctx) => ctx.Phase == Dashing;
 
-        // 상태 설명 글자는 띄우지 않는다(길어서 잘림 — 설명 없이도 됨).
-        public override string StatusText(CharacterSkill ctx) => null;
+        // 상태 글자: 도약 재사용 대기 남은 시간만(설명은 없음). 준비되면 빈칸.
+        public override string StatusText(CharacterSkill ctx) => DashCooldownRemaining(ctx) > 0f ? $"{DashCooldownRemaining(ctx):0.0}초" : string.Empty;
+
+        // HUD 막대: 재사용 대기 중이면 차오르는 막대, 준비되면 없음.
+        public override float StatusBarFill(CharacterSkill ctx)
+        {
+            float r = DashCooldownRemaining(ctx);
+            return r > 0f && dashCooldown > 0f ? 1f - r / dashCooldown : -1f;
+        }
 
         /// <summary>아대가 쉬는 동작: 창틀 넘기·턱 오르기·매달리기·착지(낙하 중 공중에서 벽 튕기기는 그대로).</summary>
         private static bool Pauses(TraversalAction a) => a != TraversalAction.None && a != TraversalAction.Fall;

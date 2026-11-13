@@ -54,6 +54,9 @@ namespace Project1.Systems
         /// <summary>시전 중이 아닐 때 HUD에 보여 줄 글(예: 리퍼 안개 칸 ●○). null이면 HUD 기본 글(준비/재사용 대기).</summary>
         public virtual string IdleStatusText(CharacterSkill ctx) => null;
 
+        /// <summary>시전 중 HUD 막대: NaN = 기본(시전 진행도), 0~1 = 이 값으로 채움, 음수 = 막대 없음. 예: 용병 아대 = 도약 재사용 대기.</summary>
+        public virtual float StatusBarFill(CharacterSkill ctx) => float.NaN;
+
         /// <summary>스킬 모션을 시전 진행도에 맞출지(true, 예: 주사기 꽂기) / 그냥 재생할지(false, 예: 돌진·도약).</summary>
         public virtual bool SyncAnimationToCast => true;
 

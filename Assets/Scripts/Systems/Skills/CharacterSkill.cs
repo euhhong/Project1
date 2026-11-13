@@ -65,6 +65,9 @@ namespace Project1.Systems
         public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
         public string StatusText => skill == null ? null : State == SkillState.Casting ? skill.StatusText(this) : skill.IdleStatusText(this);
 
+        /// <summary>HUD 막대(시전 중만): NaN = 기본(시전 진행도), 0~1 = 채움, 음수 = 막대 없음.</summary>
+        public float StatusBarFill => State == SkillState.Casting && skill != null ? skill.StatusBarFill(this) : float.NaN;
+
         public string AnimationState =>
             skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);
 

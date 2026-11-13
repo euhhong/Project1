@@ -45,6 +45,9 @@ namespace Project1.Core
         /// <summary>시전 중이어도 창틀 넘기·턱 오르기를 막지 않는지(예: 켜 둔 용병 아대). 시전 중이 아니면 false.</summary>
         bool AllowsTraversal { get; }
 
+        /// <summary>시전 중 HUD 막대: NaN = 기본(시전 진행도), 0~1 = 이 값으로 채움, 음수 = 막대 없음.</summary>
+        float StatusBarFill { get; }
+
         /// <summary>Skill 레이어에서 지금 재생할 상태 이름(예: Luchino_Leap_Slam). 없으면 빈 문자열.</summary>
         string AnimationState { get; }
 
