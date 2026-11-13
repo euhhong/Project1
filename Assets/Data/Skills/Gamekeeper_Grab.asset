@@ -35,3 +35,5 @@ MonoBehaviour:
   towStopReach: 0.1
   pullMotionShare: 0.6
   aimMoveSpeedRatio: 1
+  snapTolerance: 1
+  maxSnapAngle: 20

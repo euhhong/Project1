@@ -58,6 +58,12 @@ namespace Project1.Systems
         [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
         [Range(0f, 1f)] public float aimMoveSpeedRatio = 1f;
 
+        [Header("조준 보정 (근처를 지나면 꺾어서 문다)")]
+        [Tooltip("판정(hitRadius) 밖으로 이만큼(m) 더 떨어져 지나가도 그 상대 쪽으로 꺾어 문다. 0이면 보정 없음.")]
+        [Min(0f)] public float snapTolerance = 1f;
+        [Tooltip("보정으로 꺾는 최대 각도(도). 이보다 많이 꺾어야 하는 상대는 무시한다.")]
+        [Range(0f, 60f)] public float maxSnapAngle = 20f;
+
         [Tooltip("끌어오는/끌려가는 동안 재생할 마무리 모션(팔을 당겨 거두기)의 앞부분 비율. 나머지는 followThrough 동안.")]
         [Range(0f, 1f)] public float pullMotionShare = 0.6f;
 
@@ -149,6 +155,12 @@ namespace Project1.Systems
                     float to = Mathf.Min(range, ctx.Reach + extendSpeed * dt);
                     bool hitChar = FindVictim(ctx, from, to, out float charAt, out Hurtbox victim);
                     bool hitWall = FindWall(ctx, from, to, out float wallAt, out Vector3 wallNormal);
+                    // 조준 보정: 바로 맞히지 못했어도 그랩 머리가 상대 근처(snapTolerance 안)를 지나면 그쪽으로 방향을 꺾어(머리가 옆으로 빡) 문다.
+                    if (!hitChar && snapTolerance > 0f && TrySnap(ctx, from, hitWall ? wallAt : to, out charAt, out victim))
+                    {
+                        hitChar = true;
+                        hitWall = false;
+                    }
                     if (hitWall && (!hitChar || wallAt < charAt))
                     {
                         ctx.Reach = wallAt;
@@ -258,6 +270,43 @@ namespace Project1.Systems
         public float AimLength(Vector3 origin, Vector3 dir) => FindWall(origin, dir, 0f, range, out float at, out _) ? at : range;
 
         /// <summary>from ~ to 사이를 굵기 hitRadius로 훑어 처음 닿는 다른 캐릭터를 찾는다(맞히지는 않는다).</summary>
+        /// <summary>
+        /// 조준 보정. from ~ to 사이를 굵게(hitRadius + snapTolerance) 훑어 근처를 지나는 상대를 찾고, 가까운 순서로
+        /// 그 상대 쪽(수평)으로 방향을 꺾어 본다 — 꺾는 각이 maxSnapAngle 이하이고, 꺾은 방향으로 실제 판정에 닿고, 사이에 벽이 없으면 그 방향으로 확정.
+        /// 확정하면 ctx.Direction·ReachOrigin이 바뀐다(FE는 그랩 머리를 새 방향의 Reach 자리에 그리므로 옆으로 빡 옮겨 간다). 못 찾으면 그대로 둔다.
+        /// </summary>
+        private bool TrySnap(CharacterSkill ctx, float from, float to, out float hitAt, out Hurtbox victim)
+        {
+            hitAt = to; victim = null;
+            var self = ctx.GetComponent<CharacterIdentity>();
+            Vector3 oldDir = ctx.Direction, oldOrigin = ctx.ReachOrigin;
+            Vector3 start = oldOrigin + oldDir * from;
+            float length = Mathf.Max(to - from, 0.001f);
+            var hits = Physics.SphereCastAll(start, hitRadius + snapTolerance, oldDir, length, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var h in hits)
+            {
+                if (!h.collider.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                var owner = hurt.Owner;
+                if (owner == null || (self != null && !self.CanHit(owner))) continue;
+                Vector3 toTarget = Flat(h.collider.bounds.center - oldOrigin);
+                if (toTarget.magnitude < 0.3f) continue;
+                Vector3 dir = toTarget.normalized;
+                if (Vector3.Angle(oldDir, dir) > maxSnapAngle) continue;
+                ctx.Direction = dir;
+                ctx.ReachOrigin = Origin(ctx);
+                if (FindVictim(ctx, 0f, Mathf.Min(range, toTarget.magnitude + hitRadius + 1f), out float at, out var v)
+                    && !FindWall(ctx, 0f, at, out _, out _))
+                {
+                    hitAt = at; victim = v;
+                    return true;
+                }
+                ctx.Direction = oldDir;
+                ctx.ReachOrigin = oldOrigin;
+            }
+            return false;
+        }
+
         private bool FindVictim(CharacterSkill ctx, float from, float to, out float hitAt, out Hurtbox victim)
         {
             hitAt = to; victim = null;

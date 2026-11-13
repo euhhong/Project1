@@ -5,8 +5,9 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 사냥터지기 그랩 조준 보조선(- - - 점선). 내가 조종하는 사냥터지기(LocalPlayerInput)에만 보인다.
-    /// - 그랩이 나가는 손 자리(GrabShotSkill.Origin)에서 던질 방향(몸 = 시야)으로 사거리 끝까지, 벽·물건에 먼저 닿으면 거기까지 긋는다.
+    /// 사냥터지기 그랩 조준 보조선. 내가 조종하는 사냥터지기(LocalPlayerInput)에만 보인다.
+    /// - 점선(- - -): 그랩이 나가는 손 자리(GrabShotSkill.Origin)에서 던질 방향(몸 = 시야)으로 사거리 끝까지, 벽·물건에 먼저 닿으면 거기까지.
+    /// - 흰색 일자선: 점선이 끝나는 곳(그랩 리치 끝)에 조준 방향과 수직으로 짧게.
     /// - 쓸 수 있을 때는 옅게, E를 눌러 조준하는 동안(준비·꾹 누르기)은 진하게. 그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
     /// 연출 전용(판정은 BE GrabShotSkill). GrabShotVisual이 붙을 때 같이 붙는다(RequireComponent).
     /// </summary>
@@ -22,9 +23,16 @@ namespace Project1.Presentation
         [SerializeField] private Color idleColor = new(0.85f, 0.75f, 1f, 0.3f);
         [SerializeField] private Color aimColor = new(0.85f, 0.6f, 1f, 0.9f);
 
+        [Header("리치 끝 표시 (흰색 일자선)")]
+        [Tooltip("그랩이 닿는 끝에 조준 방향과 수직으로 긋는 흰 선의 길이(m).")]
+        [SerializeField, Min(0.05f)] private float endBarLength = 0.7f;
+        [SerializeField, Min(0.005f)] private float endBarWidth = 0.05f;
+        [SerializeField] private Color endBarIdleColor = new(1f, 1f, 1f, 0.45f);
+        [SerializeField] private Color endBarAimColor = new(1f, 1f, 1f, 0.95f);
+
         private CharacterSkill skill;
         private bool isLocal;
-        private LineRenderer line;
+        private LineRenderer line, endBar;
         private Texture2D dashTexture;
 
         private void Awake()
@@ -36,12 +44,16 @@ namespace Project1.Presentation
         private void OnDestroy()
         {
             if (line != null) { Destroy(line.material); Destroy(line.gameObject); }
+            if (endBar != null) { Destroy(endBar.material); Destroy(endBar.gameObject); }
             if (dashTexture != null) Destroy(dashTexture);
         }
 
-        private void OnDisable()
+        private void OnDisable() => Hide();
+
+        private void Hide()
         {
             if (line != null) line.enabled = false;
+            if (endBar != null) endBar.enabled = false;
         }
 
         private void LateUpdate()
@@ -50,24 +62,34 @@ namespace Project1.Presentation
             var grab = skill != null ? skill.Skill as GrabShotSkill : null;
             bool aiming = grab != null && grab.IsAiming(skill);
             bool show = isLocal && grab != null && (skill.State == SkillState.Ready || aiming);
-            if (!show) { if (line != null) line.enabled = false; return; }
+            if (!show) { Hide(); return; }
 
             Vector3 dir = aiming ? skill.Direction : Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            if (dir.sqrMagnitude < 0.0001f) { if (line != null) line.enabled = false; return; }
+            if (dir.sqrMagnitude < 0.0001f) { Hide(); return; }
             Vector3 origin = grab.Origin(transform, dir);
             float length = grab.AimLength(origin, dir);
+            Vector3 end = origin + dir * length;
 
-            EnsureLine();
+            EnsureLines();
             line.enabled = true;
             line.SetPosition(0, origin);
-            line.SetPosition(1, origin + dir * length);
+            line.SetPosition(1, end);
             Color c = aiming ? aimColor : idleColor;
             line.startColor = c;
             line.endColor = new Color(c.r, c.g, c.b, c.a * 0.6f); // 끝으로 갈수록 살짝 옅게
             line.textureScale = new Vector2(1f / dashPeriod, 1f);
+
+            // 리치 끝(점선이 끝나는 곳): 조준 방향과 수직인 흰 일자선.
+            Vector3 side = Vector3.Cross(Vector3.up, dir).normalized * (endBarLength * 0.5f);
+            endBar.enabled = true;
+            endBar.SetPosition(0, end - side);
+            endBar.SetPosition(1, end + side);
+            Color b = aiming ? endBarAimColor : endBarIdleColor;
+            endBar.startColor = b;
+            endBar.endColor = b;
         }
 
-        private void EnsureLine()
+        private void EnsureLines()
         {
             if (line != null) return;
             // 점선 무늬: 한 칸 = 선(dashFill) + 빈칸, 길이 방향으로 반복.
@@ -77,18 +99,26 @@ namespace Project1.Presentation
             for (int i = 0; i < px; i++) dashTexture.SetPixel(i, 0, i < filled ? Color.white : Color.clear);
             dashTexture.Apply();
 
-            var go = new GameObject("GrabAimLine");
-            go.transform.SetParent(transform, false);
-            line = go.AddComponent<LineRenderer>();
-            line.useWorldSpace = true;
-            line.positionCount = 2;
-            line.widthMultiplier = width;
+            line = NewLine("GrabAimLine", width);
             line.textureMode = LineTextureMode.Tile;
-            line.alignment = LineAlignment.View;
-            line.numCapVertices = 0;
-            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            line.receiveShadows = false;
-            line.material = new Material(Shader.Find("Sprites/Default")) { mainTexture = dashTexture };
+            line.material.mainTexture = dashTexture;
+            endBar = NewLine("GrabReachEnd", endBarWidth);
+        }
+
+        private LineRenderer NewLine(string name, float lineWidth)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            var lr = go.AddComponent<LineRenderer>();
+            lr.useWorldSpace = true;
+            lr.positionCount = 2;
+            lr.widthMultiplier = lineWidth;
+            lr.alignment = LineAlignment.View;
+            lr.numCapVertices = 0;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            lr.receiveShadows = false;
+            lr.material = new Material(Shader.Find("Sprites/Default"));
+            return lr;
         }
     }
 }
