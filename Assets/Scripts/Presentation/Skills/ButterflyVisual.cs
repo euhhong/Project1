@@ -25,6 +25,11 @@ namespace Project1.Presentation
 
         private IButterflyField field;
         private readonly List<ButterflyModel> placed = new();
+        [Tooltip("던진 나비가 손에서 놓을 자리까지 날아가는 시간(초) — 아주 빠르게, 벽은 뚫고 곧게.")]
+        [SerializeField, Min(0.01f)] private float flyTime = 0.1f;
+        private int seenPlaced = -1;
+        private float flyStart = -10f;
+        private Vector3 flyFrom;
         private ButterflyModel preview;
         private LineRenderer marker, previewRing, aimRing;
         private Transform root;
@@ -38,17 +43,23 @@ namespace Project1.Presentation
         {
             if (field == null) field = GetComponent<IButterflyField>();
             if (field == null) return;
+            if (!TryGetComponent(out ButterflyThrowAnimator _)) gameObject.AddComponent<ButterflyThrowAnimator>(); // 나비를 놓을 때 던지는 상체 모션
             if (root == null) root = new GameObject("Butterflies").transform; // 캐릭터를 따라 움직이지 않게 따로 둔다
 
             // 놓은 나비
             var list = field.Butterflies;
             while (placed.Count < list.Count) placed.Add(Make($"Butterfly_{placed.Count}", false));
             while (placed.Count > list.Count) { Destroy(placed[^1].gameObject); placed.RemoveAt(placed.Count - 1); }
+            // 새로 놓은 나비: 부채 든 오른손에서 던져져 놓을 자리까지 곧게 날아간다(벽을 뚫고, flyTime초).
+            if (seenPlaced < 0) seenPlaced = field.PlacedCount;
+            if (field.PlacedCount != seenPlaced) { seenPlaced = field.PlacedCount; flyStart = Time.time; flyFrom = ThrowHand(); }
             float t = Time.time;
             for (int i = 0; i < placed.Count; i++)
             {
                 var b = placed[i];
                 b.transform.position = list[i] + Vector3.up * (hoverHeight + Mathf.Sin(t * 2.2f + i * 1.7f) * bob);
+                float fp = (t - flyStart) / flyTime;
+                if (i == placed.Count - 1 && fp >= 0f && fp < 1f) b.transform.position = Vector3.Lerp(flyFrom, b.transform.position, 1f - (1f - fp) * (1f - fp)); // 빠르게 떠나 살짝 감속하며 도착
                 b.transform.rotation = Quaternion.Euler(-12f, i * 77f + Mathf.Sin(t * 0.7f + i) * 20f, 0f);
                 b.Highlight = i == field.TargetIndex;
             }
@@ -89,6 +100,14 @@ namespace Project1.Presentation
                 float pulse = 1f + Mathf.Sin(t * 6f) * 0.08f;
                 SetRing(marker, list[ti], markerRadius * pulse, t * 90f);
             }
+        }
+
+        /// <summary>나비를 던지는 손(부채 든 오른손) 자리. 모델이 없으면 가슴 높이.</summary>
+        private Vector3 ThrowHand()
+        {
+            var anim = GetComponentInChildren<Animator>();
+            var hand = anim != null && anim.isHuman ? anim.GetBoneTransform(HumanBodyBones.RightHand) : null;
+            return hand != null ? hand.position : transform.position + Vector3.up * 1.4f + transform.forward * 0.4f;
         }
 
         private ButterflyModel Make(string name, bool ghost)

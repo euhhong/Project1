@@ -61,6 +61,7 @@ namespace Project1.Systems
 
         // 좌클릭을 누르지 않을 때도 지금 겨누는 대로 놓으면 나비가 갈 자리(조준 보조 고리).
         [SerializeField] private GroundPlacementPreview aim = new();
+        public int PlacedCount { get; private set; }
         public bool AimShown { get; private set; }
         public Vector3 AimPoint => aim.Point;
         public bool AimValid => AimShown && aim.Valid;
@@ -123,6 +124,7 @@ namespace Project1.Systems
 
         private void Place(Vector3 point)
         {
+            PlacedCount++;
             butterflies.Add(point);
             while (butterflies.Count > maxButterflies) butterflies.RemoveAt(0);
         }

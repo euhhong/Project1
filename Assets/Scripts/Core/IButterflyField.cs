@@ -29,6 +29,9 @@ namespace Project1.Core
         Vector3 AimPoint { get; }
         bool AimValid { get; }
 
+        /// <summary>지금까지 놓은 나비 수(놓을 때마다 1씩, FE가 새로 놓인 나비를 알아챈다 — 던지는 모션·날아가는 연출).</summary>
+        int PlacedCount { get; }
+
         /// <summary>다음 나비를 놓기까지 남은 재사용 대기(초).</summary>
         float PlaceCooldownRemaining { get; }
 
