@@ -31,6 +31,8 @@ namespace Project1.Presentation
         [SerializeField, Min(0f)] private float moveReachBonus = 0.45f;
 
         [Header("효과")]
+        [Tooltip("예전 만화 \"펑\"(노랑·흰 별, 말풍선 모양)을 터뜨릴지. 지금은 끔 — 타격 효과는 SwingTrail(휘두르는 궤적)이 맡는다. 펀치 리치(판정 상자)는 이것과 상관없이 그대로.")]
+        [SerializeField] private bool showBurst = false;
         [SerializeField, Min(0.05f)] private float effectTime = 0.2f;
         [SerializeField, Min(0.1f)] private float burstSize = 1.1f;
         [Tooltip("발차기 \"펑\"을 발 앞으로 얼마나 띄울지(m).")]
@@ -117,7 +119,7 @@ namespace Project1.Presentation
             if (attack == null) return;
             var phase = attack.AttackPhase;
             bool striking = attack.AttackState == CharacterAttackState.Light || attack.AttackState == CharacterAttackState.Heavy;
-            if (striking && phase == AttackPhase.Active && lastPhase != AttackPhase.Active)
+            if (showBurst && striking && phase == AttackPhase.Active && lastPhase != AttackPhase.Active)
             {
                 if (attack.IsRunJumpAttack) SpawnKick();
                 else if (punchReach) SpawnPunch();
