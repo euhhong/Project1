@@ -23,6 +23,8 @@ namespace Project1.Systems
         private ICharacterStun stun; // 실행 중에 붙을 수 있어 필요할 때 찾는다
         private float castTime;
         private float recoveryTime, recoveryDuration;
+        private float skillBuffer; // 공격 중 E 선입력(그 공격이 끊고 이어 갈 수 있을 때만, 예: 맹인 휘두르기 → 찌르기)
+        private const float SkillBufferTime = 0.6f;
 
         public SkillDefinition Skill => skill;
         public string SkillId => skill != null ? skill.id : string.Empty;
@@ -166,7 +168,16 @@ namespace Project1.Systems
             switch (State)
             {
                 case SkillState.Ready:
-                    if (input.Skill && CanUse) StartCast();
+                    if (input.Skill)
+                    {
+                        if (CanUse) StartCast();
+                        else if (attack is IAttackCancel c && c.CanCancelForSkill) skillBuffer = SkillBufferTime; // 공격의 후딜레이가 시작되면 끊고 이어 쓴다
+                    }
+                    else if (skillBuffer > 0f)
+                    {
+                        skillBuffer -= dt;
+                        if (attack is IAttackCancel c && c.TryCancelForSkill() && CanUse) { skillBuffer = 0f; StartCast(); }
+                    }
                     break;
 
                 case SkillState.Casting:

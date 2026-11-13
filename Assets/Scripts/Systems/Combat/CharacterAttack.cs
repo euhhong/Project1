@@ -17,7 +17,7 @@ namespace Project1.Systems
     /// </summary>
     [RequireComponent(typeof(AttackHitDetector))]
     [DisallowMultipleComponent]
-    public class CharacterAttack : MonoBehaviour, ICharacterAttackState, IMoveSpeedLimit
+    public class CharacterAttack : MonoBehaviour, ICharacterAttackState, IMoveSpeedLimit, IAttackCancel
     {
         [SerializeField] private AttackSpec lightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.RightHand);
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
@@ -50,6 +50,22 @@ namespace Project1.Systems
 
         /// <summary>좌우로 그어 후리기를 켜거나 끈다(캐릭터를 고를 때, 예: 맹인).</summary>
         public void SetSwipeAttacks(bool on) => swipeAttacks = on;
+
+        [Tooltip("첫 휘두르기 뒤 받아 둘 수 있는 선입력(다음 휘두르기·E 찌르기) 최대 수. 받아 둔 입력은 후딜레이가 시작되면 바로 이어 나간다.")]
+        [SerializeField, Min(0)] private int maxComboFollowUps = 2;
+        private int bufferedSwipe;   // 받아 둔 다음 휘두르기 방향(0 = 없음)
+        private int comboFollowUps;  // 이번 연속 동작에서 이어 간 수
+        private bool chaining;       // 이어 가느라 공격을 끝내는 중(연속 동작 수를 지우지 않음)
+
+        public bool CanCancelForSkill => swipeAttacks && (AttackState == CharacterAttackState.Light || AttackState == CharacterAttackState.Heavy) && comboFollowUps < maxComboFollowUps;
+
+        public bool TryCancelForSkill()
+        {
+            if (AttackState == CharacterAttackState.None) return true;
+            if (!CanCancelForSkill || AttackPhase != AttackPhase.Recovery) return false;
+            EndAttack(); // 후딜레이를 끊고 E 찌르기로(스킬이 이어서 시작)
+            return true;
+        }
 
         public event Action<CharacterAttackState> AttackStarted;
         public event Action ChargeStarted;
@@ -186,7 +202,16 @@ namespace Project1.Systems
 
                 case CharacterAttackState.Light:
                 case CharacterAttackState.Heavy:
+                    // 연속 동작(맹인): 동작이 끝나기 전에 들어온 다음 휘두르기를 받아 두고(최대 maxComboFollowUps번), 후딜레이가 시작되면 끊고 바로 이어 나간다.
+                    if (swipeAttacks && input.AttackSwipe != 0 && comboFollowUps < maxComboFollowUps) bufferedSwipe = input.AttackSwipe;
                     AdvancePhase(dt);
+                    if (bufferedSwipe != 0 && AttackState != CharacterAttackState.None && AttackPhase == AttackPhase.Recovery && grounded)
+                    {
+                        int next = bufferedSwipe;
+                        comboFollowUps++;
+                        chaining = true; EndAttack(); chaining = false;
+                        StartSwipe(next);
+                    }
                     break;
             }
         }
@@ -281,6 +306,8 @@ namespace Project1.Systems
             IsAirAttack = false;
             IsRunJumpAttack = false;
             Swipe = 0;
+            bufferedSwipe = 0;
+            if (!chaining) comboFollowUps = 0;
             AttackEnded?.Invoke();
         }
     }
