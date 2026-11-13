@@ -240,6 +240,20 @@ namespace Project1.Presentation.EditorTools
                 getUp.AddCondition(AnimatorConditionMode.IfNot, 0, "IsDown");
             }
 
+            // 들고 다니기 레이어(두 팔만, 공격보다 아래): 무기를 두 손으로 받쳐 든 자세(광대 = Walk With Rifle의 팔).
+            // 다리는 걷기·달리기 그대로. 무게는 CharacterCarryPose가 켠다(기본 0 → 다른 캐릭터는 영향 없음).
+            if (HasMotionFile("Carry_Joker"))
+            {
+                ac.AddLayer("Carry");
+                var cl = ac.layers;
+                var carry = cl[cl.Length - 1];
+                carry.avatarMask = LoadArmsMask(); carry.defaultWeight = 0f; carry.blendingMode = AnimatorLayerBlendingMode.Override;
+                ac.layers = cl;
+                var csm = ac.layers[ac.layers.Length - 1].stateMachine;
+                csm.defaultState = csm.AddState("Carry");
+                csm.defaultState.motion = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/Carry_Joker.fbx");
+            }
+
             // 땅 공격 레이어(상체만). 상태 전환과 재생 위치는 CharacterAttackAnimator가 코드로 정한다.
             var mask = LoadUpperBodyMask();
             ac.AddLayer(AttackLayer);
@@ -335,6 +349,23 @@ namespace Project1.Presentation.EditorTools
             var land = state.AddTransition(locomotion);
             land.hasExitTime = false; land.duration = 0.12f;
             land.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
+        }
+
+        public const string ArmsMaskPath = "Assets/Models/IdentityV/_Motions/ArmsMask.mask";
+
+        private static AvatarMask LoadArmsMask()
+        {
+            var mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(ArmsMaskPath);
+            if (mask != null) return mask;
+            mask = new AvatarMask();
+            for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++)
+            {
+                var part = (AvatarMaskBodyPart)i;
+                mask.SetHumanoidBodyPartActive(part, part == AvatarMaskBodyPart.LeftArm || part == AvatarMaskBodyPart.RightArm
+                    || part == AvatarMaskBodyPart.LeftFingers || part == AvatarMaskBodyPart.RightFingers);
+            }
+            AssetDatabase.CreateAsset(mask, ArmsMaskPath);
+            return mask;
         }
 
         private static AvatarMask LoadUpperBodyMask()
