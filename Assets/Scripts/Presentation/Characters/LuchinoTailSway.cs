@@ -10,6 +10,7 @@ namespace Project1.Presentation
     /// - 물결: 밑동에서 끝으로 흐르는 좌우 흔들기(도마뱀 꼬리처럼) + 살짝 위아래. 움직이면 커지고 빨라진다.
     /// - 관성: 몸이 돌면 꼬리가 반대쪽으로 처졌다 따라오고, 옆으로 가면 반대쪽으로 끌린다. 뛰어오르면 처지고, 떨어지면 들리며,
     ///   착지하면 아래로 탁 쳤다 튀어 오른다. 마디마다 따로 된 스프링이라 끝 마디일수록 늦게·크게 따라온다(채찍처럼).
+    /// - 무게: 꼬리가 제 무게로 엉덩이에서 아래로 늘어지고, 땅에 닿은 부분은 땅(발 높이) 아래로 안 들어가고 땅을 따라 눕는다.
     /// - 달리면 꼬리를 조금 들어 몸 균형을 잡는다. 기절하면 작게, 쓰러지면(체력 0) 흔들지 않고 축 늘어진다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 루키노만). 연출 전용.
     /// </summary>
@@ -30,7 +31,13 @@ namespace Project1.Presentation
         [Tooltip("이 빠르기(m/s)에서 가장 크게 흔든다.")]
         [SerializeField, Min(0.1f)] private float fullSpeed = 6f;
         [Tooltip("달릴 때 꼬리를 드는 각도(도, 꼬리 전체).")]
-        [SerializeField, Range(0f, 40f)] private float runLift = 12f;
+        [SerializeField, Range(0f, 40f)] private float runLift = 6f;
+
+        [Header("무게(늘어짐)")]
+        [Tooltip("꼬리가 제 무게로 아래로 처지는 각도(도, 꼬리 전체). 밑동 마디일수록 많이 굽어 엉덩이에서 땅으로 늘어진다.")]
+        [SerializeField, Range(0f, 90f)] private float weightDroop = 55f;
+        [Tooltip("꼬리가 땅에 닿으면 이 높이(m, 캐릭터 발 기준) 아래로는 안 내려가고 땅을 따라 눕는다.")]
+        [SerializeField, Min(0f)] private float groundClearance = 0.04f;
 
         [Header("관성")]
         [Tooltip("몸이 돈 각도 중 꼬리가 제자리에 남는 비율(꼬리 전체). 남은 만큼 스프링이 다시 끌고 온다.")]
@@ -56,6 +63,7 @@ namespace Project1.Presentation
 
         private Animator animator;
         private Transform[] bones;
+        private Transform tipEnd; // 끝 마디의 끝점(Bonenub019)
         private Quaternion[] rest;
         private Vector2[] lag, lagVelocity; // 마디마다 x = 좌우(+ = 왼쪽으로), y = 위아래(+ = 처짐), 도
         private ICharacterState state;
@@ -134,15 +142,35 @@ namespace Project1.Presentation
                 float waveYaw = sway * weight * Mathf.Sin(w) / n * 2f;
                 float wavePitch = sway * bobRatio * weight * Mathf.Sin(w * 2f + 0.8f) / n * 2f;
 
+                // 무게: 밑동 마디일수록 많이 처진다(엉덩이에서 아래로 휘어 떨어지고 끝은 땅을 따라 눕는다).
+                float droop = weightDroop * 2f * (n - i) / (n * (n + 1f));
+
                 var b = bones[i];
                 b.localRotation = rest[i]; // 쉬는 자세에서 시작(모션이 이 뼈를 쓰지 않으므로 매번 되돌린다)
-                Vector3 along = i + 1 < n ? bones[i + 1].position - b.position : b.position - bones[i - 1].position;
+                Transform end = i + 1 < n ? bones[i + 1] : tipEnd;
+                Vector3 along = end != null ? end.position - b.position : b.position - bones[i - 1].position;
                 Vector3 side = Vector3.Cross(up, along); // 이 축으로 + 돌리면 꼬리가 아래로 처진다
                 if (side.sqrMagnitude < 1e-8f) continue;
                 side.Normalize();
-                Quaternion q = Quaternion.AngleAxis(lag[i].y + wavePitch, side) * Quaternion.AngleAxis(lag[i].x + waveYaw, up);
+                Quaternion q = Quaternion.AngleAxis(droop + lag[i].y + wavePitch, side) * Quaternion.AngleAxis(lag[i].x + waveYaw, up);
                 b.rotation = q * b.rotation;
+                if (end != null) KeepAboveGround(b, end, up);
             }
+        }
+
+        /// <summary>마디 끝(end)이 땅(발 높이 + groundClearance) 아래로 들어가면 마디를 들어 올려 땅 위에 눕힌다(좌우 방향은 그대로).</summary>
+        private void KeepAboveGround(Transform bone, Transform end, Vector3 up)
+        {
+            float ground = Vector3.Dot(transform.position, up) + groundClearance;
+            Vector3 d = end.position - bone.position;
+            float len = d.magnitude;
+            float endHeight = Vector3.Dot(end.position, up);
+            if (len < 1e-5f || endHeight >= ground) return;
+            float rise = Mathf.Clamp(ground - Vector3.Dot(bone.position, up), -len, len); // 끝이 있어야 할 높이 차
+            Vector3 flat = Vector3.ProjectOnPlane(d, up);
+            if (flat.sqrMagnitude < 1e-8f) return;
+            Vector3 want = flat.normalized * Mathf.Sqrt(len * len - rise * rise) + up * rise;
+            bone.rotation = Quaternion.FromToRotation(d, want) * bone.rotation;
         }
 
         private bool Resolve()
@@ -154,7 +182,12 @@ namespace Project1.Presentation
             foreach (var tr in animator.GetComponentsInChildren<Transform>(true)) if (tr.name == ChainRoot) { root = tr; break; }
             if (root == null) return false;
             var list = new System.Collections.Generic.List<Transform>();
-            for (var b = root; b != null && !b.name.StartsWith("Bonenub"); b = b.childCount > 0 ? b.GetChild(0) : null) list.Add(b);
+            tipEnd = null;
+            for (var b = root; b != null; b = b.childCount > 0 ? b.GetChild(0) : null)
+            {
+                if (b.name.StartsWith("Bonenub")) { tipEnd = b; break; } // 끝 마디의 끝점
+                list.Add(b);
+            }
             if (list.Count < 2) return false;
             bones = list.ToArray();
             rest = new Quaternion[bones.Length];
