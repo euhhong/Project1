@@ -38,7 +38,7 @@ namespace Project1.Presentation.EditorTools
 
         private static readonly string[] Slots =
         {
-            "Idle", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Idle_Hunter", "Idle_Thief", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
@@ -53,13 +53,14 @@ namespace Project1.Presentation.EditorTools
         {
             ("Attack_RunJump_Survivor", "Attack_RunJump_Hunter"),
             ("Attack_Light", "Attack_Light_Hunter"),
+            ("Idle", "Idle_Hunter"), // 생존자 대기(Idle (1))는 생존자만. 감시자는 감시자 대기
         };
         // 유령처럼 이동: 걷기·달리기에서도 다리를 움직이지 않고 대기 자세 그대로 미끄러진다.
         // (옆·뒤 달리기는 같은 방향 걷기 클립을 빌려 쓰므로 걷기만 바꾸면 같이 바뀐다.)
         private static readonly (string from, string to)[] GhostGlide =
         {
-            ("Walk_F", "Idle"), ("Walk_B", "Idle"), ("Walk_L", "Idle"), ("Walk_R", "Idle"),
-            ("Run_F", "Idle"), ("Run_B", "Idle"), ("Run_L", "Idle"), ("Run_R", "Idle"),
+            ("Walk_F", "Idle_Hunter"), ("Walk_B", "Idle_Hunter"), ("Walk_L", "Idle_Hunter"), ("Walk_R", "Idle_Hunter"),
+            ("Run_F", "Idle_Hunter"), ("Run_B", "Idle_Hunter"), ("Run_L", "Idle_Hunter"), ("Run_R", "Idle_Hunter"),
         };
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
@@ -71,6 +72,7 @@ namespace Project1.Presentation.EditorTools
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
+            ("Thief", new[] { new[] { ("Idle", "Idle_Thief") } }),                                     // 도둑: 가만히 있을 때 Ninja Idle
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]
@@ -90,7 +92,8 @@ namespace Project1.Presentation.EditorTools
                 else if (walkClip != null) { clip = walkClip; fromFile.Add($"{slot}(←{walkSlot})"); }
                 else
                 {
-                    clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{LegacyFolder}/{slot}.anim");
+                    // 감시자 대기(Idle_Hunter)는 파일이 없으면 예전 임시 대기(Procedural/Idle.anim)를 쓴다.
+                    clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{LegacyFolder}/{(slot == "Idle_Hunter" ? "Idle" : slot)}.anim");
                     (clip != null ? legacy : missing).Add(slot);
                 }
                 clips[slot] = clip;

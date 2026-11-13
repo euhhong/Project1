@@ -49,7 +49,8 @@
 | Vault_Survivor | 창틀·판자 넘기(생존자) | **받음, 연결 대기** — 넘기 기능이 아직 없어 Animator에는 넣지 않았다 | Jumping Down |
 | SelectIdle_Hunter | 캐릭터 선택 화면 감시자 대기(반복) | **받음** — `_Motions/HunterSelect.controller` | Idle |
 | SelectIdle_Survivor | 캐릭터 선택 화면 생존자 대기(반복) | **받음** — `_Motions/SurvivorSelect.controller` | Standing Idle |
-| Idle | 대기 | 대기(임시 모션) | |
+| Idle | 가만히 서 있을 때(생존자) | **받음** — 감시자는 Idle_Hunter(예전 임시 대기, 감시자 대기 파일이 오면 교체) | Idle (1) |
+| Idle_Thief | 도둑이 가만히 있을 때 → `ThiefLocomotion` | **받음** | Ninja Idle |
 | Air | 제자리 점프·떨어짐(공통) | **받음** — 0~22프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Jump (1) (전: Standing Jump) |
 | Air_F | 걸어서 점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 25~44프레임, 0.69초에 맞춰 재생 | Jumping |
 | Air_Run | 뛰면서 점프(공통) — 점프할 때 MoveZ > 1.75 | **받음** — 0~20프레임, 0.69초에 맞춰 재생 | Running Jump |

@@ -41,7 +41,7 @@ namespace Project1.UI.EditorTools
         private static readonly Dictionary<string, string> Controllers = new()
         {
             ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion",
-            ["Survivor_MindsEye"] = "MindsEyeLocomotion",
+            ["Survivor_MindsEye"] = "MindsEyeLocomotion", ["Survivor_Thief"] = "ThiefLocomotion",
         };
 
         [MenuItem("Tools/FE/캐릭터 목록 다시 만들기")]
