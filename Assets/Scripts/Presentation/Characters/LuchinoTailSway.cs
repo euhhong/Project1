@@ -34,8 +34,10 @@ namespace Project1.Presentation
         [SerializeField, Range(0f, 40f)] private float runLift = 6f;
 
         [Header("무게(늘어짐)")]
-        [Tooltip("꼬리가 제 무게로 아래로 처지는 각도(도, 꼬리 전체). 밑동 마디일수록 많이 굽어 엉덩이에서 땅으로 늘어진다.")]
-        [SerializeField, Range(0f, 90f)] private float weightDroop = 55f;
+        [Tooltip("꼬리 밑동(엉덩이)에서 아래로 꺾어 내리는 각도(도). 앞쪽 두 마디가 나눠 굽는다.")]
+        [SerializeField, Range(0f, 90f)] private float baseDroop = 48f;
+        [Tooltip("밑동 뒤 마디들이 다시 위로 펴지는 각도(도, 나머지 마디 전체). 클수록 아래로 볼록(∪)하게 휘고 끝이 들린다.")]
+        [SerializeField, Range(0f, 120f)] private float tipCurl = 55f;
         [Tooltip("꼬리가 땅에 닿으면 이 높이(m, 캐릭터 발 기준) 아래로는 안 내려가고 땅을 따라 눕는다.")]
         [SerializeField, Min(0f)] private float groundClearance = 0.04f;
 
@@ -142,8 +144,11 @@ namespace Project1.Presentation
                 float waveYaw = sway * weight * Mathf.Sin(w) / n * 2f;
                 float wavePitch = sway * bobRatio * weight * Mathf.Sin(w * 2f + 0.8f) / n * 2f;
 
-                // 무게: 밑동 마디일수록 많이 처진다(엉덩이에서 아래로 휘어 떨어지고 끝은 땅을 따라 눕는다).
-                float droop = weightDroop * 2f * (n - i) / (n * (n + 1f));
+                // 무게: 밑동에서 아래로 크게 꺾어 내리고(앞 두 마디), 뒤 마디들은 조금씩 다시 위로 펴진다
+                // → 아래로 볼록(∪)한 곡선. 내려가다 땅을 따라 눕고 끝은 살짝 들린다.
+                float droop = i == 0 ? baseDroop * 0.7f
+                            : i == 1 ? baseDroop * 0.3f
+                            : -tipCurl / Mathf.Max(n - 2, 1);
 
                 var b = bones[i];
                 b.localRotation = rest[i]; // 쉬는 자세에서 시작(모션이 이 뼈를 쓰지 않으므로 매번 되돌린다)
