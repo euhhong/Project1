@@ -26,6 +26,8 @@ namespace Project1.Presentation
         [SerializeField] private Color previewColor = new(0.75f, 0.45f, 1f, 0.9f);
         [SerializeField] private Color reachColor = new(0.75f, 0.45f, 1f, 0.25f);
         [SerializeField] private Color targetColor = new(1f, 0.9f, 0.35f, 0.95f);
+        [Tooltip("내려찍는 동안 땅에 보이는 맞는 부채꼴 색.")]
+        [SerializeField] private Color slamFanColor = new(1f, 0.3f, 0.35f, 0.85f);
         [Tooltip("촉수 밑동 원 반지름(m).")]
         [SerializeField, Min(0.1f)] private float footRadius = 0.7f;
 
@@ -35,6 +37,7 @@ namespace Project1.Presentation
             public PlayableGraph Graph;
             public AnimationClipPlayable Playable;
             public TentacleState Shown = (TentacleState)(-1);
+            public LineRenderer Fan; // 내려찍는 동안 맞는 부채꼴
         }
 
         private ITentacleField field;
@@ -103,14 +106,42 @@ namespace Project1.Presentation
                 var t = list[target];
                 SetRing(targetRing, t.Position, footRadius * (1f + 0.1f * Mathf.Sin(Time.time * 10f)));
                 Vector3 dir = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-                targetArrow.positionCount = 2;
-                targetArrow.SetPosition(0, t.Position + Vector3.up * 0.05f);
-                targetArrow.SetPosition(1, t.Position + dir * field.TentacleHeight + Vector3.up * 0.05f);
+                SetFan(targetArrow, t.Position, dir); // 내려찍으면 맞는 부채꼴(실제 방향은 내리칠 때 가장 가까운 상대 쪽)
+            }
+        }
+
+        /// <summary>내려찍기 판정 부채꼴 테두리(밑동 둘레 안전 원 ~ 닿는 거리, 반각 SlamHalfAngle).</summary>
+        private void SetFan(LineRenderer lr, Vector3 basePos, Vector3 dir)
+        {
+            if (dir.sqrMagnitude < 1e-6f) dir = Vector3.forward;
+            float half = field.SlamHalfAngle, inner = field.SlamInnerRadius, outer = field.SlamReach;
+            const int arc = 16;
+            lr.loop = true;
+            lr.positionCount = (arc + 1) * 2;
+            Vector3 up = Vector3.up * 0.06f;
+            for (int i = 0; i <= arc; i++)
+            {
+                float a = Mathf.Lerp(-half, half, i / (float)arc);
+                lr.SetPosition(i, basePos + Quaternion.AngleAxis(a, Vector3.up) * dir * outer + up);              // 바깥 호
+                lr.SetPosition(arc * 2 + 1 - i, basePos + Quaternion.AngleAxis(a, Vector3.up) * dir * inner + up); // 안쪽 호(거꾸로)
             }
         }
 
         private void Pose(Piece p, in TentacleInfo t)
         {
+            // 내려찍는 동안(젖힘·내리침): 맞는 부채꼴을 땅에 보여 준다(모두에게 — 피할 곳이 보이게). 방향은 가장 가까운 상대를 따라 바뀐다.
+            bool slamming = t.State == TentacleState.SlamWindup || t.State == TentacleState.SlamActive;
+            if (slamming && p.Fan == null) p.Fan = Line("SlamFan", slamFanColor, 0.08f, true);
+            if (p.Fan != null)
+            {
+                p.Fan.enabled = slamming;
+                if (slamming)
+                {
+                    float pulse = t.State == TentacleState.SlamActive ? 1f : 0.55f + 0.45f * Mathf.Sin(Time.time * 18f);
+                    p.Fan.startColor = p.Fan.endColor = new Color(slamFanColor.r, slamFanColor.g, slamFanColor.b, slamFanColor.a * pulse);
+                    SetFan(p.Fan, t.Position, Vector3.ProjectOnPlane(t.Direction, Vector3.up).normalized);
+                }
+            }
             var go = p.Go;
             go.transform.SetPositionAndRotation(t.Position, Quaternion.LookRotation(t.Direction.sqrMagnitude > 1e-4f ? t.Direction : Vector3.forward, Vector3.up));
             go.transform.localScale = Vector3.one * field.TentacleHeight;
@@ -155,6 +186,7 @@ namespace Project1.Presentation
             if (p == null) return;
             if (p.Graph.IsValid()) p.Graph.Destroy();
             if (p.Go != null) Object.Destroy(p.Go);
+            if (p.Fan != null) Object.Destroy(p.Fan.gameObject);
         }
 
         private void Build()
@@ -169,7 +201,7 @@ namespace Project1.Presentation
             previewRing = Line("PreviewRing", previewColor, 0.07f, true);
             reachRing = Line("ReachRing", reachColor, 0.04f, true);
             targetRing = Line("TargetRing", targetColor, 0.09f, true);
-            targetArrow = Line("TargetArrow", targetColor, 0.06f, false);
+            targetArrow = Line("TargetFan", targetColor, 0.06f, true);
         }
 
         private LineRenderer Line(string name, Color color, float width, bool loop)

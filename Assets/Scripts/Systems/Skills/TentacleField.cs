@@ -10,8 +10,8 @@ namespace Project1.Systems
     ///   몸 근처로 끌어다 떼거나, 누른 채 E를 누르면 취소(좌클릭을 뗄 때까지 무시).
     /// - 촉수는 최대 maxTentacles개, 넘으면 가장 오래된 것이 땅속으로 들어간다. 세운 뒤 lifetime초가 지나도 들어간다.
     /// - E를 꾹 누르면 바라보는 방향(시야)에 가장 맞는 서 있는 촉수를 고른다(TargetIndex). E를 떼면 그 촉수가 내려찍는다:
-    ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 키만큼 굵기 slamRadius로 훑어 닿는 상대를 한 번씩 맞힘) → 다시 섬(slamRecovery) → 땅속으로(sink).
-    ///   내려찍는 방향 = 촉수 키 안의 가장 가까운 상대 쪽, 없으면 하스터가 바라보는 방향.
+    ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 펼친 부채꼴 안의 상대를 한 번씩 맞힘 — 바짝 붙은 곳은 안전) → 다시 섬(slamRecovery) → 땅속으로(sink).
+    ///   내려찍는 방향 = 촉수가 닿는 거리 안의 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 없으면 하스터가 바라보는 방향.
     /// - 쓰는 동안 하스터는 자유롭게 움직인다. 맞히기만 하고 체력·데미지는 다루지 않는다(HitEvents).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
     /// </summary>
@@ -25,8 +25,17 @@ namespace Project1.Systems
         [SerializeField, Min(1f)] private float lifetime = 20f;
         [Tooltip("촉수 키(m) = 내려찍으면 닿는 거리.")]
         [SerializeField, Min(0.5f)] private float tentacleHeight = 3.2f;
-        [Tooltip("내려찍기 판정 굵기(반지름, m).")]
+        [Tooltip("(예전 일자 판정 굵기 — 지금은 부채꼴 판정이라 쓰지 않음, 내려찍는 방향을 고를 때 촉수 키에 더하는 여유로만 쓴다.)")]
         [SerializeField, Min(0.1f)] private float slamRadius = 0.75f;
+        [Header("내려찍기 판정 — 부채꼴")]
+        [Tooltip("부채꼴 반각(도). 내려찍는 방향에서 양옆으로 이만큼까지 맞는다(45 = 90도 부채꼴).")]
+        [SerializeField, Range(5f, 90f)] private float slamHalfAngle = 45f;
+        [Tooltip("촉수 밑동에서 이 거리(m, 수평) 안은 맞지 않는다 — 촉수에 바짝 붙어 둥글게 돌면 피한다.")]
+        [SerializeField, Min(0f)] private float slamInnerRadius = 0.8f;
+        [Tooltip("촉수 키보다 더 닿는 거리(m) — 내리친 끝이 땅에 퍼지는 만큼.")]
+        [SerializeField, Min(0f)] private float slamReachExtra = 0.6f;
+        [Tooltip("밑동 높이에서 이 높이(m)까지 맞는다(높이 뛰어오르면 피한다).")]
+        [SerializeField, Min(0.1f)] private float slamHitHeight = 2.2f;
         [Header("시간(초) — 모션(HasturTentacle.fbx)과 맞춘다")]
         [SerializeField, Min(0.05f)] private float riseTime = 0.6f;
         [SerializeField, Min(0.05f)] private float slamWindup = 0.4f;
@@ -59,6 +68,9 @@ namespace Project1.Systems
         public IReadOnlyList<TentacleInfo> Tentacles => tentacles;
         public float TentacleHeight => tentacleHeight;
         public float SlamRadius => slamRadius;
+        public float SlamHalfAngle => slamHalfAngle;
+        public float SlamInnerRadius => slamInnerRadius;
+        public float SlamReach => tentacleHeight + slamReachExtra;
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
 
@@ -141,19 +153,26 @@ namespace Project1.Systems
         /// <summary>촉수 키 안의 가장 가까운 상대 쪽, 없으면 하스터가 바라보는 방향(수평).</summary>
         private Vector3 SlamDirection(Vector3 basePoint, in CharacterInputFrame input)
         {
-            Vector3 best = Vector3.zero; float bestD = tentacleHeight + slamRadius;
-            var hits = Physics.OverlapSphere(basePoint + Vector3.up, tentacleHeight + slamRadius, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
-            foreach (var c in hits)
+            if (TryNearestTarget(basePoint, out var best)) return best;
+            Vector3 look = Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward;
+            return Flat(look).normalized;
+        }
+
+        /// <summary>밑동에서 닿는 거리(SlamReach + 여유) 안의 가장 가까운 상대 쪽(수평). 촉수에 바짝 붙은(slamInnerRadius 안) 상대는 고르지 않는다.</summary>
+        private bool TryNearestTarget(Vector3 basePoint, out Vector3 dir)
+        {
+            dir = Vector3.zero;
+            float bestD = SlamReach + slamRadius;
+            foreach (var c in Physics.OverlapSphere(basePoint + Vector3.up, bestD, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
             {
                 if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
                 var owner = hurt.Owner;
                 if (owner == null || (self != null && !self.CanHit(owner))) continue;
                 Vector3 to = Flat(owner.transform.position - basePoint);
-                if (to.magnitude < bestD && to.sqrMagnitude > 1e-4f) { bestD = to.magnitude; best = to.normalized; }
+                float d = to.magnitude;
+                if (d < bestD && d > slamInnerRadius) { bestD = d; dir = to / d; } // 바짝 붙은 상대는 맞지 않으니 겨누지 않는다
             }
-            if (best != Vector3.zero) return best;
-            Vector3 look = Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward;
-            return Flat(look).normalized;
+            return dir != Vector3.zero;
         }
 
         private void Step(float dt)
@@ -167,8 +186,13 @@ namespace Project1.Systems
                 {
                     case TentacleState.Rising: if (t.StateTime >= riseTime) Set(i, TentacleState.Idle); break;
                     case TentacleState.Idle: if (t.StateTime >= lifetime) Set(i, TentacleState.Sinking); break;
-                    case TentacleState.SlamWindup: if (t.StateTime >= slamWindup) Set(i, TentacleState.SlamActive); break;
+                    case TentacleState.SlamWindup:
+                        Track(i); // 다 내려가기 직전까지 가장 가까운 상대를 따라 방향을 바꾼다(한참 전 자리로 내리치지 않음)
+                        if (t.StateTime >= slamWindup) Set(i, TentacleState.SlamActive);
+                        break;
                     case TentacleState.SlamActive:
+                        Track(i);
+                        t = tentacles[i];
                         HitAlong(t);
                         if (t.StateTime >= slamActive) Set(i, TentacleState.SlamRecovery);
                         break;
@@ -176,6 +200,15 @@ namespace Project1.Systems
                     case TentacleState.Sinking: if (t.StateTime >= sinkTime) { if (TargetIndex == i) TargetIndex = -1; tentacles.RemoveAt(i); } break;
                 }
             }
+        }
+
+        /// <summary>내려찍는 중: 지금 가장 가까운 상대 쪽으로 방향을 맞춘다(없으면 그대로).</summary>
+        private void Track(int i)
+        {
+            var t = tentacles[i];
+            if (!TryNearestTarget(t.Position, out var dir)) return;
+            t.Direction = dir;
+            tentacles[i] = t;
         }
 
         private void Set(int i, TentacleState state)
@@ -194,17 +227,24 @@ namespace Project1.Systems
             tentacles[i] = t;
         }
 
-        /// <summary>내리치는 동안: 밑동에서 내려찍는 방향으로 키만큼, 땅 가까이(무릎~허리 높이)를 훑는다.</summary>
+        /// <summary>
+        /// 내리치는 동안: 밑동에서 내려찍는 방향으로 펼쳐진 부채꼴(반각 slamHalfAngle, 밑동에서 slamInnerRadius ~ SlamReach, 높이 slamHitHeight까지) 안의 상대를 한 번씩 맞힌다.
+        /// 몸(판정 상자)의 한 부분이라도 부채꼴에 들면 맞는다 — 근거리는 웬만하면 맞고, 촉수에 바짝 붙어(slamInnerRadius 안) 둥글게 돌거나 옆·뒤로 빠지면 피한다.
+        /// </summary>
         private void HitAlong(in TentacleInfo t)
         {
             if (!hitBySlam.TryGetValue(t.Id, out var done)) hitBySlam[t.Id] = done = new HashSet<int>();
-            Vector3 start = t.Position + Vector3.up * 0.6f;
-            var hits = Physics.SphereCastAll(start, slamRadius, t.Direction, tentacleHeight, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
-            foreach (var hc in hits)
+            Vector3 basePos = t.Position;
+            Vector3 dir = Flat(t.Direction).sqrMagnitude > 1e-6f ? Flat(t.Direction).normalized : Vector3.forward;
+            float reach = SlamReach;
+            Vector3 probe = basePos + Vector3.up * 0.8f;
+            foreach (var c in Physics.OverlapSphere(basePos + Vector3.up * (slamHitHeight * 0.5f), reach + slamHitHeight, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
             {
-                if (!hc.collider.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
                 var victim = hurt.Owner;
-                if (victim == null || (self != null && !self.CanHit(victim)) || !done.Add(victim.Id)) continue;
+                if (victim == null || (self != null && !self.CanHit(victim)) || done.Contains(victim.Id)) continue;
+                if (!InSlamFan(hurt.Collider, basePos, dir, reach, out Vector3 point)) continue;
+                done.Add(victim.Id);
                 HitEvents.Raise(new HitResult
                 {
                     AttackerId = self != null ? self.Id : 0,
@@ -213,9 +253,29 @@ namespace Project1.Systems
                     Slot = slot,
                     AttackId = -1000 - t.Id,
                     Tick = SimulationTick.Current,
-                    Point = hc.distance > 0f ? hc.point : hurt.Collider.ClosestPoint(start),
+                    Point = point,
                 });
             }
+        }
+
+        /// <summary>판정 상자(col)의 어느 부분이 부채꼴 안에 드는지. 밑동 쪽 가장 가까운 점과 상자 가운데 두 곳을 본다.</summary>
+        private bool InSlamFan(Collider col, Vector3 basePos, Vector3 dir, float reach, out Vector3 point)
+        {
+            Vector3 near = col.ClosestPoint(basePos + Vector3.up * 0.8f);
+            Vector3 center = col.bounds.center;
+            foreach (var p in new[] { near, center })
+            {
+                float up = p.y - basePos.y;
+                if (up < -0.5f || up > slamHitHeight) continue;
+                Vector3 to = Flat(p - basePos);
+                float d = to.magnitude;
+                if (d < slamInnerRadius || d > reach) continue;
+                if (Vector3.Angle(dir, to) > slamHalfAngle) continue;
+                point = p;
+                return true;
+            }
+            point = default;
+            return false;
         }
 
         /// <summary>E를 꾹 누르는 동안: 바라보는 방향과 가장 가까운 각도의 서 있는 촉수를 고른다.</summary>

@@ -44,7 +44,16 @@ namespace Project1.Core
         /// <summary>촉수 키(m) = 내려찍으면 닿는 거리.</summary>
         float TentacleHeight { get; }
 
-        /// <summary>내려찍기 판정 굵기(반지름, m).</summary>
+        /// <summary>(예전 일자 판정 굵기 — 내려찍는 방향을 고를 때 여유로만 쓴다.)</summary>
         float SlamRadius { get; }
+
+        /// <summary>내려찍기 판정 부채꼴의 반각(도) — 내려찍는 방향에서 양옆으로.</summary>
+        float SlamHalfAngle { get; }
+
+        /// <summary>촉수 밑동에서 이 거리(m) 안은 맞지 않는다(바짝 붙어 돌면 피함).</summary>
+        float SlamInnerRadius { get; }
+
+        /// <summary>부채꼴이 닿는 거리(m, 밑동에서 수평).</summary>
+        float SlamReach { get; }
     }
 }
