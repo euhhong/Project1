@@ -17,6 +17,7 @@ namespace Project1.UI
         private static readonly Vector3 StageOrigin = new(10000f, 0f, 10000f);
         private const float Spacing = 3.5f;
         private const float CameraDistance = 7.5f, CameraHeight = 2.2f, LookHeight = 1.5f;
+        private static readonly string[] HiddenInSelect = { "Gamekeeper_Grab_Weapon" };
 
         private CharacterRoster roster;
         private GameObject player;
@@ -93,6 +94,9 @@ namespace Project1.UI
                 m.transform.localScale = Vector3.one * e.scale;
                 // 판정 상자는 선택 화면에서 필요 없다.
                 foreach (var c in m.GetComponentsInChildren<Collider>()) c.enabled = false;
+                // 선택 화면에서는 들지 않는 소품(예: 사냥터지기 그랩)을 감춘다. 게임에서는 그대로 든다.
+                foreach (var r in m.GetComponentsInChildren<Renderer>(true))
+                    if (System.Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
                 var anim = m.GetComponent<Animator>();
                 if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
                 lineup.Add(m);
