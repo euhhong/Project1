@@ -44,7 +44,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_HeavyKick", "Attack_AirStomp", "Attack_AirCharge", "Down",
-            "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
+            "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
@@ -326,6 +326,8 @@ namespace Project1.Presentation.EditorTools
             if (clips["Attack_RunJump_Survivor"] != null) airSm.AddState("RunJump").motion = clips["Attack_RunJump_Survivor"];
             // 생존자 강공격(땅): 머리를 노리는 왼발 돌려차기(Mixamo Martelo 2). 다리까지 움직이므로 전신 레이어에 둔다. 쓸지는 CharacterAttackAnimator.HeavyKick(생존자만 켬)이 정한다.
             if (clips["Attack_HeavyKick"] != null) airSm.AddState("HeavyKick").motion = clips["Attack_HeavyKick"];
+            // 생존자 두 번째 점프 공격(달리기 점프 공격 중 한 번 더): 다시 뛰어오르며 머리를 노리는 날아 차기. 쓸지는 BE(CharacterAttack.IsFollowUpKick, 생존자만)가 정한다.
+            if (clips["Attack_RunJump2_Survivor"] != null) airSm.AddState("RunJump2").motion = clips["Attack_RunJump2_Survivor"];
 
             // 피격 레이어(상체만): 맞은 부위·방향에 맞는 모션을 CharacterHitReactionAnimator가 한 번 재생한다.
             ac.AddLayer("HitReact");

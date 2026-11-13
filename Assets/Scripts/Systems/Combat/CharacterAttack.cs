@@ -28,6 +28,31 @@ namespace Project1.Systems
         [SerializeField] private AttackSpec airLightAttack = new(0.12f, 0.12f, 0.30f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
         [SerializeField] private AttackSpec airHeavyAttack = new(0.20f, 0.15f, 0.40f, HitboxSlot.LeftFoot | HitboxSlot.RightFoot);
 
+        [Header("두 번째 점프 공격 (달리기 점프 공격 중 한 번 더 누름, 생존자)")]
+        [Tooltip("달리기 점프 공격 중(또는 그 점프가 끝나기 전) 공격을 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기를 한다. 캐릭터를 고를 때 SetRunJumpFollowUp으로 켠다.")]
+        [SerializeField] private bool runJumpFollowUp;
+        [Tooltip("두 번째 날아 차기 구간(준비·판정·공중 마무리). 판정은 왼발(차는 발).")]
+        [SerializeField] private AttackSpec followUpKick = new(0.08f, 0.22f, 0.3f, HitboxSlot.LeftFoot);
+        [Tooltip("두 번째 날아 차기를 시작할 때 지금 높이에서 더 뛰어오르는 높이(m).")]
+        [SerializeField, Min(0f)] private float followUpJumpHeight = 0.5f;
+        [Tooltip("두 번째 날아 차기 뒤 착지해서 못 움직이고 공격도 못 하는 후딜레이(초).")]
+        [SerializeField, Min(0f)] private float followUpLandRecovery = 0.45f;
+        [Tooltip("머리를 노릴 상대를 찾는 거리(m, 수평)와 앞쪽 각도(도).")]
+        [SerializeField, Min(0f)] private float followUpSeekRange = 4f;
+        [SerializeField, Range(0f, 90f)] private float followUpSeekAngle = 60f;
+        [Tooltip("판정 한가운데 시각에 차는 발이 몸(루트) 위로 올라와 있는 높이(m, 날아 차기 모션 기준).")]
+        [SerializeField, Min(0f)] private float followUpFootRise = 0.85f;
+        [Tooltip("머리를 노려 내려갈 때 최대 아래 속도(m/s).")]
+        [SerializeField, Min(0f)] private float followUpMaxDiveSpeed = 6f;
+        private bool runJumpAirborne;  // 이번 점프에서 달리기 점프 공격을 했다(착지하면 지운다)
+        private bool followUpUsed;     // 이번 점프에서 두 번째 날아 차기를 이미 했다
+        private float followUpLanded = -1f; // 두 번째 날아 차기 뒤 착지한 지 지난 시간(-1 = 아직 공중)
+
+        public bool IsFollowUpKick { get; private set; }
+
+        /// <summary>두 번째 점프 공격(달리기 점프 공격 중 한 번 더)을 켜거나 끈다(캐릭터를 고를 때, 생존자만).</summary>
+        public void SetRunJumpFollowUp(bool on) => runJumpFollowUp = on;
+
         private ICharacterInputSource inputSource;
         private ICharacterState characterState;
         private AttackHitDetector hitDetector;
@@ -82,6 +107,11 @@ namespace Project1.Systems
             if (AttackState == CharacterAttackState.HeavyCharge && characterState != null && characterState.IsGrounded)
             {
                 maxSpeed = characterState.WalkSpeed;
+                return true;
+            }
+            if (IsFollowUpKick && followUpLanded >= 0f)
+            {
+                maxSpeed = 0f; // 두 번째 날아 차기 뒤 착지 후딜레이: 제자리
                 return true;
             }
             maxSpeed = 0f;
@@ -140,6 +170,8 @@ namespace Project1.Systems
                 input.LightAttack = false;
                 input.HeavyRelease = false;
             }
+            if (grounded && !IsFollowUpKick) { runJumpAirborne = false; followUpUsed = false; }
+            bool followUp = runJumpFollowUp && !grounded && runJumpAirborne && !followUpUsed && input.AttackPressed && !IsFollowUpKick;
 
             switch (AttackState)
             {
@@ -158,6 +190,8 @@ namespace Project1.Systems
                         StartSwipe(input.AttackSwipe);
                         break;
                     }
+                    // 달리기 점프 공격을 한 그 점프가 끝나기 전에 한 번 더 누름 → 다시 뛰어오르며 두 번째 날아 차기.
+                    if (followUp) { StartFollowUpKick(input); break; }
                     // 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 바로 공중 공격(첫 입력만), 키를 뗄 때까지 다른 입력은 무시한다.
                     if (!grounded && input.AttackPressed)
                     {
@@ -204,6 +238,8 @@ namespace Project1.Systems
 
                 case CharacterAttackState.Light:
                 case CharacterAttackState.Heavy:
+                    // 달리기 점프 공격 중 한 번 더 누름 → 끊고 다시 뛰어오르며 두 번째 날아 차기.
+                    if (followUp && IsRunJumpAttack) { StartFollowUpKick(input); break; }
                     // 연속 동작(맹인): 동작이 끝나기 전에 들어온 다음 휘두르기를 받아 두고(최대 maxComboFollowUps번), 후딜레이가 시작되면 끊고 바로 이어 나간다.
                     if (swipeAttacks && input.AttackSwipe != 0 && comboFollowUps < maxComboFollowUps) bufferedSwipe = input.AttackSwipe;
                     AdvancePhase(dt);
@@ -219,7 +255,7 @@ namespace Project1.Systems
         }
 
         // 공중 전용 구간(발 판정)은 앞으로 달리다 뛴 공격(플라잉킥 등)에만 쓴다. 그 밖의 공중 공격은 땅 공격과 같은 구간·손 판정.
-        private AttackSpec CurrentSpec => AttackState == CharacterAttackState.Heavy
+        private AttackSpec CurrentSpec => IsFollowUpKick ? followUpKick : AttackState == CharacterAttackState.Heavy
             ? (IsRunJumpAttack ? airHeavyAttack : heavyAttack)
             : (IsRunJumpAttack ? airLightAttack : lightAttack);
 
@@ -240,9 +276,84 @@ namespace Project1.Systems
             StartAttack(CharacterAttackState.Light);
         }
 
+        /// <summary>두 번째 날아 차기: 지금 공격(첫 플라잉킥)을 끊고 followUpJumpHeight만큼 다시 뛰어오르며 찬다.</summary>
+        private void StartFollowUpKick(in CharacterInputFrame input)
+        {
+            if (hitDetector != null && hitDetector.IsAttacking) hitDetector.EndAttack();
+            followUpUsed = true;
+            followUpLanded = -1f;
+            waitAirRelease = !(input.LightAttack || input.HeavyRelease); // 누른 키를 뗄 때 나오는 약공격 입력은 버린다(착지 뒤 땅 공격이 나가지 않게)
+            if (TryGetComponent(out CharacterMotor motor)) motor.Launch(FollowUpLaunchSpeed(motor));
+            IsAirAttack = true;
+            IsRunJumpAttack = true;
+            IsFollowUpKick = true;
+            Swipe = 0;
+            AttackState = CharacterAttackState.Light;
+            AttackPhase = AttackPhase.Windup;
+            phaseTime = 0f;
+            PhaseProgress = 0f;
+            AttackStarted?.Invoke(AttackState);
+            AdvancePhase(0f);
+        }
+
+        /// <summary>
+        /// 두 번째 날아 차기의 위아래 속도. 앞쪽(followUpSeekRange, ±followUpSeekAngle)에 상대 머리가 있으면 판정 한가운데 시각에
+        /// 차는 발(몸 위 followUpFootRise)이 그 머리 높이에 오도록 정한다(머리를 노림 — 높이 떠 있으면 머리 쪽으로 내리꽂듯).
+        /// 없으면 지금 높이에서 followUpJumpHeight만큼 더 뛰어오른다.
+        /// </summary>
+        private float FollowUpLaunchSpeed(CharacterMotor motor)
+        {
+            float g = motor.Gravity;
+            float hop = Mathf.Sqrt(2f * followUpJumpHeight * -g);
+            if (!TryFindHeadAhead(out float headY)) return hop;
+            float tm = followUpKick.Windup + followUpKick.Active * 0.5f;
+            if (tm <= 0.01f) return hop;
+            float targetRootY = headY - followUpFootRise;
+            float v = (targetRootY - transform.position.y - 0.5f * g * tm * tm) / tm;
+            return Mathf.Clamp(v, -followUpMaxDiveSpeed, hop);
+        }
+
+        /// <summary>앞쪽에서 가장 가까운 맞힐 수 있는 상대의 머리 판정 높이(월드 y).</summary>
+        private bool TryFindHeadAhead(out float headY)
+        {
+            headY = 0f;
+            var self = GetComponent<CharacterIdentity>();
+            Vector3 pos = transform.position, fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            float best = float.MaxValue;
+            foreach (var col in Physics.OverlapSphere(pos, followUpSeekRange + 1f, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
+            {
+                if (!col.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled || hurt.Part != BodyPart.Head) continue;
+                var owner = hurt.Owner;
+                if (owner == null || owner == self || (self != null && !self.CanHit(owner))) continue;
+                Vector3 c = col.bounds.center, flat = Vector3.ProjectOnPlane(c - pos, Vector3.up);
+                float d = flat.magnitude;
+                if (d > followUpSeekRange || d < 0.2f || Vector3.Angle(fwd, flat) > followUpSeekAngle) continue;
+                if (d < best) { best = d; headY = c.y; }
+            }
+            return best < float.MaxValue;
+        }
+
+        /// <summary>
+        /// 두 번째 날아 차기의 마무리: 공중에서는 내려오는 자세(진행도 0~0.6)로 착지를 기다리고,
+        /// 착지하면 followUpLandRecovery 동안 제자리 후딜레이(0.6~1) 뒤 끝난다.
+        /// </summary>
+        private void FollowUpRecovery(float dt)
+        {
+            bool grounded = characterState == null || characterState.IsGrounded;
+            if (followUpLanded < 0f && !grounded)
+            {
+                PhaseProgress = 0.6f * Mathf.Clamp01(phaseTime / Mathf.Max(followUpKick.Recovery, 0.01f));
+                return;
+            }
+            followUpLanded = followUpLanded < 0f ? 0f : followUpLanded + dt;
+            PhaseProgress = 0.6f + 0.4f * (followUpLandRecovery > 0f ? Mathf.Clamp01(followUpLanded / followUpLandRecovery) : 1f);
+            if (followUpLanded >= followUpLandRecovery) EndAttack();
+        }
+
         private void StartAttack(CharacterAttackState state)
         {
             IsRunJumpAttack = IsAirAttack && IsRunningForward();
+            if (IsRunJumpAttack) runJumpAirborne = true;
             AttackState = state;
             AttackPhase = AttackPhase.Windup;
             phaseTime = 0f;
@@ -258,6 +369,7 @@ namespace Project1.Systems
 
             while (true)
             {
+                if (IsFollowUpKick && AttackPhase == AttackPhase.Recovery) { FollowUpRecovery(dt); return; }
                 float length = PhaseLength(spec, AttackPhase);
                 if (phaseTime < length)
                 {
@@ -307,6 +419,8 @@ namespace Project1.Systems
             phaseTime = 0f;
             IsAirAttack = false;
             IsRunJumpAttack = false;
+            IsFollowUpKick = false;
+            followUpLanded = -1f;
             Swipe = 0;
             bufferedSwipe = 0;
             if (!chaining) comboFollowUps = 0;

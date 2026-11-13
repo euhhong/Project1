@@ -34,6 +34,7 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light"] = new Vector2(2, 30),             // Mutant Punch(생존자 기본 공격): 오른손 훅 6~11
             ["Attack_Light_HookPunch"] = new Vector2(14, 56),  // Hook Punch(빈손 생존자 — 용병·도둑 기본 공격): 오른손 뒤로 당김(14~30) → 훅이 앞으로 꽂힘(30~36) → 되돌리기
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
+            ["Attack_RunJump2_Survivor"] = new Vector2(0, 30), // 두 번째 날아 차기(생존자, Flying Kick 다른 판): 뛰어오르며 왼발을 머리 높이로 뻗음(4~16) → 착지(~23) → 일어섬
             ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_Light_Luchino"] = new Vector2(4, 60),     // Standing Melee Attack Horizontal: 오른쪽 뒤로 당김 → 가로 베기(22~29) → 몸 되돌리기
             ["Attack_Light_Geisha"] = new Vector2(7, 61),      // Standing Torch Melee Attack Stab을 Blender로 좌우 뒤집음(Tools/Blender/mirror_motion.py, 프레임 1 밀림): 오른팔로 길게 찌르기
@@ -55,7 +56,7 @@ namespace Project1.Presentation.EditorTools
         };
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
-        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper" };
+        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper" };
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
         private const float AirHeightOffset = -0.91f;
         // 발을 땅에 붙이는 모션(몸 높이는 발 기준): 광대 로켓 돌진(다리를 벌려 디딘 자세라 몸이 낮아진다).

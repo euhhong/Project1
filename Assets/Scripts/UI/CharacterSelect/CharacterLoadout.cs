@@ -68,6 +68,7 @@ namespace Project1.UI
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
                 if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
+                attack.SetRunJumpFollowUp(survivorKick); // 생존자: 달리기 점프 공격 중 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기(착지 후딜레이)
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기
             }
             // 만화 타격 효과: 생존자 모두(플라잉킥). 주먹 기본 공격(Mutant Punch·훅 펀치)을 쓰면 펀치 효과 + 늘어난 리치도.

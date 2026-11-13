@@ -33,6 +33,7 @@ namespace Project1.Presentation
             ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
             ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34
             ["Attack_RunJump_Survivor"] = new Vector2(8f / 30f, 19f / 30f), // Flying Kick(0~30): 왼발 뻗기 8~19
+            ["Attack_RunJump2_Survivor"] = new Vector2(4f / 30f, 16f / 30f), // Flying Kick 다른 판(0~30, 두 번째 날아 차기): 왼발을 머리 높이로 뻗기 4~16
             ["Attack_HeavyKick"] = new Vector2(12f / 39f, 22f / 39f),       // Martelo 2(0~39, 생존자 강공격): 왼발을 들어 올려(~12) 머리 높이로 돌려차기(12~22, 발 높이 1.2~1.6m) → 내려놓기
             ["Attack_RunJump_Hunter"] = new Vector2(11f / 34f, 19f / 34f),  // Run Jump Attack(원본 36~70): 내려치기 47~55
             ["Attack_Light_Joker"] = new Vector2(11f / 34f, 19f / 34f),     // 광대 두 손 내려치기(같은 클립)
@@ -59,6 +60,7 @@ namespace Project1.Presentation
         private static readonly int AirChargeId = Animator.StringToHash("AirCharge");
         private static readonly int RunJumpId = Animator.StringToHash("RunJump");
         private static readonly int KickId = Animator.StringToHash("HeavyKick");
+        private static readonly int RunJump2Id = Animator.StringToHash("RunJump2");
 
         /// <summary>땅에서 강공격을 머리를 노리는 발차기(전신 HeavyKick 상태)로 보여 줄지. 생존자만 켠다(CharacterLoadout).</summary>
         public bool HeavyKick { get; set; }
@@ -113,6 +115,7 @@ namespace Project1.Presentation
                     case CharacterAttackState.Light:
                     case CharacterAttackState.Heavy:
                         if (kick) animator.Play(KickId, airLayer, Normalized(SlotTiming("Attack_HeavyKick")));
+                        else if (runJump && attack.IsFollowUpKick && animator.HasState(airLayer, RunJump2Id)) animator.Play(RunJump2Id, airLayer, Normalized(SlotTiming("Attack_RunJump2")));
                         else if (runJump) animator.Play(RunJumpId, airLayer, Normalized(SlotTiming("Attack_RunJump")));
                         else animator.Play(StompId, airLayer, Normalized(SlotTiming("Attack_AirStomp")));
                         break;

@@ -31,6 +31,9 @@ namespace Project1.Core
         /// </summary>
         bool IsRunJumpAttack { get; }
 
+        /// <summary>달리기 점프 공격 중 한 번 더 눌러 다시 뛰어오르며 찬 두 번째 점프 공격인지(생존자, 머리를 노리는 날아 차기). 착지 뒤 후딜레이까지 유지된다.</summary>
+        bool IsFollowUpKick { get; }
+
         /// <summary>마우스를 좌우로 그어 낸 약공격의 방향(-1 = 왼쪽으로 후림, +1 = 오른쪽으로 후림, 0 = 그냥 공격). 공격이 끝날 때까지 유지된다.</summary>
         int Swipe { get; }
 
