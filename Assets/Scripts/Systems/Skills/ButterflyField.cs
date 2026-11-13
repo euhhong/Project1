@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 마우스가 가리키는 곳에 놓을 자리를 보여 준다(Placing, PreviewPoint).
     ///   땅 위만 된다(면이 위를 향함, 공중·벽 불가). 떼면 그 자리에 나비를 놓는다(재사용 대기 placeCooldown, 테스트 0초).
     ///   취소: 누른 채 E를 누르거나(뗄 때까지 무시), 몸 근처(cancelRadius)로 끌어다 놓으면 놓지 않는다 — 취소는 재사용 대기가 생기지 않는다.
+    ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다(그 자리 바닥에 붙음).
     /// - 나비는 최대 maxButterflies마리, 넘으면 가장 오래된 것이 사라진다.
     /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
@@ -40,6 +41,13 @@ namespace Project1.Systems
         private ICharacterSkillState skillState;
         private ICharacterStun stun;
         private bool waitRelease;
+        // 시점을 돌리는 동안: 시야 기준 나비 자리(캐릭터에서, 수평)를 지켜 시점을 따라 돌린다.
+        [Tooltip("시점을 따라 돈 자리에서 바닥을 찾을 때 위·아래로 살피는 거리(m).")]
+        [SerializeField, Min(0.1f)] private float groundProbeUp = 3f, groundProbeDown = 8f;
+        private readonly RaycastHit[] groundHits = new RaycastHit[16];
+        private bool previewSet, viewLocked;
+        private Vector3 viewLocal;
+        private float lastAimYaw;
 
         public IReadOnlyList<Vector3> Butterflies => butterflies;
         public bool Placing { get; private set; }
@@ -83,7 +91,7 @@ namespace Project1.Systems
             }
             else if (input.HeavyCharging && !blocked && (Placing || PlaceCooldownRemaining <= 0f))
             {
-                if (!Placing) { PreviewValid = false; PreviewCancels = false; } // 새로 누르기 시작: 지난 자리는 버린다
+                if (!Placing) { PreviewValid = false; PreviewCancels = false; previewSet = false; viewLocked = false; } // 새로 누르기 시작: 지난 자리는 버린다
                 Placing = true;
                 UpdatePreview(input);
                 if (input.Skill)
@@ -109,12 +117,50 @@ namespace Project1.Systems
 
         private void UpdatePreview(in CharacterInputFrame input)
         {
-            // 커서가 가리키는 곳이 없음(우클릭으로 시점을 돌리는 중 등) → 마지막 자리를 그대로 둔다(다시 옮기거나 취소하지 않는다).
-            if (!input.HasAimPoint) return;
-            PreviewPoint = input.AimPoint;
-            Vector3 flat = input.AimPoint - transform.position; flat.y = 0f;
+            Quaternion view = Quaternion.Euler(0f, input.LookYaw, 0f);
+            if (!input.HasAimPoint)
+            {
+                // 커서가 가리키는 곳이 없음(우클릭으로 시점을 돌리는 중 등):
+                // 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 보고 시야 기준 방향을 그대로 지킨 채 시점을 따라 돌린다.
+                if (!previewSet) return; // 아직 한 번도 겨누지 않음
+                if (!viewLocked)
+                {
+                    Vector3 off = PreviewPoint - transform.position; off.y = 0f;
+                    viewLocal = Quaternion.Inverse(Quaternion.Euler(0f, lastAimYaw, 0f)) * off; // 마지막으로 겨눴을 때 시야 기준(돌리기 시작한 틱의 회전도 놓치지 않게)
+                    viewLocked = true;
+                }
+                Vector3 p = transform.position + view * viewLocal;
+                if (GroundAt(p, out Vector3 point, out Vector3 normal)) Evaluate(point, normal);
+                else { PreviewPoint = p; PreviewCancels = false; PreviewValid = false; } // 아래에 땅이 없음
+                return;
+            }
+            viewLocked = false;
+            lastAimYaw = input.LookYaw;
+            Evaluate(input.AimPoint, input.AimNormal);
+        }
+
+        private void Evaluate(Vector3 point, Vector3 normal)
+        {
+            PreviewPoint = point;
+            previewSet = true;
+            Vector3 flat = point - transform.position; flat.y = 0f;
             PreviewCancels = flat.magnitude <= cancelRadius; // 몸 근처 → 떼면 취소
-            PreviewValid = !PreviewCancels && input.AimNormal.y >= minGroundNormalY && flat.magnitude <= maxPlaceDistance;
+            PreviewValid = !PreviewCancels && normal.y >= minGroundNormalY && flat.magnitude <= maxPlaceDistance;
+        }
+
+        /// <summary>p 바로 위에서 아래로 내려 처음 닿는 바닥(자기 몸·트리거 제외).</summary>
+        private bool GroundAt(Vector3 p, out Vector3 point, out Vector3 normal)
+        {
+            point = p; normal = Vector3.up;
+            int n = Physics.RaycastNonAlloc(p + Vector3.up * groundProbeUp, Vector3.down, groundHits, groundProbeUp + groundProbeDown, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue; bool found = false;
+            for (int i = 0; i < n; i++)
+            {
+                var h = groundHits[i];
+                if (h.collider.transform.IsChildOf(transform) || h.distance >= best) continue;
+                best = h.distance; point = h.point; normal = h.normal; found = true;
+            }
+            return found;
         }
 
         private void Place(Vector3 point)
