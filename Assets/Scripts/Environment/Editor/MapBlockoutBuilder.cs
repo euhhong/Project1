@@ -57,6 +57,7 @@ namespace Project1.Map.EditorTools
         private static readonly Rect2 Atrium = new(12f, 4f, 32f, 24f);   // 로비(2F까지 트임)
         private static readonly Rect2 MainWell = new(17f, 9f, 27f, 19f); // 3F 바닥의 트인 곳
         private const float ChandelierY = 9.8f;
+        private static readonly Rect2 MainCollapse = new(33.5f, 26f, 38f, 29.6f); // 북 복도 동쪽: 2F·3F 바닥·지붕까지 무너져 하늘로 트임(루키노 도약 자리)
 
         private static Material floorMat, wallMat, accentMat;
 
@@ -133,9 +134,9 @@ namespace Project1.Map.EditorTools
 
             var floors = Group(m, "Floors", Vector3.zero);
             Slab(floors, "1F_Floor", new Rect2(-0.1f, -0.1f, W + 0.1f, D + 0.1f), G, 0.35f, floorMat);
-            Slab(floors, "2F_Floor", new Rect2(-0.1f, -0.1f, W + 0.1f, D + 0.1f), F2, SlabT, floorMat, Atrium, hW1, hE1);
-            Slab(floors, "3F_Floor", new Rect2(-0.1f, -0.1f, W + 0.1f, D + 0.1f), F3, SlabT, floorMat, MainWell, hW2, hE2);
-            Slab(floors, "Roof", new Rect2(-0.25f, -0.25f, W + 0.25f, D + 0.25f), RoofTop, SlabT, accentMat);
+            Slab(floors, "2F_Floor", new Rect2(-0.1f, -0.1f, W + 0.1f, D + 0.1f), F2, SlabT, floorMat, Atrium, hW1, hE1, MainCollapse);
+            Slab(floors, "3F_Floor", new Rect2(-0.1f, -0.1f, W + 0.1f, D + 0.1f), F3, SlabT, floorMat, MainWell, hW2, hE2, MainCollapse);
+            Slab(floors, "Roof", new Rect2(-0.25f, -0.25f, W + 0.25f, D + 0.25f), RoofTop, SlabT, accentMat, MainCollapse);
 
             // 층마다 바깥벽(층마다 문·창이 다름) + 같은 안벽(복도 벽, 방 칸막이 — 방은 복도로만 문)
             var outerN = new[]
@@ -256,7 +257,8 @@ namespace Project1.Map.EditorTools
 
             // 고딕: 박공지붕·첨탑, 뒤쪽 모서리 탑, 정면·뒷면 버팀벽
             var g = Group(m, "Gothic", Vector3.zero);
-            GableRoof(g, "Roof", -0.25f, W + 0.25f, -0.25f, D + 0.25f, RoofTop, 10f);
+            GableRoof(g, "Roof", -0.25f, W + 0.25f, -0.25f, D + 0.25f, RoofTop, 10f, gapSide: 1, gapZ0: MainCollapse.z0 - 0.5f, gapZ1: D + 0.25f);
+            Rubble(g, "Collapse_Rubble", MainCollapse, G);
             Tower(g, "Tower_SW", new Vector3(-3.2f, 0f, -3.2f)); // 뒤 바깥 계단 아래쪽을 막지 않게 바깥으로
             Tower(g, "Tower_SE", new Vector3(W + 3.2f, 0f, -3.2f));
             foreach (float x in new[] { 11f, 17.5f, 26.5f, 33f })
@@ -367,6 +369,8 @@ namespace Project1.Map.EditorTools
             var hole1 = R(0.2f, s0, 3.7f, s1);
             var hole2 = R(3.7f, s0, 7.2f, s1);
             var lib = R(3f, 0.2f, 12f, 6.5f);
+            var libCollapse = R(4f, 1f, 8.5f, 5.5f);      // 서재 지붕이 무너져 하늘이 보임(서관)
+            var dormCollapse = R(10.5f, 3f, 14f, 8f);     // 락커룸·숙소 위가 옥상까지 무너짐(동관)
             const float topY = F3;                 // 2F→ 계단이 끝나는 높이(서관 3F / 동관 옥상 테라스)
 
             var fl = Group(h, "Floors", Vector3.zero);
@@ -376,12 +380,13 @@ namespace Project1.Map.EditorTools
             {
                 Slab(fl, "2F_Floor", outer, F2, SlabT, floorMat, hole1, lib);
                 Slab(fl, "3F_Floor", outer, F3, SlabT, floorMat, hole2, lib);
-                Slab(fl, "Roof", R(-0.25f, -0.25f, w + 0.25f, d + 0.25f), RoofTop, SlabT, accentMat);
+                Slab(fl, "Roof", R(-0.25f, -0.25f, w + 0.25f, d + 0.25f), RoofTop, SlabT, accentMat, libCollapse);
             }
             else
             {
-                Slab(fl, "2F_Floor", outer, F2, SlabT, floorMat, hole1);
-                Slab(fl, "Roof_Terrace", R(-0.25f, -0.25f, w + 0.25f, d + 0.25f), F3, SlabT, floorMat, hole2);
+                Slab(fl, "2F_Floor", outer, F2, SlabT, floorMat, hole1, dormCollapse);
+                Slab(fl, "Roof_Terrace", R(-0.25f, -0.25f, w + 0.25f, d + 0.25f), F3, SlabT, floorMat, hole2, dormCollapse);
+                Rubble(fl, "Collapse_Rubble", dormCollapse, G);
             }
 
             for (int f = 0; f < floors; f++)
@@ -436,7 +441,7 @@ namespace Project1.Map.EditorTools
                 HX(fu, "Terrace_Rail_N", -0.25f, w + 0.25f, d + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
                 HZ(fu, "Terrace_Rail_Out", -0.25f, d + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(6f, 8f));
                 HZ(fu, "Terrace_Rail_Court", -0.25f, d + 0.25f, w + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
-                HB(fu, "Chimney_A", new Vector3(10f, F3, 3f), new Vector3(12f, F3 + 3.5f, 5f), wallMat);
+                HB(fu, "Chimney_A", new Vector3(1f, F3, 3f), new Vector3(3f, F3 + 3.5f, 5f), wallMat);
                 HB(fu, "Chimney_B", new Vector3(10f, F3, d - 4f), new Vector3(12f, F3 + 3.5f, d - 2f), wallMat);
                 HX(fu, "Terrace_LowWall", 9f, 14f, 8f, F3, 1f, 0.4f, accentMat);
             }
@@ -447,7 +452,7 @@ namespace Project1.Map.EditorTools
             HB(fu, "LowTerrace_Crate", new Vector3(-3.6f, -0.3f, 8.8f), new Vector3(-2.4f, 1.2f, 10f), accentMat);
 
             var g = Group(h, "Gothic", Vector3.zero);
-            if (tall) GableRoof(g, "Roof", -0.25f, w + 0.25f, -0.25f, d + 0.25f, RoofTop, 8f);
+            if (tall) GableRoof(g, "Roof", -0.25f, w + 0.25f, -0.25f, d + 0.25f, RoofTop, 8f, gapSide: east ? 1 : -1, gapZ0: -0.5f, gapZ1: 6.5f);
             Tower(g, "Tower", new Vector3(X(-2.2f), 0f, d + 2.2f));
         }
 
@@ -543,6 +548,21 @@ namespace Project1.Map.EditorTools
             }
         }
 
+        /// <summary>
+        /// 무너진 곳 아래 잔해: 낮은 더미(0.8m) → 가운데 더미(1.6m) → 꼭대기 조각(2.4m) 계단식(뛰어 올라섬), 기울어 떨어진 바닥 판 2장.
+        /// r = 무너진 구멍 자리(그 아래 바닥 floorY에 쌓는다).
+        /// </summary>
+        private static void Rubble(Transform p, string name, Rect2 r, float floorY)
+        {
+            var g = Group(p, name, Vector3.zero);
+            float cx = (r.x0 + r.x1) / 2f, cz = (r.z0 + r.z1) / 2f, sx = r.x1 - r.x0, sz = r.z1 - r.z0;
+            Box(g, "Pile_Low", new Vector3(cx, floorY + 0.4f, cz), new Vector3(sx * 0.8f, 0.8f, sz * 0.75f), floorMat, 8f);
+            Box(g, "Pile_Mid", new Vector3(cx + sx * 0.08f, floorY + 1.2f, cz - sz * 0.05f), new Vector3(sx * 0.45f, 0.8f, sz * 0.4f), accentMat, -14f);
+            Box(g, "Pile_Top", new Vector3(cx + sx * 0.14f, floorY + 2f, cz), new Vector3(sx * 0.22f, 0.8f, sz * 0.22f), floorMat, 25f);
+            BoxR(g, "Slab_A", new Vector3(r.x0 + sx * 0.2f, floorY + 1.1f, cz + sz * 0.15f), new Vector3(sx * 0.35f, 0.3f, sz * 0.6f), Quaternion.Euler(0f, 12f, 38f), floorMat, true);
+            BoxR(g, "Slab_B", new Vector3(r.x1 - sx * 0.15f, floorY + 0.9f, r.z0 + sz * 0.2f), new Vector3(sx * 0.4f, 0.3f, sz * 0.3f), Quaternion.Euler(-30f, -20f, 0f), floorMat, true);
+        }
+
         /// <summary>사물함 한 줄(+z 방향): 0.9m 폭·0.6m 깊이·2.2m 높이 칸 count개. start = 첫 칸 남쪽 끝 가운데(바닥).</summary>
         private static void Lockers(Transform p, string name, Vector3 start, int count)
         {
@@ -551,14 +571,30 @@ namespace Project1.Map.EditorTools
                 Box(g, $"Locker_{i}", new Vector3(0f, 1.1f, i * 0.92f + 0.45f), new Vector3(0.6f, 2.2f, 0.9f), accentMat);
         }
 
-        /// <summary>가파른 박공지붕(용마루 남북 방향) + 계단식 박공벽 + 첨탑.</summary>
-        private static void GableRoof(Transform g, string name, float x0, float x1, float z0, float z1, float baseY, float ridge)
+        /// <summary>
+        /// 가파른 박공지붕(용마루 남북 방향) + 계단식 박공벽 + 첨탑.
+        /// gapSide(-1 = 서쪽 경사면, +1 = 동쪽, 0 = 없음)의 z gapZ0..gapZ1 구간은 무너져 비어 있다(그 아래 무너진 곳이 하늘로 트임).
+        /// </summary>
+        private static void GableRoof(Transform g, string name, float x0, float x1, float z0, float z1, float baseY, float ridge,
+            int gapSide = 0, float gapZ0 = 0f, float gapZ1 = 0f)
         {
-            float half = (x1 - x0) / 2f, mid = (x0 + x1) / 2f, zc = (z0 + z1) / 2f, depth = z1 - z0;
+            float half = (x1 - x0) / 2f, mid = (x0 + x1) / 2f, zc = (z0 + z1) / 2f;
             float angle = Mathf.Atan2(ridge, half) * Mathf.Rad2Deg;
             float len = Mathf.Sqrt(half * half + ridge * ridge);
-            BoxR(g, $"{name}_W", new Vector3(x0 + half / 2f, baseY + ridge / 2f, zc), new Vector3(len, 0.4f, depth + 0.5f), Quaternion.Euler(0f, 0f, angle), accentMat, true);
-            BoxR(g, $"{name}_E", new Vector3(x1 - half / 2f, baseY + ridge / 2f, zc), new Vector3(len, 0.4f, depth + 0.5f), Quaternion.Euler(0f, 0f, -angle), accentMat, true);
+            foreach (int side in new[] { -1, 1 })
+            {
+                float cx = side < 0 ? x0 + half / 2f : x1 - half / 2f;
+                var rot = Quaternion.Euler(0f, 0f, side < 0 ? angle : -angle);
+                var spans = gapSide == side
+                    ? new[] { (z0 - 0.25f, gapZ0), (gapZ1, z1 + 0.25f) }
+                    : new[] { (z0 - 0.25f, z1 + 0.25f) };
+                int k = 0;
+                foreach (var (a, b) in spans)
+                {
+                    if (b - a < 0.05f) continue;
+                    BoxR(g, $"{name}_{(side < 0 ? "W" : "E")}{(k++ > 0 ? "_" + k : "")}", new Vector3(cx, baseY + ridge / 2f, (a + b) / 2f), new Vector3(len, 0.4f, b - a), rot, accentMat, true);
+                }
+            }
             const int steps = 4;
             for (int i = 0; i < steps; i++)
             {
