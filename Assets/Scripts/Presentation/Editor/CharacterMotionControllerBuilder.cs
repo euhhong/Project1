@@ -38,7 +38,7 @@ namespace Project1.Presentation.EditorTools
 
         private static readonly string[] Slots =
         {
-            "Idle", "Idle_Hunter", "Idle_Thief", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
@@ -67,7 +67,7 @@ namespace Project1.Presentation.EditorTools
             // 감시자 공통: 공장장·사냥터지기·안토니오·리퍼·광대
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
-            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기
+            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino"), ("Idle", "Idle_Luchino") } }), // 루키노: 가로 베기, 웅크린 대기(Crouch Idle)
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
