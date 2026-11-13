@@ -27,7 +27,7 @@ MonoBehaviour:
   targetRange: 40
   targetAngle: 70
   launchPitchUp: 12
-  heightRatio: 0.89
-  sideOffset: 0.34
-  forwardOffset: 0.71
+  heightRatio: 0.82
+  sideOffset: 0.1
+  forwardOffset: 0.84
   slot: 16

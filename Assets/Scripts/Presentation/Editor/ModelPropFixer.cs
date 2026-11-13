@@ -17,7 +17,7 @@ namespace Project1.Presentation.EditorTools
     /// </summary>
     public class ModelPropFixer : AssetPostprocessor
     {
-        public override uint GetVersion() => 6; // 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
+        public override uint GetVersion() => 8; // 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
         public override int GetPostprocessOrder() => -5;
 
         private void OnPostprocessModel(GameObject root)
@@ -96,8 +96,10 @@ namespace Project1.Presentation.EditorTools
 
         /// <summary>
         /// 공군: 신호총(Coordinator_Prop, 오른손 뼈 아래)의 총구가 뒤를 보고 있었다(쏘면 노리쇠 쪽에서 나가는 것처럼 보임).
-        /// → 손바닥을 지나는 세로축(쏘는 자세에서의 위쪽)을 중심으로 180도 돌린다. 손잡이는 손에 그대로, 총열만 앞으로.
+        /// → 손바닥을 지나는 세로축(쏘는 자세에서의 위쪽)으로 180도 돌려 총열을 앞으로, 이어 위에서 봐도 곧게(총열 = 몸 앞쪽) 손잡이가 똑바로 아래를 보게 세운다.
         /// </summary>
+        private const float BarrelPitchUp = 25f; // 공군 신호총 총열을 수평으로 들어 올리는 각도(도)
+
         private static void FixCoordinator(GameObject root, ModelImporter importer)
         {
             var gun = root.GetComponentsInChildren<MeshRenderer>(true).FirstOrDefault(r => r.name == "Coordinator_Prop");
@@ -109,21 +111,34 @@ namespace Project1.Presentation.EditorTools
                 : rightLower != null ? (rightHand.position - rightLower.position) * 0.3f : Vector3.zero;
             Vector3 palm = rightHand.position + fingers * 0.5f;
 
-            // 쏘는 자세(Skill_Coordinator_Flare, 쏘는 순간)에서 잰 "월드 위쪽"을 오른손 뼈 기준으로 나타낸 축. 이 축으로 돌리면 손잡이는 아래 그대로, 총열만 뒤 → 앞.
-            Vector3 upInHand = new Vector3(-0.623f, 0.492f, 0.608f);
-            gun.transform.RotateAround(palm, rightHand.TransformDirection(upInHand).normalized, 180f);
-
-            // 총구 자리: 쏘는 자세의 몸 앞쪽(오른손 뼈 기준으로 잰 방향)으로 가장 멀리 나온 정점들(총열 끝, 나팔처럼 벌어진 입구)의 가운데.
-            // 빈 자식 Coordinator_Muzzle로 둔다 — FE(FlareShotVisual)가 신호탄을 여기서 내보낸다.
-            Vector3 fwd = rightHand.TransformDirection(new Vector3(-0.308f, 0.560f, -0.769f)).normalized;
+            // 쏘는 자세(Skill_Coordinator_Flare, 쏘는 순간)에서 잰 "월드 위쪽"·"몸 앞쪽"을 오른손 뼈 기준으로 나타낸 방향.
+            Vector3 up = rightHand.TransformDirection(new Vector3(-0.629f, 0.552f, 0.548f)).normalized;
+            Vector3 fwd = rightHand.TransformDirection(new Vector3(-0.265f, 0.510f, -0.818f)).normalized;
+            // 1) 위쪽 축으로 180도: 총열이 뒤 → 앞(손잡이는 아래 그대로).
+            gun.transform.RotateAround(palm, up, 180f);
+            // 2) 똑바로 세우기: 총열(긴 축, 총구 쪽)이 몸 앞쪽과 나란하게(위에서 봐도 곧게), 손잡이(총열 → 손바닥)가 똑바로 아래를 보게. 손바닥을 중심으로 돌린다.
             var world = gun.GetComponent<MeshFilter>().sharedMesh.vertices.Select(p => gun.transform.TransformPoint(p)).ToArray();
+            Vector3 a = HandleEnd(world, out Vector3 b);
+            Vector3 barrel = (b - a).normalized;
+            if (Vector3.Dot(barrel, fwd) < 0f) barrel = -barrel;
+            Vector3 mean = Vector3.zero; foreach (var p in world) mean += p; mean /= world.Length;
+            Vector3 down = Vector3.ProjectOnPlane(palm - mean, barrel);
+            down = down.sqrMagnitude > 1e-10f ? down.normalized : -up;
+            Quaternion align = Quaternion.LookRotation(Vector3.ProjectOnPlane(fwd, up).normalized, up) * Quaternion.Inverse(Quaternion.LookRotation(barrel, -down));
+            gun.transform.SetPositionAndRotation(palm + align * (gun.transform.position - palm), align * gun.transform.rotation);
+            // 3) 긴 축에 손잡이가 섞여 총열이 앞으로 25도쯤 숙여 있었다 → 몸 오른쪽 축으로 들어 올려 총열을 수평으로(옆에서 봐도 곧게).
+            gun.transform.RotateAround(palm, Vector3.Cross(up, fwd).normalized, -BarrelPitchUp);
+
+            // 총구 자리: 몸 앞쪽으로 가장 멀리 나온 정점들(총열 끝, 나팔처럼 벌어진 입구)의 가운데.
+            // 빈 자식 Coordinator_Muzzle로 둔다 — FE(FlareShotVisual)가 신호탄을 여기서 내보낸다.
+            world = gun.GetComponent<MeshFilter>().sharedMesh.vertices.Select(p => gun.transform.TransformPoint(p)).ToArray();
             float far = world.Max(p => Vector3.Dot(p, fwd)), near = world.Min(p => Vector3.Dot(p, fwd));
             var tip = world.Where(p => Vector3.Dot(p, fwd) >= far - (far - near) * 0.04f).ToArray();
             Vector3 muzzle = Vector3.zero; foreach (var p in tip) muzzle += p; muzzle /= tip.Length;
             var mz = new GameObject("Coordinator_Muzzle").transform;
             mz.SetParent(gun.transform, false);
             mz.position = muzzle;
-            mz.rotation = Quaternion.LookRotation(fwd, rightHand.TransformDirection(upInHand));
+            mz.rotation = Quaternion.LookRotation(fwd, up);
             Debug.Log($"[FE] 공군 신호총을 손잡이 축으로 180도 돌렸습니다(총구가 앞을 보게).");
         }
 
