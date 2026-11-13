@@ -56,7 +56,7 @@ namespace Project1.Presentation
             if (leaning)
                 animator.Play(state, layer, push.PushBlocked ? 0.999f : Mathf.Min(push.PushTime / PushLeanTime, 0.999f));
             else if (!pushing && Synced(traversal.Action))
-                animator.Play(state, layer, Mathf.Min(traversal.ActionProgress, 0.999f));
+                animator.Play(state, layer, Mathf.Min(traversal.ActionProgress * (traversal.Action == TraversalAction.HangClimbOver ? Project1.Systems.CharacterTraversal.OverClipShare : 1f), 0.999f));
             else if (playing != state)
                 animator.CrossFadeInFixedTime(state, playing == 0 ? 0f : crossFade, layer);
             playing = state;
@@ -72,6 +72,7 @@ namespace Project1.Presentation
             TraversalAction.Hang => t.BracedHang ? "HangBraced" : "Hang",
             TraversalAction.HangClimb => "HangClimb",
             TraversalAction.HangClimbRail => "HangClimbRail",
+            TraversalAction.HangClimbOver => "HangClimbRail", // 같은 모션의 앞부분(올라 넘어가기)만
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",

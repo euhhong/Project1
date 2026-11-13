@@ -14,7 +14,8 @@ namespace Project1.Systems
     /// - 매달리기: 공중에서 턱 쪽으로 방향키를 누르고 있고 손이 턱에 닿을 높이면 잡고 매달린다(HangGrab → Hang).
     ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
     ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
-    ///   뒤(S) → 놓고 떨어진다.
+    ///   벽 한 장(창틀 윗부분·담 꼭대기처럼 얇고 반대편이 낮음)이면 앞 → 위로 넘어가자마자 반대편으로 떨어진다(HangClimbOver, Climbing 앞부분).
+    ///   뒤(S) → 놓고 떨어진다. 잡는 턱은 손이 닿는 가장 높은 윗면(창틀·벽 맨 꼭대기, 창틀 없는 바닥 끝도).
     /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
     /// - 착지: 떨어진 높이(가장 높았던 곳 → 착지)로 고른다 — 고공(hardFall 이상) = Hard Landing, 점프해서 높이 = 앞구르기(Falling To Roll),
     ///   걸어서 높이 = 깊이 웅크림(Jumping), 낮게 = 살짝 웅크림(Jumping Down). 크게 착지하면 잠깐 못 움직인다.
@@ -129,7 +130,7 @@ namespace Project1.Systems
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
         private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
-                                                             || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail;
+                                                             || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver;
         private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
 
         private void Awake() => Init();
@@ -177,7 +178,7 @@ namespace Project1.Systems
             switch (action)
             {
                 case TraversalAction.ClimbUp: case TraversalAction.WindowVault: case TraversalAction.WindowDrop: case TraversalAction.WindowJump:
-                case TraversalAction.HangClimb: case TraversalAction.HangClimbRail:
+                case TraversalAction.HangClimb: case TraversalAction.HangClimbRail: case TraversalAction.HangClimbOver:
                     actionTime += dt;
                     // 진행도 1인 틱에 이동이 끝 자리로 옮긴 뒤 다음 틱에 끝낸다.
                     if (actionTime > actionDuration + dt * 0.5f) FinishScripted();
@@ -419,7 +420,38 @@ namespace Project1.Systems
                 StartAction(TraversalAction.HangClimbRail, railClimbTime);
                 return true;
             }
+            if (FindOverThinTop(ledge, out var over))
+            {
+                // 벽 한 장(창틀 윗부분·담 꼭대기): 위로 올라 넘어가고, 넘어가자마자 반대편으로 떨어진다.
+                pathEnd = over;
+                root0 = ledge.Top - RailClimbTop * hu;
+                railTop = ledge.Top;
+                StartAction(TraversalAction.HangClimbOver, railClimbTime * OverClipShare);
+                return true;
+            }
             return false;
+        }
+
+        /// <summary>벽 한 장 넘기는 Climbing 모션의 앞부분(올라 넘어가기)만 쓴다 — 일어서는 뒷부분은 자르고 바로 떨어진다.</summary>
+        public const float OverClipShare = 0.75f;
+
+        /// <summary>
+        /// 얇은 꼭대기(두께 1.2m 이하 — 벽 한 장·창틀 윗부분) 너머: 꼭대기 위가 비고, 넘어간 자리(반대편 허공, 꼭대기 높이)에 몸이 들어가고, 반대편이 더 낮으면 그 자리.
+        /// </summary>
+        private bool FindOverThinTop(in Ledge l, out Vector3 over)
+        {
+            over = default;
+            const float probe = 1.25f;
+            Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
+            if (!Cast(far, l.Normal, probe, out var back)) return false; // 두껍다(위에 설 자리가 없을 뿐인 두꺼운 턱)
+            float thick = probe - back.distance;
+            Vector3 mid = l.Face - l.Normal * (thick * 0.5f); mid.y = l.Top;
+            if (OverlapSphere(mid + Vector3.up * 0.5f, 0.25f)) return false; // 꼭대기 위가 막힘(천장 등)
+            Vector3 beyond = l.Face - l.Normal * (thick + cc.radius + 0.15f); beyond.y = l.Top + 0.03f;
+            if (OverlapCapsule(beyond, cc.radius * 0.9f)) return false;           // 넘어간 자리가 막힘
+            if (Cast(beyond + Vector3.up * 0.1f, Vector3.down, 0.4f, out _)) return false; // 반대편이 바로 바닥 = 난간 넘기·올라서기 쪽
+            over = beyond;
+            return true;
         }
 
         private void Release()
@@ -507,6 +539,14 @@ namespace Project1.Systems
                     float top = railTop + 0.05f;
                     Vector3 xz = Vector3.Lerp(s, e, Smooth(0.4f, 0.95f, p));
                     xz.y = y0 + railClimbRise.Evaluate(p) * (top - root0) - Smooth(0.7f, 1f, p) * (top - e.y); // 난간을 넘은 뒤 그 뒤 바닥으로 내려선다
+                    return xz;
+                }
+                case TraversalAction.HangClimbOver: // Climbing 앞부분(OverClipShare): 꼭대기로 오름 → 넘어감. 끝나면 바로 떨어진다.
+                {
+                    float q = p * OverClipShare; // 원래 모션(난간 넘기) 기준 진행도
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.08f, q));
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.45f, 1f, p));
+                    xz.y = y0 + railClimbRise.Evaluate(q) * (railTop + 0.05f - root0);
                     return xz;
                 }
             }
