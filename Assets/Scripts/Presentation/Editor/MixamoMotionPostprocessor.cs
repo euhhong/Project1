@@ -51,7 +51,8 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light_Ripper"] = new Vector2(7, 51),
             ["Attack_Heavy_Ripper"] = new Vector2(7, 51),
             ["Attack_RunJump_Ripper"] = new Vector2(37, 71),
-            ["Air"] = new Vector2(0, 22),                      // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
+            ["Hit_HeadKick"] = new Vector2(19, 76),            // 헤드샷 킥에 맞음(Corkscrew Evade): 뒤로 회오리치며 뛰어오름(19~34) → 땅에 떨어짐(43) → 엎드림 → 일어섬(76)
+            ["Air"] = new Vector2(0, 22),                     // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
             ["Air_F"] = new Vector2(25, 44),                   // Jumping(걸어서 점프): 발이 떨어짐(25) → 꼭대기(34) → 착지(44)
             ["Air_Run"] = new Vector2(0, 20),                  // Running Jump(뛰면서 점프): 도약(0) → 꼭대기(10) → 착지(20)
         };

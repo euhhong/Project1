@@ -43,6 +43,9 @@ namespace Project1.Core
         /// <summary>데미지 없이 밀어내기만 하는 공격인지(예: 맹인 지팡이). 데미지 규칙을 만들 때 이걸 보고 건너뛴다.</summary>
         public bool NoDamage;
 
+        /// <summary>맞은 쪽이 쓰러지며 나가떨어지는 공격인지(예: 두 번째 날아 차기가 머리에 맞음 — 회오리치며 나가떨어짐 모션). 모션(FE)이 본다.</summary>
+        public bool Knockdown;
+
         /// <summary>세기 배율(0이면 1).</summary>
         public readonly float PowerScale => Power > 0f ? Power : 1f;
 
