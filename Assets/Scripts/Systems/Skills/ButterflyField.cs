@@ -15,7 +15,8 @@ namespace Project1.Systems
     ///   우클릭으로 시점을 돌리는 중에 좌클릭을 꾹 눌러도 꺼낼 수 있다(화면 가운데가 가리키는 땅, 없으면 앞쪽).
     /// - 나비는 최대 maxButterflies마리, 넘으면 가장 오래된 것이 사라진다.
     ///   캐릭터가 설 공간(몸 크기 캡슐 빈 곳 + 바닥)만 있으면 벽 너머 안 보이는 곳에도 놓는다(가리킨 벽 너머로 광선을 이어 찾음, placeBeyondWalls).
-    /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). 벽 등에 가려 안 보이는 나비는 겨누지 않는다(targetNeedsSight — 도약 표적만 안 뜸). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
+    /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). 벽 등에 가려 안 보이는 나비는 겨누지 않는다(targetNeedsSight — 도약 표적만 안 뜸).
+    ///   단 나비를 놓은 직후 followJustThrownTime(1초) 안에는 방금 날린 나비가 무조건 표적(벽 너머여도 E로 따라감, 벽에 막히면 그대로 멈춤). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
     /// </summary>
     [DisallowMultipleComponent]
@@ -69,6 +70,10 @@ namespace Project1.Systems
         [Tooltip("도약 표적: 눈에서 나비까지 벽 등에 가려지면 겨누지 않는다(E 표적 표시가 안 뜸). 나비 위 이 높이들(m) 중 하나라도 보이면 보인다.")]
         [SerializeField] private bool targetNeedsSight = true;
         [SerializeField] private float[] sightHeights = { 0.55f, 1.3f };
+        [Tooltip("방금 날린 나비 따라가기: 나비를 놓은 직후 이 시간(초) 안에는 방금 날린 나비가 벽 너머(안 보임)·시야 밖·먼 곳이어도 도약 표적이 된다(E로 바로 따라감). 가다가 벽에 막히면 지금처럼 멈춘다.")]
+        [SerializeField] private bool followJustThrown = true;
+        [SerializeField, Min(0f)] private float followJustThrownTime = 1f;
+        private float justThrownLeft;
         private static readonly RaycastHit[] SightHits = new RaycastHit[16];
 
         // 좌클릭을 누르지 않을 때도 지금 겨누는 대로 놓으면 나비가 갈 자리(조준 보조 고리).
@@ -156,13 +161,21 @@ namespace Project1.Systems
             PlacedCount++;
             butterflies.Add(point);
             while (butterflies.Count > maxButterflies) butterflies.RemoveAt(0);
+            justThrownLeft = followJustThrown ? followJustThrownTime : 0f; // 방금 날린 나비(맨 끝)는 잠깐 무조건 표적
         }
 
         /// <summary>바라보는 방향(시야 Yaw·Pitch)과 가장 가까운 각도의 나비를 고른다(시야 각도·거리 안에서).</summary>
         private void UpdateTarget(in CharacterInputFrame input)
         {
             TargetIndex = -1;
+            if (justThrownLeft > 0f) justThrownLeft = Mathf.Max(0f, justThrownLeft - Time.fixedDeltaTime);
             if (butterflies.Count == 0) return;
+            if (followJustThrown && justThrownLeft > 0f)
+            {
+                // 방금 날린 나비: 벽 너머·시야 밖·먼 곳이어도 표적(바로 E를 누르면 따라감). 이미 거기 있으면 아님.
+                Vector3 last = butterflies[^1] - transform.position; last.y = 0f;
+                if (last.magnitude >= minTargetDistance) { TargetIndex = butterflies.Count - 1; return; }
+            }
             Vector3 eye = transform.position + Vector3.up * eyeHeight;
             Vector3 look = Quaternion.Euler(input.LookPitch, input.LookYaw, 0f) * Vector3.forward;
             float bestAngle = maxTargetAngle;
