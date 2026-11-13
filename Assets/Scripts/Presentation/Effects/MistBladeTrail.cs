@@ -5,7 +5,8 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 리퍼 안개 칼날 하나의 연출: 손톱 모양 그대로(나란한 세 줄기, 끝이 뾰족하고 가운데가 앞으로 휜 초승달) 회색빛 안개 칼날 +
-    /// 지나간 자리에 흩어지는 안개 + 끝난 자리에서 칼날이 안개로 부서져 흩어짐.
+    /// 지나간 자리에 흩어지는 안개(칼날 뒤에서 나와 손톱 모양을 가리지 않음) + 세 줄기 손톱 자국 줄(궤적) + 끝난 자리에서 칼날이 안개로 부서져 흩어짐.
+    /// 칼날은 안개보다 위에 그려 날아가는 내내 손톱 모양이 온전히 보인다.
     /// 칼날은 휘두른 방향(swingAxis, 날아가는 방향에 수직)으로 세운다 — 내려치기면 세로로 선다.
     /// 세기(IProjectile.Power)가 약하면(E, 1칸) 작고 옅다.
     /// 투사체(IProjectile, BE)의 자리를 따라간다. 처음엔 손톱 자리에서 시작해 짧게 BE 자리로 합쳐진다.
@@ -27,7 +28,7 @@ namespace Project1.Presentation
         private MeshRenderer bladeRenderer;
         private Mesh mesh;
         private ParticleSystem mist;
-        private Material bladeMat, mistMat;
+        private Material bladeMat, mistMat, trailMat;
 
         public static MistBladeTrail Create(IProjectile p, Vector3 start, Vector3 swingAxis)
         {
@@ -56,10 +57,32 @@ namespace Project1.Presentation
             bgo.AddComponent<MeshFilter>().sharedMesh = mesh;
             bladeRenderer = bgo.AddComponent<MeshRenderer>();
             bladeMat = new Material(Shader.Find("Sprites/Default")) { name = "MistBlade" }; // 꼭짓점 색(가장자리 투명), 양면
-            bladeMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.6f, 1f, strength));
+            bladeMat.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.85f, 1f, strength));
+            bladeMat.renderQueue = 3100; // 안개(파티클)보다 나중에 그려 손톱 모양이 안개에 가리지 않게
             bladeRenderer.sharedMaterial = bladeMat;
             bladeRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             blade = bgo.transform;
+
+            // 손톱 자국: 세 줄기 가운데에서 지나간 길을 따라 가는 줄이 남는다(날아가는 동안 궤적에 손톱 자국이 그대로 보이게).
+            trailMat = new Material(Shader.Find("Sprites/Default")) { name = "MistClawStreak", renderQueue = 3050 };
+            for (int c = 0; c < Claws; c++)
+            {
+                var tgo = new GameObject("ClawStreak" + c);
+                tgo.transform.SetParent(blade, false);
+                tgo.transform.localPosition = new Vector3((c - (Claws - 1) * 0.5f) * 0.2f, (c - 1) * 0.06f, 0.28f); // 줄기 가운데(앞으로 휜 끝)
+                var tr = tgo.AddComponent<TrailRenderer>();
+                tr.sharedMaterial = trailMat;
+                tr.time = 0.22f;
+                tr.minVertexDistance = 0.05f;
+                tr.widthMultiplier = 0.07f * scale;
+                tr.widthCurve = AnimationCurve.Linear(0f, 1f, 1f, 0.2f);
+                var g = new Gradient();
+                g.SetKeys(new[] { new GradientColorKey(BladeColor, 0f), new GradientColorKey(MistColor, 1f) },
+                          new[] { new GradientAlphaKey(0.85f * Mathf.Lerp(0.7f, 1f, strength), 0f), new GradientAlphaKey(0f, 1f) });
+                tr.colorGradient = g;
+                tr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                tr.emitting = true;
+            }
 
             // 안개: 칼날 줄기 자리에서 지나간 거리만큼 덩이를 남긴다(월드 공간), 천천히 커지며 옅어진다
             var sgo = new GameObject("MistBladeFog");
@@ -77,10 +100,11 @@ namespace Project1.Presentation
             main.scalingMode = ParticleSystemScalingMode.Shape;
             var emission = mist.emission;
             emission.rateOverTime = 0f;
-            emission.rateOverDistance = 16f;
+            emission.rateOverDistance = 10f; // 지나간 자리에만 옅게(칼날을 덮지 않게)
             var shape = mist.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(0.5f, 1.4f, 0.15f); // 세 줄기가 차지하는 자리(칼날 크기는 위 localScale로 따라감)
+            shape.position = new Vector3(0f, 0f, -0.7f);  // 칼날 바로 뒤에서 나온다(앞의 손톱 모양을 가리지 않게)
             var size = mist.sizeOverLifetime;
             size.enabled = true; size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.8f, 1f, 1.8f));
             var col = mist.colorOverLifetime;
@@ -147,6 +171,7 @@ namespace Project1.Presentation
                 }
             }
             blade.gameObject.GetComponent<MeshRenderer>().enabled = false;
+            foreach (var tr in GetComponentsInChildren<TrailRenderer>()) tr.emitting = false; // 손톱 자국 줄은 남은 만큼 옅어지며 사라진다
             Destroy(gameObject, 1.6f);
         }
 
@@ -154,6 +179,7 @@ namespace Project1.Presentation
         {
             if (bladeMat != null) Destroy(bladeMat);
             if (mistMat != null) Destroy(mistMat);
+            if (trailMat != null) Destroy(trailMat);
             if (mesh != null) Destroy(mesh);
         }
 
