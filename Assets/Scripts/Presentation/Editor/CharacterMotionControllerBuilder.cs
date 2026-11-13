@@ -27,7 +27,8 @@ namespace Project1.Presentation.EditorTools
         private const float RunJumpMoveZ = (1f + CharacterAnimatorDriver.RunBlendValue) * 0.5f;
 
         // 스킬 모션의 재생 배속. 전위 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
-        private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f }; // 사냥터지기 그랩은 재생 위치를 BE 구간에 맞춘다(CharacterSkillAnimator.MotionTiming)
+        // 광대 로켓 돌진: 다리는 달리기 모션(6.5m/s용) — 돌진 8m/s에 맞춰 1.2배.
+        private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f, ["SmileyFace_RocketCharge"] = 1.2f }; // 사냥터지기 그랩은 재생 위치를 BE 구간에 맞춘다(CharacterSkillAnimator.MotionTiming)
 
         // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
         private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1"), ("SmileyFace_RocketCharge", "Fall_1") };

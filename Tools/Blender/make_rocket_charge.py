@@ -2,12 +2,12 @@
 광대 로켓 돌진(E) 모션 두 개를 새로 만든다(바탕 = 대기 모션 FBX 첫 프레임, Mixamo 뼈대).
 - Skill_SmileyFace_RocketCharge_Raise: E를 꾹 누르는 동안 — 로켓을 두 손으로 머리 위로 치켜든 상체 자세(반복, 게임에서는 상체만 쓰고 다리는 걷기).
 - Skill_SmileyFace_RocketCharge: E를 떼면 돌진 — 상체를 앞으로 기울이고 두 손으로 로켓을 가슴 앞에 내밀어(머리가 정면) 들이받는 자세,
-  무게중심을 낮추고 로켓을 껴안듯 두 팔로 감싸 안는다. 다리는 달리지 않고 앞다리는 깊이 굽혀 디디고 뒷다리는 뒤로 끌리게(로켓 추진력에 밀려 가는 느낌).
-  떨림 없이 아주 느리게 숨만 쉰다(반복).
+  무게중심을 낮추고 로켓을 껴안듯 두 팔로 감싸 안는다. 다리는 달리기 모션(Run_F)의 다리를 그대로 가져와 엇갈려 뛴다.
+  상체는 떨림 없이 그대로(반복 = 달리기 한 걸음 주기).
 - 머리는 내내 정면.
 
 사용법 (Blender 5.x):
-  blender -b --python Tools/Blender/make_rocket_charge.py -- <바탕 대기.fbx> <출력 폴더>
+  blender -b --python Tools/Blender/make_rocket_charge.py -- <바탕 대기.fbx> <출력 폴더> <달리기.fbx(Run_F)>
 """
 import bpy, sys, os, math
 from mathutils import Matrix, Quaternion, Vector
@@ -58,7 +58,16 @@ def build(src, dst, keys, frame_end):
     def lean(name, deg):  # + = 앞으로 숙임
         rotate_world(bone(pbs, name), Quaternion(right, -math.radians(deg)))
 
-    ctx = dict(aim=aim, lean=lean, fwd=fwd, up=up, right=right)
+    def set_local(name, q):
+        bone(pbs, name).rotation_quaternion = q
+        bpy.context.view_layer.update()
+
+    def set_hips(rot, loc):
+        h = next(b for b in pbs if b.parent is None)
+        h.rotation_quaternion = rot; h.location = loc
+        bpy.context.view_layer.update()
+
+    ctx = dict(aim=aim, lean=lean, set_local=set_local, set_hips=set_hips, fwd=fwd, up=up, right=right)
     for frame, pose in keys.items():
         for b in pbs:
             b.rotation_quaternion = base_rot[b.name]
@@ -94,37 +103,53 @@ def raise_pose(lift):
     return pose
 
 
-def ram_pose(breath):
-    """무게중심을 낮추고(무릎을 깊이 굽히고 상체를 앞으로 크게 숙임) 로켓을 껴안듯 두 팔로 감싸 안고 들이받는다.
-    앞다리는 깊이 굽혀 디디고 뒷다리는 뒤로 끌린다(달리지 않음 — 로켓 추진력에 밀려 감). breath: 아주 느린 들숨(0~1, 떨림 없음)."""
+LEG_BONES = ("LeftUpLeg", "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot", "RightToeBase")
+
+
+def sample_run_legs(run_fbx):
+    """달리기 모션(Run_F)의 프레임마다 다리 뼈 로컬 회전을 읽는다(같은 Mixamo 뼈대)."""
+    arm = load(run_fbx)
+    f0, f1 = (int(round(v)) for v in arm.animation_data.action.frame_range)
+    frames = []
+    for f in range(f0, f1 + 1):
+        bpy.context.scene.frame_set(f)
+        bpy.context.view_layer.update()
+        hips = next(b for b in arm.pose.bones if b.parent is None)
+        d = {n: bone(arm.pose.bones, n).rotation_quaternion.copy() for n in LEG_BONES}
+        d["@hips_rot"] = hips.rotation_quaternion.copy(); d["@hips_loc"] = hips.location.copy()  # 엉덩이 높이·흔들림도 달리기대로(발이 땅을 뚫지 않게)
+        frames.append(d)
+    return frames
+
+
+def ram_pose(legs):
+    """무게중심을 낮추고(상체를 앞으로 크게 숙임) 로켓을 껴안듯 두 팔로 감싸 안고 들이받는다.
+    다리는 달리기 모션(legs = 그 프레임의 다리 로컬 회전)으로 엇갈려 뛴다. 상체는 떨림 없이 그대로."""
     def pose(c):
         f, u, r = c["fwd"], c["up"], c["right"]
-        c["lean"]("Spine", 20.0 + 1.0 * breath)
+        c["set_hips"](legs["@hips_rot"], legs["@hips_loc"])
+        for n, q in legs.items():
+            if n.startswith("@"): continue
+            c["set_local"](n, q)
+        c["lean"]("Spine", 20.0)
         c["lean"]("Spine1", 12.0)
         c["lean"]("Spine2", 6.0)
         for side, s in (("Right", 1.0), ("Left", -1.0)):
             c["aim"](side + "Arm", 0.45 * f - 0.75 * u + 0.35 * s * r)       # 위팔: 앞·아래로, 바깥으로 벌려 감쌀 자리
             c["aim"](side + "ForeArm", 0.55 * f + 0.05 * u - 0.85 * s * r)  # 아래팔: 가슴 밑에서 안쪽으로 감아 로켓을 껴안음
             c["aim"](side + "Hand", 0.2 * f + 0.4 * u - 0.9 * s * r)        # 손: 로켓을 위로 감싸 쥠
-        # 앞다리(왼쪽): 깊이 굽혀 디딤 / 뒷다리(오른쪽): 뒤로 끌림(발끝이 땅을 스침)
-        c["aim"]("LeftUpLeg", 0.75 * f - 0.66 * u)
-        c["aim"]("LeftLeg", -0.35 * f - 0.94 * u)
-        c["aim"]("LeftFoot", 0.9 * f - 0.4 * u)
-        c["aim"]("RightUpLeg", -0.55 * f - 0.83 * u)
-        c["aim"]("RightLeg", -0.85 * f - 0.5 * u)
-        c["aim"]("RightFoot", -0.25 * f - 0.97 * u)
     return pose
 
 
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    if len(argv) < 2:
-        raise SystemExit("usage: -- <base_idle.fbx> <out_dir>")
-    src, out = argv[0], argv[1]
+    if len(argv) < 3:
+        raise SystemExit("usage: -- <base_idle.fbx> <out_dir> <run.fbx>")
+    src, out, run = argv[0], argv[1], argv[2]
     build(src, os.path.join(out, "Skill_SmileyFace_RocketCharge_Raise.fbx"),
           {1: raise_pose(0.0), 16: raise_pose(1.0), 31: raise_pose(0.0)}, 31)
+    legs = sample_run_legs(run)
     build(src, os.path.join(out, "Skill_SmileyFace_RocketCharge.fbx"),
-          {1: ram_pose(0.0), 16: ram_pose(1.0), 31: ram_pose(0.0)}, 31)  # 떨림 없이 1초에 한 번 아주 느리게 숨쉬기
+          {i + 1: ram_pose(l) for i, l in enumerate(legs)}, len(legs))  # 달리기 한 걸음 주기(반복)
 
 
 main()
