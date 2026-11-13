@@ -11,6 +11,8 @@ namespace Project1.Systems
     ///   땅: 약=오른손, 강=오른손+소품. 앞으로 달리다 뛴 공중 공격(IsRunJumpAttack, 플라잉킥 등): 양발. 그 밖의 공중 공격은 땅 공격과 같다.
     /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
     /// - 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 공중 공격이 한 번 나가고, 키를 뗄 때까지 새 입력을 받지 않는다.
+    /// - 공격이 끝난 뒤에도 잠깐(약 lightReattackDelay / 강 heavyReattackDelay) 새 공격을 받지 않는다. 이동은 되고 안내·쿨다운 표시는 없다.
+    ///   (달리기 점프 공격에 이어 가는 두 번째 날아 차기, 맹인 후리기 잇기는 예외)
     /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
     /// - 땅에서 강공격을 모으는 동안에는 걷기 속도로 제한한다(IMoveSpeedLimit). 공중에서는 점프 궤적을 건드리지 않는다.
     /// 공격 방향은 몸 방향(= 시야 Yaw, CharacterMotor가 맞춘다)이다. 데미지는 다루지 않는다.
@@ -21,6 +23,13 @@ namespace Project1.Systems
     {
         [SerializeField] private AttackSpec lightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.RightHand);
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
+
+        [Header("다시 공격 대기 (표시 없음 — 손맛으로만 느낌)")]
+        [Tooltip("약공격(공중 공격 포함)이 끝난 뒤 다시 공격을 받기까지의 시간(초). 그동안 이동은 되고, 누른 공격 키는 뗄 때까지 무시한다.")]
+        [SerializeField, Min(0f)] private float lightReattackDelay = 0.3f;
+        [Tooltip("강공격이 끝난 뒤 다시 공격을 받기까지의 시간(초).")]
+        [SerializeField, Min(0f)] private float heavyReattackDelay = 0.5f;
+        private float reattackTimer; // 남은 다시 공격 대기(초)
 
         [Header("달리기 점프 공격 (앞으로 달리다 뛴 공중 공격, 발 판정)")]
         [Tooltip("공중 공격을 시작할 때 앞으로 이 속도 비율(걷기 0 ~ 달리기 1) 이상이면 달리기 점프 공격으로 본다.")]
@@ -181,6 +190,7 @@ namespace Project1.Systems
                 input.LightAttack = false;
                 input.HeavyRelease = false;
             }
+            if (reattackTimer > 0f) reattackTimer -= dt;
             if (grounded && !IsFollowUpKick) { runJumpAirborne = false; followUpUsed = false; }
             bool followUp = runJumpFollowUp && !grounded && runJumpAirborne && !followUpUsed && input.AttackPressed && !IsFollowUpKick;
 
@@ -203,6 +213,13 @@ namespace Project1.Systems
                     }
                     // 달리기 점프 공격을 한 그 점프가 끝나기 전에 한 번 더 누름 → 다시 뛰어오르며 두 번째 날아 차기.
                     if (followUp) { StartFollowUpKick(input); break; }
+                    // 공격이 끝난 직후 다시 공격 대기: 이동은 되지만 공격은 안 나간다. 이때 누른 키는 뗄 때까지 무시한다
+                    // (대기가 끝난 뒤 떼어 공격이 나가거나 모으기가 시작되지 않게 — 연타하면 헛누름으로 느껴진다).
+                    if (reattackTimer > 0f)
+                    {
+                        if (input.AttackPressed && !(input.LightAttack || input.HeavyRelease)) waitAirRelease = true;
+                        break;
+                    }
                     // 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 바로 공중 공격(첫 입력만), 키를 뗄 때까지 다른 입력은 무시한다.
                     if (!grounded && input.AttackPressed)
                     {
@@ -423,6 +440,9 @@ namespace Project1.Systems
             {
                 hitDetector.EndAttack();
             }
+            // 다시 공격 대기. 연속 동작(맹인 후리기 잇기)은 바로 이어 가므로 걸지 않는다.
+            if (!chaining && AttackState != CharacterAttackState.None)
+                reattackTimer = AttackState == CharacterAttackState.Heavy ? heavyReattackDelay : lightReattackDelay;
             AttackState = CharacterAttackState.None;
             AttackPhase = AttackPhase.None;
             PhaseProgress = 0f;
