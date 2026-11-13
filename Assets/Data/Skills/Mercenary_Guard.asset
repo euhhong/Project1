@@ -21,3 +21,4 @@ MonoBehaviour:
   dashTime: 0.3
   newDirectionDot: 0.7
   moveDeadZone: 0.3
+  autoDashDelay: 0.5

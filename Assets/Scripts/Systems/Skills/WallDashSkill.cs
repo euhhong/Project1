@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 몸이 벽(캐릭터가 아닌 장애물)에 옆으로 닿으면 도약 준비가 된다.
     /// - 그다음 첫 이동(벽에 닿을 때 누르던 방향과 다른 방향을 누르거나, 멈췄다가 다시 움직이면)에
     ///   그 방향으로 초고속(dashSpeed)으로 dashTime 동안 튀어 나간다(잔상). 점프는 못 한다.
-    /// - 벽에 닿은 뒤 autoDashDelay(1초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.
+    /// - 벽에 닿은 뒤 autoDashDelay(0.5초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.
     /// - 도약이 끝나면 다시 켜진 상태로 돌아가고, 벽에 또 닿으면 또 도약할 수 있다.
     /// 켜져 있어도 걷기·달리기·공격은 평소대로 한다(공격해도 꺼지지 않는다).
     /// </summary>
@@ -26,7 +26,7 @@ namespace Project1.Systems
         [Tooltip("이동 입력으로 볼 최소 크기.")]
         [Range(0f, 1f)] public float moveDeadZone = 0.3f;
         [Tooltip("벽에 닿은 뒤 이 시간(초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.")]
-        [Min(0f)] public float autoDashDelay = 1f;
+        [Min(0f)] public float autoDashDelay = 0.5f;
 
         public override bool LocksActions => false;
         public override bool CancelledByAttack => false;
@@ -76,7 +76,7 @@ namespace Project1.Systems
                     }
                     if (ctx.PhaseTime >= autoDashDelay)
                     {
-                        // 1초 안에 새 방향 입력이 없었다 → 바라보는 방향(시야 = 카메라 앞)으로 저절로 도약.
+                        // autoDashDelay 안에 새 방향 입력이 없었다 → 바라보는 방향(시야 = 카메라 앞)으로 저절로 도약.
                         ctx.SetPhase(Dashing);
                         ctx.Direction = Vector3.forward;
                         break;
