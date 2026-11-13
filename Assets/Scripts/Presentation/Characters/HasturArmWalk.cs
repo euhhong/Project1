@@ -58,6 +58,9 @@ namespace Project1.Presentation
         private ICharacterAttackState attack;
         private float phase, amount;
 
+        /// <summary>걸음 위상(라디안). 한 바퀴(2π) = 걸음 한 쌍. HasturBodyBob이 몸 들썩임 박자를 맞춘다.</summary>
+        public float StepPhase => phase;
+
         private void OnDisable() => Restore();
 
         private void LateUpdate()
