@@ -21,7 +21,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 383d01978c5f73f41be4b1c27f873a4d, type: 2}
   - id: Survivor_Cowboy
     displayName: "\uCE74\uC6B0\uBCF4\uC774"
     role: 0
