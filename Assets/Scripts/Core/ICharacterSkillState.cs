@@ -48,6 +48,12 @@ namespace Project1.Core
         /// <summary>모션 재생 위치를 진행도(CastProgress/RecoveryProgress)에 맞출지. false면 그냥 재생한다.</summary>
         bool SyncAnimationToProgress { get; }
 
+        /// <summary>지금 잔상을 남길지(예: 용병 초고속 도약).</summary>
+        bool ShowAfterimage { get; }
+
+        /// <summary>HUD에 보여 줄 스킬 상태 글. null이면 HUD가 기본 글(준비/사용 중/재사용 대기)을 쓴다.</summary>
+        string StatusText { get; }
+
         /// <summary>공격 범위를 보여 줄지(예: 루키노 내려찍기 착지 지점).</summary>
         bool ShowArea { get; }
 

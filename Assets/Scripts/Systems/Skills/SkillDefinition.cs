@@ -36,6 +36,18 @@ namespace Project1.Systems
         /// </summary>
         public virtual bool LocksActions => false;
 
+        /// <summary>시전 중 공격하면 시전이 끊기는지. 기본: 공격을 막지 않는 스킬(자가치료)은 끊긴다. 켜 두는 스킬(용병 아대)은 false.</summary>
+        public virtual bool CancelledByAttack => !LocksActions;
+
+        /// <summary>시전 중 castMoveSpeed로 이동 속도를 제한할지. 켜 두는 스킬(용병 아대)은 false.</summary>
+        public virtual bool LimitsMoveSpeed => true;
+
+        /// <summary>지금 잔상을 남길지(예: 용병 초고속 도약 중).</summary>
+        public virtual bool Afterimage(CharacterSkill ctx) => false;
+
+        /// <summary>HUD에 보여 줄 상태 글(예: "벽에 닿음 → 이동하면 도약"). null이면 HUD 기본 글.</summary>
+        public virtual string StatusText(CharacterSkill ctx) => null;
+
         /// <summary>스킬 모션을 시전 진행도에 맞출지(true, 예: 주사기 꽂기) / 그냥 재생할지(false, 예: 돌진·도약).</summary>
         public virtual bool SyncAnimationToCast => true;
 

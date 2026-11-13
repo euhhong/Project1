@@ -44,6 +44,11 @@ namespace Project1.Systems
         public bool ShowArea { get; set; }
         public Vector3 AreaCenter { get; set; }
         public float AreaRadius { get; set; }
+        /// <summary>스킬이 쓰는 방향(예: 용병 도약 방향, 시야 기준 x = 우, z = 앞).</summary>
+        public Vector3 Direction { get; set; }
+
+        public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
+        public string StatusText => skill != null && State == SkillState.Casting ? skill.StatusText(this) : null;
 
         public string AnimationState =>
             skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);
@@ -100,7 +105,7 @@ namespace Project1.Systems
         public bool TryGetSpeedLimit(out float maxSpeed)
         {
             maxSpeed = skill != null ? skill.castMoveSpeed : 0f;
-            return State == SkillState.Casting && !TryGetMoveOverride(out _, out _, out _);
+            return State == SkillState.Casting && skill != null && skill.LimitsMoveSpeed && !TryGetMoveOverride(out _, out _, out _);
         }
 
         public bool TryGetMoveOverride(out Vector2 localMove, out float speed, out bool allowJump)
@@ -141,7 +146,7 @@ namespace Project1.Systems
                     break;
 
                 case SkillState.Casting:
-                    bool interruptedByAttack = !skill.LocksActions && attack != null && attack.AttackState != CharacterAttackState.None;
+                    bool interruptedByAttack = skill.CancelledByAttack && attack != null && attack.AttackState != CharacterAttackState.None;
                     if (interruptedByAttack || IsStunned)
                     {
                         EndCast(false);
