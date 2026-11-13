@@ -60,9 +60,11 @@ namespace Project1.Core
         bool LocksActions { get; }
 
         /// <summary>
-        /// 턱에 매달렸다가 놓아 떨어진 것이고 떨어진 높이(drop, m — 매달린 높이부터)가 아주 높지 않은지. 그러면 다치지 않고(낙하 데미지 없음) 가볍게만 착지한다.
-        /// 놓은 뒤 착지한 틱까지 참일 수 있다(FallDamage가 착지 틱에 묻는다).
+        /// 이번 낙하가 다치지 않는 낙하인지(낙하 데미지 없음) — drop = 떨어진 높이(m).
+        /// - 턱에 매달렸다가 놓음(매달린 높이부터 아주 높지 않으면, 가볍게만 착지)
+        /// - 앞(옆)으로 뛰어내림: 떨어지기 시작할 때 뒤 방향키를 누르지 않았으면 공중에서 뒤를 눌러도 구르며 착지(고공 착지 높이 미만)
+        /// 착지한 틱까지 참일 수 있다(FallDamage가 착지 틱에 묻는다).
         /// </summary>
-        bool IsSoftHangDrop(float drop);
+        bool IsSafeFall(float drop);
     }
 }

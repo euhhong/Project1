@@ -20,6 +20,7 @@ namespace Project1.Systems
     ///   벽 종류·두께와 상관없이 같은 규칙: 올라서기로는 못 가는 낮은 벽(약 1.8~2.9m)도 발로 벽을 짚고 매달린다(루트는 바닥 아래로 내려가도 되고, 놓으면 바닥 위로 올림).
     /// - 감시자(HunterStyle): 창틀 넘기·올라서기는 들어오던 속도로 출발해 속도를 이어 나가고(Carry), 매달려 오르기는 붙기·옮기기 끝을 조금 늘려 덜 끊긴다.
     /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
+    ///   앞·뒤는 떨어지기 시작할 때(땅에서 떨어지는 틱: 넉백·뒤 방향키·뒤로 가던 속도) 정하고 공중에서 바뀌지 않는다. 뒤로 뛰어내리면 구르지 않고 다친다, 앞으로 뛰어내리면 구르며 다치지 않는다(hardFall 미만).
     /// - 착지: 떨어진 높이(가장 높았던 곳 → 착지)로 고른다 — 고공(hardFall 이상) = Hard Landing, 점프해서 높이 = 앞구르기(Falling To Roll),
     ///   걸어서 높이 = 깊이 웅크림(Jumping), 낮게 = 살짝 웅크림(Jumping Down). 크게 착지하면 잠깐 못 움직인다.
     /// 오르는 중·매달림·구르기·크게 착지하는 중에는 공격·스킬을 막는다(LocksActions). 기절·쓰러지면 놓친다.
@@ -127,7 +128,7 @@ namespace Project1.Systems
         private Ledge ledge;
         private Vector3 pathStart, pathMid, pathEnd, hangPos, entryVelocity;
         private float root0, railTop;
-        private bool airborne, jumped, jumpedFlag, knocked, hangDrop;
+        private bool airborne, jumped, jumpedFlag, knocked, hangDrop, backAtStart, safeJump;
         private float peakY, airStartY;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
@@ -226,7 +227,7 @@ namespace Project1.Systems
                 if (actionTime >= actionDuration) { action = TraversalAction.None; actionTime = actionDuration = 0f; }
             }
 
-            TrackAir(grounded, dead);
+            TrackAir(grounded, dead, input);
             if (dead || stunned || IsBusy()) return;
 
             Vector3 dir = MoveDirection(input);
@@ -268,7 +269,7 @@ namespace Project1.Systems
 
         // ───────────────────── 낙하·착지 ─────────────────────
 
-        private void TrackAir(bool grounded, bool dead)
+        private void TrackAir(bool grounded, bool dead, in CharacterInputFrame input)
         {
             Vector3 pos = transform.position;
             if (!grounded)
@@ -279,27 +280,29 @@ namespace Project1.Systems
                     airStartY = peakY = pos.y;
                     jumped = jumpedFlag;
                     knocked = TryGetComponent(out Knockback kb) && kb.Active;
+                    // 뒤로 떨어지는지는 떨어지기 시작할 때(땅에서 떨어지는 틱) 정한다 — 넉백, 뒤 방향키, 뒤로 가던 속도. 공중에서 뒤를 눌러도 바뀌지 않는다.
+                    backAtStart = knocked || input.Move.y < -0.5f || (state != null && state.LocalPlanarVelocity.y < -backwardSpeed);
+                    safeJump = jumped && !backAtStart; // 앞(옆)으로 뛰어내림: 구르며 착지하고 다치지 않는다
                 }
                 jumpedFlag = false;
                 peakY = Mathf.Max(peakY, pos.y);
                 if (IsLanding(action)) action = TraversalAction.None; // 착지하다 다시 떨어짐(구르다 턱 끝에서 등)
                 if (action == TraversalAction.None && !jumped && airStartY - pos.y > fallStartDrop && !SkillBusy())
                 {
-                    bool back = knocked || (TryGetComponent(out Knockback k) && k.Active)
-                                || (state != null && state.LocalPlanarVelocity.y < -backwardSpeed);
+                    bool back = backAtStart || (TryGetComponent(out Knockback k) && k.Active);
                     StartAction(TraversalAction.Fall, 0f);
                     fallBackward = back;
                 }
                 return;
             }
-            if (!airborne) { jumpedFlag = false; hangDrop = false; return; } // 매달렸다 놓은 낙하는 착지한 다음 틱에 끝(FallDamage가 착지 틱에 묻는다)
+            if (!airborne) { jumpedFlag = false; hangDrop = false; safeJump = false; return; } // 다치지 않는 낙하 표시는 착지한 다음 틱에 끝(FallDamage가 착지 틱에 묻는다)
             airborne = false;
             bool walkedOff = action == TraversalAction.Fall;
             if (walkedOff) action = TraversalAction.None;
             float drop = peakY - pos.y;
             if (dead || SkillBusy()) { }
-            else if (IsSoftHangDrop(drop)) { if (drop >= lowFall) { StartAction(TraversalAction.Land, landTime); landStop = 0f; } } // 다치지 않게 가볍게만
-            else StartLanding(drop, jumped, walkedOff);
+            else if (hangDrop && drop < hangDropSafeHeight) { if (drop >= lowFall) { StartAction(TraversalAction.Land, landTime); landStop = 0f; } } // 매달렸다 놓음: 다치지 않게 가볍게만
+            else StartLanding(drop, jumped && !backAtStart, walkedOff); // 뒤로 뛰어내림은 구르지 않는다(걸어서 떨어진 것처럼 크게 착지)
             jumped = false;
         }
 
@@ -540,7 +543,7 @@ namespace Project1.Systems
             return true;
         }
 
-        public bool IsSoftHangDrop(float drop) => hangDrop && drop < hangDropSafeHeight;
+        public bool IsSafeFall(float drop) => (hangDrop && drop < hangDropSafeHeight) || (safeJump && drop < hardFall);
 
         private void Release()
         {
