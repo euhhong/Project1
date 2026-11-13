@@ -726,6 +726,7 @@ namespace Project1.Map.EditorTools
         {
             var g = Group(parent, name, start);
             g.localRotation = Quaternion.LookRotation(dir, Vector3.up);
+            g.gameObject.AddComponent<Project1.Core.NoLedgeGrab>(); // 계단은 점프로 붙잡는 턱이 아니다(이름·구조가 바뀌어도)
             float stepRise = rise / StairSteps;
             for (int i = 1; i < StairSteps; i++)
                 BoxMM(g, $"Step_{i:00}", new Vector3(-width / 2f, -0.3f, (i - 1) * StairRun), new Vector3(width / 2f, i * stepRise, i * StairRun), accentMat);
