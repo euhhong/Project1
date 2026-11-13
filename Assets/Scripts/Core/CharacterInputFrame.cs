@@ -38,5 +38,14 @@ namespace Project1.Core
 
         /// <summary>지난 틱 이후 공격 키가 눌렸다(누른 순간, 짧게/길게와 상관없이). 공중 공격처럼 바로 나가야 할 때 쓴다.</summary>
         public bool AttackPressed;
+
+        /// <summary>마우스 커서가 가리키는 곳이 있는지(화면 안에서 무언가에 닿음). 커서를 잠근 동안(우클릭 시점 회전)은 화면 가운데.</summary>
+        public bool HasAimPoint;
+
+        /// <summary>마우스 커서가 가리키는 곳(월드). HasAimPoint일 때만 의미 있다(예: 붉은나비 나비 놓을 자리).</summary>
+        public Vector3 AimPoint;
+
+        /// <summary>AimPoint 면의 바깥 방향(월드). 땅이면 위쪽에 가깝다.</summary>
+        public Vector3 AimNormal;
     }
 }

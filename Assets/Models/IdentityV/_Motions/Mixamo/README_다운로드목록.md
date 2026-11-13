@@ -41,8 +41,7 @@
 | Skill_Forward_Charge | 전위 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |
 | Skill_Luchino_Leap | 루키노 도약(E) → 공중에서 공격 키 = 내려찍기 | **받음** — 한 파일을 둘로 나눔: Skill_Luchino_Leap(16~30, 도약~꼭대기) + Skill_Luchino_Leap_Slam(39~48, 내리치며 하강) | Jump Attack |
 | Skill_Luchino_Leap_Land | 루키노 내려찍기 착지(경직 1.2초에 맞춰 재생) | **받음** — 2~45프레임(발 닿음 → 손 짚고 웅크림 → 일어서기), 발 기준 높이 | Hard Landing |
-| Skill_Mercenary_Guard_Wall | 용병 아대: 벽에 닿은 직후 0.1초(WallDashSkill.wallPoseTime)만 벽을 손으로 짚는 자세, 그다음은 원래 모션 | **받음** — 한 프레임 자세 | Male Action Pose |
-| Skill_Mercenary_Guard_Dash | 용병 아대 도약(벽에서 튕겨 나갈 때) | **Blender로 새로 만듦**(`Tools/Blender/make_wall_pushoff.py`, 바탕 = 벽 짚는 자세) — 1 벽 짚음 → 4 두 팔을 뻗어 벽을 밀어냄 → 10 몸 전체가 뒤로 젖혀지며 튕겨 나감(도약 0.3초) | (직접 만듦) |
+| Skill_Mercenary_Guard_Wall | 용병 아대: 벽에 닿은 직후 0.1초(WallDashSkill.wallPoseTime)만 손을 잠깐 들어 벽을 짚는 자세, 그다음은 원래 모션(튕겨 나갈 때 따로 모션 없음 — 밀어내기 모션은 사용자 요청으로 뺌, `Tools/Blender/make_wall_pushoff.py`만 남김) | **받음** — 한 프레임 자세 | Male Action Pose |
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |

@@ -137,6 +137,10 @@ namespace Project1.Systems
                         IsAirAttack = !grounded;
                         StartAttack(CharacterAttackState.Light);
                     }
+                    else if (input.HeavyCharging && TryGetComponent(out IAttackHoldOverride hold) && hold.OverridesHeavyHold)
+                    {
+                        // 꾹 누르기는 다른 기능이 쓴다(예: 붉은나비 나비 놓기). 강공격을 모으지 않는다.
+                    }
                     else if (input.HeavyCharging && !grounded)
                     {
                         // 땅에서 누르기 시작해 공중에서 0.3초를 넘긴 경우: 모으지 않는다(뗄 때까지 무시).

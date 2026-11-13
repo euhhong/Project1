@@ -93,7 +93,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: 0efa463e3c1c1284295f3bc88a322f39, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 609e6ccd75d1d4446b5dd6c0ee525e87, type: 2}
   - id: Hunter_Hastur
     displayName: "\uD558\uC2A4\uD130"
     role: 1

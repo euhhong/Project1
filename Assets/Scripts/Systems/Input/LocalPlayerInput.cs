@@ -48,6 +48,14 @@ namespace Project1.Systems
         private bool attackHeld;
         private float attackPressTime;
 
+        // 마우스 커서가 가리키는 곳(매 프레임 갱신).
+        [Header("커서 겨누기")]
+        [Tooltip("커서 아래를 찾는 최대 거리(m).")]
+        [SerializeField, Min(1f)] private float aimMaxDistance = 200f;
+        private readonly RaycastHit[] aimHits = new RaycastHit[16];
+        private bool hasAim;
+        private Vector3 aimPoint, aimNormal;
+
         // 같은 틱에 여러 번 불려도 같은 값을 돌려주기 위한 캐시.
         private int cachedTick = int.MinValue;
         private CharacterInputFrame cachedFrame;
@@ -73,6 +81,9 @@ namespace Project1.Systems
                 HeavyRelease = heavyReleaseQueued,
                 Skill = skillQueued,
                 AttackPressed = attackPressedQueued,
+                HasAimPoint = hasAim,
+                AimPoint = aimPoint,
+                AimNormal = aimNormal,
             };
             jumpQueued = false;
             lightAttackQueued = false;
@@ -148,6 +159,31 @@ namespace Project1.Systems
 
             UpdateAttack();
             UpdateLook();
+            UpdateAim();
+        }
+
+        /// <summary>마우스 커서(잠근 동안은 화면 가운데) 아래에서 처음 닿는 것(자기 몸·트리거 제외)을 찾는다.</summary>
+        private void UpdateAim()
+        {
+            hasAim = false;
+            var cam = Camera.main;
+            if (cam == null) return;
+            Vector2 screen = cursorLocked || Mouse.current == null
+                ? new Vector2(Screen.width * 0.5f, Screen.height * 0.5f)
+                : Mouse.current.position.ReadValue();
+            if (screen.x < 0f || screen.y < 0f || screen.x > Screen.width || screen.y > Screen.height) return;
+            Ray ray = cam.ScreenPointToRay(screen);
+            int n = Physics.RaycastNonAlloc(ray, aimHits, aimMaxDistance, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var h = aimHits[i];
+                if (h.collider.transform.IsChildOf(transform) || h.distance >= best) continue;
+                best = h.distance;
+                aimPoint = h.point;
+                aimNormal = h.normal;
+                hasAim = true;
+            }
         }
 
         private void UpdateAttack()

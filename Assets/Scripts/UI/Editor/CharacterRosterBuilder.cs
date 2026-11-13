@@ -24,6 +24,7 @@ namespace Project1.UI.EditorTools
             ["Hunter_Luchino"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.LeapSkill>(); s.id = "Luchino_Leap"; s.displayName = "도약 내려찍기"; s.castTime = 5f; s.cooldown = 0f /* 테스트 단계 0초, 원래 12 */; s.leapHeight = 12f; s.forwardSpeed = 9f; return s; },
             ["Hunter_Gamekeeper"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.GrabShotSkill>(); s.id = "Gamekeeper_Grab"; s.displayName = "그랩"; s.castTime = 3f; s.cooldown = 0f; return s; },
             ["Survivor_Mercenary"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.WallDashSkill>(); s.id = "Mercenary_Guard"; s.displayName = "아대"; s.castTime = 99999f; /* 켜 두는 스킬: 다시 누를 때까지 */ s.cooldown = 0f; return s; },
+            ["Hunter_Geisha"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ButterflyGlideSkill>(); s.id = "Geisha_Butterfly"; s.displayName = "나비에게"; s.castTime = 3f; s.cooldown = 0f; return s; },
             ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 0f /* 테스트 단계 0초, 원래 15 */; s.chargeSpeed = 16f; return s; },
         };
 

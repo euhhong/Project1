@@ -31,6 +31,8 @@ namespace Project1.UI
 
             // 캐릭터별 소품(무기). 다른 캐릭터로 바꾸면 지운다.
             SetProp<FanWeapon>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 접는 부채
+            SetProp<ButterflyField>(player, entry.id == "Hunter_Geisha");  // 붉은나비: 좌클릭 꾹 = 나비 놓기, E = 겨눈 나비에게(BE)
+            SetProp<ButterflyVisual>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 나비·미리보기·표적 표시(FE)
             SetProp<GrabShotVisual>(player, entry.id == "Hunter_Gamekeeper"); // 사냥터지기: 그랩 쏘기 연출
             SetProp<CharacterCarryPose>(player, entry.id == "Hunter_SmileyFace"); // 광대: 로켓 폭죽을 두 손으로 받쳐 든 자세
             SetProp<RocketWeapon>(player, entry.id == "Hunter_SmileyFace");       // 광대: 로켓 폭죽 무기
