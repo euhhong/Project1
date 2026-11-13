@@ -133,4 +133,4 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: 8a5b57eaac928374b8e284be94424624, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: f77519d09d3a0e843bbba7168920de98, type: 2}

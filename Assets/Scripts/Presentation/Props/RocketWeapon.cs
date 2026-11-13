@@ -10,6 +10,8 @@ namespace Project1.Presentation
     ///   몸통을 왼손 쪽으로 눕혀 왼손바닥에 얹히게 맞춘다(Carry 레이어 자세).
     /// - 공격 중에는 통나무·각목을 휘두르듯 두 손으로 꼬리 쪽을 쥔다: 오른손이 맨 끝, 로켓은 아래팔이 뻗는 방향으로 나가되
     ///   몸 앞쪽으로 당겨 머리가 되도록 앞을 본다(머리 위로 들 때도 뒤로 넘어가지 않음). 두 자세 사이는 짧게 바꿔 쥔다.
+    /// - 로켓 돌진(E, RocketChargeSkill): E를 누르는 동안 두 손으로 머리 위에 가로로 치켜들고(머리는 앞),
+    ///   돌진하면 무게중심을 낮춘 채 로켓을 껴안듯 감싸 안고(몸통이 두 팔 사이를 지남) 머리를 정면으로 들이받는다.
     /// - 로켓 크기의 판정 상자(Hitbox_Rocket, 오른손 자리)를 붙여 오른손 공격이 로켓으로 맞힌다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 광대만). 모델이 바뀌면 새 손에 다시 붙인다.
     /// </summary>
@@ -31,11 +33,21 @@ namespace Project1.Presentation
         [Tooltip("들고 다니는 자세 ↔ 공격 자세로 바꿔 쥐는 시간(초).")]
         [SerializeField, Min(0.01f)] private float gripSwitchTime = 0.08f;
 
+        [Header("로켓 돌진(E) 중 쥐는 법")]
+        [Tooltip("치켜들 때 로켓을 두 손 위로 얼마나 올릴지(m).")]
+        [SerializeField] private float raiseAboveHands = 0.08f;
+        [Tooltip("돌진할 때 로켓 머리를 아래로 기울이는 각도(도).")]
+        [SerializeField] private float ramPitchDown = 4f;
+        [Tooltip("돌진할 때 로켓을 껴안는 자리: 두 손보다 뒤로 나오는 길이 비율(0 = 꼬리 끝을 쥠, 0.5 = 가운데를 안음).")]
+        [SerializeField, Range(0f, 0.7f)] private float ramHugBack = 0.4f;
+        private const string RocketChargeId = "SmileyFace_RocketCharge";
+
         private ICharacterAttackState attack;
+        private ICharacterSkillState skill;
         private Animator animator;
         private Transform leftHand, rightHand, leftLower, rightLower;
         private ToyRocket rocket;
-        private float attackBlend;
+        private float attackBlend, skillBlend, ramBlend;
 
         private void Awake() => attack = GetComponent<ICharacterAttackState>();
 
@@ -64,22 +76,44 @@ namespace Project1.Presentation
             carryDir.Normalize();
             Vector3 carryUp = Vector3.ProjectOnPlane(Vector3.up, carryDir).normalized;
             Vector3 carryPos = r - carryDir * tailBehindHand + carryUp * liftAboveHands;
-            if (attackBlend <= 0f)
+            Vector3 pos = carryPos;
+            Quaternion rot = Quaternion.LookRotation(carryDir, carryUp);
+
+            if (attackBlend > 0f)
             {
-                rocket.transform.SetPositionAndRotation(carryPos, Quaternion.LookRotation(carryDir, carryUp));
-                return;
+                // 공격 중: 통나무·각목을 휘두르듯 두 손으로 꼬리 쪽을 쥔다(오른손이 맨 끝, 왼손이 그 위).
+                // 로켓은 아래팔이 뻗는 방향(팔꿈치 → 손)으로 나가되, 몸 앞쪽으로 당겨 머리가 되도록 앞을 보게 한다.
+                Vector3 forearm = (r - rightLower.position) + (l - leftLower.position);
+                if (forearm.sqrMagnitude < 1e-4f) forearm = transform.forward;
+                Vector3 swingDir = (forearm.normalized + transform.forward * keepHeadForward).normalized;
+                Vector3 side = Vector3.Cross(swingDir, transform.right).sqrMagnitude > 1e-4f ? transform.right : transform.up;
+                Vector3 swingUp = Vector3.Cross(side, swingDir).normalized;
+                Vector3 grip = r - swingDir * gripTailPastHand;
+                pos = Vector3.Lerp(carryPos, grip, attackBlend);
+                rot = Quaternion.Slerp(rot, Quaternion.LookRotation(swingDir, swingUp), attackBlend);
             }
 
-            // 공격 중: 통나무·각목을 휘두르듯 두 손으로 꼬리 쪽을 쥔다(오른손이 맨 끝, 왼손이 그 위).
-            // 로켓은 아래팔이 뻗는 방향(팔꿈치 → 손)으로 나가되, 몸 앞쪽으로 당겨 머리가 되도록 앞을 보게 한다.
-            Vector3 forearm = (r - rightLower.position) + (l - leftLower.position);
-            if (forearm.sqrMagnitude < 1e-4f) forearm = transform.forward;
-            Vector3 swingDir = (forearm.normalized + transform.forward * keepHeadForward).normalized;
-            Vector3 side = Vector3.Cross(swingDir, transform.right).sqrMagnitude > 1e-4f ? transform.right : transform.up;
-            Vector3 swingUp = Vector3.Cross(side, swingDir).normalized;
-            Vector3 grip = r - swingDir * gripTailPastHand;
-            Vector3 pos = Vector3.Lerp(carryPos, grip, attackBlend);
-            Quaternion rot = Quaternion.Slerp(Quaternion.LookRotation(carryDir, carryUp), Quaternion.LookRotation(swingDir, swingUp), attackBlend);
+            // 로켓 돌진(E): 들고 다님 = 두 손으로 머리 위에 가로로 치켜듦(머리는 앞), 돌진 = 로켓을 껴안고 머리를 정면으로 들이받음.
+            if (skill == null) TryGetComponent(out skill);
+            bool inSkill = skill != null && skill.State == SkillState.Casting && skill.SkillId == RocketChargeId && skill.MotionPhase != AttackPhase.None;
+            bool ramming = inSkill && skill.MotionPhase == AttackPhase.Active;
+            skillBlend = Mathf.MoveTowards(skillBlend, inSkill ? 1f : 0f, Time.deltaTime / gripSwitchTime);
+            ramBlend = Mathf.MoveTowards(ramBlend, ramming ? 1f : 0f, Time.deltaTime / gripSwitchTime);
+            if (skillBlend > 0f)
+            {
+                Vector3 fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+                Vector3 mid = (r + l) * 0.5f;
+                float length = rocket.Length * worldScale;
+                Vector3 raisePos = mid + Vector3.up * raiseAboveHands - fwd * (length * 0.5f); // 가운데를 두 손으로 받침
+                Quaternion raiseRot = Quaternion.LookRotation(fwd, Vector3.up);
+                Vector3 ramDir = Quaternion.AngleAxis(ramPitchDown, Vector3.Cross(Vector3.up, fwd)) * fwd;
+                Vector3 ramPos = mid - ramDir * (length * ramHugBack);                           // 껴안듯: 몸통이 두 팔 사이를 지나 뒤쪽이 가슴에 닿음
+                Quaternion ramRot = Quaternion.LookRotation(ramDir, Vector3.up);
+                Vector3 skillPos = Vector3.Lerp(raisePos, ramPos, ramBlend);
+                Quaternion skillRot = Quaternion.Slerp(raiseRot, ramRot, ramBlend);
+                pos = Vector3.Lerp(pos, skillPos, skillBlend);
+                rot = Quaternion.Slerp(rot, skillRot, skillBlend);
+            }
             rocket.transform.SetPositionAndRotation(pos, rot);
         }
 

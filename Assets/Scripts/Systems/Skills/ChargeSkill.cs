@@ -10,6 +10,7 @@ namespace Project1.Systems
     /// - 다른 캐릭터에 닿으면 멈추고, 상대는 돌진 거리에 비례해 기절한다(stunPerMeter, min~max). 나는 넘어지지 않는다.
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
     /// - 시야(마우스 우클릭)로 방향은 틀 수 있다(몸이 시야 방향을 보기 때문).
+    /// - 돌진 중 E를 한 번 더 누르면 그 자리에서 멈춘다(넘어지지 않음, cancelGrace 뒤부터).
     /// 땅에서만 쓴다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Charge")]
@@ -48,6 +49,15 @@ namespace Project1.Systems
             speed = chargeSpeed;
             allowJump = false;
             return true;
+        }
+
+        [Tooltip("돌진을 시작한 뒤 이 시간(초)이 지나면 E를 한 번 더 눌러 돌진을 멈출 수 있다(넘어지지 않음).")]
+        [Min(0f)] public float cancelGrace = 0.1f;
+
+        public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
+        {
+            if (input.Skill && elapsed > cancelGrace) { recovery = 0f; return true; } // E를 한 번 더 → 돌진 취소
+            return ShouldEndEarly(ctx.gameObject, elapsed, out recovery);
         }
 
         public override bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery)

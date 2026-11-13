@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8f705503d34e4245ab114c9fcb5e86f, type: 3}
+  m_Name: SmileyFace_RocketCharge
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.RocketChargeSkill
+  id: SmileyFace_RocketCharge
+  displayName: "\uB85C\uCF13 \uB3CC\uC9C4"
+  castTime: 12
+  cooldown: 0
+  castMoveSpeed: 3.6
+  chargeSpeed: 16
+  obstacleGrace: 0.1
+  crashRecovery: 1.8
+  stunPerMeter: 0.15
+  minStun: 0.5
+  maxStun: 4

@@ -70,6 +70,12 @@ namespace Project1.Systems
         /// <summary>
         /// 약·강공격 판정 부위를 바꾼다(캐릭터를 고를 때, 예: 리퍼 = 왼손 + 무기). None이면 처음(인스펙터) 값으로 되돌린다.
         /// </summary>
+        /// <summary>
+        /// 지금 누르고 있는 공격 키는 뗄 때까지 무시한다(뗄 때 나오는 약공격·강공격 입력도 버린다).
+        /// 다른 기능이 공격 키 누름을 이미 썼을 때 부른다(예: 광대 로켓 들기를 좌클릭으로 취소 — 그 클릭으로 공격이 나가지 않게).
+        /// </summary>
+        public void IgnoreAttackUntilRelease() => waitAirRelease = true;
+
         public void SetAttackSlots(HitboxSlot light, HitboxSlot heavy)
         {
             if (!slotDefaultsSaved) { defaultLightSlots = lightAttack.Slots; defaultHeavySlots = heavyAttack.Slots; slotDefaultsSaved = true; }

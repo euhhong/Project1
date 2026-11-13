@@ -19,7 +19,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly HashSet<string> Looping = new()
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
-            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker",
+            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise",
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
@@ -55,6 +55,8 @@ namespace Project1.Presentation.EditorTools
         private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper" };
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
         private const float AirHeightOffset = -0.91f;
+        // 발을 땅에 붙이는 모션(몸 높이는 발 기준): 광대 로켓 돌진(다리를 벌려 디딘 자세라 몸이 낮아진다).
+        private static readonly HashSet<string> FeetOnGround = new() { "Skill_SmileyFace_RocketCharge" };
 
         private bool IsMotion => assetPath.Replace('\\', '/').StartsWith(Folder + "/")
                                  && assetPath.EndsWith(".fbx", System.StringComparison.OrdinalIgnoreCase);
@@ -94,7 +96,7 @@ namespace Project1.Presentation.EditorTools
                 return;
             }
 
-            var clip = Configure(defaults[0], name, NoRootHeight.Contains(name) ? Height.Body : Height.Bake);
+            var clip = Configure(defaults[0], name, NoRootHeight.Contains(name) ? Height.Body : FeetOnGround.Contains(name) ? Height.Feet : Height.Bake);
             if (Trims.TryGetValue(name, out var trim))
             {
                 clip.firstFrame = trim.x;

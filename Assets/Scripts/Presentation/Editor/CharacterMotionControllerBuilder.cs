@@ -30,7 +30,10 @@ namespace Project1.Presentation.EditorTools
         private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f }; // 사냥터지기 그랩은 재생 위치를 BE 구간에 맞춘다(CharacterSkillAnimator.MotionTiming)
 
         // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
-        private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1") };
+        private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1"), ("SmileyFace_RocketCharge", "Fall_1") };
+
+        // 상체만 쓰는 스킬 모션(SkillUpper 레이어, 다리는 걷기·달리기 그대로): 광대 로켓 치켜들고 걷기, 용병 벽 짚기(다리는 계속 달림).
+        private static readonly HashSet<string> UpperBodySkillClips = new() { "Skill_SmileyFace_RocketCharge_Raise", "Skill_Mercenary_Guard_Wall" };
 
         // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속) — Mixamo/Skill_<스킬 ID>.fbx가 없을 때만.
         // 사냥터지기 그랩 쏘기는 이제 전용 파일 Skill_Gamekeeper_Grab.fbx(감시자 내려치기 + 머리는 앞을 봄, Blender로 수정)를 쓴다.
@@ -312,6 +315,14 @@ namespace Project1.Presentation.EditorTools
             ac.layers = layers3;
             var skillSm = ac.layers[ac.layers.Length - 1].stateMachine;
             skillSm.defaultState = skillSm.AddState("Empty");
+            // 상체 스킬 레이어: UpperBodySkillClips의 상태는 여기(상체 마스크) — 다리는 아래 레이어의 걷기·달리기를 그대로 쓴다.
+            ac.AddLayer("SkillUpper");
+            var upperLayers = ac.layers;
+            var upperLayer = upperLayers[upperLayers.Length - 1];
+            upperLayer.avatarMask = mask; upperLayer.defaultWeight = 0f; upperLayer.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = upperLayers;
+            var upperSm = ac.layers[ac.layers.Length - 1].stateMachine;
+            upperSm.defaultState = upperSm.AddState("Empty");
             foreach (var guid in AssetDatabase.FindAssets("Skill_ t:Model", new[] { MixamoMotionPostprocessor.Folder }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -324,7 +335,7 @@ namespace Project1.Presentation.EditorTools
                     // 자세를 고친 모션(MotionPoseAdjuster)이 있으면 그것을 쓴다. 몸을 낮춘 모션이라 Foot IK로 발을 땅에 붙인다.
                     var adjusted = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{MotionPoseAdjuster.Folder}/{clip.name}.anim");
                     string stateName = clip.name.Substring("Skill_".Length);
-                    var state = skillSm.AddState(stateName);
+                    var state = (UpperBodySkillClips.Contains(clip.name) ? upperSm : skillSm).AddState(stateName);
                     state.motion = adjusted != null ? adjusted : clip;
                     state.iKOnFeet = adjusted != null;
                     if (SkillLoopSpeed.TryGetValue(stateName, out float loopSpeed)) state.speed = loopSpeed;

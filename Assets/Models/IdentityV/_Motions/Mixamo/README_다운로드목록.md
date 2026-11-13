@@ -41,7 +41,9 @@
 | Skill_Forward_Charge | 전위 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |
 | Skill_Luchino_Leap | 루키노 도약(E) → 공중에서 공격 키 = 내려찍기 | **받음** — 한 파일을 둘로 나눔: Skill_Luchino_Leap(16~30, 도약~꼭대기) + Skill_Luchino_Leap_Slam(39~48, 내리치며 하강) | Jump Attack |
 | Skill_Luchino_Leap_Land | 루키노 내려찍기 착지(경직 1.2초에 맞춰 재생) | **받음** — 2~45프레임(발 닿음 → 손 짚고 웅크림 → 일어서기), 발 기준 높이 | Hard Landing |
-| Skill_Mercenary_Guard_Wall | 용병 아대: 벽에 닿은 직후 0.1초(WallDashSkill.wallPoseTime)만 손을 잠깐 들어 벽을 짚는 자세, 그다음은 원래 모션(튕겨 나갈 때 따로 모션 없음 — 밀어내기 모션은 사용자 요청으로 뺌, `Tools/Blender/make_wall_pushoff.py`만 남김) | **받음** — 한 프레임 자세 | Male Action Pose |
+| Skill_Mercenary_Guard_Wall | 용병 아대: 벽에 닿은 직후 0.1초(WallDashSkill.wallPoseTime)만 손을 잠깐 들어 벽을 짚는 자세, 상체만(SkillUpper 레이어, 다리는 계속 달림), 그다음은 원래 모션(튕겨 나갈 때 따로 모션 없음 — 밀어내기 모션은 사용자 요청으로 뺌, `Tools/Blender/make_wall_pushoff.py`만 남김) | **받음** — 한 프레임 자세 | Male Action Pose |
+| Skill_SmileyFace_RocketCharge_Raise | 광대 로켓 돌진(E): E를 꾹 누르는 동안 로켓을 두 손으로 머리 위로 치켜듦 — 상체만(SkillUpper), 다리는 걷기 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter) | (직접 만듦) |
+| Skill_SmileyFace_RocketCharge | 광대 로켓 돌진(E): E를 떼면 돌진 — 무게중심을 낮추고 로켓을 껴안은 채 머리를 정면으로 들이받음, 다리는 달리지 않고 앞다리 굽혀 디딤·뒷다리 끌림(로켓 추진력), 떨림 없음. 벽에 부딪히면 Fall_1 | **Blender로 새로 만듦**(같은 스크립트), 발 기준 높이(Feet) | (직접 만듦) |
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |
