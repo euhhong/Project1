@@ -18,7 +18,7 @@ namespace Project1.Map.EditorTools
     /// 루키노 도약(머리 위 6m 천장 검사): 로비(천장 18m)·날개 옥상 테라스·발코니·정원은 뜀, 2F·3F 회랑·방·창고는 못 뜀.
     ///
     /// 배치(월드 좌표, x=동, z=북). 저택 60×36m: x -30..30, z -36..0, 정면(정문)은 북쪽(시작 지점 쪽).
-    ///   가운데 본채(x -16..16): 3층. 로비 24×22m(x -12..12, z -28..-6)가 지붕까지 트여 2F·3F 회랑 난간에서 1F 로비가 내려다보인다.
+    ///   가운데 본채(x -16..16): 3층. 로비 24×22m(x -12..12, z -28..-6)는 2F까지 트여 회랑 난간에서 내려다보이고, 3F는 가운데 우물(12×10m)만 트인 큰 홀(엄폐물).
     ///     로비: 긴 식탁(14×3m)과 등받이 높은 의자 20개, 식탁 둘레 높은 병풍 4개(모서리 틈으로 도는 고리), 기둥 열, 샹들리에(충돌 없음).
     ///     대계단 2개(로비 → 2F 남쪽 회랑). 2F 남쪽 문 → 뒤 테라스(바깥 계단 2개로 뒤뜰). 2F 북쪽 문 → 정문 위 발코니.
     ///   서·동 날개(x -30..-16, 16..30): 2층, 방 3개씩(문 2개 이상). 날개 계단(1F→2F→옥상)이 나란히 있고 옥상은 하늘 열린 테라스(3F 높이),
@@ -54,6 +54,8 @@ namespace Project1.Map.EditorTools
         private const float StairLen = (StairSteps - 1) * StairRun; // 위층 바닥 구멍 길이 8.4
 
         private static readonly Vector3 MansionOrigin = new(-30f, 0f, -36f);
+        private static readonly Rect2 LobbyWell = new(24f, 14f, 36f, 24f); // 본채 3F 바닥의 트인 곳(로컬)
+        private const float ChandelierY = 9.8f; // 2F와 3F 사이(우물로 사슬이 지붕까지)
 
         private static Material floorMat, wallMat, accentMat;
 
@@ -136,7 +138,8 @@ namespace Project1.Map.EditorTools
             Slab(floors, "1F_Floor", outer, G, 0.35f, floorMat);
             Slab(floors, "2F_Floor", outer, F2, SlabT, floorMat, atrium, holeW1, holeE1);
             // 3F 판: 본채는 3층 바닥, 날개는 옥상 테라스. 벽 겉면보다 5cm 밖으로(깜빡임 방지)
-            Slab(floors, "3F_Floor_Terraces", new Rect2(-0.25f, -0.25f, 60.25f, 36.25f), F3, SlabT, floorMat, atrium, holeW2, holeE2);
+            // 3F는 로비 위를 대부분 덮고 가운데 우물(well)만 트인다(1층 로비가 일부만 보임)
+            Slab(floors, "3F_Floor_Terraces", new Rect2(-0.25f, -0.25f, 60.25f, 36.25f), F3, SlabT, floorMat, LobbyWell, holeW2, holeE2);
             Slab(floors, "Roof", new Rect2(13.75f, -0.25f, 46.25f, 36.25f), RoofTop, SlabT, accentMat);
 
             // ── 1F
@@ -249,10 +252,24 @@ namespace Project1.Map.EditorTools
             }
             WallX(exhibit, "DisplayWall", 27f, 33f, 4f, F3, 2.8f, 0.4f, wallMat);
 
-            var r3 = Group(m, "3F_Railings", Vector3.zero);
-            WallX(r3, "Atrium_S", 18f, 42f, 8f, F3, RailH, RailT, accentMat, Gap(29f, 31f));
-            WallZ(r3, "Atrium_W", 8f, 30f, 18f, F3, RailH, RailT, accentMat);
-            WallZ(r3, "Atrium_E", 8f, 30f, 42f, F3, RailH, RailT, accentMat);
+            // 3F 큰 홀: 로비 위는 막고 가운데 우물만 트임(난간, 서·동 틈으로 2F까지 뛰어내림). 기둥 열이 홀 안 기둥이 되고,
+            // 우물 네 모서리 큰 L벽(2.8m)·서·동 낮은 벽(1m, 넘음)·남·북 병풍으로 우물 둘레를 도는 고리와 가림막을 만든다.
+            var r3 = Group(m, "3F_Hall", Vector3.zero);
+            var wl = LobbyWell;
+            WallX(r3, "Well_S", wl.x0, wl.x1, wl.z0, F3, RailH, RailT, accentMat);
+            WallX(r3, "Well_N", wl.x0, wl.x1, wl.z1, F3, RailH, RailT, accentMat);
+            WallZ(r3, "Well_W", wl.z0, wl.z1, wl.x0, F3, RailH, RailT, accentMat, Gap(18f, 20f));
+            WallZ(r3, "Well_E", wl.z0, wl.z1, wl.x1, F3, RailH, RailT, accentMat, Gap(18f, 20f));
+            foreach (var (cx, cz, sx, sz) in new[] { (20f, 11f, 1f, 1f), (40f, 11f, -1f, 1f), (20f, 27f, 1f, -1f), (40f, 27f, -1f, -1f) })
+            {
+                string tag = $"{(sz > 0 ? "S" : "N")}{(sx > 0 ? "W" : "E")}";
+                WallX(r3, $"LWall_{tag}_A", Mathf.Min(cx, cx + sx * 4f), Mathf.Max(cx, cx + sx * 4f), cz, F3, 2.8f, 0.4f, wallMat);
+                WallZ(r3, $"LWall_{tag}_B", Mathf.Min(cz, cz + sz * 3f), Mathf.Max(cz, cz + sz * 3f), cx, F3, 2.8f, 0.4f, wallMat);
+            }
+            WallZ(r3, "LowWall_W", 16.5f, 21.5f, 21f, F3, 1f, 0.4f, accentMat);
+            WallZ(r3, "LowWall_E", 16.5f, 21.5f, 39f, F3, 1f, 0.4f, accentMat);
+            FoldingScreen(r3, "Screen_S", new Vector3(30f - 6 * ScreenStep / 2f, F3, 11.2f), true, 6);
+            FoldingScreen(r3, "Screen_N", new Vector3(30f - 6 * ScreenStep / 2f, F3, 26.8f), true, 6);
 
             WingTerrace(Group(m, "Terrace_WingW", Vector3.zero), 0f, 14f, holeW2, true);
             WingTerrace(Group(m, "Terrace_WingE", Vector3.zero), 46f, 60f, holeE2, false);
@@ -316,7 +333,7 @@ namespace Project1.Map.EditorTools
             FoldingScreen(screens, "E", new Vector3(39.4f, G, 21.5f - spanZ / 2f), false, 6);
 
             // 샹들리에(보이기만, 충돌 없음): 고리 + 사슬
-            var ch = Group(l, "Chandelier", new Vector3(30f, 13f, 21.5f));
+            var ch = Group(l, "Chandelier", new Vector3(30f, ChandelierY, 19f)); // 우물 가운데 아래
             const float r = 3.5f;
             for (int k = 0; k < 8; k++)
             {
@@ -326,7 +343,7 @@ namespace Project1.Map.EditorTools
                 BoxR(ch, $"Candle_{k}", p + Vector3.up * 0.45f, new Vector3(0.15f, 0.6f, 0.15f), Quaternion.identity, wallMat, false);
             }
             BoxR(ch, "Hub", Vector3.zero, new Vector3(1f, 1.2f, 1f), Quaternion.identity, accentMat, false);
-            BoxR(ch, "Chain", new Vector3(0f, (RoofTop - SlabT - 13f) / 2f, 0f), new Vector3(0.12f, RoofTop - SlabT - 13f, 0.12f), Quaternion.identity, accentMat, false);
+            BoxR(ch, "Chain", new Vector3(0f, (RoofTop - SlabT - ChandelierY) / 2f, 0f), new Vector3(0.12f, RoofTop - SlabT - ChandelierY, 0.12f), Quaternion.identity, accentMat, false);
         }
 
         /// <summary>정면·뒷면 버팀벽, 모서리 탑 4개(뾰족 지붕), 본채 박공지붕·박공벽·첨탑.</summary>
