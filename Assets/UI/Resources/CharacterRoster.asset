@@ -85,7 +85,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: fe0f3b54e9822484f8b6ab08165ac080, type: 2}
   - id: Hunter_Geisha
     displayName: "\uBD89\uC740\uB098\uBE44"
     role: 1

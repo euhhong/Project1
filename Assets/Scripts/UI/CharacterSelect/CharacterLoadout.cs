@@ -31,6 +31,7 @@ namespace Project1.UI
 
             // 캐릭터별 소품(무기). 다른 캐릭터로 바꾸면 지운다.
             SetProp<FanWeapon>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 접는 부채
+            SetProp<GrabShotVisual>(player, entry.id == "Hunter_Gamekeeper"); // 사냥터지기: 그랩 쏘기 연출
             // 만화 타격 효과: 생존자 모두(플라잉킥). 생존자 기본 공격(Mutant Punch)을 쓰면 펀치 효과 + 늘어난 리치도.
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))

@@ -32,6 +32,10 @@ namespace Project1.Presentation.EditorTools
         // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
         private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1") };
 
+        // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속). 사냥터지기 그랩 던지기 = Standing Melee Attack Downward(사용자 지정),
+        // 그랩이 뻗어 나가는 순간(준비 0.3초)에 맞춰 1.6배속.
+        private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f) };
+
         private static readonly string[] Slots =
         {
             "Idle", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
@@ -302,6 +306,14 @@ namespace Project1.Presentation.EditorTools
                     if (SkillLoopSpeed.TryGetValue(stateName, out float loopSpeed)) state.speed = loopSpeed;
                 }
             }
+            // 다른 자리의 모션을 그대로 쓰는 스킬(예: 사냥터지기 그랩 쏘기 = 감시자 기본 공격 내려치기 모션).
+            foreach (var (skillId, slot, speed) in SkillClipAliases)
+                if (clips.TryGetValue(slot, out var aliasClip) && aliasClip != null)
+                {
+                    var s = skillSm.AddState(skillId);
+                    s.motion = aliasClip;
+                    s.speed = speed;
+                }
             foreach (var (skillId, slot) in SkillEndMotions)
                 if (clips.TryGetValue(slot, out var endClip) && endClip != null)
                     skillSm.AddState(skillId + "_End").motion = endClip;

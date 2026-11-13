@@ -48,6 +48,11 @@ namespace Project1.Core
         /// <summary>모션 재생 위치를 진행도(CastProgress/RecoveryProgress)에 맞출지. false면 그냥 재생한다.</summary>
         bool SyncAnimationToProgress { get; }
 
+        /// <summary>스킬이 뻗어 나간 길이(m, 예: 사냥터지기 그랩)와 방향(월드). 길이 0이면 안 나가 있다.</summary>
+        float Reach { get; }
+
+        UnityEngine.Vector3 Direction { get; }
+
         /// <summary>지금 잔상을 남길지(예: 용병 초고속 도약).</summary>
         bool ShowAfterimage { get; }
 

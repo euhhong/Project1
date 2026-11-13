@@ -46,6 +46,8 @@ namespace Project1.Systems
         public float AreaRadius { get; set; }
         /// <summary>스킬이 쓰는 방향(예: 용병 도약 방향, 시야 기준 x = 우, z = 앞).</summary>
         public Vector3 Direction { get; set; }
+        /// <summary>지금 뻗어 나간 길이(m, 예: 사냥터지기 그랩). 0이면 안 나가 있다.</summary>
+        public float Reach { get; set; }
 
         public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
         public string StatusText => skill != null && State == SkillState.Casting ? skill.StatusText(this) : null;
@@ -185,6 +187,7 @@ namespace Project1.Systems
             UseCount++;
             SetPhase(0);
             ShowArea = false;
+            Reach = 0f;
             skill.OnStart(this);
             SkillStarted?.Invoke();
         }
@@ -193,6 +196,7 @@ namespace Project1.Systems
         {
             CastProgress = 0f;
             ShowArea = false;
+            Reach = 0f;
             if (completed && recovery > 0f)
             {
                 // 도중에 막혀 끝남(예: 돌진이 벽에 부딪힘) → 넘어져 있다가 재사용 대기.

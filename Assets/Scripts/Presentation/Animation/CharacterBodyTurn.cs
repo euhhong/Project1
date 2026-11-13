@@ -36,6 +36,7 @@ namespace Project1.Presentation
         public float YawOffset => yaw;
 
         private ICharacterState state;
+        private ICharacterSkillState skill;
         private Animator animator;
         private Transform model;
         private Quaternion modelBaseRotation;
@@ -70,6 +71,15 @@ namespace Project1.Presentation
         {
             if (animator == null || !animator.isActiveAndEnabled) ResolveModel();
             if (state == null || model == null) return;
+
+            // 행동을 막는 스킬(예: 사냥터지기 그랩, 전위 돌진) 중에는 몸을 바로 시야 방향으로 돌린다(틀어 둔 각도 없앰).
+            if (skill == null) TryGetComponent(out skill);
+            if (skill != null && skill.LocksActions)
+            {
+                yaw = targetYaw = yawVelocity = 0f;
+                model.localRotation = modelBaseRotation;
+                return;
+            }
 
             Vector2 v = state.LocalPlanarVelocity; // x = 오른쪽, y = 앞
             if (Mathf.Abs(v.x) > lateralThreshold)
