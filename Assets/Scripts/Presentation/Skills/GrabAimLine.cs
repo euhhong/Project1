@@ -6,8 +6,8 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 사냥터지기 그랩 조준 보조선. 내가 조종하는 사냥터지기(LocalPlayerInput)에만 보인다.
-    /// - 점선(- - -): 그랩이 나가는 손 자리(GrabShotSkill.Origin)에서 던질 방향(몸 = 시야)으로 사거리 끝까지, 벽·물건에 먼저 닿으면 거기까지.
-    /// - 흰색 일자선: 점선이 끝나는 곳(그랩 리치 끝)에 조준 방향과 수직으로 짧게.
+    /// - 점선(- - -): 그랩이 나가는 손 자리(GrabShotSkill.Origin)에서 던질 방향(몸 = 시야)으로.
+    /// - 점선·흰색 일자선 모두 확실히 잡히는 거리(최대 사거리 - endBarInset)까지만, 벽이 더 가까우면 벽 앞까지. 흰 선은 점선 끝에 조준 방향과 수직으로 짧게.
     /// - 쓸 수 있을 때는 옅게, E를 눌러 조준하는 동안(준비·꾹 누르기)은 진하게. 그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
     /// 연출 전용(판정은 BE GrabShotSkill). GrabShotVisual이 붙을 때 같이 붙는다(RequireComponent).
     /// </summary>
@@ -26,6 +26,8 @@ namespace Project1.Presentation
         [Header("리치 끝 표시 (흰색 일자선)")]
         [Tooltip("그랩이 닿는 끝에 조준 방향과 수직으로 긋는 흰 선의 길이(m).")]
         [SerializeField, Min(0.05f)] private float endBarLength = 0.7f;
+        [Tooltip("흰 선을 그랩 최대 사거리보다 이만큼(m) 앞에 긋는다. 땅이 울퉁불퉁하거나 상대가 움직여도 확실히 닿는 거리를 보여 주려고(최대 사거리 끝은 겨우 닿는 거리).")]
+        [SerializeField, Min(0f)] private float endBarInset = 3f;
         [SerializeField, Min(0.005f)] private float endBarWidth = 0.05f;
         [SerializeField] private Color endBarIdleColor = new(1f, 1f, 1f, 0.45f);
         [SerializeField] private Color endBarAimColor = new(1f, 1f, 1f, 0.95f);
@@ -67,7 +69,8 @@ namespace Project1.Presentation
             Vector3 dir = aiming ? skill.Direction : Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             if (dir.sqrMagnitude < 0.0001f) { Hide(); return; }
             Vector3 origin = grab.Origin(transform, dir);
-            float length = grab.AimLength(origin, dir);
+            // 점선과 흰 선 모두 '확실히 닿는 거리'(최대 사거리 - endBarInset)까지만. 벽이 더 가까우면 벽 앞까지.
+            float length = Mathf.Min(grab.AimLength(origin, dir), Mathf.Max(0.5f, grab.range - endBarInset));
             Vector3 end = origin + dir * length;
 
             EnsureLines();
@@ -79,11 +82,12 @@ namespace Project1.Presentation
             line.endColor = new Color(c.r, c.g, c.b, c.a * 0.6f); // 끝으로 갈수록 살짝 옅게
             line.textureScale = new Vector2(1f / dashPeriod, 1f);
 
-            // 리치 끝(점선이 끝나는 곳): 조준 방향과 수직인 흰 일자선.
+            // 점선 끝: 조준 방향과 수직인 흰 일자선.
+            Vector3 barAt = end;
             Vector3 side = Vector3.Cross(Vector3.up, dir).normalized * (endBarLength * 0.5f);
             endBar.enabled = true;
-            endBar.SetPosition(0, end - side);
-            endBar.SetPosition(1, end + side);
+            endBar.SetPosition(0, barAt - side);
+            endBar.SetPosition(1, barAt + side);
             Color b = aiming ? endBarAimColor : endBarIdleColor;
             endBar.startColor = b;
             endBar.endColor = b;
