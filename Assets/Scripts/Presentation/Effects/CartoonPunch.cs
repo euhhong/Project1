@@ -7,7 +7,8 @@ namespace Project1.Presentation
     /// <summary>
     /// 만화 같은 타격 효과("펑")와 늘어난 펀치 거리(리치). CharacterLoadout이 붙인다.
     /// - 펀치(punchReach 켬, 주먹 기본 공격 Mutant Punch·훅 펀치를 쓰는 캐릭터): 몸 앞쪽에 판정 상자(Hitbox_Reach, 오른손 자리)를 둔다.
-    ///   오른손 공격의 판정 구간에 같이 켜져서 주먹이 닿는 곳보다 멀리 맞는다. 판정 구간이 시작될 때 그 자리에 "펑"이 터진다.
+    ///   오른손 공격의 판정 구간에 같이 켜져서 주먹이 닿는 곳보다 멀리 맞는다.
+    ///   앞으로 이동하면서 치면 판정 끝이 조금 더 멀리 나간다(moveReachBonus, 달리기 속도에서 최대). 판정 구간이 시작될 때 판정 끝에 "펑"이 터져 닿는 곳을 보여 준다.
     /// - 발차기(모든 생존자, 앞으로 달리다 뛴 공격 = 플라잉킥): 판정 구간이 시작될 때 앞으로 더 나간 발 앞에서 "펑"이 터진다.
     /// "펑" = 노랑·흰 별 두 겹 + 주먹/발에서 뻗는 속도선, 0.2초 만에 사라진다(PunchBurst).
     /// </summary>
@@ -26,6 +27,8 @@ namespace Project1.Presentation
         [SerializeField, Min(0.1f)] private float reachHeight = 0.9f;
         [Tooltip("판정 상자 높이(캐릭터 키 대비, 가슴쯤).")]
         [SerializeField, Range(0.2f, 1f)] private float heightRatio = 0.62f;
+        [Tooltip("앞으로 이동하면서 칠 때 판정 끝이 더 나가는 거리(m, 달리기 속도에서 최대, 걷기면 그만큼 덜).")]
+        [SerializeField, Min(0f)] private float moveReachBonus = 0.45f;
 
         [Header("효과")]
         [SerializeField, Min(0.05f)] private float effectTime = 0.2f;
@@ -36,6 +39,8 @@ namespace Project1.Presentation
         [SerializeField] private Color innerColor = new(1f, 1f, 1f, 1f);
 
         private ICharacterAttackState attack;
+        private ICharacterState state;
+        private float bonus; // 이번 공격에서 판정 끝이 더 나간 거리(m)
         private Animator animator;
         private BoxCollider reachBox;
         private AttackPhase lastPhase = AttackPhase.None;
@@ -49,7 +54,34 @@ namespace Project1.Presentation
             else if (!on && reachBox != null) { Destroy(reachBox.gameObject); reachBox = null; RefreshDetector(); }
         }
 
-        private void Awake() => attack = GetComponent<ICharacterAttackState>();
+        private void Awake()
+        {
+            attack = GetComponent<ICharacterAttackState>();
+            state = GetComponent<ICharacterState>();
+        }
+
+        // 판정 상자 길이를 앞으로 가는 속도에 맞춘다(판정이 켜지기 전·켜진 동안 매 틱). 공격이 아니면 원래 길이.
+        private void FixedUpdate()
+        {
+            if (reachBox == null || attack == null) return;
+            bool striking = (attack.AttackState == CharacterAttackState.Light || attack.AttackState == CharacterAttackState.Heavy) && !attack.IsRunJumpAttack;
+            if (!striking) bonus = 0f;
+            else if (attack.AttackPhase == AttackPhase.Windup || attack.AttackPhase == AttackPhase.Active)
+            {
+                float fwd = state != null ? state.LocalPlanarVelocity.y : 0f;
+                float run = state != null ? Mathf.Max(state.RunSpeed, 0.1f) : 6.5f;
+                bonus = Mathf.Max(bonus, moveReachBonus * Mathf.Clamp01(fwd / run)); // 판정 중 멈춰도 줄지 않는다
+            }
+            SetReachLength(reach + bonus);
+        }
+
+        private void SetReachLength(float farEnd)
+        {
+            float length = Mathf.Max(farEnd - reachStart, 0.1f);
+            var c = reachBox.center; var s = reachBox.size;
+            reachBox.center = new Vector3(c.x, c.y, reachStart + length * 0.5f);
+            reachBox.size = new Vector3(s.x, s.y, length);
+        }
 
         private void Start()
         {
@@ -104,7 +136,8 @@ namespace Project1.Presentation
         private void SpawnPunch()
         {
             if (reachBox == null) return;
-            Vector3 center = reachBox.transform.TransformPoint(reachBox.center + new Vector3(0f, 0f, reachBox.size.z * 0.3f));
+            // 판정 끝(앞으로 가며 치면 더 멀리)에서 터뜨려 닿는 곳을 보여 준다.
+            Vector3 center = reachBox.transform.TransformPoint(reachBox.center + new Vector3(0f, 0f, reachBox.size.z * 0.5f - 0.15f));
             var hand = Model()?.GetBoneTransform(HumanBodyBones.RightHand);
             PunchBurst.Create(center, hand != null ? hand.position : center, burstSize * Scale, effectTime, outerColor, innerColor, GetMaterial());
         }
