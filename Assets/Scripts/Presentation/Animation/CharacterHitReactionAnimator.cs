@@ -10,6 +10,7 @@ namespace Project1.Presentation
     /// - 몸통: 맞은 위치가 몸 뒤쪽이면 Hit_Body_Back(Big Kidney Hit), 아니면 Hit_Body_Side(Big Side Hit)
     /// - 팔·다리: Hit_Limb(Side Hit)
     /// 상체만 움직이므로 걷기·달리기 다리 모션은 그대로 이어진다. 연출 전용이고 게임 상태는 바꾸지 않는다.
+    /// 공격 중(약·강공격)에는 피격 모션을 얹지 않는다 — 둘이 바짝 붙어 서로 때려도 공격 모션이 끝까지 제대로 나온다.
     /// 캐릭터 루트에 붙인다. Animator는 자식 모델에서 자동으로 찾는다(모델이 바뀌면 다시 찾는다).
     /// </summary>
     [DisallowMultipleComponent]
@@ -31,6 +32,17 @@ namespace Project1.Presentation
         private float weight;
         private bool playing;
         private ICharacterStun stun;
+        private ICharacterAttackState attack;
+
+        /// <summary>지금 약·강공격 중인지(피격 모션이 공격 모션을 덮지 않게).</summary>
+        private bool Attacking
+        {
+            get
+            {
+                if (attack == null) TryGetComponent(out attack);
+                return attack != null && (attack.AttackState == CharacterAttackState.Light || attack.AttackState == CharacterAttackState.Heavy);
+            }
+        }
         private static readonly int StunId = Animator.StringToHash("Stun");
 
         private void Awake() => identity = GetComponent<CharacterIdentity>();
@@ -54,6 +66,7 @@ namespace Project1.Presentation
         private void OnHit(HitResult hit)
         {
             if (identity == null || hit.VictimId != identity.Id || !Resolve()) return;
+            if (Attacking) return; // 공격 중: 공격 모션을 그대로 둔다
             int state;
             switch (hit.Part)
             {
@@ -81,6 +94,13 @@ namespace Project1.Presentation
         {
             WatchStun();
             if (!Resolve()) return;
+            if (Attacking)
+            {
+                // 공격하는 동안은 피격·기절 상체 모션을 끈다(공격 레이어 위에 얹히지 않게).
+                weight = 0f; playing = false;
+                animator.SetLayerWeight(layer, 0f);
+                return;
+            }
 
             // 기절 중: Stun 모션이 있으면 기절이 풀릴 때까지 반복해서 유지(고개 숙임).
             if (stun != null && stun.IsStunned && animator.HasState(layer, StunId))
@@ -110,6 +130,7 @@ namespace Project1.Presentation
         // 기절 시작: 고개를 숙인다. 전용 Stun 모션이 없으면 머리 피격 모션(Head Hit)으로 숙이고 기절 동안 그 자세를 유지한다.
         private void OnStunned(float seconds)
         {
+            if (Attacking) return;
             if (!Resolve() || animator.HasState(layer, StunId) || !animator.HasState(layer, HeadId)) return;
             animator.Play(HeadId, layer, 0f);
             weight = 1f;
