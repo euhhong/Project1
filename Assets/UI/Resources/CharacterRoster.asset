@@ -75,7 +75,7 @@ MonoBehaviour:
     role: 1
     model: {fileID: 919132149155446097, guid: 09a20e645c0c9ff4e9374e7a5747811d, type: 3}
     scale: 4
-    gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
+    gameController: {fileID: 22100000, guid: c2c788701c3e06349a1a8b7a8deacb6b, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
   - id: Hunter_Gamekeeper
