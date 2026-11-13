@@ -161,7 +161,7 @@ namespace Project1.Presentation
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.2f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.6f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.02f, 0.05f);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.55f, 0.15f), new Color(1f, 0.2f, 0.05f));
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.25f, 0.15f), new Color(0.9f, 0.05f, 0.03f));
             main.gravityModifier = -0.15f;
             main.maxParticles = 120;
             var em = ps.emission; em.rateOverTime = 18f;
@@ -190,7 +190,7 @@ namespace Project1.Presentation
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 1.1f);
             main.startSpeed = new ParticleSystem.MinMaxCurve(1.2f, 3.5f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.08f);
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.6f, 0.2f), new Color(0.9f, 0.15f, 0.05f));
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.3f, 0.18f), new Color(0.85f, 0.05f, 0.03f));
             main.gravityModifier = 0.4f;
             main.loop = false;
             var em = ps.emission; em.rateOverTime = 0f;

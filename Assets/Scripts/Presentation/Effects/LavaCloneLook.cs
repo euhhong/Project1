@@ -14,7 +14,7 @@ namespace Project1.Presentation
     public class LavaCloneLook : MonoBehaviour
     {
         [SerializeField] private Color bodyColor = new(0.025f, 0.022f, 0.022f);
-        [SerializeField] private Color crackColor = new(1f, 0.28f, 0.06f);
+        [SerializeField] private Color crackColor = new(1f, 0.07f, 0.035f); // 붉은 용암빛
         [Tooltip("균열 발광 세기(평균) / 일렁이는 폭 / 빠르기.")]
         [SerializeField, Min(0f)] private float glow = 3.2f, flicker = 0.9f, flickerSpeed = 2.3f;
 
@@ -75,7 +75,7 @@ namespace Project1.Presentation
 
         /// <summary>
         /// 금 간 무늬(이어 붙여도 이음매 없음): 보로노이 칸의 경계(F2 - F1이 작은 곳)가 균열. 큰 얼룩 무늬가 밝은 곳에만 남겨 "군데군데".
-        /// 균열 가운데는 노랗게 뜨겁고 가장자리로 갈수록 붉게 식는다(발광 색과 곱해짐).
+        /// 균열 가운데는 밝은 붉은빛, 가장자리로 갈수록 검붉게 식는다(발광 색과 곱해짐).
         /// </summary>
         public static Texture2D CrackTexture()
         {
@@ -110,7 +110,7 @@ namespace Project1.Presentation
                     crack = crack * crack * (3f - 2f * crack);
                     float mask = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.42f, 0.62f, patch));
                     float a = crack * mask;
-                    Color c = Color.Lerp(new Color(0.55f, 0.08f, 0.02f), new Color(1f, 0.85f, 0.45f), crack * crack) * a;
+                    Color c = Color.Lerp(new Color(0.5f, 0.02f, 0.02f), new Color(1f, 0.32f, 0.22f), crack * crack) * a; // 가장자리 검붉게 → 가운데 밝은 붉은빛
                     px[y * n + x] = new Color(c.r, c.g, c.b, 1f);
                 }
             crackTexture = new Texture2D(n, n, TextureFormat.RGBA32, true) { name = "LavaCracks", wrapMode = TextureWrapMode.Repeat };
