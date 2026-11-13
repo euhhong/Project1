@@ -73,7 +73,8 @@ namespace Project1.Systems
         [SerializeField, Min(0.1f)] private float grabTime = 0.6f, bracedGrabTime = 0.55f;
         [Tooltip("놓은 뒤 다시 잡을 수 있을 때까지(초).")]
         [SerializeField, Min(0f)] private float regrabDelay = 0.4f;
-        [SerializeField, Min(0.1f)] private float hangClimbTime = 1.9f, railClimbTime = 1.4f;
+        [Tooltip("매달려 올라가기(Freehang Climb, 벽 한 장 넘기는 이 시간 × OverClipShare) / 난간 넘기(Climbing) 시간(초). 모션은 이 시간에 맞춰 재생된다.")]
+        [SerializeField, Min(0.1f)] private float hangClimbTime = 1.5f, railClimbTime = 1.15f;
         [Tooltip("매달려 올라갈 때 발 높이(0 = 매달린 자리, 1 = 턱 위) — Freehang Climb의 낮은 발 높이를 따른다.")]
         [SerializeField] private AnimationCurve hangClimbRise = new(
             new Keyframe(0f, 0f), new Keyframe(0.08f, 0.06f), new Keyframe(0.13f, 0.29f), new Keyframe(0.16f, 0.42f), new Keyframe(0.21f, 0.55f),
