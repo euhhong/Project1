@@ -30,6 +30,8 @@ namespace Project1.Presentation
             // 사냥터지기 그랩 쏘기(Skill_Gamekeeper_Grab, Tools/Blender/make_grab_throw.py): 몸을 앞으로 기울이며 오른팔을 어깨 높이로 앞으로 뻗어 던진 자세(12/31프레임 = 37%)에서 멈추고
             // 그랩이 날아갔다 돌아오면 팔을 거둬 서 있는 자세로 돌아온다.
             ["Gamekeeper_Grab"] = new Vector2(11f / 30f, 11f / 30f),
+            // 리퍼 안개 칼날(E): 기본 공격 왼손 내려치기(Attack_Light_Ripper) — 내려치는 구간(14~22/44)에 칼날이 나간다.
+            ["Ripper_MistBlade"] = new Vector2(14f / 44f, 22f / 44f),
         };
 
         private const string UpperLayerName = "SkillUpper"; // 상체만 쓰는 스킬 모션(다리는 걷기·달리기 그대로)

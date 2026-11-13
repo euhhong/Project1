@@ -31,9 +31,9 @@ namespace Project1.Systems
         [Range(1f, 180f)] public float targetAngle = 70f;
         [Tooltip("쏘는 방향을 바라보는 방향보다 위로(도) — 신호탄이 살짝 떠올랐다가 휘어 간다.")]
         public float launchPitchUp = 12f;
-        [Tooltip("쏘는 자리(캐릭터 키 대비 높이 / 몸 가운데에서 오른쪽 m / 앞 m) — 오른손 신호총.")]
-        [Range(0.1f, 1f)] public float heightRatio = 0.65f;
-        public float sideOffset = 0.3f, forwardOffset = 0.6f;
+        [Tooltip("쏘는 자리(캐릭터 키 대비 높이 / 몸 가운데에서 오른쪽 m / 앞 m) — 오른손 신호총 총구.")]
+        [Range(0.1f, 1f)] public float heightRatio = 0.89f; // 쏘는 순간 총구(Coordinator_Muzzle) 자리에 맞춤: 몸 기준 (0.34, 1.51, 0.71), 키 1.70
+        public float sideOffset = 0.34f, forwardOffset = 0.71f;
         public HitboxSlot slot = HitboxSlot.Weapon;
 
         public override bool LocksActions => true;
@@ -84,7 +84,7 @@ namespace Project1.Systems
         {
             CharacterIdentity best = null;
             float bestAngle = targetAngle;
-            foreach (var c in Object.FindObjectsByType<CharacterIdentity>(FindObjectsSortMode.None))
+            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
             {
                 if (self != null && !self.CanHit(c)) continue;
                 Vector3 to = HomingProjectile.AimPoint(c) - origin;

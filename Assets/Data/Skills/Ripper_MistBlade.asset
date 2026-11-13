@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 773dea72b6b5afd4f8a2babfc46f5320, type: 3}
+  m_Name: Ripper_MistBlade
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.MistBladeSkill
+  id: Ripper_MistBlade
+  displayName: "\uC548\uAC1C \uCE7C\uB0A0"
+  castTime: 3
+  cooldown: 0
+  castMoveSpeed: 0
+  windup: 0.25
+  active: 0.1
+  followThrough: 0.45
+  cost: 1

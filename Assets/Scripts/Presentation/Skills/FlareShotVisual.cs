@@ -57,12 +57,14 @@ namespace Project1.Presentation
             FlareTrail.Create(p, Muzzle(p));
         }
 
-        /// <summary>오른손 신호총 끝(소품 상자의 가운데에서 몸 앞쪽으로). 소품이 없으면 BE 시작점.</summary>
+        /// <summary>오른손 신호총 총구(모델 임포트 때 총열 끝에 둔 Coordinator_Muzzle, ModelPropFixer). 없으면 소품 상자 가운데에서 몸 앞쪽, 소품이 없으면 BE 시작점.</summary>
         private Vector3 Muzzle(IProjectile p)
         {
             if (gun == null) gun = FindGun();
             if (gun == null) return p.Position;
             gun.enabled = true; // 쏘는 순간에는 꺼내 들고 있다
+            var mz = gun.transform.Find("Coordinator_Muzzle");
+            if (mz != null) return mz.position;
             var b = gun.bounds;
             return b.center + transform.forward * Mathf.Max(b.extents.x, b.extents.z);
         }

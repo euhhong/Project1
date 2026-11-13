@@ -52,7 +52,7 @@ namespace Project1.Systems
         public Vector3 ReachOrigin { get; set; }
 
         public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
-        public string StatusText => skill != null && State == SkillState.Casting ? skill.StatusText(this) : null;
+        public string StatusText => skill == null ? null : State == SkillState.Casting ? skill.StatusText(this) : skill.IdleStatusText(this);
 
         public string AnimationState =>
             skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);

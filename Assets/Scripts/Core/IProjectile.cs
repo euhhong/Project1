@@ -31,5 +31,8 @@ namespace Project1.Core
 
         /// <summary>캐릭터를 맞혀서 끝났는지(false = 벽·바닥·천장에 닿았거나 시간이 다 됨).</summary>
         bool EndedOnCharacter { get; }
+
+        /// <summary>공격 세기 배율(HitResult.Power와 같음, 0 = 보통). FE가 크기·진하기를 고를 수 있다.</summary>
+        float Power { get; }
     }
 }

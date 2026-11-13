@@ -38,7 +38,7 @@ namespace Project1.Presentation.EditorTools
 
         // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속) — Mixamo/Skill_<스킬 ID>.fbx가 없을 때만.
         // 사냥터지기 그랩 쏘기는 이제 전용 파일 Skill_Gamekeeper_Grab.fbx(감시자 내려치기 + 머리는 앞을 봄, Blender로 수정)를 쓴다.
-        private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f) };
+        private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f), ("Ripper_MistBlade", "Attack_Light_Ripper", 1f) /* 리퍼 E: 위에서 아래로 내려치기(기본 공격과 같은 왼손 내려치기) */ };
 
         private static readonly string[] Slots =
         {

@@ -48,6 +48,9 @@ namespace Project1.Systems
         /// <summary>HUD에 보여 줄 상태 글(예: "벽에 닿음 → 이동하면 도약"). null이면 HUD 기본 글.</summary>
         public virtual string StatusText(CharacterSkill ctx) => null;
 
+        /// <summary>시전 중이 아닐 때 HUD에 보여 줄 글(예: 리퍼 안개 칸 ●○). null이면 HUD 기본 글(준비/재사용 대기).</summary>
+        public virtual string IdleStatusText(CharacterSkill ctx) => null;
+
         /// <summary>스킬 모션을 시전 진행도에 맞출지(true, 예: 주사기 꽂기) / 그냥 재생할지(false, 예: 돌진·도약).</summary>
         public virtual bool SyncAnimationToCast => true;
 

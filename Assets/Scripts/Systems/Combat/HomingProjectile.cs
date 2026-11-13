@@ -27,12 +27,13 @@ namespace Project1.Systems
         public bool Alive { get; private set; }
         public Vector3 EndPoint { get; private set; }
         public bool EndedOnCharacter { get; private set; }
+        public float Power { get; private set; }
         /// <summary>쏠 때 고른 목표(없으면 곧게 날아간다).</summary>
         public CharacterIdentity Target => target;
 
-        /// <summary>투사체를 만든다. target이 없으면 처음 방향으로 곧게 난다.</summary>
+        /// <summary>투사체를 만든다. target이 없으면 처음 방향으로 곧게 난다(예: 리퍼 안개 칼날). power = 공격 세기 배율(0 = 보통).</summary>
         public static HomingProjectile Launch(string kind, CharacterIdentity owner, CharacterIdentity target, Vector3 origin, Vector3 direction,
-            float speed, float turnRateDeg, float hitRadius, float wallRadius, float lifetime, HitboxSlot slot, int attackId)
+            float speed, float turnRateDeg, float hitRadius, float wallRadius, float lifetime, HitboxSlot slot, int attackId, float power = 0f)
         {
             var go = new GameObject($"Projectile_{kind}");
             go.transform.position = origin;
@@ -40,7 +41,7 @@ namespace Project1.Systems
             p.Kind = kind; p.owner = owner; p.target = target;
             p.Direction = direction.sqrMagnitude > 1e-6f ? direction.normalized : Vector3.forward;
             p.Speed = speed; p.turnRate = turnRateDeg; p.hitRadius = hitRadius; p.wallRadius = wallRadius;
-            p.lifetime = lifetime; p.slot = slot; p.attackId = attackId; p.Alive = true;
+            p.lifetime = lifetime; p.slot = slot; p.attackId = attackId; p.Power = power; p.Alive = true;
             ProjectileEvents.RaiseLaunched(p);
             return p;
         }
@@ -103,6 +104,7 @@ namespace Project1.Systems
                     AttackId = attackId,
                     Tick = SimulationTick.Current,
                     Point = hurtPoint,
+                    Power = Power,
                 });
                 End(hurtPoint, true);
                 return;

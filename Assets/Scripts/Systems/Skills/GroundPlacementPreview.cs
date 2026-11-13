@@ -8,6 +8,7 @@ namespace Project1.Systems
     /// 좌클릭을 꾹 눌러 땅 위에 무언가를 놓을 자리 고르기(미리보기) — 붉은나비 나비, 안토니오 음표가 같이 쓴다(BE).
     /// - 마우스 커서가 가리키는 곳을 따라간다. 땅 위만 된다(면이 위를 향함, 공중·벽 불가), 너무 멀면 안 됨.
     /// - 몸 근처(cancelRadius)로 끌어다 놓으면 "취소" 자리(Cancels).
+    /// - orbitWhileTurning을 끄면(안토니오): 시점을 돌리는 동안에도 화면 가운데가 가리키는 땅을 자유롭게 따라간다(거리 고정 없음).
     /// - 우클릭으로 시점을 돌리면(커서가 아님): 캐릭터를 원의 가운데로, 자리까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다(그 자리 바닥에 붙음).
     ///   시점을 돌리는 중에 새로 고르기 시작하면 화면 가운데가 가리키는 땅, 없으면 앞쪽 defaultDistance m.
     /// </summary>
@@ -24,6 +25,8 @@ namespace Project1.Systems
         [Min(0f)] public float defaultDistance = 6f;
         [Tooltip("바닥을 찾을 때 위·아래로 살피는 거리(m).")]
         [Min(0.1f)] public float groundProbeUp = 3f, groundProbeDown = 8f;
+        [Tooltip("우클릭으로 시점을 돌릴 때: 켜면 캐릭터 둘레로 거리를 지켜 돈다(붉은나비), 끄면 화면 가운데가 가리키는 땅을 자유롭게 따라간다(안토니오).")]
+        public bool orbitWhileTurning = true;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
         private bool set, viewLocked;
@@ -43,6 +46,12 @@ namespace Project1.Systems
         public void Update(Transform owner, in CharacterInputFrame input)
         {
             Quaternion view = Quaternion.Euler(0f, input.LookYaw, 0f);
+            if (!orbitWhileTurning && input.HasAimPoint)
+            {
+                // 자유롭게: 커서든 화면 가운데든 가리키는 땅을 그대로 따라간다(거리 고정 없음)
+                Evaluate(owner, input.AimPoint, input.AimNormal);
+                return;
+            }
             if (!(input.HasAimPoint && input.AimFromCursor))
             {
                 if (!set)

@@ -31,9 +31,18 @@ namespace Project1.Core
         /// <summary>맞은 위치(월드).</summary>
         public Vector3 Point;
 
+        /// <summary>
+        /// 공격 세기 배율(데미지를 정할 때 곱한다). 0 = 보통(1배)으로 본다 — 따로 정하지 않은 공격은 모두 보통.
+        /// 예: 리퍼 안개 칼날 = 2칸 공격 1, E(1칸) 0.5.
+        /// </summary>
+        public float Power;
+
+        /// <summary>세기 배율(0이면 1).</summary>
+        public readonly float PowerScale => Power > 0f ? Power : 1f;
+
         public override string ToString()
         {
-            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point}";
+            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale}";
         }
     }
 }

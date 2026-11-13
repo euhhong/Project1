@@ -17,8 +17,8 @@ namespace Project1.Systems
     [DisallowMultipleComponent]
     public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride
     {
-        [Tooltip("놓을 자리 고르기(땅 위만, 몸 근처 = 취소, 시점을 돌리면 캐릭터 둘레로 돎).")]
-        [SerializeField] private GroundPlacementPreview placement = new();
+        [Tooltip("놓을 자리 고르기(땅 위만, 몸 근처 = 취소). 시점을 돌리는 동안에도 붉은나비처럼 거리를 지키지 않고 화면 가운데가 가리키는 땅을 자유롭게 따라간다.")]
+        [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false };
         [Tooltip("첫 음표를 놓은 뒤 둘째를 놓아야 하는 시간(초).")]
         [SerializeField, Min(0.1f)] private float linkWindow = 5f;
         [Tooltip("E로 바로 놓을 때 몸 앞 거리(m).")]
@@ -59,6 +59,7 @@ namespace Project1.Systems
         {
             inputSource = GetComponent<ICharacterInputSource>();
             self = GetComponent<CharacterIdentity>();
+            placement.orbitWhileTurning = false; // 안토니오: 자유롭게 놓기
         }
 
         private void OnDisable()

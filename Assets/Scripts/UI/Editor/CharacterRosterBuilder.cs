@@ -27,6 +27,7 @@ namespace Project1.UI.EditorTools
             ["Hunter_Geisha"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ButterflyGlideSkill>(); s.id = "Geisha_Butterfly"; s.displayName = "나비에게"; s.castTime = 3f; s.cooldown = 0f; return s; },
             ["Survivor_Coordinator"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.FlareShotSkill>(); s.id = "Coordinator_Flare"; s.displayName = "신호총"; s.castTime = 2f; s.cooldown = 0f; return s; },
             ["Hunter_SmileyFace"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.RocketChargeSkill>(); s.id = "SmileyFace_RocketCharge"; s.displayName = "로켓 돌진"; s.castTime = 12f; s.cooldown = 0f; s.castMoveSpeed = 3.6f; s.chargeSpeed = 8f /* 전위(16)의 0.5배 */; return s; },
+            ["Hunter_Ripper"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.MistBladeSkill>(); s.id = "Ripper_MistBlade"; s.displayName = "안개 칼날"; s.castTime = 3f; s.cooldown = 0f; /* 안개 1칸을 쓴다(7초마다 1칸, 최대 2칸) */ return s; },
             ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 0f /* 테스트 단계 0초, 원래 15 */; s.chargeSpeed = 16f; return s; },
         };
 
