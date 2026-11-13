@@ -33,6 +33,13 @@ namespace Project1.Systems
 
         public void ResetToFull() => Set(maxHealth);
 
+        /// <summary>최대 체력을 바꾸고 가득 채운다(캐릭터를 고를 때 — 감시자 150, 생존자 100, DamageRules).</summary>
+        public void SetMax(float max)
+        {
+            maxHealth = Mathf.Max(1f, max);
+            Set(maxHealth);
+        }
+
         private void Set(float value)
         {
             current = Mathf.Clamp(value, 0f, maxHealth);

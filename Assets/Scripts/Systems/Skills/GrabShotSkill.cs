@@ -530,6 +530,7 @@ namespace Project1.Systems
                 AttackId = -ctx.UseCount,
                 Tick = SimulationTick.Current,
                 Point = point,
+                BaseDamage = DamageRules.GrabDamage, // 그랩·올가미 피해(끌려오는 동안 기절은 스킬이 건다)
             });
         }
 

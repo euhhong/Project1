@@ -199,6 +199,7 @@ namespace Project1.Systems
                     AttackId = -(200000 + ++hitCounter),
                     Tick = SimulationTick.Current,
                     Point = onWire,
+                    BaseDamage = DamageRules.NoteWireDamage, // 전류선 한 번 닿을 때 피해
                 });
             }
         }

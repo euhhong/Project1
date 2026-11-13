@@ -22,6 +22,18 @@ namespace Project1.Systems
 
         public void Stun(float seconds) => Stun(seconds, Vector3.zero);
 
+        /// <summary>target을 seconds초 기절(경직)시킨다. CharacterStun이 없으면 붙이고 이동에 알린다. hitDirection = 맞힌 것이 나아가던 방향(없으면 0).</summary>
+        public static void Apply(GameObject target, float seconds, Vector3 hitDirection)
+        {
+            if (target == null || seconds <= 0f) return;
+            if (!target.TryGetComponent(out CharacterStun stun))
+            {
+                stun = target.AddComponent<CharacterStun>();
+                if (target.TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits(); // 기절(IMoveOverride)을 이동에 알린다
+            }
+            stun.Stun(seconds, hitDirection);
+        }
+
         /// <summary>hitDirection = 맞힌 것이 나아가던 방향(월드, 예: 돌진한 쪽 → 나). 내 앞쪽과 같은 쪽으로 나아갔으면 등 뒤에서 맞은 것. 0이면 방향 없음.</summary>
         public void Stun(float seconds, Vector3 hitDirection)
         {

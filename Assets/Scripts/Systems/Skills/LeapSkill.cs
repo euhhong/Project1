@@ -168,6 +168,7 @@ namespace Project1.Systems
                     AttackId = -ctx.UseCount, // 일반 공격 번호와 겹치지 않게 음수
                     Tick = SimulationTick.Current,
                     Point = hurt.transform.position,
+                    BaseDamage = DamageRules.LeapSlamDamage, // 내려찍기 피해(Docs/DamageSystem.md)
                 });
                 Stun(victim.gameObject);
             }

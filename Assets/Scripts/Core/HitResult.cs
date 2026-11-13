@@ -49,12 +49,21 @@ namespace Project1.Core
         /// <summary>맨주먹으로 때린 히트인지(무기 없이 손 판정으로 맞힘, 예: 생존자 주먹 기본 공격). 주먹 막기(FistParry)는 이것만 막는다.</summary>
         public bool Fist;
 
+        /// <summary>공격 종류(평타 약·강·달리기 점프·두 번째 차기 / 스킬). 평타 판정(AttackHitDetector)이 채운다. 0 = 스킬·기타.</summary>
+        public AttackKind Kind;
+
+        /// <summary>강공격을 모은 시간(초). 데미지 규칙이 강공격 피해를 늘리는 데 쓴다.</summary>
+        public float Charge;
+
+        /// <summary>이 히트의 기본 피해를 직접 정한 값(스킬이 정함, 예: 루키노 내려찍기 30). 0이면 규칙 표(DamageRules)의 값.</summary>
+        public float BaseDamage;
+
         /// <summary>세기 배율(0이면 1).</summary>
         public readonly float PowerScale => Power > 0f ? Power : 1f;
 
         public override string ToString()
         {
-            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale} knockback={Knockback} noDamage={NoDamage} fist={Fist}";
+            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale} knockback={Knockback} noDamage={NoDamage} fist={Fist} kind={Kind} charge={Charge:0.00} base={BaseDamage}";
         }
     }
 }

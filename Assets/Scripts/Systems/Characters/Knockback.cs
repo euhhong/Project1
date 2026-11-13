@@ -15,6 +15,7 @@ namespace Project1.Systems
         private float duration, time;
         private CharacterController controller;
         private bool impacted, impactDamage = true;
+        private float impactPerSpeedOverride = -1f, impactStun;
         private Collider lastHit;
 
         [Tooltip("부딪혔을 때 데미지 = 이 값 × 부딪힌 순간 밀려나던 속도(m/s). 예: 16m/s로 바로 부딪히면 약 19.")]
@@ -29,12 +30,14 @@ namespace Project1.Systems
         public bool Active => time < duration;
 
         /// <summary>target을 velocity(m/s, 수평)로 duration초 동안 밀어낸다. stun = 밀리는 동안 기절시킬지, stunAfter = 다 밀린 뒤 더 기절해 있는 시간(초),
-        /// impactDamage = 벽·캐릭터에 부딪히면 데미지를 줄지(끄면 거기서 멈추기만 — 기본 피격 넉백).</summary>
-        public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f, bool stun = true, bool impactDamage = true)
+        /// impactDamage = 벽·캐릭터에 부딪히면 데미지를 줄지(끄면 거기서 멈추기만 — 감시자 평타 넉백), impactPerSpeed = 부딪힘 데미지 배율(음수면 이 컴포넌트 값),
+        /// impactStun = 부딪히면(데미지를 입으면) 더 거는 경직(초, 벽꿍 — 생존자 평타).</summary>
+        public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f, bool stun = true, bool impactDamage = true,
+            float impactPerSpeed = -1f, float impactStun = 0f)
         {
             if (target == null || duration <= 0f) return;
             if (!target.TryGetComponent(out Knockback k)) k = target.AddComponent<Knockback>();
-            k.impactDamage = impactDamage;
+            k.impactDamage = impactDamage; k.impactPerSpeedOverride = impactPerSpeed; k.impactStun = impactStun;
             k.Begin(velocity, duration, stunAfter, stun);
         }
 
@@ -80,11 +83,12 @@ namespace Project1.Systems
             impacted = true;
             time = duration; // 더 밀리지 않는다(벽을 따라 미끄러지지 않게)
             if (!impactDamage || speed < minImpactSpeed) return;
-            float damage = impactDamagePerSpeed * speed;
+            float damage = (impactPerSpeedOverride >= 0f ? impactPerSpeedOverride : impactDamagePerSpeed) * speed;
             if (TryGetComponent(out CharacterHealth health)) health.Damage(damage);
             float r = controller != null ? controller.radius : 0.4f;
             Vector3 point = transform.position + Vector3.up + velocity.normalized * r; // 부딪힌 쪽 몸 가장자리
             Impacted?.Invoke(damage, point);
+            if (impactStun > 0f) CharacterStun.Apply(gameObject, impactStun, velocity); // 벽꿍: 박히면 더 멈춤
         }
 
         private void OnDisable() => time = duration;

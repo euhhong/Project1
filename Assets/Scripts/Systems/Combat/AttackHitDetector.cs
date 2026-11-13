@@ -154,6 +154,8 @@ namespace Project1.Systems
                     Point = pair.Value.Point,
                     // 주먹: 맨주먹 캐릭터가 무기 없는 공격을 손 판정으로 맞힘
                     Fist = unarmed && (pair.Value.Slot & (HitboxSlot.LeftHand | HitboxSlot.RightHand)) != 0 && (activeSlots & HitboxSlot.Weapon) == 0,
+                    Kind = CurrentKind(),                                  // 데미지·경직·넉백 규칙(DamageRules)이 표를 고른다
+                    Charge = attackState != null ? attackState.ChargeTime : 0f,
                 };
                 // 맞는 쪽이 막으면(예: 정면 주먹 막기) 히트를 내지 않는다 — 데미지·경직·넉백·피격 모션 없음, 막기 이펙트만.
                 if (HitBlockers.Blocks(pair.Value.Victim, hit, gameObject)) { HitEvents.RaiseBlocked(hit); continue; }
@@ -161,6 +163,15 @@ namespace Project1.Systems
                 Hit?.Invoke(hit);
                 HitEvents.Raise(hit);
             }
+        }
+
+        /// <summary>지금 평타의 종류(두 번째 날아 차기 → 달리기 점프 → 강 → 약).</summary>
+        private AttackKind CurrentKind()
+        {
+            if (attackState == null) return AttackKind.Light;
+            if (attackState.IsFollowUpKick) return AttackKind.FollowUp;
+            if (attackState.IsRunJumpAttack) return AttackKind.RunJump;
+            return attackState.AttackState == CharacterAttackState.Heavy ? AttackKind.Heavy : AttackKind.Light;
         }
 
         /// <summary>상대가 점프해 발이 내 발보다 jumpDodgeHeight 넘게 높이 떠 있는지.</summary>

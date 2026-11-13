@@ -4,8 +4,9 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 임시 데미지 규칙(게임 시작 모드에서만 켠다): 맞으면 맞은 캐릭터 체력이 baseDamage × 세기(HitResult.PowerScale)만큼 준다.
-    /// 데미지 없는 공격(HitResult.NoDamage, 예: 맹인 지팡이 넉백)은 건너뛴다. 정식 규칙(부위 배율 등)은 아직 정하지 않았다(PM).
+    /// 데미지 규칙(게임 시작 모드에서만 켠다): 맞으면 맞은 캐릭터 체력이 DamageRules.Damage만큼 준다
+    /// (공격 종류·때린 쪽 분류(감시자/생존자)별 표 × 부위 배율 × 세기 × 등 뒤 배율 — Docs/DamageSystem.md).
+    /// 데미지 없는 공격(HitResult.NoDamage, 예: 맹인 지팡이 넉백)은 건너뛴다. Enable의 baseDamage는 예전 호환용(쓰지 않음).
     /// </summary>
     public static class BattleDamage
     {
@@ -33,12 +34,10 @@ namespace Project1.Systems
         private static void OnHit(HitResult hit)
         {
             if (hit.NoDamage) return;
-            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
-            {
-                if (c.Id != hit.VictimId) continue;
-                if (c.TryGetComponent(out CharacterHealth health)) health.Damage(BaseDamage * hit.PowerScale);
-                return;
-            }
+            var victim = DamageRules.Find(hit.VictimId);
+            if (victim == null || !victim.TryGetComponent(out CharacterHealth health)) return;
+            var attacker = DamageRules.Find(hit.AttackerId);
+            health.Damage(DamageRules.Damage(hit, attacker != null ? attacker.gameObject : null, victim.gameObject));
         }
     }
 }

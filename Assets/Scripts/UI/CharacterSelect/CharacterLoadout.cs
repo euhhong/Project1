@@ -16,7 +16,7 @@ namespace Project1.UI
             CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
 
             var health = Ensure<CharacterHealth>(player);
-            health.ResetToFull();
+            health.SetMax(DamageRules.MaxHealth(entry.role == CharacterRole.Hunter)); // 최대 체력: 감시자 150, 생존자 100(가득 채움)
 
             Ensure<CharacterStun>(player);
             var traversal = Ensure<CharacterTraversal>(player);
