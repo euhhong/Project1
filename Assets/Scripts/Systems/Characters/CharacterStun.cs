@@ -15,13 +15,22 @@ namespace Project1.Systems
         public bool IsStunned => StunRemaining > 0f;
         public float StunRemaining { get; private set; }
 
+        public bool StunnedFromBehind { get; private set; }
+
         public event Action<float> Stunned;
         public event Action Recovered;
 
-        public void Stun(float seconds)
+        public void Stun(float seconds) => Stun(seconds, Vector3.zero);
+
+        /// <summary>hitDirection = 맞힌 것이 나아가던 방향(월드, 예: 돌진한 쪽 → 나). 내 앞쪽과 같은 쪽으로 나아갔으면 등 뒤에서 맞은 것. 0이면 방향 없음.</summary>
+        public void Stun(float seconds, Vector3 hitDirection)
         {
             if (seconds <= StunRemaining) return;
+            bool fresh = !IsStunned;
             StunRemaining = seconds;
+            hitDirection.y = 0f;
+            bool behind = hitDirection.sqrMagnitude > 1e-4f && Vector3.Dot(transform.forward, hitDirection.normalized) > 0.3f;
+            if (fresh) StunnedFromBehind = behind; // 기절이 길어질 때는 처음 쓰러진 방향 그대로
             Stunned?.Invoke(seconds);
         }
 
@@ -35,13 +44,14 @@ namespace Project1.Systems
         {
             if (!IsStunned) return;
             StunRemaining = Mathf.Max(0f, StunRemaining - Time.fixedDeltaTime);
-            if (!IsStunned) Recovered?.Invoke();
+            if (!IsStunned) { StunnedFromBehind = false; Recovered?.Invoke(); }
         }
 
         private void OnDisable()
         {
             if (!IsStunned) return;
             StunRemaining = 0f;
+            StunnedFromBehind = false;
             Recovered?.Invoke();
         }
     }

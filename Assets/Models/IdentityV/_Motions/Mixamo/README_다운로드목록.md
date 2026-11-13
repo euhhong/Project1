@@ -38,7 +38,8 @@
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
-| Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 앞·옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
+| Hit_Body_Front | 몸통 피격(공통) — 몸 앞(약 ±60°)에서 맞음, 크게 뒤로 젖힘 | **받음** — 상체만(HitReact 레이어) | Standing React Large From Front |
+| Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
 | Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |
 | Fall_1 | 넘어지기 1 — 전위 돌진이 벽·장애물에 부딪힘(`Forward_Charge_End`) | **받음** — 1.8초 동안 넘어져 못 움직임 | Rifle Hit To Back |
 | Skill_Forward_Charge | 전위 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |

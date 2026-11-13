@@ -28,6 +28,8 @@ namespace Project1.Systems
         public Vector3 EndPoint { get; private set; }
         public bool EndedOnCharacter { get; private set; }
         public float Power { get; private set; }
+        /// <summary>맞힌 상대를 기절시키는 시간(초, 0 = 기절 없음 — 예: 신호탄). 맞은 쪽 등 뒤로 날아와 맞으면 등 뒤에서 기절한 것이 된다.</summary>
+        public float StunSeconds { get; set; }
         /// <summary>쏠 때 고른 목표(없으면 곧게 날아간다).</summary>
         public CharacterIdentity Target => target;
 
@@ -106,6 +108,13 @@ namespace Project1.Systems
                     Point = hurtPoint,
                     Power = Power,
                 });
+                if (StunSeconds > 0f && hurt.Owner != null)
+                {
+                    var victim = hurt.Owner.gameObject;
+                    if (!victim.TryGetComponent(out CharacterStun stun)) stun = victim.AddComponent<CharacterStun>();
+                    stun.Stun(StunSeconds, Direction);
+                    if (victim.TryGetComponent(out CharacterMotor victimMotor)) victimMotor.RefreshSpeedLimits(); // 새로 붙인 기절(이동 막기)을 이동이 알도록
+                }
                 End(hurtPoint, true);
                 return;
             }

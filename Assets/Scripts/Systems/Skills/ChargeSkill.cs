@@ -74,7 +74,7 @@ namespace Project1.Systems
                 float distance = elapsed * chargeSpeed;
                 float seconds = Mathf.Clamp(distance * stunPerMeter, minStun, maxStun);
                 if (!victim.TryGetComponent(out CharacterStun stun)) stun = victim.gameObject.AddComponent<CharacterStun>();
-                stun.Stun(seconds);
+                stun.Stun(seconds, victim.transform.position - owner.transform.position); // 뒤에서 들이받으면 휘청이며 쓰러진다(모션)
                 if (victim.TryGetComponent(out CharacterMotor victimMotor)) victimMotor.RefreshSpeedLimits();
                 return true;
             }

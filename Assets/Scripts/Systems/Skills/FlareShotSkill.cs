@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 따라가는 유도탄(HomingProjectile)이다. 겨누는 동안 몸이 그 상대 쪽으로 저절로 돌아간다(시점은 그대로).
     /// 신호탄은 — 곡선으로 휘지만 길을 찾지 않고 곧장 가므로 벽·바닥·천장에 닿으면 사라진다.
     /// 상대가 없으면 바라보는 방향으로 곧게 난다. 쏘는 동안 잠깐 제자리(이동·공격 불가).
-    /// 체력·데미지는 다루지 않는다(맞힌 것은 HitEvents로 알릴 뿐).
+    /// 맞은 상대는 stunTime초 기절한다(등 뒤로 맞으면 휘청이며 쓰러지는 모션). 체력·데미지는 다루지 않는다(맞힌 것은 HitEvents로 알릴 뿐).
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Flare Shot")]
     public class FlareShotSkill : SkillDefinition
@@ -25,6 +25,8 @@ namespace Project1.Systems
         [Min(0f)] public float turnRate = 140f;
         [Tooltip("상대를 맞히는 굵기(반지름, m) / 벽에 닿는 굵기(m).")]
         [Min(0.01f)] public float hitRadius = 0.35f, wallRadius = 0.08f;
+        [Tooltip("신호탄에 맞은 상대가 기절하는 시간(초). 0 = 기절 없음.")]
+        [Min(0f)] public float stunTime = 2.5f;
         [Tooltip("신호탄이 사라지기까지(초).")]
         [Min(0.1f)] public float lifetime = 4f;
         [Tooltip("목표로 고를 상대의 최대 거리(m). 이 안에서 가장 가까운 상대를 노린다(보고 있지 않아도).")]
@@ -87,7 +89,8 @@ namespace Project1.Systems
             Vector3 origin = Origin(ctx, fwd, right);
             Vector3 dir = Quaternion.AngleAxis(-launchPitchUp, right) * fwd;
             var target = FindTarget(self, ctx.transform.position);
-            HomingProjectile.Launch("Flare", self, target, origin, dir, flareSpeed, turnRate, hitRadius, wallRadius, lifetime, slot, -ctx.UseCount);
+            var flare = HomingProjectile.Launch("Flare", self, target, origin, dir, flareSpeed, turnRate, hitRadius, wallRadius, lifetime, slot, -ctx.UseCount);
+            flare.StunSeconds = stunTime; // 맞으면 기절(등 뒤로 맞으면 휘청이며 쓰러짐)
         }
 
         private Vector3 Origin(CharacterSkill ctx, Vector3 fwd, Vector3 right)
