@@ -33,6 +33,9 @@ namespace Project1.Presentation
             ["Attack_RunJump_Hunter"] = new Vector2(11f / 34f, 19f / 34f),  // Run Jump Attack(원본 36~70): 내려치기 47~55
             ["Attack_Light_Joker"] = new Vector2(11f / 34f, 19f / 34f),     // 광대 두 손 내려치기(같은 클립)
             ["Attack_Heavy_Joker"] = new Vector2(11f / 34f, 19f / 34f),
+            ["Attack_Light_Ripper"] = new Vector2(14f / 44f, 22f / 44f),    // 리퍼: 감시자 내려치기를 좌우 뒤집음(왼손)
+            ["Attack_Heavy_Ripper"] = new Vector2(14f / 44f, 22f / 44f),
+            ["Attack_RunJump_Ripper"] = new Vector2(11f / 34f, 19f / 34f),
             // 아직 임시 모션(_Motions/Procedural)
             ["Attack_Heavy"] = new Vector2(0.25f / 0.9f, 0.4f / 0.9f),
             ["Attack_AirStomp"] = new Vector2(0.25f, 0.45f),

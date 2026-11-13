@@ -22,3 +22,4 @@ MonoBehaviour:
   newDirectionDot: 0.7
   moveDeadZone: 0.3
   autoDashDelay: 0.5
+  wallPoseTime: 0.1

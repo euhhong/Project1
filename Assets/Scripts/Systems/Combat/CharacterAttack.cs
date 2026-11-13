@@ -64,6 +64,19 @@ namespace Project1.Systems
             return false;
         }
 
+        private HitboxSlot defaultLightSlots, defaultHeavySlots;
+        private bool slotDefaultsSaved;
+
+        /// <summary>
+        /// 약·강공격 판정 부위를 바꾼다(캐릭터를 고를 때, 예: 리퍼 = 왼손 + 무기). None이면 처음(인스펙터) 값으로 되돌린다.
+        /// </summary>
+        public void SetAttackSlots(HitboxSlot light, HitboxSlot heavy)
+        {
+            if (!slotDefaultsSaved) { defaultLightSlots = lightAttack.Slots; defaultHeavySlots = heavyAttack.Slots; slotDefaultsSaved = true; }
+            lightAttack.Slots = light == HitboxSlot.None ? defaultLightSlots : light;
+            heavyAttack.Slots = heavy == HitboxSlot.None ? defaultHeavySlots : heavy;
+        }
+
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();

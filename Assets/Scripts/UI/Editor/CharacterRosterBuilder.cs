@@ -41,6 +41,7 @@ namespace Project1.UI.EditorTools
         private static readonly Dictionary<string, string> Controllers = new()
         {
             ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion", ["Hunter_SmileyFace"] = "SmileyFaceLocomotion",
+            ["Hunter_Ripper"] = "RipperLocomotion",
             ["Survivor_MindsEye"] = "MindsEyeLocomotion", // 도둑은 생존자 기본(대기 Idle (1)) — Ninja Idle은 사용자 요청으로 되돌림
         };
 

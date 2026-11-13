@@ -42,13 +42,17 @@ namespace Project1.Presentation.EditorTools
             // 광대: 무조건 두 손으로 머리 위에서 아래로 내려치기(같은 Run Jump Attack의 내려치기 부분, 상체만)
             ["Attack_Light_Joker"] = new Vector2(36, 70),
             ["Attack_Heavy_Joker"] = new Vector2(36, 70),
+            // 리퍼: 감시자 공격을 Blender로 좌우 뒤집어 왼손(손 자체가 무기)으로(Tools/Blender/mirror_motion.py, 프레임 1 밀림)
+            ["Attack_Light_Ripper"] = new Vector2(7, 51),
+            ["Attack_Heavy_Ripper"] = new Vector2(7, 51),
+            ["Attack_RunJump_Ripper"] = new Vector2(37, 71),
             ["Air"] = new Vector2(0, 22),                      // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
             ["Air_F"] = new Vector2(25, 44),                   // Jumping(걸어서 점프): 발이 떨어짐(25) → 꼭대기(34) → 착지(44)
             ["Air_Run"] = new Vector2(0, 20),                  // Running Jump(뛰면서 점프): 도약(0) → 꼭대기(10) → 착지(20)
         };
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
-        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump_Hunter" };
+        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper" };
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
         private const float AirHeightOffset = -0.91f;
 

@@ -42,7 +42,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
-            "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker",
+            "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
         };
 
@@ -65,7 +65,7 @@ namespace Project1.Presentation.EditorTools
         };
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
-            // 감시자 공통: 공장장·사냥터지기·안토니오·리퍼·광대
+            // 감시자 공통: 공장장·사냥터지기·안토니오
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
             ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기. 대기는 감시자 공통(Crouch Idle는 사용자 요청으로 되돌림, 파일만 남김)
@@ -73,6 +73,8 @@ namespace Project1.Presentation.EditorTools
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
             ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
+            // 리퍼: 무기가 없고 왼손 자체가 무기 → 모든 공격을 왼손으로(감시자 공격을 Blender로 좌우 뒤집은 모션)
+            ("Ripper", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Ripper"), ("Attack_Heavy", "Attack_Heavy_Ripper"), ("Attack_RunJump_Survivor", "Attack_RunJump_Ripper") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
         };

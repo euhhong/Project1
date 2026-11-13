@@ -27,6 +27,8 @@ namespace Project1.Systems
         [Range(0f, 1f)] public float moveDeadZone = 0.3f;
         [Tooltip("벽에 닿은 뒤 이 시간(초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.")]
         [Min(0f)] public float autoDashDelay = 0.5f;
+        [Tooltip("벽에 닿은 뒤 벽을 짚는 자세(_Wall)를 보여 주는 시간(초). 지나면 원래 모션으로 돌아간다.")]
+        [Min(0f)] public float wallPoseTime = 0.1f;
 
         public override bool LocksActions => false;
         public override bool CancelledByAttack => false;
@@ -109,9 +111,9 @@ namespace Project1.Systems
             _ => "켜짐 (E로 끄기)",
         };
 
-        // 벽에 닿아 도약을 기다리는 동안 = ID_Wall(벽을 손으로 짚는 자세, Male Action Pose), 도약 중 = ID_Dash(모션이 있으면).
+        // 벽에 닿은 직후 wallPoseTime(0.1초) 동안만 = ID_Wall(벽을 손으로 짚는 자세, Male Action Pose), 그다음은 원래 모션. 도약 중 = ID_Dash(모션이 있으면).
         public override string AnimationState(CharacterSkill ctx) =>
-            ctx.Phase == Armed ? id + "_Wall" : ctx.Phase == Dashing ? id + "_Dash" : string.Empty;
+            ctx.Phase == Armed && ctx.PhaseTime < wallPoseTime ? id + "_Wall" : ctx.Phase == Dashing ? id + "_Dash" : string.Empty;
 
         public override void Complete(GameObject owner) { }
 

@@ -123,7 +123,7 @@ MonoBehaviour:
     role: 1
     model: {fileID: 919132149155446097, guid: 9c46b0408d20ba149a855864af46d5d3, type: 3}
     scale: 4
-    gameController: {fileID: 22100000, guid: 28cde1e6f1f09664a823662e7f4bb2d1, type: 2}
+    gameController: {fileID: 22100000, guid: 4f2cc29a4017ddc459005c0bf48a895a, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 0}
   - id: Hunter_SmileyFace
