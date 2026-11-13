@@ -27,7 +27,7 @@ namespace Project1.Presentation
         [Tooltip("그랩이 닿는 끝에 조준 방향과 수직으로 긋는 흰 선의 길이(m).")]
         [SerializeField, Min(0.05f)] private float endBarLength = 0.7f;
         [Tooltip("흰 선을 그랩 최대 사거리보다 이만큼(m) 앞에 긋는다. 땅이 울퉁불퉁하거나 상대가 움직여도 확실히 닿는 거리를 보여 주려고(최대 사거리 끝은 겨우 닿는 거리).")]
-        [SerializeField, Min(0f)] private float endBarInset = 3f;
+        [SerializeField, Min(0f)] private float endBarInset = 5f;
         [SerializeField, Min(0.005f)] private float endBarWidth = 0.05f;
         [SerializeField] private Color endBarIdleColor = new(1f, 1f, 1f, 0.45f);
         [SerializeField] private Color endBarAimColor = new(1f, 1f, 1f, 0.95f);
