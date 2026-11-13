@@ -7,7 +7,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 붉은나비 나비 연출(IButterflyField, BE를 읽어 그린다).
     /// - 놓은 나비: 땅 위에 떠서 파닥거린다(ButterflyModel).
-    /// - 좌클릭을 꾹 누르는 동안: 마우스가 가리키는 자리에 반투명 미리보기 나비(놓을 수 없는 자리면 붉게) + 바닥 고리.
+    /// - 좌클릭을 꾹 누르는 동안: 마우스가 가리키는 자리에 반투명 미리보기 나비(놓을 수 없는 자리면 붉게, 몸 근처 = 떼면 취소면 작고 흐리게) + 바닥 고리.
     /// - 지금 겨누는 나비: 테두리가 밝게 빛나고 바닥에 붉은 표적 고리가 돈다(E를 누르면 그 나비로 간다).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만).
     /// </summary>
@@ -63,7 +63,9 @@ namespace Project1.Presentation
                 preview.GhostValid = field.PreviewValid;
                 preview.transform.position = field.PreviewPoint + Vector3.up * hoverHeight;
                 preview.transform.rotation = Quaternion.Euler(-12f, transform.eulerAngles.y, 0f);
-                previewRing.startColor = previewRing.endColor = field.PreviewValid ? previewRingColor : new Color(1f, 0.25f, 0.2f, 0.6f);
+                // 놓을 수 있음 = 흰 고리, 못 놓는 자리 = 붉은 고리, 몸 근처(떼면 취소) = 흐린 회색 고리 + 흐린 나비
+                previewRing.startColor = previewRing.endColor = field.PreviewCancels ? new Color(0.6f, 0.6f, 0.6f, 0.35f) : field.PreviewValid ? previewRingColor : new Color(1f, 0.25f, 0.2f, 0.6f);
+                preview.transform.localScale = Vector3.one * size * (field.PreviewCancels ? 0.6f : 1f);
                 SetRing(previewRing, field.PreviewPoint, markerRadius * 0.7f, 0f);
             }
 

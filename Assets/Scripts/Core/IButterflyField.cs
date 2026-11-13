@@ -21,6 +21,12 @@ namespace Project1.Core
         /// <summary>미리보기 자리에 놓을 수 있는지(땅 위만 됨).</summary>
         bool PreviewValid { get; }
 
+        /// <summary>미리보기 자리가 몸 근처라 떼면 놓기가 취소되는지(재사용 대기 없음).</summary>
+        bool PreviewCancels { get; }
+
+        /// <summary>다음 나비를 놓기까지 남은 재사용 대기(초).</summary>
+        float PlaceCooldownRemaining { get; }
+
         /// <summary>지금 바라보는 방향·시야에 가장 맞는 나비(Butterflies 번호). 없으면 -1. E를 누르면 여기로 간다.</summary>
         int TargetIndex { get; }
     }
