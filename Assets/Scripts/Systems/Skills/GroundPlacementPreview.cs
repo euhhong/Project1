@@ -131,7 +131,7 @@ namespace Project1.Systems
             if (!Placeable(owner, ref point, normal))
             {
                 Vector3 sp = point, sn = normal;
-                if (SnapToLedge(owner, ref sp, ref sn)) { point = sp; normal = sn; }
+                if (SnapToLedge(owner, ref sp, ref sn) && SnapSeen(owner, input, sp)) { point = sp; normal = sn; }
                 else if (seeThroughWalls && input.HasAimRay && FindBeyond(owner, input.AimRayOrigin, input.AimPoint, out Vector3 bp, out Vector3 bn)) { point = bp; normal = bn; }
             }
             Evaluate(owner, point, normal);
@@ -301,7 +301,8 @@ namespace Project1.Systems
                 if (!Probe(owner, origin, Vector3.down, ledgeSnapHeight + 0.05f, out Vector3 gp, out Vector3 gn)) continue;
                 if (gn.y < minGroundNormalY || gp.y < point.y - 0.05f) continue;
                 // 끝 모서리인지: 면 바깥쪽(밑면이면 캐릭터 쪽으로 ledgeSnapInset)에서 윗면 높이까지 위가 트여 있어야 한다.
-                Vector3 outside = point - inward * (underside ? ledgeSnapInset : 0.05f) + Vector3.down * 0.02f;
+                // 옆면이면 0.25m 바깥에서 본다 — 끝에 선 난간(두께 0.15m, 가장자리에 걸침)을 천장으로 잘못 보지 않게. 방 안 벽 꼭대기(천장 밑)는 그대로 막힌다.
+                Vector3 outside = point - inward * (underside ? ledgeSnapInset : 0.25f) + Vector3.down * 0.02f;
                 if (Probe(owner, outside, Vector3.up, gp.y - outside.y + 0.1f, out _, out _)) return false;
                 if (!FindStandSpot(owner, ref gp)) continue;
                 point = gp; normal = gn;
@@ -311,6 +312,35 @@ namespace Project1.Systems
         }
 
         private static readonly float[] LedgeDepths = { 0f, 0.5f, 1f };
+
+        [Tooltip("턱 끝 잡기를 보일 때만(안토니오): 올려 붙인 자리 위 이 높이들(m) 중 하나라도 시점(광선 출발점)에서 가리지 않고 보여야 붙인다. 안 보이면 지금처럼 못 놓는다. 비우면 검사 안 함(붉은나비).")]
+        public float[] ledgeSnapSightHeights = Array.Empty<float>();
+
+        /// <summary>턱 끝에 올려 붙인 자리가 시점에서 일부라도 보이는지(ledgeSnapSightHeights 중 하나). 검사를 안 쓰면 늘 true.</summary>
+        private bool SnapSeen(Transform owner, in CharacterInputFrame input, Vector3 snapped)
+        {
+            if (ledgeSnapSightHeights == null || ledgeSnapSightHeights.Length == 0) return true;
+            if (!input.HasAimRay) return false;
+            foreach (float h in ledgeSnapSightHeights)
+                if (Clear(owner, input.AimRayOrigin, snapped + Vector3.up * h)) return true;
+            return false;
+        }
+
+        /// <summary>from → to 사이에 막는 것이 없는지(owner 몸·캐릭터·트리거 제외).</summary>
+        private static bool Clear(Transform owner, Vector3 from, Vector3 to)
+        {
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            if (len < 1e-3f) return true;
+            int n = Physics.RaycastNonAlloc(from, d / len, Hits, len - 0.05f, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = Hits[i].collider;
+                if (c.transform.IsChildOf(owner) || IsCharacter(c)) continue;
+                return false;
+            }
+            return true;
+        }
 
         /// <summary>p 바로 위에서 아래로 내려 처음 닿는 바닥(owner 몸·트리거 제외).</summary>
         public bool GroundAt(Transform owner, Vector3 p, out Vector3 point, out Vector3 normal)

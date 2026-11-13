@@ -7,6 +7,8 @@ namespace Project1.Systems
     /// <summary>
     /// 안토니오의 붉은 음표(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 붉은나비 나비처럼 마우스가 가리키는 땅에 놓을 자리를 고르고, 떼면 음표를 놓는다(GroundPlacementPreview).
+    ///   나비처럼 아래층에서 위층 바닥 끝(옆면·밑면)을 가리키면 그 윗면 모서리에 놓고(ledgeSnapHeight), 발보다 maxRiseHeight(7m) 넘게 높은 곳은 못 놓는다(2층 되고 3층·지붕 안 됨).
+    ///   나비와 달리 벽 너머 안 보이는 곳에는 놓지 않는다.
     /// - E를 누르면 바로 앞(instantDistance)에 즉시 음표를 놓는다. 좌클릭을 꾹 눌러 놓을 자리를 고르는 중이면 E = 고르기 취소(음표를 놓지 않고, 좌클릭을 뗄 때까지 무시).
     /// - 음표는 두 개가 한 쌍이다: 첫 음표를 놓고 linkWindow(5초) 안에 둘째를 놓아야 한다. 못 놓으면 끊기고 첫 음표는 사라진다.
     ///   둘째를 놓으면 두 음표가 붉은 전류선으로 이어진다. 다시 음표를 놓으면 지난 쌍은 사라지고 새 첫 음표가 된다.
@@ -60,12 +62,36 @@ namespace Project1.Systems
         [SerializeField, Range(0f, 1f)] private float placingPitchScale = 0.1f;
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
 
+        [Tooltip("위층 바닥 끝 모서리(붉은나비 나비와 같음): 아래층에서 위층 바닥 판의 옆면·밑면을 가리키면 그 위 이 높이(m) 안의 윗면 모서리에 놓는다. 벽 한가운데·천장 밑은 그대로 못 놓는다. 0 = 끔.")]
+        [SerializeField, Min(0f)] private float ledgeSnapHeight = 1f;
+        [Tooltip("놓을 자리가 캐릭터 발보다 이만큼(m) 넘게 높으면 못 놓는다(층고 6m — 1층에서 2층 바닥은 되고 3층·지붕은 안 됨). 0 = 제한 없음.")]
+        [SerializeField, Min(0f)] private float maxRiseHeight = 7f;
+        [Tooltip("모서리에 올려 놓을 때: 음표 자리 위 이 높이들(m — 음표는 noteHeight 1m에 뜸) 중 하나라도 시점에서 보여야 놓는다(일부라도 보이면 됨). 안 보이면 지금처럼 못 놓는다.")]
+        [SerializeField] private float[] snapSightHeights = { 0.6f, 1.0f, 1.4f };
+
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
             self = GetComponent<CharacterIdentity>();
+            ApplyPlacementSettings();
+        }
+
+        private void OnValidate() => ApplyPlacementSettings();
+
+        /// <summary>
+        /// 붉은나비 나비 놓기와 일부만 같게: 위층 바닥 끝 모서리 잡기·높이 제한은 같고,
+        /// 벽 너머(안 보이는 곳) 놓기·설 공간 검사는 하지 않는다(음표는 보이는 땅에만).
+        /// </summary>
+        private void ApplyPlacementSettings()
+        {
+            if (placement == null) return;
             placement.orbitWhileTurning = false; // 안토니오: 자유롭게 놓기
             placement.dragWhileTurning = true;   // 시점을 돌리며 고를 때: 마우스로 음표 자리를 직접 민다(감도 높게)
+            placement.ledgeSnapHeight = ledgeSnapHeight;
+            placement.ledgeSnapSightHeights = snapSightHeights; // 모서리 자리가 시야에 일부라도 보일 때만
+            placement.maxRiseHeight = maxRiseHeight;
+            placement.seeThroughWalls = false;
+            placement.requireStandSpace = false;
         }
 
         private void OnDisable()
