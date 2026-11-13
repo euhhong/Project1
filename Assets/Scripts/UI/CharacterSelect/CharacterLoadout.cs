@@ -39,6 +39,9 @@ namespace Project1.UI
             SetProp<LassoVisual>(player, entry.id == "Survivor_Cowboy");      // 카우보이: 올가미 밧줄·고리 연출 + 조준 보조선(스킬은 사냥터지기 그랩과 같은 GrabShotSkill)
             SetProp<FlareShotVisual>(player, entry.id == "Survivor_Coordinator"); // 공군: 신호탄 붉은 연기 궤적
             SetProp<NoteField>(player, entry.id == "Hunter_Antonio");   // 안토니오: 좌클릭 꾹 / E = 붉은 음표, 두 개를 전류선으로 이음(BE)
+            SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 하스터: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
+            SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 하스터: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
+            SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 하스터: 다리 촉수 다섯 가닥 꿈틀거림(FE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
             SetProp<AntonioViolin>(player, entry.id == "Hunter_Antonio"); // 안토니오: 바이올린·활(VARCO) — 대기 땐 켜는 자세, 움직일 땐 들고 다님(FE)
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
