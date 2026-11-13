@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 도약 → 내려찍기(루키노).
     /// - 쓰면 앞으로 크게 포물선을 그리며 뛰어오른다(leapHeight 12m = 보통 점프의 10배). 떠 있는 동안 앞으로 forwardSpeed로 날아간다.
     /// - 공중에서 공격 키를 누르면 바로 아래 착지 지점에 공격 범위(slamRadius)가 뜨고, 빠르게 내리꽂는다.
-    ///   땅에 닿는 순간 범위 안의 다른 캐릭터를 모두 맞힌다(HitEvents, 부위는 몸통). 그 뒤 slamRecovery 동안 못 움직인다.
+    ///   땅에 닿는 순간 범위 안의 다른 캐릭터를 모두 맞힌다(HitEvents, 부위는 몸통). 맞은 상대는 slamStun초 경직(CharacterStun). 그 뒤 slamRecovery 동안 못 움직인다.
     /// - 공중에서 E를 한 번 더 누르면 공격 없이 그 자리에서 바로 빠르게 떨어진다(모션은 내려찍기와 같음).
     /// - 아무것도 안 누르면 그냥 착지하고 끝난다.
     /// 땅에서만 쓴다. 시전 중 일반 공격·점프는 못 한다(공격 키는 내려찍기에 쓴다).
@@ -37,6 +37,8 @@ namespace Project1.Systems
         [Min(0f)] public float dropRecovery = 0.25f;
         [Tooltip("내려찍기 공격 판정이 나는 자리 표시용(HitResult.Slot).")]
         public HitboxSlot slamSlot = HitboxSlot.Weapon;
+        [Tooltip("내려찍기에 맞은 상대가 경직(기절, CharacterStun)되는 시간(초). 0이면 경직 없음.")]
+        [Min(0f)] public float slamStun = 1f;
 
         public override bool LocksActions => true;
         public override bool SyncAnimationToCast => false;
@@ -167,7 +169,20 @@ namespace Project1.Systems
                     Tick = SimulationTick.Current,
                     Point = hurt.transform.position,
                 });
+                Stun(victim.gameObject);
             }
+        }
+
+        /// <summary>내려찍기에 맞은 상대를 slamStun초 경직시킨다(기절이 없으면 붙이고 이동에 알린다).</summary>
+        private void Stun(GameObject victim)
+        {
+            if (slamStun <= 0f || victim == null) return;
+            if (!victim.TryGetComponent(out CharacterStun stun))
+            {
+                stun = victim.AddComponent<CharacterStun>();
+                if (victim.TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits();
+            }
+            stun.Stun(slamStun);
         }
     }
 }
