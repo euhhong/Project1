@@ -40,14 +40,16 @@ namespace Project1.Presentation
         [Tooltip("실내 구도를 쓴다. 끄면 실내에서도 위 '자리' 값 그대로.")]
         [SerializeField] private bool useIndoorFraming = true;
         [Tooltip("실내에서 바라볼 지점 높이(m).")]
-        [SerializeField] private float indoorPivotHeight = 1.45f;
-        [Tooltip("실내에서 카메라 거리(m). 가까울수록 벽에 덜 막힌다.")]
-        [SerializeField] private float indoorDistance = 3.3f;
-        [Tooltip("실내 기본 내려다보는 각도(도). 낮을수록 앞(문·복도)이 멀리 보인다.")]
-        [SerializeField] private float indoorPitchOffset = 14f;
+        [SerializeField] private float indoorPivotHeight = 1.4f;
+        [Tooltip("실내에서 카메라 거리(m). 복도·방이 다 보이게 야외보다 멀게(벽에 막히면 벽 피하기가 당기거나 들어 올린다).")]
+        [SerializeField] private float indoorDistance = 5.5f;
+        [Tooltip("실내 기본 내려다보는 각도(도). 높을수록 위에서 내려다봐 칸막이 너머 복도가 보인다.")]
+        [SerializeField] private float indoorPitchOffset = 38f;
         [Tooltip("실내에서 발이 놓일 화면 높이.")]
         [Range(0.02f, 0.5f)]
-        [SerializeField] private float indoorFeetViewportY = 0.12f;
+        [SerializeField] private float indoorFeetViewportY = 0.1f;
+        [Tooltip("실내에서 시야각(FOV)을 이만큼(도) 넓힌다 — 복도 양옆까지 보이게.")]
+        [SerializeField, Range(0f, 40f)] private float indoorFovAdd = 12f;
 
         [Header("벽 피하기")]
         [Tooltip("캐릭터와 카메라 사이에 벽·천장이 끼면 카메라를 캐릭터 쪽으로 당긴다.")]
@@ -81,6 +83,7 @@ namespace Project1.Presentation
 
         // 이번 프레임 구도(야외·실내를 섞은 값)
         private float curPivotHeight, curFeetViewportY;
+        private float baseFov = -1f; // 처음 시야각(실내에서 넓힌 뒤 되돌릴 값)
 
         private void LateUpdate()
         {
@@ -93,6 +96,7 @@ namespace Project1.Presentation
             float indoor = SenseIndoor(!initialized);
             curPivotHeight = Mathf.Lerp(pivotHeight, indoorPivotHeight, indoor);
             curFeetViewportY = Mathf.Lerp(feetViewportY, indoorFeetViewportY, indoor);
+            ApplyFov(indoor);
             float wantDistance = Mathf.Lerp(distance, indoorDistance, indoor);
             float wantPitchOffset = Mathf.Lerp(pitchOffset, indoorPitchOffset, indoor);
 
@@ -137,6 +141,15 @@ namespace Project1.Presentation
                 indoorSensor = gameObject.AddComponent<CameraIndoorSensor>();
             indoorSensor.Tick(target, snap);
             return indoorSensor.Indoor01;
+        }
+
+        /// <summary>실내 정도(0~1)만큼 시야각을 넓힌다. 처음 시야각을 기억해 두고 거기에 더한다.</summary>
+        private void ApplyFov(float indoor)
+        {
+            if (cam == null) cam = GetComponent<Camera>();
+            if (cam == null) return;
+            if (baseFov < 0f) baseFov = cam.fieldOfView;
+            cam.fieldOfView = baseFov + indoorFovAdd * indoor;
         }
 
         /// <summary>

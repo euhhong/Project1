@@ -29469,10 +29469,11 @@ MonoBehaviour:
   frameFeet: 1
   feetViewportY: 0.07
   useIndoorFraming: 1
-  indoorPivotHeight: 1.45
-  indoorDistance: 3.3
-  indoorPitchOffset: 14
-  indoorFeetViewportY: 0.12
+  indoorPivotHeight: 1.4
+  indoorDistance: 5.5
+  indoorPitchOffset: 38
+  indoorFeetViewportY: 0.1
+  indoorFovAdd: 12
   avoidObstacles: 1
   obstacleRadius: 0.3
   minObstacleDistance: 0.7
