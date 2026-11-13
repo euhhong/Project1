@@ -11,7 +11,7 @@ namespace Project1.Systems
     /// - 벽에 닿은 뒤 autoDashDelay(0.5초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.
     /// - 도약은 월드 방향으로 곧게 간다(시점을 돌려도 휘지 않음). 도약 중반(steerStart)부터 처음 누른 방향키 하나로 휘는 쪽을 정하고
     ///   그 방향키가 가리키는 쪽으로 최대 곡선(steerRate)까지 휜다. 반대쪽으로는 못 휜다(S자 불가). 시점을 휙 돌리면 U자(maxTurn)까지.
-    /// - 도약이 끝나면 다시 켜진 상태로 돌아가고, 벽에 또 닿으면 또 도약할 수 있다.
+    /// - 한 번 도약하면(도약이 끝나면) 저절로 꺼진다. 다시 쓰려면 E로 다시 켠다.
     /// 켜져 있어도 걷기·달리기·공격은 평소대로 한다(공격해도 꺼지지 않는다).
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Wall Dash")]
@@ -101,7 +101,7 @@ namespace Project1.Systems
                     Steer(ctx, body, moving ? new Vector3(move.x, 0f, move.y).normalized : Vector3.zero);
                     ctx.Direction = Quaternion.Inverse(body) * ctx.Heading; // 월드 방향 그대로(시점을 돌려도 휘지 않음)
                     if (motor != null && motor.HitObstacle && IsWall(ctx, motor.LastObstacle)) { SlideAlongWall(ctx, motor.LastObstacleNormal); ctx.Heading = body * ctx.Direction; }
-                    if (ctx.PhaseTime >= dashTime) ctx.SetPhase(Active);
+                    if (ctx.PhaseTime >= dashTime) return true; // 한 번 도약하면 저절로 꺼진다
                     break;
                 }
             }
@@ -178,7 +178,7 @@ namespace Project1.Systems
         {
             Armed => $"벽에 닿음 — 이동하면 도약! ({Mathf.Max(0f, autoDashDelay - ctx.PhaseTime):0.0}초 뒤 앞으로)",
             Dashing => "도약!",
-            _ => "켜짐 (E로 끄기)",
+            _ => "켜짐 — 한 번 도약하면 꺼짐 (E로 끄기)",
         };
 
         // 벽에 닿은 직후 wallPoseTime(0.1초) 동안만 = ID_Wall(벽을 손으로 짚는 자세, Male Action Pose), 그다음은 원래 모션. 도약 중 = ID_Dash(모션이 있으면).
