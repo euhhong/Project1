@@ -14,11 +14,14 @@ namespace Project1.Presentation
         [SerializeField, Min(0.1f)] private float length = 0.8f;
         [SerializeField, Min(0.02f)] private float radius = 0.085f;
         [SerializeField, Range(2, 12)] private int stripes = 5;
-        [SerializeField, Range(8, 48)] private int segments = 20;
+        [SerializeField, Range(8, 64)] private int segments = 32;
 
         [SerializeField] private Color stripeA = new(0.9f, 0.15f, 0.15f);
         [SerializeField] private Color stripeB = new(0.97f, 0.95f, 0.9f);
-        [SerializeField] private Color noseColor = new(1f, 0.82f, 0.15f);
+        [Tooltip("드릴 머리 색(어두운 적갈색).")]
+        [SerializeField] private Color noseColor = new(0.36f, 0.13f, 0.08f);
+        [Tooltip("드릴 머리 끝을 둥글게 마감하는 반지름(몸통 반지름 대비).")]
+        [SerializeField, Range(0.05f, 0.6f)] private float tipRoundness = 0.22f;
         [SerializeField] private Color finColor = new(0.2f, 0.45f, 0.95f);
         [SerializeField] private Color darkColor = new(0.15f, 0.13f, 0.12f);
 
@@ -35,7 +38,7 @@ namespace Project1.Presentation
             var r = GetComponent<MeshRenderer>(); if (r == null) r = gameObject.AddComponent<MeshRenderer>();
             r.sharedMaterials = new[]
             {
-                Mat("RocketA", stripeA, 0.45f), Mat("RocketB", stripeB, 0.45f), Mat("RocketNose", noseColor, 0.6f),
+                Mat("RocketA", stripeA, 0.45f), Mat("RocketB", stripeB, 0.45f), Mat("RocketNose", noseColor, 0.35f),
                 Mat("RocketFin", finColor, 0.4f), Mat("RocketDark", darkColor, 0.2f),
             };
             if (mesh == null) mesh = new Mesh { name = "ToyRocket" };
@@ -75,9 +78,8 @@ namespace Project1.Presentation
                 Ring(i % 2, z0, radius, z1, radius);
             }
             Disk(4, nozzle, radius, false);          // 몸통 뒤 덮개
-            // 머리 원뿔(끝을 살짝 둥글게: 두 단)
-            Ring(2, noseStart, radius, noseStart + (length - noseStart) * 0.6f, radius * 0.55f);
-            Ring(2, noseStart + (length - noseStart) * 0.6f, radius * 0.55f, length, 0.002f);
+            // 드릴 머리: 매끈한 원뿔 + 끝은 둥근 반구로 마감(한 장으로 이어 붙여 각지지 않게)
+            Nose(noseStart, length);
             // 날개 4장(꼬리 쪽)
             for (int k = 0; k < 4; k++) Fin(k * 90f + 45f, nozzle, nozzle + bodyLen * 0.35f);
             // 심지(꼬리 뒤로 삐죽)
@@ -109,6 +111,44 @@ namespace Project1.Presentation
                 t.Add(a0); t.Add(a1); t.Add(b0);
                 t.Add(b0); t.Add(a1); t.Add(b1);
             }
+        }
+
+        // 원뿔(noseStart ~ 끝)을 둘레를 두 배로 나눠 매끈하게, 끝은 반지름 tipRoundness*radius의 반구로 둥글게.
+        // 모든 단이 정점을 공유해서 법선이 부드럽게 이어진다(다각형처럼 각져 보이지 않음).
+        private void Nose(float z0, float z1)
+        {
+            int seg = segments * 2;
+            float tipR = radius * tipRoundness;
+            // 반구 가운데: 원뿔 옆면이 반구에 닿는 곳. 끝(z1)에서 tipR만큼 안쪽.
+            float capCenter = z1 - tipR;
+            var profile = new List<Vector2>(); // (z, 반지름)
+            const int coneSteps = 10, capSteps = 8;
+            for (int k = 0; k <= coneSteps; k++)
+            {
+                float t = k / (float)coneSteps;
+                profile.Add(new Vector2(Mathf.Lerp(z0, capCenter, t), Mathf.Lerp(radius, tipR, t)));
+            }
+            for (int k = 1; k <= capSteps; k++)
+            {
+                float a = k / (float)capSteps * Mathf.PI * 0.5f;
+                profile.Add(new Vector2(capCenter + Mathf.Sin(a) * tipR, Mathf.Cos(a) * tipR));
+            }
+            int start = verts.Count;
+            foreach (var p in profile)
+                for (int i = 0; i <= seg; i++)
+                {
+                    float ang = i * Mathf.PI * 2f / seg;
+                    verts.Add(new Vector3(Mathf.Cos(ang) * p.y, Mathf.Sin(ang) * p.y, p.x));
+                }
+            var t2 = tris[2];
+            int row = seg + 1;
+            for (int k = 0; k < profile.Count - 1; k++)
+                for (int i = 0; i < seg; i++)
+                {
+                    int a0 = start + k * row + i, a1 = a0 + 1, b0 = a0 + row, b1 = b0 + 1;
+                    t2.Add(a0); t2.Add(a1); t2.Add(b0);
+                    t2.Add(b0); t2.Add(a1); t2.Add(b1);
+                }
         }
 
         private void Disk(int sub, float z, float r, bool front)
