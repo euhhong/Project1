@@ -27,3 +27,10 @@ MonoBehaviour:
   sideOffset: 0.3
   forwardOffset: 0.8
   slot: 16
+  dragSpeed: 20
+  dragReleaseStun: 0.4
+  towSpeed: 20
+  wallProbeRadius: 0.12
+  wallMaxNormalY: 0.6
+  towStopReach: 0.1
+  pullMotionShare: 0.6
