@@ -43,6 +43,8 @@ namespace Project1.Systems
         public float PhaseTime { get; set; }
         /// <summary>이번 시전 번호(공격 판정 AttackId로 쓴다).</summary>
         public int UseCount { get; private set; }
+        /// <summary>이번 시전이 공격의 후딜레이를 끊고 이어 쓴 것인지(받아 둔 E 선입력, 예: 맹인 휘두르기 → 찌르기). 스킬이 오토에임 등을 할 때 본다.</summary>
+        public bool StartedFromCombo { get; private set; }
         public bool ShowArea { get; set; }
         public Vector3 AreaCenter { get; set; }
         public float AreaRadius { get; set; }
@@ -171,13 +173,13 @@ namespace Project1.Systems
                 case SkillState.Ready:
                     if (input.Skill)
                     {
-                        if (CanUse) StartCast();
+                        if (CanUse) { StartedFromCombo = false; StartCast(); }
                         else if (attack is IAttackCancel c && c.CanCancelForSkill) skillBuffer = SkillBufferTime; // 공격의 후딜레이가 시작되면 끊고 이어 쓴다
                     }
                     else if (skillBuffer > 0f)
                     {
                         skillBuffer -= dt;
-                        if (attack is IAttackCancel c && c.TryCancelForSkill() && CanUse) { skillBuffer = 0f; StartCast(); }
+                        if (attack is IAttackCancel c && c.TryCancelForSkill() && CanUse) { skillBuffer = 0f; StartedFromCombo = true; StartCast(); }
                     }
                     break;
 

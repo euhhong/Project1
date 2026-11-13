@@ -28,6 +28,8 @@ namespace Project1.Systems
         [Min(0f)] public float knockbackSpeed = 14f;
         [Min(0.05f)] public float knockbackTime = 0.35f;
         public HitboxSlot slot = HitboxSlot.Weapon;
+        [Tooltip("휘두르기에서 이어 쓴 찌르기(연계)만: 이 거리(m) 안의 가장 가까운 상대 쪽으로 몸을 자동으로 돌려 찌른다(오토에임). 그냥 E는 그대로.")]
+        [Min(0f)] public float comboAutoAimRange = 6f;
 
         // 이번 찌르기에서 이미 맞힌 상대(캐릭터마다 따로).
         private static readonly Dictionary<CharacterSkill, HashSet<int>> hitThisCast = new();
@@ -39,6 +41,7 @@ namespace Project1.Systems
         {
             ctx.SetPhase(Windup);
             ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized;
+            ctx.AreaRadius = ctx.StartedFromCombo && AutoAim(ctx) ? 1f : 0f; // 1 = 오토에임 중(이 스킬은 범위 표시를 쓰지 않는다)
             if (!hitThisCast.TryGetValue(ctx, out var set)) hitThisCast[ctx] = set = new HashSet<int>();
             set.Clear();
         }
@@ -53,7 +56,7 @@ namespace Project1.Systems
         {
             // 찌르기 시작한 뒤로는 찌르는 방향을 지킨다.
             yaw = Mathf.Atan2(ctx.Direction.x, ctx.Direction.z) * Mathf.Rad2Deg;
-            return ctx.Phase != Windup;
+            return ctx.Phase != Windup || ctx.AreaRadius > 0f; // 연계 오토에임이면 준비 때부터 상대 쪽으로
         }
 
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recoveryTime)
@@ -62,7 +65,8 @@ namespace Project1.Systems
             switch (ctx.Phase)
             {
                 case Windup:
-                    ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 준비 동안은 시야를 따라 돈다
+                    if (ctx.AreaRadius > 0f) AutoAim(ctx); // 연계 오토에임: 준비 동안 상대를 따라 돈다
+                    else ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 준비 동안은 시야를 따라 돈다
                     if (ctx.PhaseTime >= windup) ctx.SetPhase(Active);
                     return false;
                 case Active:
@@ -90,6 +94,25 @@ namespace Project1.Systems
         public override string StatusText(CharacterSkill ctx) => ctx.Phase == Windup ? "준비" : "찌르기!";
 
         public override void Complete(GameObject owner) { }
+
+        /// <summary>가장 가까운 맞힐 수 있는 상대(comboAutoAimRange 안) 쪽으로 찌를 방향을 돌린다. 없으면 false(방향 그대로).</summary>
+        private bool AutoAim(CharacterSkill ctx)
+        {
+            var self = ctx.GetComponent<CharacterIdentity>();
+            CharacterIdentity best = null; float bestDist = comboAutoAimRange;
+            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == self || (self != null && !self.CanHit(c))) continue;
+                if (c.TryGetComponent(out ICharacterHealth hp) && hp.IsDead) continue;
+                float d = Vector3.Distance(c.transform.position, ctx.transform.position);
+                if (d < bestDist) { bestDist = d; best = c; }
+            }
+            if (best == null) return false;
+            Vector3 to = Vector3.ProjectOnPlane(best.transform.position - ctx.transform.position, Vector3.up);
+            if (to.sqrMagnitude < 1e-4f) return false;
+            ctx.Direction = to.normalized;
+            return true;
+        }
 
         private void HitAlong(CharacterSkill ctx)
         {
