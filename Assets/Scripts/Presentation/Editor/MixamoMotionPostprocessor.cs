@@ -123,6 +123,12 @@ namespace Project1.Presentation.EditorTools
             },
             // Hard Landing(루키노 내려찍기 착지): 발 닿음(3) → 손 짚고 웅크림(9~30) → 일어서기(~45)
             ["Skill_Luchino_Leap_Land"] = new[] { ("Skill_Luchino_Leap_Land", new Vector2(2, 45), Height.Feet) },
+            // Big Jump(카우보이 올가미로 상대 뛰어넘기): 도움닫기(1~14)는 빼고 발이 떨어짐(15) → 꼭대기(30) → 발 닿음(47) / 착지해 웅크렸다 일어서기(47~72)
+            ["Skill_Cowboy_Lasso_Vault"] = new[]
+            {
+                ("Skill_Cowboy_Lasso_Vault", new Vector2(15, 47), Height.Body),
+                ("Skill_Cowboy_Lasso_Land", new Vector2(47, 72), Height.Feet),
+            },
         };
 
         private ModelImporterClipAnimation Configure(ModelImporterClipAnimation clip, string name, Height height)

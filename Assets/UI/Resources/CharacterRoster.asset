@@ -29,7 +29,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: 19dfb64602e48f04b8e80ed478286ffb, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 4459bea94423e134988b597366fff8c7, type: 2}
   - id: Survivor_Doctor
     displayName: "\uC758\uC0AC"
     role: 0

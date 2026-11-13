@@ -23,6 +23,15 @@ namespace Project1.UI.EditorTools
             ["Survivor_Doctor"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.SelfHealSkill>(); s.id = "Doctor_SelfHeal"; s.displayName = "자가치료"; s.castTime = 1.5f; s.cooldown = 0f /* 테스트 단계 0초, 원래 12 */; s.castMoveSpeed = 0f; s.healFraction = 0.4f; return s; },
             ["Hunter_Luchino"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.LeapSkill>(); s.id = "Luchino_Leap"; s.displayName = "도약 내려찍기"; s.castTime = 5f; s.cooldown = 0f /* 테스트 단계 0초, 원래 12 */; s.leapHeight = 12f; s.forwardSpeed = 9f; return s; },
             ["Hunter_Gamekeeper"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.GrabShotSkill>(); s.id = "Gamekeeper_Grab"; s.displayName = "그랩"; s.castTime = 3f; s.cooldown = 0f; return s; },
+            // 카우보이 올가미: 사냥터지기 그랩과 같은 스킬·같은 값(그랩 데이터 파일을 복사)인데 벽에는 끌려가지 않고, 상대를 맞히면 뛰어넘어 반대편(잡은 거리만큼)에 착지
+            ["Survivor_Cowboy"] = () =>
+            {
+                var src = AssetDatabase.LoadAssetAtPath<Project1.Systems.GrabShotSkill>($"{SkillsFolder}/Gamekeeper_Grab.asset");
+                var s = src != null ? Object.Instantiate(src) : ScriptableObject.CreateInstance<Project1.Systems.GrabShotSkill>();
+                s.id = "Cowboy_Lasso"; s.displayName = "올가미"; s.castTime = src != null ? src.castTime : 3f; s.cooldown = 0f;
+                s.towToWalls = false; s.vaultOverVictim = true;
+                return s;
+            },
             ["Survivor_Mercenary"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.WallDashSkill>(); s.id = "Mercenary_Guard"; s.displayName = "아대"; s.castTime = 99999f; /* 켜 두는 스킬: 다시 누를 때까지 */ s.cooldown = 0f; return s; },
             ["Hunter_Geisha"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ButterflyGlideSkill>(); s.id = "Geisha_Butterfly"; s.displayName = "나비에게"; s.castTime = 3f; s.cooldown = 0f; return s; },
             ["Survivor_Coordinator"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.FlareShotSkill>(); s.id = "Coordinator_Flare"; s.displayName = "신호총"; s.castTime = 2f; s.cooldown = 0f; return s; },

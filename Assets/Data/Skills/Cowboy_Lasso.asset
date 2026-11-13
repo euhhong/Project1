@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81536b07afc83d04d8ca9e8c6bac5fa5, type: 3}
+  m_Name: Cowboy_Lasso
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.GrabShotSkill
+  id: Cowboy_Lasso
+  displayName: "\uC62C\uAC00\uBBF8"
+  castTime: 60
+  cooldown: 0
+  castMoveSpeed: 0
+  windup: 0.3
+  followThrough: 0.6
+  range: 16
+  extendSpeed: 45
+  retractSpeed: 60
+  hitRadius: 0.6
+  heightRatio: 0.85
+  sideOffset: 0.3
+  forwardOffset: 0.8
+  slot: 16
+  dragSpeed: 20
+  dragReleaseStun: 0.4
+  towSpeed: 20
+  wallProbeRadius: 0.12
+  wallMaxNormalY: 0.6
+  towStopReach: 0.1
+  towToWalls: 0
+  vaultOverVictim: 1
+  vaultHeight: 2.6
+  vaultHeightPerMeter: 0.1
+  vaultMaxHeight: 5
+  vaultLandTime: 0.45
+  aimMoveSpeedRatio: 1
+  snapTolerance: 1
+  maxSnapAngle: 20
+  pullMotionShare: 0.6

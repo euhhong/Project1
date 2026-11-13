@@ -10,6 +10,8 @@ namespace Project1.Systems
     ///    - 상대보다 먼저 벽(옆을 보는 면)에 닿으면 그랩이 벽을 문 채 사냥터지기가 벽 쪽으로 끌려간다(Towing, towSpeed). 그랩 머리는 벽에 박힌 채 사슬만 줄어든다.
     ///    - 아무것도 못 맞히거나 바닥 같은 면에 닿으면 그냥 되감긴다(retractSpeed).
     ///    끌어오는/끌려가는 동안은 팔을 당기는 마무리 모션 앞부분(pullMotionShare)을 당긴 정도에 맞춰 재생한다. → 3) 팔을 거둬 마무리한다(followThrough).
+    /// 카우보이 올가미(towToWalls 끔 · vaultOverVictim 켬): 던지기·조준·사거리·판정·조준 보정은 똑같고, 벽에 닿으면 끌려가지 않고 그냥 되감는다.
+    ///   상대를 맞히면 끌어오지 않고 카우보이가 상대를 뛰어넘어(Vaulting) 반대편, 잡은 거리(카우보이 → 상대)만큼 떨어진 곳에 착지한다(VaultLanding). 올가미는 뛰어넘을 때까지 상대를 문다.
     /// 쓰는 동안은 이동·점프·공격 불가(끌려갈 때만 스킬이 몸을 옮긴다), 던진 뒤로는 몸이 던진 방향을 지킨다.
     /// 동작 구간은 TryGetMotionPhase로 알린다(FE가 모션을 구간에 맞춰 멈추고 다시 재생한다).
     /// 그랩이 지금 얼마나 나가 있는지는 CharacterSkill.Reach / Direction / ReachOrigin으로 공개한다(FE가 그랩·사슬을 그 자리에 그린다).
@@ -17,7 +19,7 @@ namespace Project1.Systems
     [CreateAssetMenu(menuName = "Project1/Skills/Grab Shot")]
     public class GrabShotSkill : SkillDefinition
     {
-        private const int Windup = 0, Extending = 1, Retracting = 2, FollowThrough = 3, Dragging = 4, Towing = 5;
+        private const int Windup = 0, Extending = 1, Retracting = 2, FollowThrough = 3, Dragging = 4, Towing = 5, Vaulting = 6, VaultLanding = 7;
 
         [Tooltip("뻗기 전 준비(팔을 뒤로 당겼다 앞으로 내지르기) 시간(초).")]
         [Min(0f)] public float windup = 0.3f;
@@ -54,6 +56,18 @@ namespace Project1.Systems
         [Tooltip("그랩 머리(벽)에서 이 거리(m)까지 끌려가면 멈춘다(손이 벽에 닿는 곳).")]
         [Min(0f)] public float towStopReach = 0.1f;
 
+        [Header("카우보이: 벽 반응 · 뛰어넘기")]
+        [Tooltip("벽을 물면 그쪽으로 끌려갈지(사냥터지기). 끄면 벽에 닿아도 그냥 되감는다(카우보이).")]
+        public bool towToWalls = true;
+        [Tooltip("상대를 맞히면 끌어오는 대신 쏜 쪽이 상대를 뛰어넘어 반대편(잡은 거리만큼)에 착지한다(카우보이).")]
+        public bool vaultOverVictim = false;
+        [Tooltip("뛰어넘는 높이(m, 가장 낮을 때). 거리가 멀면 vaultHeightPerMeter만큼 더 높이(최대 vaultMaxHeight).")]
+        [Min(0.5f)] public float vaultHeight = 2.6f;
+        [Min(0f)] public float vaultHeightPerMeter = 0.1f;
+        [Min(0.5f)] public float vaultMaxHeight = 5f;
+        [Tooltip("착지해서 일어서는 시간(초).")]
+        [Min(0f)] public float vaultLandTime = 0.45f;
+
         [Header("조준 (E 꾹 누르기)")]
         [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
         [Range(0f, 1f)] public float aimMoveSpeedRatio = 1f;
@@ -79,6 +93,15 @@ namespace Project1.Systems
         /// <summary>지금 벽을 문 그랩을 따라 끌려가는 중인지.</summary>
         public bool IsTowing(CharacterSkill ctx) => ctx.State == SkillState.Casting && ctx.Phase == Towing;
 
+        /// <summary>지금 상대를 뛰어넘는 중인지(카우보이). 올가미 끝은 VaultHook.</summary>
+        public bool IsVaulting(CharacterSkill ctx) => ctx.State == SkillState.Casting && ctx.Phase == Vaulting;
+
+        /// <summary>뛰어넘는 동안 올가미가 문 자리(월드).</summary>
+        public Vector3 VaultHook(CharacterSkill ctx) => vaults.TryGetValue(ctx, out var v) ? v.Hook : ctx.ReachOrigin;
+
+        private struct Vault { public Vector3 Hook, Land; public float AirTime, Speed; public CharacterController Victim; }
+        private static readonly System.Collections.Generic.Dictionary<CharacterSkill, Vault> vaults = new();
+
         public override bool CanStart(GameObject owner, out string reason)
         {
             var state = owner.GetComponent<ICharacterState>();
@@ -100,6 +123,16 @@ namespace Project1.Systems
         public override bool TryGetMoveOverride(CharacterSkill ctx, out Vector2 localMove, out float speed, out bool allowJump)
         {
             allowJump = false;
+            if (ctx.Phase == Vaulting && vaults.TryGetValue(ctx, out var vault))
+            {
+                // 착지 자리 쪽으로 날아간다(높이는 Launch로 준 포물선). 마지막 틱은 남은 거리만큼만.
+                Vector3 toLand = Flat(vault.Land - ctx.transform.position);
+                float left = toLand.magnitude;
+                Vector3 local = Quaternion.Inverse(ctx.transform.rotation) * (left > 1e-3f ? toLand / left : ctx.Direction);
+                localMove = new Vector2(local.x, local.z);
+                speed = Mathf.Min(vault.Speed, left / Time.fixedDeltaTime);
+                return true;
+            }
             if (ctx.Phase == Towing)
             {
                 // 그랩이 문 벽 쪽으로(던진 방향) 끌려간다. 손이 벽에 닿는 곳을 넘지 않게 마지막 틱은 남은 거리만큼만.
@@ -164,7 +197,7 @@ namespace Project1.Systems
                     if (hitWall && (!hitChar || wallAt < charAt))
                     {
                         ctx.Reach = wallAt;
-                        if (wallNormal.y <= wallMaxNormalY && wallAt > towStopReach)
+                        if (towToWalls && wallNormal.y <= wallMaxNormalY && wallAt > towStopReach)
                         {
                             // 벽을 물었다 → 사냥터지기가 벽 쪽으로 끌려간다.
                             ctx.AreaCenter = ctx.ReachOrigin + ctx.Direction * wallAt;
@@ -178,6 +211,7 @@ namespace Project1.Systems
                         ctx.Reach = charAt;
                         Vector3 hookPoint = ctx.ReachOrigin + ctx.Direction * charAt;
                         RaiseHit(ctx, victim, hookPoint);
+                        if (vaultOverVictim) { BeginVault(ctx, victim, hookPoint); return false; }
                         // 문 상대를 끌어온다(되감는 동안 + 놓인 뒤 잠깐 기절).
                         GrabPull.Begin(victim.Owner.gameObject, ctx, this, hookPoint, charAt / dragSpeed + dragReleaseStun);
                         ctx.AreaRadius = charAt;
@@ -201,6 +235,19 @@ namespace Project1.Systems
                     if (ctx.Reach <= 0f) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
                     return false;
 
+                case Vaulting:
+                {
+                    vaults.TryGetValue(ctx, out var v);
+                    // 올가미는 상대를 지나칠 때까지 문 자리에 걸려 있다(사슬 길이 = 손 → 문 자리, 앞쪽 거리).
+                    ctx.Reach = Mathf.Max(0f, Vector3.Dot(Flat(v.Hook - ctx.ReachOrigin), ctx.Direction));
+                    bool landed = ctx.PhaseTime > v.AirTime * 0.5f && ctx.TryGetComponent(out CharacterMotor m) && m.IsGrounded;
+                    if (landed || ctx.PhaseTime > v.AirTime + 0.6f) { EndVault(ctx); ctx.Reach = 0f; ctx.SetPhase(VaultLanding); }
+                    return false;
+                }
+
+                case VaultLanding:
+                    return ctx.PhaseTime >= vaultLandTime;
+
                 case Towing:
                 {
                     // 그랩 머리는 벽(AreaCenter)에 박혀 있고, 손이 다가간 만큼 사슬이 줄어든다.
@@ -222,6 +269,14 @@ namespace Project1.Systems
             bool pulled = ctx.AreaRadius > 0f;
             switch (ctx.Phase)
             {
+                case Vaulting:
+                    phase = AttackPhase.Active;
+                    progress = vaults.TryGetValue(ctx, out var v) && v.AirTime > 0f ? Mathf.Clamp01(ctx.PhaseTime / v.AirTime) : 1f;
+                    return true;
+                case VaultLanding:
+                    phase = AttackPhase.Recovery;
+                    progress = vaultLandTime > 0f ? Mathf.Clamp01(ctx.PhaseTime / vaultLandTime) : 1f;
+                    return true;
                 case Windup: phase = AttackPhase.Windup; progress = windup > 0f ? Mathf.Clamp01(ctx.PhaseTime / windup) : 1f; break; // 꾹 누르는 동안은 던질 자세(끝)에서 멈춘다
                 case Extending:
                 case Retracting: phase = AttackPhase.Active; progress = 0f; break;
@@ -241,18 +296,58 @@ namespace Project1.Systems
         }
 
         // 조준하며 걷는 동안은 스킬 모션 없이 걷기 모션 그대로(전신 던지기 모션이면 다리가 미끄러져 보인다).
+        // 뛰어넘기(카우보이)는 <id>_Vault(공중) → <id>_Land(착지) 모션.
         public override string AnimationState(CharacterSkill ctx) =>
-            ctx.State != SkillState.Casting || (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f) ? string.Empty : id;
+            ctx.State != SkillState.Casting || (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f) ? string.Empty
+            : ctx.Phase == Vaulting ? id + "_Vault" : ctx.Phase == VaultLanding ? id + "_Land" : id;
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {
             Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "조준 — E를 떼면 던짐" : "준비",
             Dragging => "끌어오기!",
             Towing => "벽으로!",
+            Vaulting => "뛰어넘기!",
             _ => "그랩!",
         };
 
-        public override void Complete(GameObject owner) { }
+        public override void Complete(GameObject owner)
+        {
+            if (owner != null && owner.TryGetComponent(out CharacterSkill ctx)) EndVault(ctx); // 도중에 끊겨도 충돌 무시를 되돌린다
+        }
+
+        /// <summary>
+        /// 상대를 맞힘(카우보이) → 뛰어넘기 시작. 착지 자리 = 상대 + 던진 방향 × 잡은 거리(쏜 쪽 → 상대, 수평). 상대보다 높이 뛰어(포물선) 그 위를 지나고,
+        /// 넘는 동안은 상대와 몸이 부딪히지 않는다. 공중에 있는 시간에 맞춰 앞으로 나가는 속도를 정한다.
+        /// </summary>
+        private void BeginVault(CharacterSkill ctx, Hurtbox victim, Vector3 hookPoint)
+        {
+            Vector3 victimPos = victim.Owner.transform.position;
+            float grabbed = Flat(victimPos - ctx.transform.position).magnitude;
+            Vector3 land = victimPos + ctx.Direction * grabbed;
+            land.y = ctx.transform.position.y;
+            float travel = Flat(land - ctx.transform.position).magnitude;
+            float height = Mathf.Clamp(vaultHeight + vaultHeightPerMeter * travel, vaultHeight, Mathf.Max(vaultHeight, vaultMaxHeight));
+            var motor = ctx.GetComponent<CharacterMotor>();
+            float g = motor != null ? Mathf.Abs(motor.Gravity) : 20f;
+            float vy = Mathf.Sqrt(2f * g * height);
+            float air = 2f * vy / g;
+            var mine = ctx.GetComponent<CharacterController>();
+            var theirs = victim.Owner.GetComponent<CharacterController>();
+            if (mine != null && theirs != null) Physics.IgnoreCollision(mine, theirs, true);
+            vaults[ctx] = new Vault { Hook = hookPoint, Land = land, AirTime = air, Speed = travel / Mathf.Max(air, 0.05f), Victim = theirs };
+            if (motor != null) motor.Launch(vy);
+            ctx.Reach = Mathf.Max(0f, Vector3.Dot(Flat(hookPoint - ctx.ReachOrigin), ctx.Direction));
+            ctx.AreaRadius = 0f;
+            ctx.SetPhase(Vaulting);
+        }
+
+        private static void EndVault(CharacterSkill ctx)
+        {
+            if (!vaults.TryGetValue(ctx, out var v)) return;
+            vaults.Remove(ctx);
+            var mine = ctx != null ? ctx.GetComponent<CharacterController>() : null;
+            if (mine != null && v.Victim != null) Physics.IgnoreCollision(mine, v.Victim, false);
+        }
 
         /// <summary>그랩이 나가는 시작점(던진 자세의 오른손 = 오른쪽 어깨 줄, 어깨 높이, 몸 앞). 모션과 상관없이 캐릭터 위치·방향으로 정한다.</summary>
         public Vector3 Origin(CharacterSkill ctx) => Origin(ctx.transform, ctx.Direction);
