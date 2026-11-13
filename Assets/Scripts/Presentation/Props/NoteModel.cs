@@ -4,18 +4,26 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 안토니오의 붉은 음표(임시 모델, 코드로 만듦 — 8분음표 ♪: 비스듬한 머리 + 기둥 + 꼬리). 색은 붉게, 빛은 거의 없게.
-    /// 원점은 머리 가운데쯤, 위로 기둥이 선다(키 약 0.7m). 늘 카메라 쪽을 보게 돈다(모양이 잘 보이게).
+    /// 안토니오의 붉은 음표. 모델은 Resources의 RedMusicNote(VARCO에서 만든 8분음표 ♪, Blender로 줄이고 원점을 머리 가운데로 옮김)를 쓴다.
+    /// 원점 = 음표 머리(공) 가운데 → 전류선이 머리 가운데에서 나간다. 위로 기둥·꼬리가 선다(키 약 0.7m = size 1).
+    /// 늘 카메라 쪽으로 ♪ 모양(꼬리가 오른쪽)을 보이게 돈다. 모델을 못 찾으면 코드로 만든 임시 모양을 쓴다.
     /// Ghost: 놓을 자리 미리보기(반투명, 놓을 수 없으면 흐린 회색).
     /// </summary>
     [DisallowMultipleComponent]
     public class NoteModel : MonoBehaviour
     {
+        private const string ModelResource = "RedMusicNote/RedMusicNote";
+
         [SerializeField] private Color color = new(0.82f, 0.07f, 0.09f);
         [Tooltip("아주 약한 발광(0 = 없음).")]
         [SerializeField, Min(0f)] private float glow = 0.15f;
+        [Tooltip("모델 크기(원본 키 1m 기준).")]
+        [SerializeField, Min(0.05f)] private float modelScale = 0.7f;
+        [Tooltip("모델을 세로축으로 더 돌릴 각도(도). ♪ 앞면이 카메라를 보게 맞춘 값.")]
+        [SerializeField] private float modelYaw = 0f;
 
         private readonly List<Renderer> parts = new();
+        private readonly List<Material> modelMats = new();
         private Material solid, ghostOk, ghostBad;
         private bool ghost, ghostValid = true;
 
@@ -24,9 +32,25 @@ namespace Project1.Presentation
 
         private void Awake()
         {
-            solid = Lit(color, glow);
             ghostOk = Transparent(new Color(1f, 0.35f, 0.35f, 0.45f));
             ghostBad = Transparent(new Color(0.6f, 0.6f, 0.6f, 0.35f));
+            var prefab = Resources.Load<GameObject>(ModelResource);
+            if (prefab != null)
+            {
+                var model = Instantiate(prefab, transform, false);
+                model.name = "Model";
+                model.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.Euler(0f, modelYaw, 0f) * prefab.transform.localRotation); // FBX 축 맞춤(눕힘 방지)은 그대로 두고 세로축으로만 돌린다
+                model.transform.localScale = Vector3.one * modelScale;
+                foreach (var r in model.GetComponentsInChildren<Renderer>())
+                {
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    parts.Add(r);
+                    modelMats.Add(r.sharedMaterial);
+                }
+                Apply();
+                return;
+            }
+            solid = Lit(color, glow);
             // 머리(비스듬한 타원)
             Part(PrimitiveType.Sphere, new Vector3(0f, 0f, 0f), Quaternion.Euler(0f, 0f, 25f), new Vector3(0.3f, 0.21f, 0.14f));
             // 기둥(머리 오른쪽에서 위로)
@@ -59,8 +83,12 @@ namespace Project1.Presentation
 
         private void Apply()
         {
-            Material m = ghost ? (ghostValid ? ghostOk : ghostBad) : solid;
-            foreach (var r in parts) if (r != null) r.sharedMaterial = m;
+            for (int i = 0; i < parts.Count; i++)
+            {
+                if (parts[i] == null) continue;
+                Material solidMat = i < modelMats.Count ? modelMats[i] : solid; // 모델이면 모델 머티리얼(텍스처), 임시 모양이면 붉은 Lit
+                parts[i].sharedMaterial = ghost ? (ghostValid ? ghostOk : ghostBad) : solidMat;
+            }
         }
 
         private void OnDestroy()
