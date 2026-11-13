@@ -37,10 +37,12 @@ namespace Project1.Presentation
 
         private ICharacterState state;
         private ICharacterSkillState skill;
+        private ICharacterTraversalState traversal;
+        private ICharacterPushState push;
         private Animator animator;
         private Transform model;
         private Quaternion modelBaseRotation;
-        private Transform spine, chest, neck, head;
+        private Transform hips, spine, chest, neck, head;
         private float yaw, yawVelocity, targetYaw, lastLateralTime = -999f;
         [Header("몸이 한 번에 크게 돌 때(예: 붉은나비 나비에게 날아간 뒤)")]
         [Tooltip("한 프레임에 이 각도(도)보다 크게 돌면 모델이 부드럽게 따라 돈다.")]
@@ -60,7 +62,7 @@ namespace Project1.Presentation
         private void ResolveModel()
         {
             animator = GetComponentInChildren<Animator>();
-            model = null; spine = chest = neck = head = null;
+            model = null; hips = spine = chest = neck = head = null;
             yaw = yawVelocity = targetYaw = 0f;
             lastRootYaw = transform.eulerAngles.y; catchingUp = false;
             if (animator == null) return;
@@ -68,6 +70,7 @@ namespace Project1.Presentation
             modelBaseRotation = model.localRotation;
             if (animator.isHuman)
             {
+                hips = animator.GetBoneTransform(HumanBodyBones.Hips);
                 spine = animator.GetBoneTransform(HumanBodyBones.Spine);
                 chest = animator.GetBoneTransform(HumanBodyBones.Chest);
                 neck = animator.GetBoneTransform(HumanBodyBones.Neck);
@@ -82,8 +85,13 @@ namespace Project1.Presentation
 
             // 행동을 막는 스킬(예: 사냥터지기 그랩, 전위 돌진) 중에는 몸을 바로 시야 방향으로 돌린다(틀어 둔 각도 없앰).
             if (skill == null) TryGetComponent(out skill);
+            if (traversal == null) TryGetComponent(out traversal);
+            if (push == null) TryGetComponent(out push);
             float rootYaw = transform.eulerAngles.y;
-            if (skill != null && skill.LocksActions)
+            // 오르기·창틀 넘기·매달리기·구르기·밀기 중에도 몸을 틀지 않는다(BE가 몸 방향을 정한다 — 틀면 상체·목이 뒤틀린다).
+            bool traversing = (traversal != null && traversal.Action != TraversalAction.None && traversal.Action != TraversalAction.Fall)
+                              || (push != null && push.IsPushing);
+            if ((skill != null && skill.LocksActions) || traversing)
             {
                 yaw = targetYaw = yawVelocity = 0f;
                 model.localRotation = modelBaseRotation;
@@ -129,10 +137,18 @@ namespace Project1.Presentation
             model.localRotation = Quaternion.Euler(0f, yaw, 0f) * modelBaseRotation;
         }
 
+        [Header("뒤틀림 막기")]
+        [Tooltip("뼈 하나를 시야 쪽으로 되돌리는 최대 각도(도). 상체·목·머리를 다 더해도 이 값 × 4를 넘지 않는다.")]
+        [SerializeField, Range(0f, 45f)] private float maxTwistPerBone = 20f;
+        [Tooltip("상체가 이만큼(위쪽과 내적) 서 있을 때만 되돌린다. 눕거나 크게 숙인 자세(창틀 넘기·구르기·쓰러짐)에서 월드 위쪽으로 돌리면 뼈가 뒤틀린다.")]
+        [SerializeField, Range(0f, 1f)] private float uprightDot = 0.8f;
+
         private void LateUpdate()
         {
-            // Animator가 자세를 쓴 뒤에, 몸을 튼 만큼 상체·목·머리를 시야 쪽으로 되돌린다.
-            if (model == null || Mathf.Abs(yaw) < 0.01f) return;
+            // Animator가 자세를 쓴 뒤에, 옆으로 걸으며 몸을 튼 만큼 상체·목·머리를 시야 쪽으로 조금 되돌린다.
+            // 크게 돈 뒤 따라 도는 중(catchingUp)에는 되돌리지 않는다 — 상체·목이 크게 비틀린다.
+            if (model == null || catchingUp || Mathf.Abs(yaw) < 0.01f) return;
+            if (hips != null && head != null && Vector3.Dot((head.position - hips.position).normalized, Vector3.up) < uprightDot) return; // 누웠거나 크게 숙임
             float carry = 0f;
             carry = Twist(spine, spineCompensation + carry);
             carry = Twist(chest, chestCompensation + carry);
@@ -140,11 +156,12 @@ namespace Project1.Presentation
             Twist(head, headCompensation + carry);
         }
 
-        /// <summary>뼈를 월드 위쪽 축으로 -yaw*비율 만큼 돌린다. 뼈가 없으면 비율을 다음 뼈로 넘긴다.</summary>
+        /// <summary>뼈를 위쪽 축으로 -yaw*비율(최대 maxTwistPerBone) 만큼 돌린다. 뼈가 없으면 비율을 다음 뼈로 넘긴다.</summary>
         private float Twist(Transform bone, float ratio)
         {
             if (bone == null) return ratio;
-            bone.rotation = Quaternion.AngleAxis(-yaw * ratio, Vector3.up) * bone.rotation;
+            float angle = Mathf.Clamp(-yaw * ratio, -maxTwistPerBone, maxTwistPerBone);
+            bone.rotation = Quaternion.AngleAxis(angle, Vector3.up) * bone.rotation;
             return 0f;
         }
     }

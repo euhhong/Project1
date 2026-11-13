@@ -11,10 +11,75 @@ namespace Project1.Presentation.EditorTools
     /// - 반복 모션(대기·걷기·달리기·공중·모으기)은 Loop를 켠다.
     /// - 루트 회전·높이·수평 이동을 모두 포즈에 굽는다. 이동은 BE CharacterMotor가 하기 때문이다.
     /// - 필요한 모션만 잘라 쓴다(Trims). 단위는 원본 FBX의 프레임(30fps).
+    /// - 뼈가 뒤틀리지 않게: Humanoid 근육 값을 모두 정해진 범위(-1~1, 아바타 관절 한계) 안으로 자른다(ClampMuscles).
+    ///   Mixamo 모션은 손가락 벌림·발 비틀기·어깨가 한계를 몇 배씩 넘는 것이 있어(예: Jumping (1) 손가락 12배) 그대로면 손·발·어깨가 꼬여 모델이 일그러진다.
     /// </summary>
     public class MixamoMotionPostprocessor : AssetPostprocessor
     {
         public const string Folder = "Assets/Models/IdentityV/_Motions/Mixamo";
+
+        /// <summary>근육 값 한계(Humanoid 근육 1 = 아바타 관절 한계 끝). 조금 넘는 것은 자연스러워 그대로 둔다.</summary>
+        private const float MuscleLimit = 1f;
+
+        private void OnPostprocessAnimation(GameObject root, AnimationClip clip)
+        {
+            if (!IsMotion) return;
+            int clamped = ClampMuscles(clip);
+            if (clamped > 0) Debug.Log($"[FE] {clip.name}: 관절 한계를 넘은 근육 키 {clamped}개를 한계 안으로 잘랐습니다(뼈 뒤틀림 막기).");
+        }
+
+        /// <summary>
+        /// Humanoid 클립의 근육 곡선 키를 -MuscleLimit~MuscleLimit로 자른다. 루트·IK 목표(RootT/RootQ, …T.x, …Q.w 등)는 건드리지 않는다. 자른 키 수를 돌려준다.
+        /// </summary>
+        public static int ClampMuscles(AnimationClip clip)
+        {
+            int count = 0;
+            foreach (var binding in AnimationUtility.GetCurveBindings(clip))
+            {
+                if (binding.type != typeof(Animator) || !IsMuscleCurve(binding.propertyName)) continue;
+                var curve = AnimationUtility.GetEditorCurve(clip, binding);
+                if (curve == null) continue;
+                var keys = curve.keys;
+                bool changed = false;
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    if (Mathf.Abs(keys[i].value) <= MuscleLimit) continue;
+                    keys[i].value = Mathf.Clamp(keys[i].value, -MuscleLimit, MuscleLimit);
+                    changed = true;
+                    count++;
+                }
+                if (!changed && !Overshoots(curve)) continue;
+                curve.keys = keys;
+                // 키 사이 곡선이 키 값을 넘어 출렁이지 않게(ClampedAuto = 이웃 키 사이를 넘지 않는 부드러운 곡선) — 한계 밖으로 새지 않는다.
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    AnimationUtility.SetKeyLeftTangentMode(curve, i, AnimationUtility.TangentMode.ClampedAuto);
+                    AnimationUtility.SetKeyRightTangentMode(curve, i, AnimationUtility.TangentMode.ClampedAuto);
+                }
+                AnimationUtility.SetEditorCurve(clip, binding, curve);
+            }
+            return count;
+        }
+
+        /// <summary>키는 한계 안인데 키 사이 곡선이 한계 밖으로 출렁이는지.</summary>
+        private static bool Overshoots(AnimationCurve curve)
+        {
+            int n = curve.length;
+            if (n < 2) return false;
+            float t0 = curve.keys[0].time, t1 = curve.keys[n - 1].time;
+            int samples = Mathf.Max(60, n * 4);
+            for (int s = 0; s <= samples; s++)
+                if (Mathf.Abs(curve.Evaluate(Mathf.Lerp(t0, t1, s / (float)samples))) > MuscleLimit) return true;
+            return false;
+        }
+
+        private static bool IsMuscleCurve(string property)
+        {
+            if (property.StartsWith("Root") || property.StartsWith("Motion")) return false;                 // RootT.x, RootQ.w, MotionT …
+            int dot = property.LastIndexOf('.');
+            if (dot > 0 && dot == property.Length - 2 && (property[dot - 1] == 'T' || property[dot - 1] == 'Q')) return false; // LeftFootT.x, LeftHandQ.w(IK 목표)
+            return true; // 근육(예: "Spine Front-Back", "LeftHand.Middle.Spread")
+        }
 
         private static readonly HashSet<string> Looping = new()
         {
