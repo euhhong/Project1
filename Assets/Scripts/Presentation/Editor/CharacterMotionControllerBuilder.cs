@@ -281,6 +281,20 @@ namespace Project1.Presentation.EditorTools
                 csm.defaultState.motion = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/Carry_Joker.fbx");
             }
 
+            // 바이올린 켜기 레이어(상체만, 공격보다 아래): 안토니오가 음표를 놓을 자리를 고르는 동안과 놓은 뒤 잠깐 바이올린을 켠다(대기와 같은 Idle_Antonio).
+            // 다리는 걷기·달리기 그대로. 무게는 AntonioViolin이 켠다(기본 0 → 다른 캐릭터는 영향 없음).
+            if (HasMotionFile("Idle_Antonio"))
+            {
+                ac.AddLayer("Violin");
+                var vl = ac.layers;
+                var vlayer = vl[vl.Length - 1];
+                vlayer.avatarMask = LoadUpperBodyMask(); vlayer.defaultWeight = 0f; vlayer.blendingMode = AnimatorLayerBlendingMode.Override;
+                ac.layers = vl;
+                var vsm = ac.layers[ac.layers.Length - 1].stateMachine;
+                vsm.defaultState = vsm.AddState("Violin");
+                vsm.defaultState.motion = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/Idle_Antonio.fbx");
+            }
+
             // 땅 공격 레이어(상체만). 상태 전환과 재생 위치는 CharacterAttackAnimator가 코드로 정한다.
             var mask = LoadUpperBodyMask();
             ac.AddLayer(AttackLayer);

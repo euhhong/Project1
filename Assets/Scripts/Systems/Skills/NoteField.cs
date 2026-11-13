@@ -53,6 +53,7 @@ namespace Project1.Systems
         public float NoteHeight => noteHeight;
         public Vector3 LastHitPoint { get; private set; }
         public float LastHitTime { get; private set; } = -1f;
+        public float LastPlaceTime { get; private set; } = -1f;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
         [Tooltip("시점을 돌리는 중에 음표 자리를 고르기 시작했을 때 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다). 좌클릭을 먼저 누르고 돌리면 그대로.")]
@@ -127,6 +128,7 @@ namespace Project1.Systems
 
         private void AddNote(Vector3 point)
         {
+            LastPlaceTime = Time.time;
             if (notes.Count == 0 || Linked)
             {
                 // 새 쌍의 첫 음표(지난 쌍은 사라진다)

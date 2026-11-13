@@ -38,5 +38,8 @@ namespace Project1.Core
         Vector3 LastHitPoint { get; }
 
         float LastHitTime { get; }
+
+        /// <summary>마지막으로 음표를 놓은 시각(Time.time). 없으면 음수. FE가 놓은 뒤 잠깐 바이올린을 켠다.</summary>
+        float LastPlaceTime { get; }
     }
 }

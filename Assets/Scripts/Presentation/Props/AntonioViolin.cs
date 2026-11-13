@@ -10,6 +10,8 @@ namespace Project1.Presentation
     /// - 켜는 자세(대기 — 바이올린 켜기 모션): 바이올린 꼬리를 목과 왼어깨 사이(턱 밑)에, 스크롤을 왼손 쪽으로, 앞판이 위를 보게.
     ///   활은 손잡이를 오른손바닥에 두고 바이올린 브리지 위를 지나게(오른손이 움직이면 활이 줄 위를 오간다).
     /// - 들고 다니는 자세(걷기·공격·스킬 중): 바이올린은 왼손에 목을 쥐고 아래팔 방향으로, 활은 오른손에 아래팔 방향으로.
+    /// - 음표를 놓기 전후(좌클릭으로 놓을 자리를 고르는 동안 + 놓은 뒤 afterPlaceTime초): 걷고 있어도 상체는 바이올린을 켠다
+    ///   (Animator "Violin" 레이어 = 상체만 Idle_Antonio, 다리는 걷기 그대로). 바이올린·활도 켜는 자세로.
     /// 두 자세 사이는 부드럽게 바꾼다. 크기는 몸(목 ~ 왼손 거리)에 맞춘다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 연출 전용.
     /// </summary>
@@ -29,6 +31,8 @@ namespace Project1.Presentation
         [SerializeField, Range(0f, 1f)] private float carryGripAt = 0.72f;
         [Tooltip("자세를 바꾸는 시간(초).")]
         [SerializeField, Min(0.01f)] private float blendTime = 0.25f;
+        [Tooltip("음표를 놓은 뒤 바이올린을 더 켜는 시간(초).")]
+        [SerializeField, Min(0f)] private float afterPlaceTime = 0.8f;
 
         private Animator animator;
         private Transform neck, lShoulder, lHand, lLower, lMiddle, rHand, rLower, rMiddle;
@@ -37,6 +41,9 @@ namespace Project1.Presentation
         private ICharacterState state;
         private ICharacterAttackState attack;
         private ICharacterSkillState skill;
+        private INoteField notes;
+        private int violinLayer = -1;
+        private float layerWeight;
         private float play; // 0 = 들고 다님, 1 = 켜는 자세
         private float length = 0.6f;
 
@@ -48,22 +55,31 @@ namespace Project1.Presentation
 
         private void OnDisable()
         {
+            if (animator != null && violinLayer >= 0) animator.SetLayerWeight(violinLayer, 0f);
+            layerWeight = 0f;
             if (violin != null) violin.gameObject.SetActive(false);
             if (bow != null) bow.gameObject.SetActive(false);
         }
 
         private void LateUpdate()
         {
-            if (animator == null || !animator.isActiveAndEnabled) { if (!Resolve()) return; }
+            if (animator == null || !animator.isActiveAndEnabled) { violinLayer = -1; if (!Resolve()) return; }
             if (violin == null && !Build()) return;
             violin.gameObject.SetActive(true); bow.gameObject.SetActive(true);
             state ??= GetComponent<ICharacterState>();
             attack ??= GetComponent<ICharacterAttackState>();
             skill ??= GetComponent<ICharacterSkillState>();
+            notes ??= GetComponent<INoteField>();
             bool idle = (state == null || (state.IsGrounded && state.MoveState == CharacterMoveState.Idle))
                         && (attack == null || attack.AttackState == CharacterAttackState.None)
                         && (skill == null || skill.State != SkillState.Casting);
-            play = Mathf.MoveTowards(play, idle ? 1f : 0f, Time.deltaTime / blendTime);
+            // 음표를 놓기 전후: 공격·스킬 중이 아니면 걷고 있어도 상체로 바이올린을 켠다.
+            bool free = (attack == null || attack.AttackState == CharacterAttackState.None) && (skill == null || skill.State != SkillState.Casting);
+            bool notePlay = free && notes != null && (notes.Placing || (notes.LastPlaceTime >= 0f && Time.time - notes.LastPlaceTime <= afterPlaceTime));
+            layerWeight = Mathf.MoveTowards(layerWeight, notePlay ? 1f : 0f, Time.deltaTime / blendTime);
+            if (violinLayer < 0 && animator.runtimeAnimatorController != null) violinLayer = animator.GetLayerIndex("Violin");
+            if (violinLayer >= 0) animator.SetLayerWeight(violinLayer, layerWeight);
+            play = Mathf.MoveTowards(play, idle || notePlay ? 1f : 0f, Time.deltaTime / blendTime);
 
             Vector3 palmL = Palm(lHand, lMiddle, lLower), palmR = Palm(rHand, rMiddle, rLower);
             Vector3 right = transform.right, up = Vector3.up;
