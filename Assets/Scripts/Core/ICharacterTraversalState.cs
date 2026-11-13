@@ -56,5 +56,11 @@ namespace Project1.Core
 
         /// <summary>공격·스킬을 막는지(오르는 중·매달림·크게 착지하는 중).</summary>
         bool LocksActions { get; }
+
+        /// <summary>
+        /// 턱에 매달렸다가 놓아 떨어진 것이고 떨어진 높이(drop, m — 매달린 높이부터)가 아주 높지 않은지. 그러면 다치지 않고(낙하 데미지 없음) 가볍게만 착지한다.
+        /// 놓은 뒤 착지한 틱까지 참일 수 있다(FallDamage가 착지 틱에 묻는다).
+        /// </summary>
+        bool IsSoftHangDrop(float drop);
     }
 }

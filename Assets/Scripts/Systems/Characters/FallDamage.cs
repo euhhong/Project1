@@ -7,6 +7,7 @@ namespace Project1.Systems
     /// 낙하 데미지. 공중에서 가장 높았던 곳 → 착지한 곳의 높이 차가 safeHeight를 넘으면, 넘은 1m마다 damagePerMeter만큼 체력이 준다.
     /// 앞구르기로 착지하면(점프해서 높이 떨어짐, CharacterTraversal LandRoll) rollScale배로 줄어든다.
     /// 스킬로 뛰어오른 경우(예: 루키노 도약 — 시전 중·후딜레이)는 데미지 없음. 쓰러져 있으면 없음.
+    /// 턱에 매달렸다가 놓아 떨어진 경우는 매달린 높이부터 아주 높지 않으면(CharacterTraversal hangDropSafeHeight 미만) 데미지 없음.
     /// 캐릭터 루트에 붙인다(CharacterLoadout). 체력(CharacterHealth)이 없으면 아무것도 하지 않는다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -47,6 +48,7 @@ namespace Project1.Systems
             if (!airborne) return;
             airborne = false;
             if (bySkill || skillBusy || health == null || health.IsDead) return;
+            if (traversal != null && traversal.IsSoftHangDrop(peakY - y)) return; // 턱에 매달렸다 놓아 떨어짐 — 아주 높지 않으면 다치지 않는다
             float over = peakY - y - safeHeight;
             if (over <= 0f) return;
             float damage = over * damagePerMeter;

@@ -99,6 +99,8 @@ namespace Project1.Systems
         [SerializeField, Min(0.1f)] private float landTime = 0.45f, landHighTime = 0.65f, landRollTime = 1f, landHardTime = 1.1f;
         [Tooltip("높은·고공 착지 뒤 못 움직이는 시간(초).")]
         [SerializeField, Min(0f)] private float landHighStop = 0.3f, landHardStop = 0.65f;
+        [Tooltip("턱에 매달렸다가 놓아(뒤 S) 떨어지면 매달린 높이부터 이 높이(m) 미만은 다치지 않는다 — 낙하 데미지·크게 착지(경직) 없이 가볍게 착지. 이 이상이면 보통 낙하 규칙.")]
+        [SerializeField, Min(0f)] private float hangDropSafeHeight = 6f;
         [Tooltip("착지하는 동안 걷기 속도 대비 빠르기.")]
         [SerializeField, Range(0f, 1f)] private float landSlow = 0.5f;
 
@@ -119,7 +121,7 @@ namespace Project1.Systems
         private Ledge ledge;
         private Vector3 pathStart, pathMid, pathEnd, hangPos, entryVelocity;
         private float root0, railTop;
-        private bool airborne, jumped, jumpedFlag, knocked;
+        private bool airborne, jumped, jumpedFlag, knocked, hangDrop;
         private float peakY, airStartY;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
@@ -284,11 +286,14 @@ namespace Project1.Systems
                 }
                 return;
             }
-            if (!airborne) { jumpedFlag = false; return; }
+            if (!airborne) { jumpedFlag = false; hangDrop = false; return; } // 매달렸다 놓은 낙하는 착지한 다음 틱에 끝(FallDamage가 착지 틱에 묻는다)
             airborne = false;
             bool walkedOff = action == TraversalAction.Fall;
             if (walkedOff) action = TraversalAction.None;
-            if (!dead && !SkillBusy()) StartLanding(peakY - pos.y, jumped, walkedOff);
+            float drop = peakY - pos.y;
+            if (dead || SkillBusy()) { }
+            else if (IsSoftHangDrop(drop)) { if (drop >= lowFall) { StartAction(TraversalAction.Land, landTime); landStop = 0f; } } // 다치지 않게 가볍게만
+            else StartLanding(drop, jumped, walkedOff);
             jumped = false;
         }
 
@@ -505,9 +510,12 @@ namespace Project1.Systems
             return true;
         }
 
+        public bool IsSoftHangDrop(float drop) => hangDrop && drop < hangDropSafeHeight;
+
         private void Release()
         {
             LiftOutOfFloor();
+            hangDrop = action == TraversalAction.Hang || action == TraversalAction.HangGrab; // 매달렸다 놓음: 아주 높지 않으면 다치지 않는다
             action = TraversalAction.None;
             actionTime = actionDuration = 0f;
             regrab = regrabDelay;
@@ -541,6 +549,7 @@ namespace Project1.Systems
             actionTime = 0f;
             actionDuration = duration;
             fallBackward = false;
+            if (a != TraversalAction.Fall && !IsLanding(a)) hangDrop = false; // 다시 잡거나 오르면 놓은 낙하가 아니다
             // 감시자: 들어오던 수평 속도(월드)를 기억해 넘기 길이 그 속도로 출발하게 한다.
             Vector2 v = state != null ? state.LocalPlanarVelocity : Vector2.zero;
             entryVelocity = transform.rotation * new Vector3(v.x, 0f, v.y);
