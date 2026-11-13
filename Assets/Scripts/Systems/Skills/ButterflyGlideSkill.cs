@@ -8,6 +8,7 @@ namespace Project1.Systems
     /// - 겨누는 나비가 없거나 나비를 놓는 중이면(놓기를 E로 취소하고 좌클릭을 아직 안 뗀 동안 포함) 쓰지 않는다.
     /// - 가는 동안 장애물(벽·다른 캐릭터 등)에 부딪히면 거기서 멈추고 툭 떨어진다(잠깐 못 움직임, bumpRecovery).
     /// - 이동·공격 불가. 중력은 그대로라 턱에서 벗어나면 떨어진다.
+    /// - 날아가는 동안 화면을 돌려도 몸(모델)은 시작할 때 각도를 지킨다(TryGetFacingYaw). 끝나면 다시 시야를 본다.
     /// 목표 자리는 시전 동안 CharacterSkill.AreaCenter에 둔다(ShowArea는 끔).
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Butterfly Glide")]
@@ -39,6 +40,7 @@ namespace Project1.Systems
             ctx.AreaCenter = field != null ? field.TargetPoint : ctx.transform.position;
             ctx.ShowArea = false;
             ctx.SetPhase(0);
+            ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 몸은 시작할 때 각도를 지킨다(TryGetFacingYaw)
         }
 
         private static Vector3 FlatTo(CharacterSkill ctx)
@@ -59,6 +61,13 @@ namespace Project1.Systems
             localMove = new Vector2(local.x, local.z);
             speed = Mathf.Min(glideSpeed, dist / Time.fixedDeltaTime); // 마지막 틱에 지나치지 않게
             return true;
+        }
+
+        public override bool TryGetFacingYaw(CharacterSkill ctx, out float yaw)
+        {
+            // 날아가는 동안 화면(시야)을 돌려도 몸은 시작할 때 각도를 그대로 지킨다. 끝나면 다시 시야를 본다.
+            yaw = Mathf.Atan2(ctx.Direction.x, ctx.Direction.z) * Mathf.Rad2Deg;
+            return ctx.Direction.sqrMagnitude > 0.01f;
         }
 
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)

@@ -25,6 +25,7 @@ namespace Project1.Systems
         private ICharacterInputSource inputSource;
         private IMoveSpeedLimit[] speedLimits;
         private IMoveOverride[] moveOverrides;
+        private IFacingOverride[] facingOverrides;
 
         public CharacterMoveState MoveState { get; private set; }
         public bool IsGrounded { get; private set; }
@@ -70,6 +71,7 @@ namespace Project1.Systems
             }
             speedLimits = GetComponents<IMoveSpeedLimit>();
             moveOverrides = GetComponents<IMoveOverride>();
+            facingOverrides = GetComponents<IFacingOverride>();
             LookYaw = transform.eulerAngles.y;
             IsGrounded = controller.isGrounded;
         }
@@ -79,6 +81,7 @@ namespace Project1.Systems
         {
             speedLimits = GetComponents<IMoveSpeedLimit>();
             moveOverrides = GetComponents<IMoveOverride>();
+            facingOverrides = GetComponents<IFacingOverride>();
         }
 
         private bool TryGetMoveOverride(out Vector2 move, out float speed, out bool allowJump)
@@ -90,6 +93,18 @@ namespace Project1.Systems
                 if (o.TryGetMoveOverride(out move, out speed, out allowJump)) return true;
             }
             move = Vector2.zero; speed = 0f; allowJump = true;
+            return false;
+        }
+
+        private bool TryGetFacingOverride(out float yaw)
+        {
+            facingOverrides ??= GetComponents<IFacingOverride>();
+            foreach (IFacingOverride o in facingOverrides)
+            {
+                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (o.TryGetFacingYaw(out yaw)) return true;
+            }
+            yaw = 0f;
             return false;
         }
 
@@ -131,7 +146,7 @@ namespace Project1.Systems
             float dt = Time.fixedDeltaTime;
 
             // 몸을 시야 좌우 방향으로 돌린다.
-            transform.rotation = Quaternion.Euler(0f, LookYaw, 0f);
+            transform.rotation = Quaternion.Euler(0f, TryGetFacingOverride(out float facingYaw) ? facingYaw : LookYaw, 0f); // 스킬이 정하면 그 각도(예: 붉은나비 나비에게 — 시작 각도 유지)
 
             // 시야 기준 수평 이동 (대각선 정규화는 입력 소스에서 Clamp).
             Vector2 move = Vector2.ClampMagnitude(input.Move, 1f);

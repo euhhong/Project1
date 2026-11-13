@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -130,6 +130,12 @@ namespace Project1.Systems
             }
             localMove = Vector2.zero; speed = 0f; allowJump = true;
             return false;
+        }
+
+        public bool TryGetFacingYaw(out float yaw)
+        {
+            yaw = 0f;
+            return State == SkillState.Casting && skill != null && skill.TryGetFacingYaw(this, out yaw);
         }
 
         private void Awake()

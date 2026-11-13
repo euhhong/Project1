@@ -55,6 +55,13 @@ namespace Project1.Systems
         /// 스킬 동작 구간(준비 Windup → 판정 Active → 마무리 Recovery)과 그 구간 진행도(0~1)를 알릴지(예: 그랩 = 휘두르기 → 그랩이 나가 있는 동안 → 마무리).
         /// 알리면 FE가 모션 재생 위치를 구간에 맞춘다(판정 동안은 멈춘 자세). 기본은 알리지 않음.
         /// </summary>
+        /// <summary>시전 중 몸이 볼 좌우 각도를 시야 대신 정할지(예: 붉은나비 나비에게 — 시작할 때 각도 유지). 시야·카메라는 그대로 돈다.</summary>
+        public virtual bool TryGetFacingYaw(CharacterSkill ctx, out float yaw)
+        {
+            yaw = 0f;
+            return false;
+        }
+
         public virtual bool TryGetMotionPhase(CharacterSkill ctx, out AttackPhase phase, out float progress)
         {
             phase = AttackPhase.None; progress = 0f;

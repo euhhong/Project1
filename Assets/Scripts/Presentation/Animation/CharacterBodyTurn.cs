@@ -42,6 +42,13 @@ namespace Project1.Presentation
         private Quaternion modelBaseRotation;
         private Transform spine, chest, neck, head;
         private float yaw, yawVelocity, targetYaw, lastLateralTime = -999f;
+        [Header("몸이 한 번에 크게 돌 때(예: 붉은나비 나비에게 날아간 뒤)")]
+        [Tooltip("한 프레임에 이 각도(도)보다 크게 돌면 모델이 부드럽게 따라 돈다.")]
+        [SerializeField, Min(1f)] private float snapThreshold = 25f;
+        [Tooltip("따라 도는 속도(감쇠 시간, 초).")]
+        [SerializeField, Min(0.01f)] private float catchUpSmoothTime = 0.15f;
+        private float lastRootYaw;
+        private bool catchingUp;
 
         private void Awake()
         {
@@ -55,6 +62,7 @@ namespace Project1.Presentation
             animator = GetComponentInChildren<Animator>();
             model = null; spine = chest = neck = head = null;
             yaw = yawVelocity = targetYaw = 0f;
+            lastRootYaw = transform.eulerAngles.y; catchingUp = false;
             if (animator == null) return;
             model = animator.transform;
             modelBaseRotation = model.localRotation;
@@ -74,10 +82,25 @@ namespace Project1.Presentation
 
             // 행동을 막는 스킬(예: 사냥터지기 그랩, 전위 돌진) 중에는 몸을 바로 시야 방향으로 돌린다(틀어 둔 각도 없앰).
             if (skill == null) TryGetComponent(out skill);
+            float rootYaw = transform.eulerAngles.y;
             if (skill != null && skill.LocksActions)
             {
                 yaw = targetYaw = yawVelocity = 0f;
                 model.localRotation = modelBaseRotation;
+                lastRootYaw = rootYaw;
+                catchingUp = false;
+                return;
+            }
+
+            // 몸(루트)이 한 번에 크게 돌면(예: 붉은나비 나비에게 날아간 뒤 시작 각도 → 시야로) 모델은 부드럽게 따라 돈다.
+            float jump = Mathf.DeltaAngle(lastRootYaw, rootYaw);
+            lastRootYaw = rootYaw;
+            if (Mathf.Abs(jump) > snapThreshold) { yaw -= jump; yawVelocity = 0f; targetYaw = 0f; catchingUp = true; }
+            if (catchingUp)
+            {
+                yaw = Mathf.SmoothDampAngle(yaw, 0f, ref yawVelocity, catchUpSmoothTime);
+                if (Mathf.Abs(yaw) < 0.5f) { yaw = 0f; catchingUp = false; }
+                model.localRotation = Quaternion.Euler(0f, yaw, 0f) * modelBaseRotation;
                 return;
             }
 
