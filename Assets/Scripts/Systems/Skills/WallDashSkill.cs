@@ -14,7 +14,8 @@ namespace Project1.Systems
     ///   그 방향키가 가리키는 쪽으로 최대 곡선(steerRate)까지 휜다. 반대쪽으로는 못 휜다(S자 불가). 시점을 휙 돌리면 U자(maxTurn)까지.
     /// - 도약이 끝나도 꺼지지 않는다(켜진 채 그대로, E로만 끈다). 대신 한 번 도약하면 dashCooldown(5초) 동안 재사용 대기 —
     ///   그동안은 벽에 닿아도 도약 준비가 되지 않는다. 대기는 캐릭터마다 따로 재고, E로 껐다 켜도 이어진다.
-    /// 켜져 있어도 걷기·달리기·공격은 평소대로 한다(공격해도 꺼지지 않는다).
+    /// 켜져 있어도 걷기·달리기·공격·창틀 넘기·턱 오르기는 평소대로 한다(모션 그대로, 공격해도 꺼지지 않는다). 창틀 넘기·오르기·매달리기·착지 중에는
+    /// 아대가 쉰다(도약 준비 안 함, E도 무시) — 끝나고 afterTraversalGrace(0.35초) 동안도 넘은 창틀에 튕기지 않는다. 상태 설명 글자는 띄우지 않는다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Wall Dash")]
     public class WallDashSkill : SkillDefinition
@@ -46,6 +47,11 @@ namespace Project1.Systems
         public override bool CancelledByAttack => false;
         public override bool LimitsMoveSpeed => false;
         public override bool SyncAnimationToCast => false;
+        // 켜 둔 채로 창틀 넘기·턱 오르기는 평소대로(모션 나옴). 도약하는 동안만 막는다.
+        public override bool AllowsTraversal(CharacterSkill ctx) => ctx.Phase != Dashing;
+
+        [Tooltip("창틀 넘기·오르기·매달리기·착지가 끝난 뒤 이 시간(초) 동안은 벽에 닿아도 도약 준비가 안 된다(넘은 창틀에 튕겨 나가지 않게).")]
+        [Min(0f)] public float afterTraversalGrace = 0.35f;
 
         public override void OnStart(CharacterSkill ctx)
         {
@@ -69,6 +75,12 @@ namespace Project1.Systems
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
             recovery = 0f;
+            // 창틀 넘기·오르기·매달리기·착지 중: 아대는 쉰다(도약 준비 안 함, E도 무시 — 넘는 동안 실수로 꺼지지 않게). 끝나고 afterTraversalGrace 동안도 준비 안 함.
+            if (ctx.Phase != Dashing && ctx.TryGetComponent(out ICharacterTraversalState tr) && Pauses(tr.Action))
+            {
+                ctx.SetPhase(Active); ctx.Direction = Vector3.zero;
+                return false;
+            }
             if (input.Skill && elapsed > 0.05f) return true; // E를 다시 누름 → 끈다
 
             var motor = ctx.GetComponent<CharacterMotor>();
@@ -85,7 +97,8 @@ namespace Project1.Systems
                     if (ctx.Phase == Active)
                     {
                         // 벽에 닿음: 지금 누르던 방향을 기억해 두고, 그와 다른 첫 이동을 기다린다(최대 autoDashDelay).
-                        if (touching && DashCooldownRemaining(ctx) <= 0f) { ctx.SetPhase(Armed); ctx.Direction = dir; } // 재사용 대기 중에는 준비 안 됨
+                        // 재사용 대기 중·창틀 넘은 직후(PhaseTime < afterTraversalGrace)에는 준비 안 됨
+                        if (touching && DashCooldownRemaining(ctx) <= 0f && ctx.PhaseTime >= afterTraversalGrace) { ctx.SetPhase(Armed); ctx.Direction = dir; }
                         break;
                     }
                     if (ctx.PhaseTime >= autoDashDelay)
@@ -190,14 +203,11 @@ namespace Project1.Systems
 
         public override bool Afterimage(CharacterSkill ctx) => ctx.Phase == Dashing;
 
-        public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
-        {
-            Armed => $"벽에 닿음 — 이동하면 도약! ({Mathf.Max(0f, autoDashDelay - ctx.PhaseTime):0.0}초 뒤 앞으로)",
-            Dashing => "도약!",
-            _ => DashCooldownRemaining(ctx) > 0f
-                ? $"켜짐 — 도약 재사용 대기 {DashCooldownRemaining(ctx):0.0}초 (E로 끄기)"
-                : "켜짐 — 벽에 닿으면 도약 준비 (E로 끄기)",
-        };
+        // 상태 설명 글자는 띄우지 않는다(길어서 잘림 — 설명 없이도 됨).
+        public override string StatusText(CharacterSkill ctx) => null;
+
+        /// <summary>아대가 쉬는 동작: 창틀 넘기·턱 오르기·매달리기·착지(낙하 중 공중에서 벽 튕기기는 그대로).</summary>
+        private static bool Pauses(TraversalAction a) => a != TraversalAction.None && a != TraversalAction.Fall;
 
         // 벽에 닿은 직후 wallPoseTime(0.1초) 동안만 = ID_Wall(벽을 손으로 짚는 자세, Male Action Pose), 그다음은 원래 모션. 도약 중 = ID_Dash(모션이 있으면).
         public override string AnimationState(CharacterSkill ctx) =>

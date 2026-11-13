@@ -256,7 +256,8 @@ namespace Project1.Systems
         private bool IsBusy() =>
             (attack != null && attack.AttackState != CharacterAttackState.None) || SkillBusy();
 
-        private bool SkillBusy() => skill != null && (skill.LocksActions || skill.State == SkillState.Casting || skill.State == SkillState.Recovering);
+        // 켜 둔 채 다니는 스킬(용병 아대)은 창틀 넘기·턱 오르기를 막지 않는다(AllowsTraversal).
+        private bool SkillBusy() => skill != null && !skill.AllowsTraversal && (skill.LocksActions || skill.State == SkillState.Casting || skill.State == SkillState.Recovering);
 
         /// <summary>방향키가 가리키는 월드 수평 방향(몸 = 시야 방향 기준). 누르지 않으면 0.</summary>
         private Vector3 MoveDirection(in CharacterInputFrame input)

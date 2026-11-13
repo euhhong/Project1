@@ -42,6 +42,9 @@ namespace Project1.Core
         /// <summary>시전 중이고, 그 스킬이 다른 행동(공격)을 막는지(예: 돌진).</summary>
         bool LocksActions { get; }
 
+        /// <summary>시전 중이어도 창틀 넘기·턱 오르기를 막지 않는지(예: 켜 둔 용병 아대). 시전 중이 아니면 false.</summary>
+        bool AllowsTraversal { get; }
+
         /// <summary>Skill 레이어에서 지금 재생할 상태 이름(예: Luchino_Leap_Slam). 없으면 빈 문자열.</summary>
         string AnimationState { get; }
 

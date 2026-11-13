@@ -84,6 +84,8 @@ namespace Project1.Systems
             PhaseTime = 0f;
         }
 
+        public bool AllowsTraversal => State == SkillState.Casting && skill != null && skill.AllowsTraversal(this);
+
         public bool LocksActions =>
             State == SkillState.Recovering || (State == SkillState.Casting && skill != null && skill.LocksActions);
 
