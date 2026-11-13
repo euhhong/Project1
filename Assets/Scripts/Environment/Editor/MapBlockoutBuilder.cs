@@ -12,7 +12,7 @@ namespace Project1.Map.EditorTools
     /// 씬의 "MapBlockout" 하나를 지우고 다시 세운다(다른 씬 오브젝트는 건드리지 않음). 맵을 바꾸려면 이 파일 숫자를 고치고 다시 실행한다.
     ///
     /// 크기 기준: 캐릭터 키 약 2.1m(감시자 ~2.7m), 반지름 0.4~0.5, 점프 1.2m, stepOffset 0.3, slopeLimit 45°.
-    ///   층고 4.3m(1F 천장 높이 4.0m), 문 2.4×3.4m, 창문 1.8m 폭·턱 0.8m·위 3.6m(점프로 넘음), 아치 3.0×3.6m,
+    ///   층고 4.3m(1F 천장 높이 4.0m), 문 2.4×3.4m, 창문 1.8m 폭·턱 1.0m·위 3.8m(점프로 넘음, 틈 높이 2.8m), 아치 3.0×3.6m,
     ///   통로 2.5m 이상, 계단 폭 2.6~2.8m·단 0.27m·디딤 0.45m(약 31°, 위에 보이지 않는 경사 Collider로 미끄럽게),
     ///   난간·낮은 벽 1.0m(점프로 넘음), 큰 벽 3m 이상(못 넘음, 시야 가림).
     /// 루키노 도약(머리 위 6m 천장 검사): 실내 1F·2F·창고는 못 뜀, 안뜰·발코니·야외 마당은 뜀.
@@ -39,7 +39,7 @@ namespace Project1.Map.EditorTools
         // 벽·개구부
         private const float WallT = 0.4f;
         private const float DoorW = 2.4f, DoorH = 3.4f;
-        private const float WinW = 1.8f, WinSill = 0.8f, WinTop = 3.6f;
+        private const float WinW = 1.8f, WinSill = 1.0f, WinTop = 3.8f;
         private const float ArchW = 3f, ArchH = 3.6f;
         private const float RailH = 1f, RailT = 0.15f;
 
@@ -220,10 +220,10 @@ namespace Project1.Map.EditorTools
             // 서쪽 L벽
             WallX(cover, "LWall_W_A", -35.25f, -28f, -17f, B, 3.3f, 0.5f, wallMat);
             WallZ(cover, "LWall_W_B", -17f, -10f, -35f, B, 3.3f, 0.5f, wallMat);
-            // 서쪽 창문 벽(턱 0.9m 틈을 점프로 넘음)
-            WallZ(cover, "WindowWall_W", -4f, 6f, -30f, B, 3.3f, 0.5f, wallMat, Notch(1f, 2f, 0.9f - B));
+            // 서쪽 창문 벽(창문과 같은 턱 1.0m 틈을 점프로 넘음)
+            WallZ(cover, "WindowWall_W", -4f, 6f, -30f, B, 3.3f, 0.5f, wallMat, Notch(1f, 2f, WinSill - B));
             // 북서 긴 벽(가운데 창문 틈)
-            WallX(cover, "LongWall_NW", -30f, -18f, 12f, B, 3.3f, 0.5f, wallMat, Notch(-24f, 2f, 0.9f - B));
+            WallX(cover, "LongWall_NW", -30f, -18f, 12f, B, 3.3f, 0.5f, wallMat, Notch(-24f, 2f, WinSill - B));
             // 낮은 벽(1m, 점프로 넘음)
             WallX(cover, "LowWall_SE_1", 13f, 19f, -33f, B, 1f - B, 0.4f, accentMat);
             WallX(cover, "LowWall_SE_2", 13f, 19f, -40f, B, 1f - B, 0.4f, accentMat);
