@@ -17,8 +17,8 @@ namespace Project1.Systems
         [Tooltip("빛이 닿는 거리(m) / 원뿔 반각(도).")]
         [Min(1f)] public float range = 14f;
         [Range(1f, 60f)] public float halfAngle = 16f;
-        [Tooltip("빛을 받을 때 1초에 차는 양(게이지 전체 = 1) — 지져짐 / 정면.")]
-        [Min(0f)] public float fillRate = 0.45f, frontFillRate = 0.5f;
+        [Tooltip("빛을 받을 때 1초에 차는 양(게이지 전체 = 1) — 아래 칸(어디로든, 다 차면 E 봉인, 빠르게) / 위 칸(정면, 다 차면 기절, 느리게).")]
+        [Min(0f)] public float fillRate = 0.6f, frontFillRate = 0.25f;
         [Tooltip("상대가 빛 쪽을 이 각도(도) 안으로 보고 있으면 정면으로 받는다.")]
         [Range(1f, 180f)] public float frontAngle = 70f;
         [Tooltip("빛이 나가는 자리(캐릭터 키 대비 높이 / 몸 앞 m / 오른쪽 m) — 오른손에 든 손전등.")]

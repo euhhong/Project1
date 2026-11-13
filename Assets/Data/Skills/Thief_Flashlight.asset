@@ -19,8 +19,8 @@ MonoBehaviour:
   castMoveSpeed: 2.5
   range: 14
   halfAngle: 16
-  fillRate: 0.45
-  frontFillRate: 0.5
+  fillRate: 0.6
+  frontFillRate: 0.25
   frontAngle: 70
   heightRatio: 0.78
   forwardOffset: 0.55

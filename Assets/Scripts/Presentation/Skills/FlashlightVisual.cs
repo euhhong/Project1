@@ -8,7 +8,7 @@ namespace Project1.Presentation
     /// 도둑 손전등 연출(FlashlightSkill, BE를 읽어 그린다).
     /// - 손전등(임시 모델, 코드로 만듦 — 검은 몸통 + 넓은 머리 + 빛나는 렌즈)은 평소엔 넣어 두고, 비추는 동안만 오른손에 들고 앞을 겨눈다.
     /// - 렌즈에서 앞으로 스포트라이트 + 옅은 빛 원뿔(벽에 닿으면 거기까지).
-    /// - 빛에 지져지는 캐릭터(LightExposure) 머리 위에 게이지 두 줄: 위 = 지져짐(잠김 선 표시, 넘으면 "E 잠김"), 아래 = 정면(다 차면 기절).
+    /// - 빛에 지져지는 캐릭터(LightExposure) 머리 위에 게이지 두 줄: 위 = 정면(천천히 참, 다 차면 기절), 아래 = 어디로든(빠르게 참, 다 차면 "E 봉인" — 0까지 떨어지면 풀림).
     ///   게이지는 비추지 않으면 계속 떨어진다(BE).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 도둑만).
     /// </summary>
@@ -201,18 +201,16 @@ namespace Project1.Presentation
                 Vector3 sp = cam.WorldToScreenPoint(ex.transform.position + Vector3.up * (top + 0.35f));
                 if (sp.z <= 0f) continue;
                 float w = 110f * u, h = 9f * u, x = sp.x - w * 0.5f, y = Screen.height - sp.y;
-                // 지져짐
-                Bar(new Rect(x, y, w, h), ex.Exposure, ex.SkillLocked ? new Color(1f, 0.35f, 0.1f) : new Color(1f, 0.8f, 0.3f));
-                GUI.color = new Color(1f, 1f, 1f, 0.9f);
-                GUI.DrawTexture(new Rect(x + w * ex.LockThreshold - u, y - 2f * u, 2f * u, h + 4f * u), white); // 잠김 선
-                // 정면
-                Bar(new Rect(x, y + h + 3f * u, w, h * 0.8f), ex.FrontExposure, new Color(1f, 0.15f, 0.1f));
+                // 위 칸: 정면(다 차면 기절)
+                Bar(new Rect(x, y, w, h * 0.8f), ex.FrontExposure, new Color(1f, 0.15f, 0.1f));
+                // 아래 칸: 어디로든(다 차면 E 봉인)
+                Bar(new Rect(x, y + h * 0.8f + 3f * u, w, h), ex.Exposure, ex.SkillLocked ? new Color(1f, 0.35f, 0.1f) : new Color(1f, 0.8f, 0.3f));
                 if (ex.SkillLocked)
                 {
                     var style = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(15 * u), fontStyle = FontStyle.Bold, alignment = TextAnchor.LowerCenter };
                     style.normal.textColor = new Color(1f, 0.5f, 0.2f);
                     GUI.color = Color.white;
-                    GUI.Label(new Rect(x - 20f * u, y - 24f * u, w + 40f * u, 22f * u), "E 잠김", style);
+                    GUI.Label(new Rect(x - 20f * u, y - 24f * u, w + 40f * u, 22f * u), "E 봉인", style);
                 }
             }
             GUI.color = Color.white;
