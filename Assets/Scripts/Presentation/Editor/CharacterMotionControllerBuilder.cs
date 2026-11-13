@@ -42,6 +42,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
+            "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
         };
 
@@ -70,6 +71,8 @@ namespace Project1.Presentation.EditorTools
             ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino"), ("Idle", "Idle_Luchino") } }), // 루키노: 가로 베기, 웅크린 대기(Crouch Idle)
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
+            // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
+            ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
             ("Thief", new[] { new[] { ("Idle", "Idle_Thief") } }),                                     // 도둑: 가만히 있을 때 Ninja Idle

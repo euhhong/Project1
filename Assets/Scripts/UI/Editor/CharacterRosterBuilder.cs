@@ -40,7 +40,7 @@ namespace Project1.UI.EditorTools
         // 캐릭터별 게임 Controller(없으면 생존자 CharacterLocomotion / 감시자 HunterLocomotion). CharacterMotionControllerBuilder의 표와 같다.
         private static readonly Dictionary<string, string> Controllers = new()
         {
-            ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion",
+            ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion", ["Hunter_SmileyFace"] = "SmileyFaceLocomotion",
             ["Survivor_MindsEye"] = "MindsEyeLocomotion", ["Survivor_Thief"] = "ThiefLocomotion",
         };
 

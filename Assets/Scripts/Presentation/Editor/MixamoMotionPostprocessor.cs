@@ -39,6 +39,9 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light_Hastur"] = new Vector2(8, 44),      // Standing 2H Magic Attack 03: 두 손 들기 → 앞으로 내뻗기(28~36). 뒤의 긴 유지 자세는 뺌
             ["Attack_Light_MindsEye"] = new Vector2(10, 48),   // Standing Melee Combo Attack Ver. 3: 첫 타 가로 베기(24~31) → 한 바퀴 돌아 앞을 봄(48). 두 번째 타는 뺌
             ["Attack_RunJump_Hunter"] = new Vector2(36, 70),   // 무기를 든 자세 → 내려치기 → 마무리(앞의 달리기·마지막 대기는 뺌)
+            // 광대: 무조건 두 손으로 머리 위에서 아래로 내려치기(같은 Run Jump Attack의 내려치기 부분, 상체만)
+            ["Attack_Light_Joker"] = new Vector2(36, 70),
+            ["Attack_Heavy_Joker"] = new Vector2(36, 70),
             ["Air"] = new Vector2(0, 22),                      // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
             ["Air_F"] = new Vector2(25, 44),                   // Jumping(걸어서 점프): 발이 떨어짐(25) → 꼭대기(34) → 착지(44)
             ["Air_Run"] = new Vector2(0, 20),                  // Running Jump(뛰면서 점프): 도약(0) → 꼭대기(10) → 착지(20)

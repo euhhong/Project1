@@ -7,7 +7,7 @@
   Animator Controller 재구성은 자동으로 된다(`Presentation/Editor/MixamoMotionPostprocessor.cs`,
   `CharacterMotionControllerBuilder.cs`, 메뉴 Tools > FE > 모션 컨트롤러 다시 만들기).
 - 생존자는 `_Motions/CharacterLocomotion.controller`를 쓴다. 감시자는 Override Controller를 쓴다:
-  공장장·사냥터지기·안토니오·리퍼·광대 = `HunterLocomotion`, 루키노 = `LuchinoLocomotion`,
+  공장장·사냥터지기·안토니오·리퍼 = `HunterLocomotion`, 광대 = `SmileyFaceLocomotion`, 루키노 = `LuchinoLocomotion`,
   붉은나비(게이샤) = `GeishaLocomotion`, 하스터 = `HasturLocomotion`. 감시자 공통 모션(`_Hunter`) 위에 캐릭터 모션(`_<이름>`)을 덮는다.
 - 공격 모션의 판정 순간(손·발이 맞는 프레임)은 `Presentation/Animation/CharacterAttackAnimator.cs`의 `Timing` 표에 적는다.
 
@@ -24,7 +24,8 @@
 | Run_B / Run_L / Run_R | 뒤·옆 달리기 | 대기 — 지금은 같은 방향 걷기를 1.7배속으로 빌려 씀 | |
 | Attack_Light | 기본 공격(생존자, 맹인 제외) | **받음** — 오른손 훅 2~30프레임(판정 6~11). 만화 "펑" 효과 + 리치 1.8m(CartoonPunch) | Mutant Punch (전: Boxing) |
 | Attack_Light_MindsEye | 맹인 기본 공격 → `MindsEyeLocomotion` | **받음** — 10~48프레임, 첫 타 가로 베기 24~31 후 한 바퀴 돌아 앞을 봄(두 번째 타는 뺌) | Standing Melee Combo Attack Ver. 3 |
-| Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼·광대) → `HunterLocomotion` | **받음** — 6~50프레임, 오른손 내려치기 20~28 | Standing Melee Attack Downward |
+| Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼) → `HunterLocomotion` | **받음** — 6~50프레임, 오른손 내려치기 20~28 | Standing Melee Attack Downward |
+| Attack_Light_Joker / Attack_Heavy_Joker | 광대 약·강공격(어떤 공격 입력이든) → `SmileyFaceLocomotion` | **받음** — 36~70프레임, 두 손 로켓을 머리 위로 들었다가 아래로 내려치기 47~55(상체 레이어). 강공격 모으기는 Carry_Joker 자세 | Standing Melee Run Jump Attack(내려치기 부분) |
 | Attack_Light_Luchino | 루키노 기본 공격 → `LuchinoLocomotion` | **받음** — 4~60프레임, 오른손 가로 베기 22~29 | Standing Melee Attack Horizontal |
 | Attack_Light_Geisha | 붉은나비 기본 공격 → `GeishaLocomotion` | **받음** — 6~60프레임, 오른손 찌르기 14~25(왼손은 횃불 자세). 붉은나비는 유령처럼 이동(걷기·달리기도 대기 자세로 미끄러짐), 다리 Hurtbox 없음 | Standing Torch Melee Attack Stab |
 | Attack_Light_Hastur | 하스터 기본 공격 → `HasturLocomotion` | **받음** — 8~44프레임, 두 손 내뻗기 28~36(뒤의 긴 유지 자세는 뺌) | Standing 2H Magic Attack 03 |
