@@ -54,7 +54,7 @@ namespace Project1.Map.EditorTools
         // 본채
         private const float MainW = 44f, MainD = 30f;
         private static readonly Vector3 MainOrigin = new(-22f, 0f, -32f);
-        private static readonly Rect2 Atrium = new(12f, 4f, 32f, 24f);   // 로비(2F까지 트임)
+        private static readonly Rect2 Atrium = new(13f, 4f, 31f, 24f);   // 로비(2F까지 트임). 서·동 복도는 x 9..13, 31..35(폭 4m)
         private static readonly Rect2 MainWell = new(17f, 9f, 27f, 19f); // 3F 바닥의 트인 곳
         private const float ChandelierY = 9.8f;
         private static readonly Rect2 MainCollapse = new(33.5f, 26f, 38f, 29.6f); // 북 복도 동쪽: 2F·3F 바닥·지붕까지 무너져 하늘로 트임(루키노 도약 자리)
@@ -111,8 +111,8 @@ namespace Project1.Map.EditorTools
             BuildSideHall(Group(root, "Hall_West", new Vector3(-36f, 0f, 6f)), east: false, floors: 3, d: 24f);
             BuildSideHall(Group(root, "Hall_East", new Vector3(18f, 0f, 6f)), east: true, floors: 2, d: 22f);
             var connectors = Group(root, "Connectors", Vector3.zero);
-            BuildConnector(connectors, "Connector_W", -21f, -18f);
-            BuildConnector(connectors, "Connector_E", 18f, 21f);
+            BuildConnector(connectors, "Connector_W", -22f, -18f);
+            BuildConnector(connectors, "Connector_E", 18f, 22f);
             BuildGrounds(Group(root, "Grounds", Vector3.zero));
             BuildPerimeter(Group(root, "Perimeter", Vector3.zero));
 
@@ -166,10 +166,12 @@ namespace Project1.Map.EditorTools
                 WallX(w, "Outer_S", -0.2f, W + 0.2f, 0f, fy, hOut, WallT, wallMat, outerS[f]);
                 WallZ(w, "Outer_W", 0f, D, 0f, fy, hOut, WallT, wallMat, outerSide[f]);
                 WallZ(w, "Outer_E", 0f, D, W, fy, hOut, WallT, wallMat, outerSide[f]);
-                WallZ(w, "Corr_W", 0.2f, 24f, 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f));
+                // 3F 서쪽은 예배실이 북쪽 벽까지(9×18m) — 복도 쪽 문 하나 더
+                if (f == 2) WallZ(w, "Corr_W", 0.2f, D - 0.2f, 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f), Door(27f));
+                else WallZ(w, "Corr_W", 0.2f, 24f, 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f));
                 WallZ(w, "Corr_E", 0.2f, 24f, W - 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f));
                 WallX(w, "W_Split", 0.2f, 9f, 12f, fy, InH, WallT, wallMat);
-                WallX(w, "W_North", 0.2f, 9f, 24f, fy, InH, WallT, wallMat);
+                if (f != 2) WallX(w, "W_North", 0.2f, 9f, 24f, fy, InH, WallT, wallMat);
                 WallX(w, "E_Split", W - 9f, W - 0.2f, 12f, fy, InH, WallT, wallMat);
                 WallX(w, "E_North", W - 9f, W - 0.2f, 24f, fy, InH, WallT, wallMat);
             }
@@ -180,8 +182,8 @@ namespace Project1.Map.EditorTools
             Stair(st, "W_2F", new Vector3(5.45f, F2, s1), Vector3.back, 3.5f, Story);
             Stair(st, "E_1F", new Vector3(W - 1.95f, G, s0), Vector3.forward, 3.5f, Story);
             Stair(st, "E_2F", new Vector3(W - 5.45f, F2, s1), Vector3.back, 3.5f, Story);
-            Stair(st, "Grand_W", new Vector3(14.5f, G, 4f + StairLen), Vector3.back, 3f, Story); // 로비 → 2F 남 회랑
-            Stair(st, "Grand_E", new Vector3(29.5f, G, 4f + StairLen), Vector3.back, 3f, Story);
+            Stair(st, "Grand_W", new Vector3(15.5f, G, 4f + StairLen), Vector3.back, 3f, Story); // 로비 → 2F 남 회랑
+            Stair(st, "Grand_E", new Vector3(28.5f, G, 4f + StairLen), Vector3.back, 3f, Story);
             BoxMM(st, "W_Fill", new Vector3(0.2f, G, s1), new Vector3(3.7f, F2 - SlabT, 11.8f), wallMat);
             BoxMM(st, "E_Fill", new Vector3(W - 3.7f, G, s1), new Vector3(W - 0.2f, F2 - SlabT, 11.8f), wallMat);
             WallX(st, "W_2F_Rail", 0.2f, 3.7f, s0, F2, RailH, RailT, accentMat);
@@ -197,10 +199,10 @@ namespace Project1.Map.EditorTools
             var cols = Group(m, "Columns", Vector3.zero);
             foreach (float z in new[] { 4f, 9f, 14f, 19f, 24f })
             {
-                Pillar(cols, $"W_{z:0}", 12f, z, 1f, G, RoofTop - SlabT);
-                Pillar(cols, $"E_{z:0}", 32f, z, 1f, G, RoofTop - SlabT);
+                Pillar(cols, $"W_{z:0}", Atrium.x0, z, 1f, G, RoofTop - SlabT);
+                Pillar(cols, $"E_{z:0}", Atrium.x1, z, 1f, G, RoofTop - SlabT);
             }
-            foreach (float x in new[] { 17f, 22f, 27f })
+            foreach (float x in new[] { 18f, 22f, 26f })
             {
                 Pillar(cols, $"S_{x:0}", x, 4f, 1f, G, RoofTop - SlabT);
                 Pillar(cols, $"N_{x:0}", x, 24f, 1f, G, RoofTop - SlabT);
@@ -210,7 +212,7 @@ namespace Project1.Map.EditorTools
 
             // 2F 회랑 난간(로비 내려다봄, 틈 = 뛰어내림)
             var r2 = Group(m, "2F_Gallery", Vector3.zero);
-            WallX(r2, "S", Atrium.x0, Atrium.x1, Atrium.z0, F2, RailH, RailT, accentMat, Gap(13f, 16f), Gap(21f, 23f), Gap(28f, 31f));
+            WallX(r2, "S", Atrium.x0, Atrium.x1, Atrium.z0, F2, RailH, RailT, accentMat, Gap(14f, 17f), Gap(21f, 23f), Gap(27f, 30f));
             WallX(r2, "N", Atrium.x0, Atrium.x1, Atrium.z1, F2, RailH, RailT, accentMat, Gap(21f, 23f));
             WallZ(r2, "W", Atrium.z0, Atrium.z1, Atrium.x0, F2, RailH, RailT, accentMat, Gap(13f, 15f));
             WallZ(r2, "E", Atrium.z0, Atrium.z1, Atrium.x1, F2, RailH, RailT, accentMat, Gap(13f, 15f));
@@ -289,16 +291,19 @@ namespace Project1.Map.EditorTools
             foreach (float z in new[] { 14f, 17f, 20f })
                 BoxMM(r, $"Shower_{z:0}", new Vector3(E(1.8f), F2, z), new Vector3(E(0.2f), F2 + 2.2f, z + 0.1f), wallMat);
 
-            // 3F 서: 예배실(북쪽 제단 단 0.8m + 제단, 장의자 4줄 — 가운데 통로) / 동: 창고(상자 더미)
-            BoxMM(r, "Chapel_AltarStep", new Vector3(1.5f, F3 - 0.05f, 21.2f), new Vector3(7.5f, F3 + 0.8f, 23.8f), accentMat);
-            BoxMM(r, "Chapel_Altar", new Vector3(3.8f, F3 + 0.8f, 22.4f), new Vector3(5.2f, F3 + 2f, 23.2f), wallMat);
-            for (int i = 0; i < 4; i++)
+            // 3F 서: 예배실(x 0..9, z 12..30 — 9×18m). 남쪽 제단 단 0.8m + 제단 + 촛대 기둥 2, 장의자 6줄(제단을 봄, 가운데 통로),
+            //   북쪽 끝은 비워 둠(연결동 옥상 길 문). 복도 쪽 문 4개(z 6은 계단실, 15·21·27).  / 동: 창고(상자 더미)
+            BoxMM(r, "Chapel_AltarStep", new Vector3(1.5f, F3 - 0.05f, 12.2f), new Vector3(7.5f, F3 + 0.8f, 14.6f), accentMat);
+            BoxMM(r, "Chapel_Altar", new Vector3(3.8f, F3 + 0.8f, 12.8f), new Vector3(5.2f, F3 + 2f, 13.6f), wallMat);
+            Pillar(r, "Chapel_Candle_W", 2.2f, 13.4f, 0.4f, F3 + 0.8f, F3 + 2.6f);
+            Pillar(r, "Chapel_Candle_E", 6.8f, 13.4f, 0.4f, F3 + 0.8f, F3 + 2.6f);
+            for (int i = 0; i < 6; i++)
             {
-                float z = 13.2f + i * 2f;
-                foreach (var (a, b) in new[] { (0.8f, 3.6f), (4.6f, 7.4f) })
+                float z = 16.4f + i * 1.8f;
+                foreach (var (a, b) in new[] { (0.8f, 3.8f), (5f, 8f) })
                 {
                     BoxMM(r, $"Pew_{i}_{a:0.#}", new Vector3(a, F3 - 0.05f, z), new Vector3(b, F3 + 0.5f, z + 0.6f), accentMat);
-                    BoxMM(r, $"PewBack_{i}_{a:0.#}", new Vector3(a, F3 + 0.5f, z - 0.15f), new Vector3(b, F3 + 1.2f, z), accentMat);
+                    BoxMM(r, $"PewBack_{i}_{a:0.#}", new Vector3(a, F3 + 0.5f, z + 0.6f), new Vector3(b, F3 + 1.2f, z + 0.75f), accentMat);
                 }
             }
             BoxMM(r, "Storage_A", new Vector3(E(7.5f), F3, 13.5f), new Vector3(E(5.5f), F3 + 1.2f, 15.5f), accentMat);
@@ -330,8 +335,8 @@ namespace Project1.Map.EditorTools
             var screens = Group(l, "FoldingScreens", Vector3.zero);
             FoldingScreen(screens, "S", new Vector3(22f - 6 * ScreenStep / 2f, G, 10.2f), true, 6);
             FoldingScreen(screens, "N", new Vector3(22f - 6 * ScreenStep / 2f, G, 18.8f), true, 6);
-            FoldingScreen(screens, "W", new Vector3(15.4f, G, 13.2f), false, 4);
-            FoldingScreen(screens, "E", new Vector3(28.6f, G, 13.2f), false, 4);
+            FoldingScreen(screens, "W", new Vector3(15.4f, G, 13.4f), false, 4);
+            FoldingScreen(screens, "E", new Vector3(28.6f, G, 13.4f), false, 4);
 
             var ch = Group(l, "Chandelier", new Vector3(22f, ChandelierY, 14f));
             const float r = 3.5f;
@@ -368,9 +373,9 @@ namespace Project1.Map.EditorTools
             float s0 = 10.5f, s1 = s0 + StairLen; // 18.9
             var hole1 = R(0.2f, s0, 3.7f, s1);
             var hole2 = R(3.7f, s0, 7.2f, s1);
-            var lib = R(3f, 0.2f, 12f, 6.5f);
+            var lib = R(3f, 0.2f, 11f, 6.5f);
             var libCollapse = R(4f, 1f, 8.5f, 5.5f);      // 서재 지붕이 무너져 하늘이 보임(서관)
-            var dormCollapse = R(10.5f, 3f, 14f, 8f);     // 락커룸·숙소 위가 옥상까지 무너짐(동관)
+            var dormCollapse = R(10f, 3f, 13.3f, 8f);     // 락커룸·숙소 위가 옥상까지 무너짐(동관)
             const float topY = F3;                 // 2F→ 계단이 끝나는 높이(서관 3F / 동관 옥상 테라스)
 
             var fl = Group(h, "Floors", Vector3.zero);
@@ -399,8 +404,8 @@ namespace Project1.Map.EditorTools
                 HZ(wg, "Outer_Out", 0f, d, 0f, fy, hOut, WallT, wallMat, ground ? new[] { Win(4.5f), Win(d - 2f) } : new[] { Win(4.5f), Win(15f), Win(d - 2f) }); // 1층 z 10..20은 낮은 테라스
                 HZ(wg, "Outer_Court", 0f, d, w, fy, hOut, WallT, wallMat,
                     ground ? new[] { Win(3f), Door(8f), Win(13f), Door(d - 5f) } : new[] { Win(4f), Win(10f), Win(16f), Win(d - 3f) });
-                HZ(wg, "Corridor", 0.2f, d - 0.2f, 15f, fy, InH, WallT, wallMat, Door(4.5f), Door(13f), Door(d - 3.5f));
-                HX(wg, "Split", 0.2f, 15f, 9f, fy, InH, WallT, wallMat);
+                HZ(wg, "Corridor", 0.2f, d - 0.2f, 14f, fy, InH, WallT, wallMat, Door(4.5f), Door(13f), Door(d - 3.5f)); // 복도 x 14..18(폭 4m)
+                HX(wg, "Split", 0.2f, 14f, 9f, fy, InH, WallT, wallMat);
             }
 
             var st = Group(h, "Stairs", Vector3.zero);
@@ -416,16 +421,16 @@ namespace Project1.Map.EditorTools
             if (tall)
             {
                 // 서재: 2.8m 책장 줄, 2F·3F 회랑 난간(트인 곳 가장자리, 틈 = 뛰어내림)
-                foreach (float x in new[] { 4.5f, 7.5f, 10.5f })
+                foreach (float x in new[] { 4.5f, 7f, 9.5f })
                     HZ(fu, $"Shelf_{x:0.#}", 1.2f, 6f, x, G, 2.8f, 0.6f, accentMat);
                 foreach (var fy in new[] { F2, F3 })
                 {
                     HZ(fu, $"LibRail_W_{fy:0}", 0.2f, 6.5f, 3f, fy, RailH, RailT, accentMat, Gap(2.5f, 4f));
-                    HZ(fu, $"LibRail_E_{fy:0}", 0.2f, 6.5f, 12f, fy, RailH, RailT, accentMat);
-                    HX(fu, $"LibRail_N_{fy:0}", 3f, 12f, 6.5f, fy, RailH, RailT, accentMat, Gap(6.5f, 8.5f));
+                    HZ(fu, $"LibRail_E_{fy:0}", 0.2f, 6.5f, 11f, fy, RailH, RailT, accentMat);
+                    HX(fu, $"LibRail_N_{fy:0}", 3f, 11f, 6.5f, fy, RailH, RailT, accentMat, Gap(6f, 8f));
                 }
                 foreach (var fy in new[] { G, F2, F3 })
-                    HB(fu, $"ReadingDesk_{fy:0}", new Vector3(9f, fy, 13f), new Vector3(13f, fy + 0.9f, 15f), accentMat);
+                    HB(fu, $"ReadingDesk_{fy:0}", new Vector3(8.5f, fy, 13f), new Vector3(12.5f, fy + 0.9f, 15f), accentMat);
             }
             else
             {
@@ -435,9 +440,9 @@ namespace Project1.Map.EditorTools
                 for (int i = 0; i < 3; i++) // 2F 숙소: 침대 3개
                     HB(fu, $"Bunk_{i}", new Vector3(1f + i * 4.5f, F2, 0.6f), new Vector3(3.2f + i * 4.5f, F2 + 1.4f, 2.6f), accentMat);
                 foreach (var fy in new[] { G, F2 })
-                    HB(fu, $"Workbench_{fy:0}", new Vector3(9f, fy, 13f), new Vector3(13.5f, fy + 1f, 14.4f), accentMat);
+                    HB(fu, $"Workbench_{fy:0}", new Vector3(8.5f, fy, 13f), new Vector3(13f, fy + 1f, 14.4f), accentMat);
                 // 옥상 테라스: 둘레 난간(남쪽 안뜰 쪽 x 15..18 = 연결동 옥상 길), 굴뚝 2, 낮은 벽
-                HX(fu, "Terrace_Rail_S", -0.25f, w + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(15f, 18.25f));
+                HX(fu, "Terrace_Rail_S", -0.25f, w + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(14f, 18.25f));
                 HX(fu, "Terrace_Rail_N", -0.25f, w + 0.25f, d + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
                 HZ(fu, "Terrace_Rail_Out", -0.25f, d + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(6f, 8f));
                 HZ(fu, "Terrace_Rail_Court", -0.25f, d + 0.25f, w + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
