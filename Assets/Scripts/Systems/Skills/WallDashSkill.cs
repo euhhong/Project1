@@ -96,10 +96,30 @@ namespace Project1.Systems
                 }
 
                 case Dashing:
+                    if (motor != null && motor.HitObstacle && IsWall(ctx, motor.LastObstacle)) SlideAlongWall(ctx, motor.LastObstacleNormal);
                     if (ctx.PhaseTime >= dashTime) ctx.SetPhase(Active);
                     break;
             }
             return false;
+        }
+
+        [Tooltip("도약 중 벽에 닿았을 때, 벽을 따라가는 성분이 이 값(0~1)보다 크면 벽을 따라 같은 속도로 미끄러진다(ㄱ자 이동). 정면으로 박으면 그대로.")]
+        [Range(0f, 1f)] public float slideMinTangent = 0.15f;
+
+        /// <summary>
+        /// 도약 중 벽에 닿으면 벽 쪽으로 파고드는 성분을 빼고 벽을 따라가는 방향으로 바꾼다(속도는 그대로). 비비며 짧게 멈추지 않고 부드럽게 미끄러진다.
+        /// Direction은 몸(시야) 기준이므로 월드로 바꿔 계산한 뒤 되돌린다.
+        /// </summary>
+        private void SlideAlongWall(CharacterSkill ctx, Vector3 wallNormal)
+        {
+            if (wallNormal.sqrMagnitude < 0.5f) return;
+            Quaternion body = ctx.transform.rotation;
+            Vector3 world = body * ctx.Direction;
+            if (Vector3.Dot(world, wallNormal) >= 0f) return;   // 벽에서 멀어지는 중
+            Vector3 along = Vector3.ProjectOnPlane(world, wallNormal);
+            along.y = 0f;
+            if (along.magnitude < slideMinTangent) return;       // 거의 정면으로 박음 → 그대로
+            ctx.Direction = Quaternion.Inverse(body) * along.normalized;
         }
 
         public override bool Afterimage(CharacterSkill ctx) => ctx.Phase == Dashing;

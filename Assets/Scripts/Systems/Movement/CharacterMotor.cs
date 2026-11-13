@@ -41,6 +41,9 @@ namespace Project1.Systems
         /// <summary>HitObstacle일 때 옆으로 부딪힌 Collider(다른 캐릭터인지 구분할 때 쓴다). 없으면 null.</summary>
         public Collider LastObstacle { get; private set; }
 
+        /// <summary>HitObstacle일 때 옆으로 부딪힌 면의 바깥쪽 방향(월드, 수평). 벽을 따라 미끄러질 때 쓴다(예: 용병 도약).</summary>
+        public Vector3 LastObstacleNormal { get; private set; }
+
         /// <summary>중력 가속도(m/s², 음수).</summary>
         public float Gravity => gravity;
 
@@ -200,7 +203,11 @@ namespace Project1.Systems
         // controller.Move 도중에 불린다. 옆으로 부딪힌 것(바닥·천장 제외)을 기억한다.
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (Mathf.Abs(hit.normal.y) < 0.5f) LastObstacle = hit.collider;
+            if (Mathf.Abs(hit.normal.y) < 0.5f)
+            {
+                LastObstacle = hit.collider;
+                LastObstacleNormal = Vector3.ProjectOnPlane(hit.normal, Vector3.up).normalized;
+            }
         }
 
         // 컴포넌트를 처음 붙일 때 CharacterController 크기를 자식 모델에 맞춘다.
