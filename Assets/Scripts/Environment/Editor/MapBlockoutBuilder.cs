@@ -42,12 +42,14 @@ namespace Project1.Map.EditorTools
         private const float WinW = 1.8f, WinSill = 1.0f, WinTop = 4.0f;
         private const float ArchW = 3f, ArchH = 4.4f;
         private const float RailH = 1f, RailT = 0.15f;
+        private const float LowTerraceH = 2.4f; // 낮은 테라스·부두 높이: 땅에서 매달려 올라가는 턱(점프 꼭대기 발 기준 1.2m 위)
 
         // 계단
         private const int StairSteps = 20;
         private const float StairRun = 0.4f;
 
         private static readonly Vector3 BuildingOrigin = new(-19f, 0f, -21f);
+        private static readonly Vector3 AnnexOrigin = new(14f, 0f, -8f);
 
         private static Material floorMat, wallMat, accentMat;
 
@@ -97,6 +99,7 @@ namespace Project1.Map.EditorTools
             Undo.RegisterCreatedObjectUndo(root.gameObject, "Build MapBlockout");
 
             BuildMainHouse(Group(root, "MainHouse", BuildingOrigin));
+            BuildAnnex(Group(root, "Annex", AnnexOrigin));
             BuildYard(Group(root, "Yard", Vector3.zero));
             BuildPerimeter(Group(root, "Perimeter", Vector3.zero));
 
@@ -161,7 +164,7 @@ namespace Project1.Map.EditorTools
             WallX(w2, "Outer_S", -0.2f, 28.2f, 0f, F2, Story, WallT, wallMat, Win(3.9f), Door(11.2f), Win(15.9f), Door(20.2f), Win(25f));
             WallX(w2, "Outer_N", -0.2f, 28.2f, 19f, F2, Story, WallT, wallMat, Win(5.9f), Win(14f), Door(23.2f));
             WallZ(w2, "Outer_W", 0f, 19f, 0f, F2, Story, WallT, wallMat, Win(12f), Win(16f));
-            WallZ(w2, "Outer_E", 0f, 19f, 28f, F2, Story, WallT, wallMat, Win(4.9f), Win(18f));
+            WallZ(w2, "Outer_E", 0f, 19f, 28f, F2, Story, WallT, wallMat, Win(4.9f), Door(17.4f)); // 17.4 = 별관 다리 문
             WallX(w2, "Part_W_S", 3f, 10f, 6f, F2, InH, WallT, wallMat, Door(6.5f));
             WallX(w2, "Part_W_N", 0.2f, 10f, 14f, F2, InH, WallT, wallMat, Door(6.5f));
             WallX(w2, "Part_E_S", 18f, 27.8f, 6f, F2, InH, WallT, wallMat, Door(22f));
@@ -179,11 +182,11 @@ namespace Project1.Map.EditorTools
 
             // 남쪽 발코니 + 외부 계단 C + 아래 기둥 회랑
             var bs = Group(house, "Balcony_S", Vector3.zero);
-            Slab(bs, "Floor", new Rect2(8f, -3f, 26f, -0.2f), F2, SlabT, floorMat);
-            WallX(bs, "Rail_S", 8f, 26f, -2.925f, F2, RailH, RailT, accentMat, Gap(12f, 14f), Gap(21f, 23f));
-            WallZ(bs, "Rail_E", -3f, -0.2f, 25.925f, F2, RailH, RailT, accentMat);
+            Slab(bs, "Floor", new Rect2(8f, -4.5f, 26f, -0.2f), F2, SlabT, floorMat); // 깊이 4.5m 테라스
+            WallX(bs, "Rail_S", 8f, 26f, -4.425f, F2, RailH, RailT, accentMat, Gap(12f, 14f), Gap(21f, 23f));
+            WallZ(bs, "Rail_E", -4.5f, -0.2f, 25.925f, F2, RailH, RailT, accentMat);
             foreach (float x in new[] { 8.4f, 11f, 17f, 22f, 25.6f })
-                Pillar(bs, $"Pillar_{x:0.#}", x, -2.6f, 0.6f, -0.3f, F2 - SlabT);
+                Pillar(bs, $"Pillar_{x:0.#}", x, -4.1f, 0.6f, -0.3f, F2 - SlabT);
             // 지형(≈0)에서 2F 바닥까지. 맨 윗단이 발코니 서쪽 끝(x 8)에 닿는다.
             Stair(bs, "Stair_C_Outside", new Vector3(8f - (StairSteps - 1) * StairRun, 0f, -1.5f), Vector3.right, 2.6f, F2);
 
@@ -195,6 +198,74 @@ namespace Project1.Map.EditorTools
             WallZ(bn, "Rail_E", 19.2f, 21.5f, 28.125f, F2, RailH, RailT, accentMat);
             Pillar(bn, "Pillar_W", 18.4f, 21.1f, 0.5f, -0.3f, F2 - SlabT);
             Pillar(bn, "Pillar_E", 27.8f, 21.1f, 0.5f, -0.3f, F2 - SlabT);
+
+            // 서쪽 낮은 테라스(2.4m): 땅에서 매달려 올라가거나, 남쪽 상자(1.2m)를 밟고 두 번 뛰어 올라섬.
+            // 서쪽 가장자리 북쪽 절반은 난간(매달렸다 난간 넘어 올라감), 남쪽 절반은 맨 턱.
+            var tw = Group(house, "Terrace_W", Vector3.zero);
+            BoxMM(tw, "Block", new Vector3(-5f, -0.3f, 5f), new Vector3(-0.2f, LowTerraceH, 12f), accentMat);
+            WallZ(tw, "Rail_W", 8.5f, 12f, -4.925f, LowTerraceH, RailH, RailT, accentMat);
+            BoxMM(tw, "StepCrate", new Vector3(-3.8f, -0.3f, 3.8f), new Vector3(-2.6f, 1.2f, 5f), accentMat);
+        }
+
+        // ───────────────────────────── 별관(1층 + 옥상 테라스) ─────────────────────────────
+        // 로컬 좌표: x 0..16(동), z 0..14(북). 월드 x 14..30, z -8..6. 옥상(= 본관 2F 높이)이 하늘 열린 넓은 테라스.
+        // 옥상 오르는 길: 본관 2F 동쪽 문 → 다리 / 북쪽 바깥 계단 D / 동쪽 부두(2.4m)에서 매달려 올라감(난간 있는 곳·없는 곳).
+        // 옥상 가운데 작은 정자(지붕 3.4m: 매달려 올라섬), 큰 벽·낮은 벽. 옥상 가장자리 난간 틈으로 뛰어내림.
+        private static void BuildAnnex(Transform annex)
+        {
+            const float sx = 16f, sz = 14f;
+            const float InH = Story - SlabT;
+
+            // 1F 바닥·옥상(옥상 판은 벽 겉면보다 5cm 밖으로: 같은 면 깜빡임 방지)
+            Slab(annex, "1F_Floor", new Rect2(-0.1f, -0.1f, sx + 0.1f, sz + 0.1f), G, 0.35f, floorMat);
+            Slab(annex, "Roof", new Rect2(-0.25f, -0.25f, sx + 0.25f, sz + 0.25f), F2, SlabT, floorMat);
+
+            // 1F 벽(위는 옥상 판 밑면까지)
+            var w = Group(annex, "1F_Walls", Vector3.zero);
+            WallX(w, "Outer_S", -0.2f, sx + 0.2f, 0f, G, InH, WallT, wallMat, Win(3f), Door(8f), Win(13f));
+            WallX(w, "Outer_N", -0.2f, sx + 0.2f, sz, G, InH, WallT, wallMat, Door(13.5f));
+            WallZ(w, "Outer_W", 0f, sz, 0f, G, InH, WallT, wallMat, Door(3f), Win(10f));
+            WallZ(w, "Outer_E", 0f, sz, sx, G, InH, WallT, wallMat, Door(1.6f), Win(12.5f));
+            // 가운데 막이 벽(창문) + 기둥 2개: 실내에서 도는 고리
+            WallX(w, "Inner", 4f, 12f, 7f, G, InH, WallT, wallMat, Win(8f));
+            Pillar(w, "Pillar_W", 4f, 3.5f, 0.8f, G, F2 - SlabT);
+            Pillar(w, "Pillar_E", 12f, 3.5f, 0.8f, G, F2 - SlabT);
+
+            // 옥상 난간(틈 = 뛰어내리는 자리, 다리·계단 자리는 열림, 동쪽 z 7..11은 맨 턱 = 부두에서 매달려 올라옴)
+            var r = Group(annex, "Roof_Railings", Vector3.zero);
+            const float e = 0.25f - RailT / 2f;
+            WallX(r, "S", -0.25f, sx + 0.25f, -e, F2, RailH, RailT, accentMat, Gap(3f, 5f), Gap(11f, 13f));
+            WallX(r, "N", -0.25f, sx + 0.25f, sz + e, F2, RailH, RailT, accentMat, Gap(8.6f, 11.2f));
+            WallZ(r, "W", -0.25f, sz + 0.25f, -e, F2, RailH, RailT, accentMat, Gap(2.9f, 5.9f), Gap(10f, 12f));
+            WallZ(r, "E", -0.25f, sz + 0.25f, sx + e, F2, RailH, RailT, accentMat, Gap(7f, 11f));
+
+            // 옥상 위 엄폐물
+            var top = Group(annex, "Roof_Cover", Vector3.zero);
+            WallZ(top, "TallWall", 1f, 5.5f, 5f, F2, 2.6f, 0.4f, wallMat);
+            WallX(top, "LowWall", 2f, 6f, 11.5f, F2, 1f, 0.4f, accentMat);
+            var kioskDoor = new Opening(0.3f, 2.7f, 0f, 2.8f);
+            Shack(top, "Kiosk", new Vector3(9f, F2, 7f), 4f, 3f,
+                s: new[] { Win(2f) }, n: new[] { Win(2f) }, w: new[] { kioskDoor }, e: new[] { kioskDoor }, h: 3f);
+
+            // 다리: 본관 2F 동쪽 문(월드 x 9, z -3.6) → 옥상 서쪽(로컬 z 2.9..5.9). 남쪽 난간 가운데 틈.
+            var br = Group(annex, "Bridge", Vector3.zero);
+            Slab(br, "Floor", new Rect2(-4.8f, 2.9f, -0.25f, 5.9f), F2, SlabT, floorMat);
+            WallX(br, "Rail_N", -4.8f, -0.25f, 5.9f - RailT / 2f, F2, RailH, RailT, accentMat);
+            WallX(br, "Rail_S", -4.8f, -0.25f, 2.9f + RailT / 2f, F2, RailH, RailT, accentMat, Gap(-3.3f, -1.8f));
+
+            // 북쪽 바깥 계단 D(서→동으로 올라감) + 꼭대기 층계참(옥상 북쪽 난간 틈으로 이어짐)
+            var sd = Group(annex, "Stair_D", Vector3.zero);
+            float topX = 1f + (StairSteps - 1) * StairRun;
+            Stair(sd, "Steps", new Vector3(1f, 0f, 15.5f), Vector3.right, 2.5f, F2);
+            Slab(sd, "Landing", new Rect2(topX, sz + 0.25f, 11.2f, 16.75f), F2, SlabT, floorMat);
+            WallX(sd, "Landing_Rail_N", topX, 11.2f, 16.75f - RailT / 2f, F2, RailH, RailT, accentMat);
+            WallZ(sd, "Landing_Rail_E", sz + 0.25f, 16.75f, 11.2f - RailT / 2f, F2, RailH, RailT, accentMat);
+            Pillar(sd, "Landing_Pillar", 10.9f, 16.45f, 0.5f, -0.3f, F2 - SlabT);
+
+            // 동쪽 부두(2.4m): 땅에서 매달려 올라감, 북쪽 상자(1.2m)로 뛰어 올라섬. 부두 위에서 옥상(3.25m 위)으로 매달려 올라감.
+            var dock = Group(annex, "Dock_E", Vector3.zero);
+            BoxMM(dock, "Block", new Vector3(sx + 0.2f, -0.3f, 3f), new Vector3(sx + 3f, LowTerraceH, 11f), accentMat);
+            BoxMM(dock, "StepCrate", new Vector3(sx + 1.4f, -0.3f, 11f), new Vector3(sx + 2.6f, 1.2f, 12.2f), accentMat);
         }
 
         // ───────────────────────────── 야외 마당 ─────────────────────────────
@@ -207,7 +278,7 @@ namespace Project1.Map.EditorTools
             Shack(yard, "Shed_SW", new Vector3(-30f, 0f, -39f), 8f, 6f,
                 s: new[] { Win(4f) }, n: new[] { Win(4f) }, w: new[] { Door(3f) }, e: new[] { Door(3f) });
             // 동쪽 창고: 남·북 문, 동·서 창문
-            Shack(yard, "Shed_E", new Vector3(21f, 0f, -17f), 6f, 7f,
+            Shack(yard, "Shed_E", new Vector3(21f, 0f, -30f), 6f, 7f,
                 s: new[] { Door(3f) }, n: new[] { Door(3f) }, w: new[] { Win(3.5f) }, e: new[] { Win(3.5f) });
 
             var cover = Group(yard, "Cover", Vector3.zero);
@@ -227,8 +298,8 @@ namespace Project1.Map.EditorTools
             // 낮은 벽(1m, 점프로 넘음)
             WallX(cover, "LowWall_SE_1", 13f, 19f, -33f, B, 1f - B, 0.4f, accentMat);
             WallX(cover, "LowWall_SE_2", 13f, 19f, -40f, B, 1f - B, 0.4f, accentMat);
-            WallZ(cover, "LowWall_NE", 4f, 10f, 24f, B, 1f - B, 0.4f, accentMat);
-            WallZ(cover, "LowWall_E", -8f, 0f, 32f, B, 1f - B, 0.4f, accentMat);
+            WallX(cover, "LowWall_NE", 18f, 24f, 14f, B, 1f - B, 0.4f, accentMat);
+            WallZ(cover, "LowWall_E", -20f, -14f, 33f, B, 1f - B, 0.4f, accentMat);
             // 기둥
             foreach (var p in new[] { new Vector2(-12f, -40f), new Vector2(-8f, -40f), new Vector2(-10f, -36f),
                                       new Vector2(20f, 22f), new Vector2(28f, 22f), new Vector2(24f, 26f) })
@@ -255,11 +326,11 @@ namespace Project1.Map.EditorTools
 
         // ───────────────────────────── 조각 ─────────────────────────────
 
-        /// <summary>1층 창고: 바닥·벽(3.6m)·지붕. 각 벽 개구부는 그 벽의 시작점(서·남쪽 모서리)에서 잰 거리.</summary>
+        /// <summary>1층 창고: 바닥·벽(높이 h)·지붕. 각 벽 개구부는 그 벽의 시작점(서·남쪽 모서리)에서 잰 거리.</summary>
         private static void Shack(Transform parent, string name, Vector3 corner, float sx, float sz,
-            Opening[] s, Opening[] n, Opening[] w, Opening[] e)
+            Opening[] s, Opening[] n, Opening[] w, Opening[] e, float h = 4.4f)
         {
-            const float h = 4.4f, t = 0.35f;
+            const float t = 0.35f;
             var g = Group(parent, name, corner);
             Slab(g, "Floor", new Rect2(0f, 0f, sx, sz), G, 0.35f, floorMat);
             Slab(g, "Roof", new Rect2(-0.5f, -0.5f, sx + 0.5f, sz + 0.5f), G + h + 0.25f, 0.25f, accentMat);
