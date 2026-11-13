@@ -30,7 +30,8 @@ namespace Project1.Systems
         }
 
         /// <summary>현재 모양과 겹치는 Collider를 results에 채우고 개수를 돌려준다.</summary>
-        public int Overlap(Collider[] results, int layerMask)
+        /// <param name="offset">모양을 이만큼(월드) 옮겨 검사한다(예: 앞으로 달리며 공격할 때 이동할 자리까지).</param>
+        public int Overlap(Collider[] results, int layerMask, Vector3 offset = default)
         {
             const QueryTriggerInteraction triggers = QueryTriggerInteraction.Collide;
             Transform t = Collider.transform;
@@ -40,7 +41,7 @@ namespace Project1.Systems
             {
                 case SphereCollider sphere:
                 {
-                    Vector3 center = t.TransformPoint(sphere.center);
+                    Vector3 center = t.TransformPoint(sphere.center) + offset;
                     float radius = sphere.radius * Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z));
                     return Physics.OverlapSphereNonAlloc(center, radius, results, layerMask, triggers);
                 }
@@ -53,20 +54,20 @@ namespace Project1.Systems
                                       : Mathf.Max(scale.x, scale.y);
                     float radius = capsule.radius * radiusScale;
                     float half = Mathf.Max(capsule.height * axisScale * 0.5f - radius, 0f);
-                    Vector3 center = t.TransformPoint(capsule.center);
+                    Vector3 center = t.TransformPoint(capsule.center) + offset;
                     Vector3 dir = t.TransformDirection(axis).normalized;
                     return Physics.OverlapCapsuleNonAlloc(center - dir * half, center + dir * half, radius, results, layerMask, triggers);
                 }
                 case BoxCollider box:
                 {
-                    Vector3 center = t.TransformPoint(box.center);
+                    Vector3 center = t.TransformPoint(box.center) + offset;
                     Vector3 halfExtents = Vector3.Scale(box.size * 0.5f, scale);
                     return Physics.OverlapBoxNonAlloc(center, halfExtents, results, t.rotation, layerMask, triggers);
                 }
                 default:
                 {
                     Bounds b = Collider.bounds;
-                    return Physics.OverlapBoxNonAlloc(b.center, b.extents, results, Quaternion.identity, layerMask, triggers);
+                    return Physics.OverlapBoxNonAlloc(b.center + offset, b.extents, results, Quaternion.identity, layerMask, triggers);
                 }
             }
         }

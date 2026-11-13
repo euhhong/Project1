@@ -23,6 +23,8 @@ namespace Project1.Systems
 
         [Tooltip("땅에서 하는 일반 공격(약·강)은, 점프해 발이 이만큼(m) 넘게 높이 뜬 상대(점프 꼭대기 근처)를 맞히지 못한다.")]
         [SerializeField, Min(0f)] private float jumpDodgeHeight = 1.15f;
+        [Tooltip("앞으로 달리며 하는 일반 공격: 판정을 지금 자리에서 앞으로 (속도 × 이 시간)만큼까지 훑는다 — 달려가며 칠 때 이동한 뒤의 자리까지 맞는 긴 리치.")]
+        [SerializeField, Min(0f)] private float moveLeadTime = 0.25f;
         private ICharacterAttackState attackState;
         private readonly Dictionary<int, Candidate> bestThisTick = new();
         private readonly Collider[] overlapBuffer = new Collider[MaxOverlaps];
@@ -84,6 +86,14 @@ namespace Project1.Systems
             if (attackState == null) TryGetComponent(out attackState);
             bool groundNormal = attackState != null && !attackState.IsAirAttack
                 && (attackState.AttackState == CharacterAttackState.Light || attackState.AttackState == CharacterAttackState.Heavy);
+            // 앞으로 달리며 치면: 판정을 앞으로 이동할 자리까지 늘인다(지금·가운데·끝 세 자리를 훑는다).
+            Vector3 lead = Vector3.zero; int leadSamples = 1;
+            if (groundNormal && TryGetComponent(out ICharacterState mover))
+            {
+                Vector3 v = transform.TransformDirection(new Vector3(mover.LocalPlanarVelocity.x, 0f, mover.LocalPlanarVelocity.y));
+                float fwd = Vector3.Dot(v, transform.forward);
+                if (fwd > mover.WalkSpeed * 0.6f) { lead = transform.forward * (fwd * moveLeadTime); leadSamples = 3; }
+            }
             int mask = CombatLayers.HurtboxMask;
 
             foreach (Hitbox hitbox in hitboxes)
@@ -94,7 +104,9 @@ namespace Project1.Systems
                 }
 
                 Vector3 origin = hitbox.Collider.bounds.center;
-                int count = hitbox.Overlap(overlapBuffer, mask);
+                for (int s = 0; s < leadSamples; s++)
+                {
+                int count = hitbox.Overlap(overlapBuffer, mask, leadSamples > 1 ? lead * (s / (float)(leadSamples - 1)) : Vector3.zero);
                 for (int i = 0; i < count; i++)
                 {
                     if (!overlapBuffer[i].TryGetComponent(out Hurtbox hurtbox) || !hurtbox.isActiveAndEnabled)
@@ -116,6 +128,7 @@ namespace Project1.Systems
                     {
                         bestThisTick[victim.Id] = new Candidate(hurtbox.Part, hitbox.Slot, point, distSq, victim.gameObject);
                     }
+                }
                 }
             }
 
