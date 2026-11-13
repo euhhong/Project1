@@ -750,7 +750,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.CharacterMotor
   walkSpeed: 3.6
   runSpeed: 6.5
-  jumpHeight: 1.2
+  jumpHeight: 1.45
   gravity: -20
 --- !u!143 &1846143978
 CharacterController:

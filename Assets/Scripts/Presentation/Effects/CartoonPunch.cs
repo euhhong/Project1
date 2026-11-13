@@ -24,9 +24,9 @@ namespace Project1.Presentation
         [Tooltip("판정 상자가 시작되는 거리(몸 바로 앞).")]
         [SerializeField, Min(0f)] private float reachStart = 0.3f;
         [SerializeField, Min(0.1f)] private float reachWidth = 0.9f;
-        [SerializeField, Min(0.1f)] private float reachHeight = 0.9f;
-        [Tooltip("판정 상자 높이(캐릭터 키 대비, 가슴쯤).")]
-        [SerializeField, Range(0.2f, 1f)] private float heightRatio = 0.62f;
+        [SerializeField, Min(0.1f)] private float reachHeight = 0.8f;
+        [Tooltip("판정 상자 높이(캐릭터 키 대비). 상대 몸 가운데(배~가슴)를 덮되 아래쪽으로 — 점프 꼭대기에 있는 상대 발보다 낮게.")]
+        [SerializeField, Range(0.2f, 1f)] private float heightRatio = 0.45f; // 몸 가운데를 노리되 조금 아래쪽(점프 꼭대기의 상대는 닿지 않게)
         [Tooltip("앞으로 이동하면서 칠 때 판정 끝이 더 나가는 거리(m, 달리기 속도에서 최대, 걷기면 그만큼 덜).")]
         [SerializeField, Min(0f)] private float moveReachBonus = 0.45f;
 

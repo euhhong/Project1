@@ -16,7 +16,7 @@ namespace Project1.Systems
     {
         [SerializeField, Min(0f)] private float walkSpeed = 3.6f;
         [SerializeField, Min(0f)] private float runSpeed = 6.5f;
-        [SerializeField, Min(0f)] private float jumpHeight = 1.2f;
+        [SerializeField, Min(0f)] private float jumpHeight = 1.45f;
         [SerializeField] private float gravity = -20f;
 
         private const float GroundStickSpeed = -2f; // 땅에 붙어 있게 살짝 누르는 속도

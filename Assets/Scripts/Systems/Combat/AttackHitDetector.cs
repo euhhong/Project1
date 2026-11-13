@@ -20,6 +20,10 @@ namespace Project1.Systems
 
         private readonly List<Hitbox> hitboxes = new();
         private readonly HashSet<int> hitVictims = new();
+
+        [Tooltip("땅에서 하는 일반 공격(약·강)은, 점프해 발이 이만큼(m) 넘게 높이 뜬 상대(점프 꼭대기 근처)를 맞히지 못한다.")]
+        [SerializeField, Min(0f)] private float jumpDodgeHeight = 1.15f;
+        private ICharacterAttackState attackState;
         private readonly Dictionary<int, Candidate> bestThisTick = new();
         private readonly Collider[] overlapBuffer = new Collider[MaxOverlaps];
 
@@ -77,6 +81,9 @@ namespace Project1.Systems
             Physics.SyncTransforms();
 
             bestThisTick.Clear();
+            if (attackState == null) TryGetComponent(out attackState);
+            bool groundNormal = attackState != null && !attackState.IsAirAttack
+                && (attackState.AttackState == CharacterAttackState.Light || attackState.AttackState == CharacterAttackState.Heavy);
             int mask = CombatLayers.HurtboxMask;
 
             foreach (Hitbox hitbox in hitboxes)
@@ -100,6 +107,7 @@ namespace Project1.Systems
                     {
                         continue;
                     }
+                    if (groundNormal && JumpedOver(victim)) continue; // 점프 꼭대기 근처의 상대는 땅 일반 공격에 맞지 않는다
 
                     // 같은 틱에 한 대상의 여러 부위가 겹치면 Hitbox에 가장 가까운 부위 하나만.
                     Vector3 point = hurtbox.Collider.ClosestPoint(origin);
@@ -129,6 +137,13 @@ namespace Project1.Systems
                 Hit?.Invoke(hit);
                 HitEvents.Raise(hit);
             }
+        }
+
+        /// <summary>상대가 점프해 발이 내 발보다 jumpDodgeHeight 넘게 높이 떠 있는지.</summary>
+        private bool JumpedOver(CharacterIdentity victim)
+        {
+            if (!victim.TryGetComponent(out ICharacterState vs) || vs.IsGrounded) return false;
+            return victim.transform.position.y - transform.position.y > jumpDodgeHeight;
         }
 
         private readonly struct Candidate
