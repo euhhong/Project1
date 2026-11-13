@@ -17,7 +17,7 @@ namespace Project1.Systems
         [Tooltip("겨누는 시간(초) — 이 뒤에 쏜다.")]
         [Min(0f)] public float windup = 0.2f;
         [Tooltip("쏜 뒤 다시 움직일 수 있을 때까지(초).")]
-        [Min(0f)] public float afterShot = 0.15f;
+        [Min(0f)] public float afterShot = 0.6f; // 쏘기 모션(Skill_Coordinator_Flare, 0.8초)이 끝날 때까지
         [Tooltip("신호탄 속도(m/s).")]
         [Min(0.1f)] public float flareSpeed = 22f;
         [Tooltip("신호탄이 목표 쪽으로 방향을 트는 빠르기(도/초). 클수록 급하게 휜다.")]

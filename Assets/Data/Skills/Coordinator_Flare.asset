@@ -18,7 +18,7 @@ MonoBehaviour:
   cooldown: 0
   castMoveSpeed: 0
   windup: 0.2
-  afterShot: 0.15
+  afterShot: 0.6
   flareSpeed: 22
   turnRate: 140
   hitRadius: 0.35
