@@ -5,8 +5,9 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 리퍼 손톱에 감기는 안개(BE).
-    /// - 공격(약·강·모으기)도 스킬도 하지 않는 동안 chargeInterval(7초)마다 안개가 한 칸씩 모인다(최대 maxCharges = 2칸).
-    ///   공격하거나 스킬을 쓰면 다음 칸까지 모으던 시간은 처음부터 다시 센다(이미 찬 칸은 그대로).
+    /// - 스킬을 쓰지 않는 동안 chargeInterval(7초)마다 안개가 한 칸씩 모인다(최대 maxCharges = 2칸).
+    ///   칼날이 나가지 않은 평타(약·강·모으기)는 모으던 시간을 건드리지 않고, 그동안에도 계속 모인다.
+    ///   스킬(E 칼날 등)을 쓰면 다음 칸까지 모으던 시간은 처음부터 다시 센다(이미 찬 칸은 그대로).
     /// - 2칸이 다 찬 상태에서 공격하면: 판정이 나는 순간(Active) 2칸을 모두 쓰고, 손톱 모양 안개 칼날이 공격 방향으로
     ///   맵 끝까지(maxRange) 일자로 날아간다(HomingProjectile, 목표 없음). 가장 먼저 닿은 것(상대·벽·바닥)에 맞고 부서진다.
     ///   덜 찬 상태의 공격은 칼날이 나가지 않는다.
@@ -21,7 +22,7 @@ namespace Project1.Systems
     {
         public const string BladeKind = "MistBlade";
 
-        [Tooltip("안개 한 칸이 모이는 시간(초) — 공격하지 않고 있어야 모인다.")]
+        [Tooltip("안개 한 칸이 모이는 시간(초) — 평타 중에도 모이고, 스킬을 쓰면 다음 칸까지 처음부터.")]
         [SerializeField, Min(0.1f)] private float chargeInterval = 7f;
         [Tooltip("모을 수 있는 칸 수. 다 찬 상태에서 공격해야 칼날이 나간다.")]
         [SerializeField, Min(1)] private int maxCharges = 2;
@@ -104,9 +105,9 @@ namespace Project1.Systems
             }
             lastPhase = phase;
 
-            // 공격·스킬을 하지 않는 동안에만 모인다(하면 다음 칸까지 처음부터)
+            // 칼날이 안 나간 평타는 상관없이 계속 모인다. 스킬을 쓰는 동안은 멈추고 다음 칸까지 처음부터
             if (Charges >= maxCharges) { NextProgress = 0f; return; }
-            if (attacking || casting) { NextProgress = 0f; return; }
+            if (casting) { NextProgress = 0f; return; }
             NextProgress += Time.fixedDeltaTime / chargeInterval;
             if (NextProgress >= 1f) { Charges++; NextProgress = 0f; }
         }
