@@ -4,7 +4,7 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 넉백(밀려남, BE): Push로 받은 속도로 수평으로 밀려나고, duration초 동안 0까지 줄어든다(이동 거리 ≈ 속도 × 시간 ÷ 2).
-    /// 밀려나는 동안과 조금 뒤까지 기절(CharacterStun)로 이동·공격·스킬을 못 한다. 벽에 막히면 거기서 멈춘다(CharacterController).
+    /// stun이 켜져 있으면(기본) 밀려나는 동안과 조금 뒤까지 기절(CharacterStun)로 이동·공격·스킬을 못 한다. 끄면 기절 없이 밀리기만 한다(예: 맹인 지팡이 평타). 벽에 막히면 거기서 멈춘다(CharacterController).
     /// 밀려나다가 벽·장애물이나 다른 캐릭터에 옆으로 부딪히면 그때 빠르기만큼 데미지를 입고(impactDamagePerSpeed × 속도, 한 번) 거기서 멈춘다.
     /// 맞은 캐릭터에 그때 붙는다(직접 붙일 필요 없음). 예: 맹인 지팡이.
     /// </summary>
@@ -28,19 +28,20 @@ namespace Project1.Systems
         /// <summary>지금 밀려나는 중인지.</summary>
         public bool Active => time < duration;
 
-        /// <summary>target을 velocity(m/s, 수평)로 duration초 동안 밀어낸다. stunAfter = 다 밀린 뒤 더 기절해 있는 시간(초).</summary>
-        public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f)
+        /// <summary>target을 velocity(m/s, 수평)로 duration초 동안 밀어낸다. stun = 밀리는 동안 기절시킬지, stunAfter = 다 밀린 뒤 더 기절해 있는 시간(초).</summary>
+        public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f, bool stun = true)
         {
             if (target == null || duration <= 0f) return;
             if (!target.TryGetComponent(out Knockback k)) k = target.AddComponent<Knockback>();
-            k.Begin(velocity, duration, stunAfter);
+            k.Begin(velocity, duration, stunAfter, stun);
         }
 
-        private void Begin(Vector3 v, float d, float stunAfter)
+        private void Begin(Vector3 v, float d, float stunAfter, bool doStun)
         {
             controller = GetComponent<CharacterController>();
             velocity = Vector3.ProjectOnPlane(v, Vector3.up);
             duration = d; time = 0f; impacted = false;
+            if (!doStun) return; // 기절 없이 밀리기만(밀리는 동안 이동 입력은 그대로 받는다)
             if (!TryGetComponent(out CharacterStun stun))
             {
                 stun = gameObject.AddComponent<CharacterStun>();
