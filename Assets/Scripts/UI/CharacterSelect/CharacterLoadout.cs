@@ -70,6 +70,7 @@ namespace Project1.UI
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
                 if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
                 attack.SetRunJumpFollowUp(survivorKick); // 생존자: 달리기 점프 공격 중 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기(착지 후딜레이)
+                SetProp<FollowUpKickStun>(player, survivorKick); // 이단으로 뛰어 찬 날아 차기를 맞히면 상대 경직
                 attack.SetHeavyRoots(survivorKick);       // 생존자: 모아서 차는 돌려차기 동안은 멈춰 서서 찬다
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기
             }
