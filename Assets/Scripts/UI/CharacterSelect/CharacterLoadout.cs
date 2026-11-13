@@ -64,7 +64,10 @@ namespace Project1.UI
                           : entry.id == "Survivor_MindsEye" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.Weapon // 맹인: 지팡이(무기)로 맞힌다
                           : entry.id == "Hunter_Hastur" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.LeftHand  // 하스터: 두 손으로 내려찍는다
                           : Project1.Core.HitboxSlot.None;
-                attack.SetAttackSlots(slots, slots);
+                // 생존자 강공격 = 머리를 노리는 왼발 돌려차기(모션은 CharacterAttackAnimator.HeavyKick) → 강공격 판정은 왼발.
+                bool survivorKick = entry.role == CharacterRole.Survivor;
+                attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
+                if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기
             }
             // 만화 타격 효과: 생존자 모두(플라잉킥). 주먹 기본 공격(Mutant Punch·훅 펀치)을 쓰면 펀치 효과 + 늘어난 리치도.

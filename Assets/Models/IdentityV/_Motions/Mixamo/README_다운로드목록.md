@@ -32,6 +32,7 @@
 | Attack_Light_Hastur | 하스터 기본 공격 → `HasturLocomotion` | **받음** — 8~44프레임, 두 손 내뻗기 28~36(뒤의 긴 유지 자세는 뺌) | Standing 2H Magic Attack 03 |
 | Skill_Gamekeeper_Grab | 사냥터지기(노루) E 스킬 그랩 쏘기 | **Blender로 새로 만듦**(`Tools/Blender/make_grab_throw.py`, 바탕 = SelectIdle_Hunter 첫 프레임) — 1 서 있음 → 8 오른팔 당김 → 12 오른쪽 어깨에서 앞으로 일직선 내지름 → 31 서 있음. 게임에서는 내지른 자세(37%)로 멈춘 채 그랩이 서 있을 때의 오른쪽 어깨에서 날아가고, 돌아오면 마무리. 머리는 내내 정면. 공중에서는 못 씀 | (직접 만듦) |
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
+| Attack_HeavyKick | 땅에서 강공격(생존자) — 머리를 노리는 발차기 | **받음** — 0~39프레임 전체, 왼발 돌려차기(판정 12~22) | Martelo 2 |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
