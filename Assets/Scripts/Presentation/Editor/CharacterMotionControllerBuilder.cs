@@ -84,9 +84,10 @@ namespace Project1.Presentation.EditorTools
             ("Ripper", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Ripper"), ("Attack_Heavy", "Attack_Heavy_Ripper"), ("Attack_RunJump_Survivor", "Attack_RunJump_Ripper") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
-            // 손에 아무것도 들지 않은 생존자(용병·도둑): 훅 펀치. 무언가 든 생존자(공군·카우보이·의사·전위·맹인)는 그대로
+            // 손에 아무것도 들지 않은 생존자(용병·도둑·카우보이 — 카우보이 소품은 ModelPropFixer가 없앰): 훅 펀치. 무언가 든 생존자(공군·의사·전위·맹인)는 그대로
             ("Mercenary", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
             ("Thief", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
+            ("Cowboy", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]

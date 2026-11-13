@@ -68,7 +68,7 @@ namespace Project1.UI
             if (Debug.isDebugBuild) Ensure<HealthDebugKeys>(player);
         }
 
-        /// <summary>주먹 기본 공격을 쓰는지: 생존자 기본(Mutant Punch, 클립 Attack_Light) 또는 빈손 생존자 훅 펀치(Attack_Light_HookPunch, 용병·도둑). 무기 공격으로 바꾼 캐릭터는 아님.</summary>
+        /// <summary>주먹 기본 공격을 쓰는지: 생존자 기본(Mutant Punch, 클립 Attack_Light) 또는 빈손 생존자 훅 펀치(Attack_Light_HookPunch, 용병·도둑·카우보이). 무기 공격으로 바꾼 캐릭터는 아님.</summary>
         private static bool UsesDefaultPunch(RuntimeAnimatorController controller)
         {
             if (controller == null) return false;

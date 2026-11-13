@@ -50,7 +50,7 @@ namespace Project1.UI.EditorTools
             ["Hunter_Luchino"] = "LuchinoLocomotion", ["Hunter_Geisha"] = "GeishaLocomotion", ["Hunter_Hastur"] = "HasturLocomotion", ["Hunter_SmileyFace"] = "SmileyFaceLocomotion",
             ["Hunter_Ripper"] = "RipperLocomotion", ["Hunter_HellEmber"] = "HellEmberLocomotion",
             ["Survivor_MindsEye"] = "MindsEyeLocomotion",
-            ["Survivor_Mercenary"] = "MercenaryLocomotion", ["Survivor_Thief"] = "ThiefLocomotion", // 빈손 생존자: 기본 공격 = 훅 펀치(대기 등은 생존자 기본 — 도둑 Ninja Idle은 사용자 요청으로 되돌림)
+            ["Survivor_Mercenary"] = "MercenaryLocomotion", ["Survivor_Thief"] = "ThiefLocomotion", ["Survivor_Cowboy"] = "CowboyLocomotion", // 빈손 생존자: 기본 공격 = 훅 펀치(대기 등은 생존자 기본 — 도둑 Ninja Idle은 사용자 요청으로 되돌림)
         };
 
         [MenuItem("Tools/FE/캐릭터 목록 다시 만들기")]
