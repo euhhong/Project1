@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.GrabShotSkill
   id: Gamekeeper_Grab
   displayName: "\uADF8\uB7A9"
-  castTime: 3
+  castTime: 60
   cooldown: 0
   castMoveSpeed: 0
   windup: 0.3
@@ -34,3 +34,4 @@ MonoBehaviour:
   wallMaxNormalY: 0.6
   towStopReach: 0.1
   pullMotionShare: 0.6
+  aimMoveSpeedRatio: 1

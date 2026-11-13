@@ -5,7 +5,7 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 그랩 쏘기(사냥터지기): E를 누르면 몸이 바로 시야(카메라) 방향을 보고,
-    /// 1) 오른손을 귀 옆으로 들어 겨눴다가 던지는 준비(windup, 공중에서는 못 씀) → 2) 몸을 앞으로 기울이며 던진 자세로 멈춘 채 그랩이 앞으로 뻗은 오른손에서 용수철처럼 앞으로 곧게 뻗어 나간다(extendSpeed, 최대 range).
+    /// 1) 오른손을 귀 옆으로 들어 겨눴다가 던지는 준비(windup, 공중에서는 못 씀). E를 꾹 누르고 있으면 던질 자세로 조준한 채 걸어 다닐 수 있고(걷는 동안은 걷기 모션), E를 떼면 던진다. 짧게 누르면 자세를 잡자마자 던진다 → 2) 몸을 앞으로 기울이며 던진 자세로 멈춘 채 그랩이 앞으로 뻗은 오른손에서 용수철처럼 앞으로 곧게 뻗어 나간다(extendSpeed, 최대 range).
     ///    - 길 위에서 처음 닿는 상대를 맞히고(HitEvents) 그 상대를 물고 되감는다(Dragging, dragSpeed): 상대는 그랩 머리를 따라 사냥터지기 앞까지 끌려온다(GrabPull, 그동안 기절).
     ///    - 상대보다 먼저 벽(옆을 보는 면)에 닿으면 그랩이 벽을 문 채 사냥터지기가 벽 쪽으로 끌려간다(Towing, towSpeed). 그랩 머리는 벽에 박힌 채 사슬만 줄어든다.
     ///    - 아무것도 못 맞히거나 바닥 같은 면에 닿으면 그냥 되감긴다(retractSpeed).
@@ -54,6 +54,10 @@ namespace Project1.Systems
         [Tooltip("그랩 머리(벽)에서 이 거리(m)까지 끌려가면 멈춘다(손이 벽에 닿는 곳).")]
         [Min(0f)] public float towStopReach = 0.1f;
 
+        [Header("조준 (E 꾹 누르기)")]
+        [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
+        [Range(0f, 1f)] public float aimMoveSpeedRatio = 1f;
+
         [Tooltip("끌어오는/끌려가는 동안 재생할 마무리 모션(팔을 당겨 거두기)의 앞부분 비율. 나머지는 followThrough 동안.")]
         [Range(0f, 1f)] public float pullMotionShare = 0.6f;
 
@@ -62,6 +66,9 @@ namespace Project1.Systems
 
         /// <summary>지금 맞힌 상대를 물고 되감는 중인지(GrabPull이 따라올지 본다).</summary>
         public bool IsDragging(CharacterSkill ctx) => ctx.State == SkillState.Casting && ctx.Phase == Dragging;
+
+        /// <summary>아직 던지기 전(준비·E를 꾹 눌러 조준하는 중)인지. 조준 보조선을 보여 줄 때 쓴다.</summary>
+        public bool IsAiming(CharacterSkill ctx) => ctx.State == SkillState.Casting && ctx.Phase == Windup;
 
         /// <summary>지금 벽을 문 그랩을 따라 끌려가는 중인지.</summary>
         public bool IsTowing(CharacterSkill ctx) => ctx.State == SkillState.Casting && ctx.Phase == Towing;
@@ -79,6 +86,7 @@ namespace Project1.Systems
             ctx.SetPhase(Windup);
             ctx.Reach = 0f;
             ctx.AreaRadius = 0f; // 끌기 시작한 길이(0 = 끌지 않음)
+            ctx.AreaCenter = Vector3.zero; // 조준하며 걷는 입력(준비 중) / 벽에 박힌 자리(끌려가는 중)
             ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 몸 = 시야 방향
             ctx.ReachOrigin = Origin(ctx);
         }
@@ -93,6 +101,13 @@ namespace Project1.Systems
                 Vector3 local = Quaternion.Inverse(ctx.transform.rotation) * ctx.Direction;
                 localMove = new Vector2(local.x, local.z);
                 speed = Mathf.Min(towSpeed, left / Time.fixedDeltaTime);
+                return true;
+            }
+            if (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f)
+            {
+                // E를 꾹 눌러 조준하는 동안은 걷는다(달리기·점프 불가).
+                localMove = new Vector2(ctx.AreaCenter.x, ctx.AreaCenter.z);
+                speed = ctx.TryGetComponent(out ICharacterState state) ? state.WalkSpeed * aimMoveSpeedRatio : 3.6f;
                 return true;
             }
             localMove = Vector2.zero; speed = 0f; // 제자리
@@ -114,11 +129,19 @@ namespace Project1.Systems
             switch (ctx.Phase)
             {
                 case Windup:
+                {
                     // 준비 동안은 몸이 계속 시야를 따라 돈다 → 쏘는 순간(손을 떠날 때) 바라보는 방향으로 날린다.
                     ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized;
                     ctx.ReachOrigin = Origin(ctx);
-                    if (ctx.PhaseTime >= windup) ctx.SetPhase(Extending);
+                    // E를 꾹 누르는 동안은 조준(차징): 걸어 다닐 수 있다. 걷기 입력은 AreaCenter(x = 우, z = 앞)에 적어 두고 TryGetMoveOverride가 쓴다.
+                    bool held = input.SkillHeld;
+                    Vector2 move = held ? Vector2.ClampMagnitude(input.Move, 1f) : Vector2.zero;
+                    ctx.AreaCenter = new Vector3(move.x, 0f, move.y);
+                    if (move.sqrMagnitude > 0.01f) ctx.PhaseTime = 0f; // 걷는 동안은 던질 자세를 풀고 걷는다(멈추면 다시 자세를 잡는다)
+                    // 던질 자세를 다 잡았고 E를 뗐으면 던진다(짧게 한 번 누르면 자세를 잡자마자 바로 던진다).
+                    if (ctx.PhaseTime >= windup && !held) ctx.SetPhase(Extending);
                     return false;
+                }
 
                 case Extending:
                 {
@@ -187,7 +210,7 @@ namespace Project1.Systems
             bool pulled = ctx.AreaRadius > 0f;
             switch (ctx.Phase)
             {
-                case Windup: phase = AttackPhase.Windup; progress = windup > 0f ? ctx.PhaseTime / windup : 1f; break;
+                case Windup: phase = AttackPhase.Windup; progress = windup > 0f ? Mathf.Clamp01(ctx.PhaseTime / windup) : 1f; break; // 꾹 누르는 동안은 던질 자세(끝)에서 멈춘다
                 case Extending:
                 case Retracting: phase = AttackPhase.Active; progress = 0f; break;
                 case Dragging:
@@ -205,11 +228,13 @@ namespace Project1.Systems
             return true;
         }
 
-        public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
+        // 조준하며 걷는 동안은 스킬 모션 없이 걷기 모션 그대로(전신 던지기 모션이면 다리가 미끄러져 보인다).
+        public override string AnimationState(CharacterSkill ctx) =>
+            ctx.State != SkillState.Casting || (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f) ? string.Empty : id;
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {
-            Windup => "준비",
+            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "조준 — E를 떼면 던짐" : "준비",
             Dragging => "끌어오기!",
             Towing => "벽으로!",
             _ => "그랩!",
@@ -218,13 +243,19 @@ namespace Project1.Systems
         public override void Complete(GameObject owner) { }
 
         /// <summary>그랩이 나가는 시작점(던진 자세의 오른손 = 오른쪽 어깨 줄, 어깨 높이, 몸 앞). 모션과 상관없이 캐릭터 위치·방향으로 정한다.</summary>
-        public Vector3 Origin(CharacterSkill ctx)
+        public Vector3 Origin(CharacterSkill ctx) => Origin(ctx.transform, ctx.Direction);
+
+        /// <summary>owner가 dir(수평) 쪽으로 던질 때 그랩이 나가는 시작점(조준 보조선용 — 시전 전에도 쓴다).</summary>
+        public Vector3 Origin(Transform owner, Vector3 dir)
         {
-            var cc = ctx.GetComponent<CharacterController>();
+            var cc = owner.GetComponent<CharacterController>();
             float h = cc != null ? cc.height : 1.7f;
-            Vector3 right = Vector3.Cross(Vector3.up, ctx.Direction).normalized;
-            return ctx.transform.position + Vector3.up * h * heightRatio + right * sideOffset + ctx.Direction * forwardOffset;
+            Vector3 right = Vector3.Cross(Vector3.up, dir).normalized;
+            return owner.position + Vector3.up * h * heightRatio + right * sideOffset + dir * forwardOffset;
         }
+
+        /// <summary>origin에서 dir로 던지면 그랩이 갈 수 있는 길이(m): 벽·물건에 먼저 닿으면 그 거리, 아니면 range. 조준 보조선용.</summary>
+        public float AimLength(Vector3 origin, Vector3 dir) => FindWall(origin, dir, 0f, range, out float at, out _) ? at : range;
 
         /// <summary>from ~ to 사이를 굵기 hitRadius로 훑어 처음 닿는 다른 캐릭터를 찾는다(맞히지는 않는다).</summary>
         private bool FindVictim(CharacterSkill ctx, float from, float to, out float hitAt, out Hurtbox victim)
@@ -249,13 +280,16 @@ namespace Project1.Systems
         }
 
         /// <summary>from ~ to 사이를 가늘게(wallProbeRadius) 훑어 처음 닿는 캐릭터가 아닌 것(벽·바닥·물건)을 찾는다.</summary>
-        private bool FindWall(CharacterSkill ctx, float from, float to, out float hitAt, out Vector3 normal)
+        private bool FindWall(CharacterSkill ctx, float from, float to, out float hitAt, out Vector3 normal) =>
+            FindWall(ctx.ReachOrigin, ctx.Direction, from, to, out hitAt, out normal);
+
+        private bool FindWall(Vector3 origin, Vector3 dir, float from, float to, out float hitAt, out Vector3 normal)
         {
             hitAt = to; normal = Vector3.zero;
-            Vector3 start = ctx.ReachOrigin + ctx.Direction * from;
+            Vector3 start = origin + dir * from;
             float length = Mathf.Max(to - from, 0.001f);
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
-            var hits = Physics.SphereCastAll(start, wallProbeRadius, ctx.Direction, length, mask, QueryTriggerInteraction.Ignore);
+            var hits = Physics.SphereCastAll(start, wallProbeRadius, dir, length, mask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue; bool found = false;
             foreach (var h in hits)
             {

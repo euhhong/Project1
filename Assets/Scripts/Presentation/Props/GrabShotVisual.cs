@@ -16,6 +16,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 사냥터지기만).
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(GrabAimLine))] // 조준 보조선(점선)도 같이 붙인다
     public class GrabShotVisual : MonoBehaviour
     {
         private const float TailEnd = 0.40f, JawStart = 0.62f;
