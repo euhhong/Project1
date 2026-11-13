@@ -50,7 +50,7 @@ namespace Project1.UI
                 var slots = entry.id == "Hunter_Ripper" ? Project1.Core.HitboxSlot.LeftHand | Project1.Core.HitboxSlot.Weapon : Project1.Core.HitboxSlot.None;
                 attack.SetAttackSlots(slots, slots);
             }
-            // 만화 타격 효과: 생존자 모두(플라잉킥). 생존자 기본 공격(Mutant Punch)을 쓰면 펀치 효과 + 늘어난 리치도.
+            // 만화 타격 효과: 생존자 모두(플라잉킥). 주먹 기본 공격(Mutant Punch·훅 펀치)을 쓰면 펀치 효과 + 늘어난 리치도.
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))
                 punch.SetPunchReach(UsesDefaultPunch(entry.gameController));
@@ -62,11 +62,11 @@ namespace Project1.UI
             if (Debug.isDebugBuild) Ensure<HealthDebugKeys>(player);
         }
 
-        /// <summary>생존자 기본 공격(Mutant Punch, 클립 이름 Attack_Light)을 그대로 쓰는지(캐릭터별 공격으로 바꾸지 않았는지).</summary>
+        /// <summary>주먹 기본 공격을 쓰는지: 생존자 기본(Mutant Punch, 클립 Attack_Light) 또는 빈손 생존자 훅 펀치(Attack_Light_HookPunch, 용병·도둑). 무기 공격으로 바꾼 캐릭터는 아님.</summary>
         private static bool UsesDefaultPunch(RuntimeAnimatorController controller)
         {
             if (controller == null) return false;
-            foreach (var clip in controller.animationClips) if (clip != null && clip.name == "Attack_Light") return true;
+            foreach (var clip in controller.animationClips) if (clip != null && (clip.name == "Attack_Light" || clip.name == "Attack_Light_HookPunch")) return true;
             return false;
         }
 
