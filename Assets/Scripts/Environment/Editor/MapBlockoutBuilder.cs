@@ -110,7 +110,10 @@ namespace Project1.Map.EditorTools
         // 로컬 좌표: x 0..28(동), z 0..19(북). 안뜰 x 10..18, z 6..14.
         private static void BuildMainHouse(Transform house)
         {
-            var outer = new Rect2(-0.2f, -0.2f, 28.2f, 19.2f);
+            // 판 가장자리는 바깥벽 두께 안에 숨긴다(벽 겉면과 같은 면이면 깜빡임).
+            var outer = new Rect2(-0.1f, -0.1f, 28.1f, 19.1f);
+            const float InH = Story - SlabT;    // 칸막이 벽: 위층 판 밑면까지(판 윗면과 겹쳐 깜빡이지 않게)
+            const float CourtH = Story - 0.02f; // 안뜰 벽: 판 윗면보다 살짝 낮게
             var court = new Rect2(10f, 6f, 18f, 14f);
             var holeA = new Rect2(0.2f, 3f, 3f, 3f + (StairSteps - 1) * StairRun);         // 계단 A: 서쪽 방, 북쪽으로 올라감
             var holeB = new Rect2(25f, 16.2f - (StairSteps - 1) * StairRun, 27.8f, 16.2f);  // 계단 B: 동쪽, 남쪽으로 올라감
@@ -133,17 +136,17 @@ namespace Project1.Map.EditorTools
             WallX(w1, "Outer_N", -0.2f, 28.2f, 19f, G, Story, WallT, wallMat, Win(5f), Door(14f), Win(22.9f));
             WallZ(w1, "Outer_W", 0f, 19f, 0f, G, Story, WallT, wallMat, Win(1.9f), Door(16.5f));
             WallZ(w1, "Outer_E", 0f, 19f, 28f, G, Story, WallT, wallMat, Door(4.4f), Win(7.4f));
-            WallX(w1, "Court_S", 9.8f, 18.2f, 6f, G, Story, WallT, wallMat, Arch(14f));
-            WallX(w1, "Court_N", 9.8f, 18.2f, 14f, G, Story, WallT, wallMat, Arch(14f));
-            WallZ(w1, "Court_W", 6f, 14f, 10f, G, Story, WallT, wallMat, Arch(10f));
-            WallZ(w1, "Court_E", 6f, 14f, 18f, G, Story, WallT, wallMat, Win(10f));
-            WallX(w1, "Part_W_S", 3f, 10f, 6f, G, Story, WallT, wallMat, Door(6.5f));
-            WallX(w1, "Part_W_N", 0.2f, 10f, 14f, G, Story, WallT, wallMat, Door(6.5f));
-            WallX(w1, "Part_E_S", 18f, 27.8f, 6f, G, Story, WallT, wallMat, Door(21.5f));
-            WallX(w1, "Part_E_N", 18f, 25f, 14f, G, Story, WallT, wallMat, Door(21.5f));
+            WallX(w1, "Court_S", 9.8f, 18.2f, 6f, G, CourtH, WallT, wallMat, Arch(14f));
+            WallX(w1, "Court_N", 9.8f, 18.2f, 14f, G, CourtH, WallT, wallMat, Arch(14f));
+            WallZ(w1, "Court_W", 6f, 14f, 10f, G, CourtH, WallT, wallMat, Arch(10f));
+            WallZ(w1, "Court_E", 6f, 14f, 18f, G, CourtH, WallT, wallMat, Win(10f));
+            WallX(w1, "Part_W_S", 3f, 10f, 6f, G, InH, WallT, wallMat, Door(6.5f));
+            WallX(w1, "Part_W_N", 0.2f, 10f, 14f, G, InH, WallT, wallMat, Door(6.5f));
+            WallX(w1, "Part_E_S", 18f, 27.8f, 6f, G, InH, WallT, wallMat, Door(21.5f));
+            WallX(w1, "Part_E_N", 18f, 25f, 14f, G, InH, WallT, wallMat, Door(21.5f));
             // 계단 옆 막이 벽: 계단 중간에서 옆방으로 떨어져 들어가는 샛길을 막는다.
-            WallZ(w1, "StairA_Side", 6f, 14f, 3f + WallT / 2f, G, Story, WallT, wallMat);
-            WallZ(w1, "StairB_Side", holeB.z0, 14f, 25f - WallT / 2f, G, Story, WallT, wallMat);
+            WallZ(w1, "StairA_Side", 6f, 14f, 3f + WallT / 2f, G, InH, WallT, wallMat);
+            WallZ(w1, "StairB_Side", holeB.z0, 14f, 25f - WallT / 2f, G, InH, WallT, wallMat);
 
             // 계단
             var stairs = Group(house, "Stairs", Vector3.zero);
@@ -159,10 +162,10 @@ namespace Project1.Map.EditorTools
             WallX(w2, "Outer_N", -0.2f, 28.2f, 19f, F2, Story, WallT, wallMat, Win(5.9f), Win(14f), Door(23.2f));
             WallZ(w2, "Outer_W", 0f, 19f, 0f, F2, Story, WallT, wallMat, Win(12f), Win(16f));
             WallZ(w2, "Outer_E", 0f, 19f, 28f, F2, Story, WallT, wallMat, Win(4.9f), Win(18f));
-            WallX(w2, "Part_W_S", 3f, 10f, 6f, F2, Story, WallT, wallMat, Door(6.5f));
-            WallX(w2, "Part_W_N", 0.2f, 10f, 14f, F2, Story, WallT, wallMat, Door(6.5f));
-            WallX(w2, "Part_E_S", 18f, 27.8f, 6f, F2, Story, WallT, wallMat, Door(22f));
-            WallX(w2, "Part_E_N", 18f, 25f, 14f, F2, Story, WallT, wallMat, Door(21.5f));
+            WallX(w2, "Part_W_S", 3f, 10f, 6f, F2, InH, WallT, wallMat, Door(6.5f));
+            WallX(w2, "Part_W_N", 0.2f, 10f, 14f, F2, InH, WallT, wallMat, Door(6.5f));
+            WallX(w2, "Part_E_S", 18f, 27.8f, 6f, F2, InH, WallT, wallMat, Door(22f));
+            WallX(w2, "Part_E_N", 18f, 25f, 14f, F2, InH, WallT, wallMat, Door(21.5f));
 
             var r2 = Group(house, "2F_Railings", Vector3.zero);
             WallX(r2, "Court_S", 10f, 18f, 6f, F2, RailH, RailT, accentMat, Gap(13f, 15f));
@@ -428,6 +431,7 @@ namespace Project1.Map.EditorTools
             m.SetFloat("_Smoothness", smoothness);
             m.SetFloat("_Metallic", 0f);
             EditorUtility.SetDirty(m);
+            AssetDatabase.SaveAssetIfDirty(m); // 내 머티리얼만 저장(SaveAssets는 다른 세션의 작업 중 에셋까지 저장함)
             return m;
         }
     }
