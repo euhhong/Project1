@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 분신(공장장 E): 옆에 분신을 하나 불러낸다. 분신은 불러낼 때 가장 가까이 있던 상대를 향해 저절로 다가가,
+    /// 분신(공장장 E): 옆에 분신을 하나 불러낸다. 분신은 불러낼 때 가장 가까이 있던 상대를 향해 저절로 걸어서 다가가,
     /// 공격 범위에 들면 멈춰 서서 공격한다(CloneBrain). lifetime초 뒤 사라진다. 한 번에 하나 — 다시 부르면 지난 분신은 사라진다.
     /// 분신의 몸·이동·공격·맞는 판정은 여기(BE)서 만들고, 모델·겉모습(검은 몸 + 용암 균열)·무기(갈고리 낫)는 FE가 붙인다(CloneEvents.Spawned).
     /// 분신과 불러낸 캐릭터는 서로 맞지 않는다(CharacterIdentity.Summoner). 체력은 다루지 않는다.
@@ -17,8 +17,6 @@ namespace Project1.Systems
         [Min(0.5f)] public float lifetime = 10f;
         [Tooltip("이 거리(m, 몸 가운데끼리) 안에 들면 멈춰 서서 공격한다.")]
         [Min(0.5f)] public float attackRange = 1.7f;
-        [Tooltip("목표가 이보다 멀면 달려서, 가까우면 걸어서 다가간다(m).")]
-        [Min(0f)] public float runDistance = 4f;
         [Tooltip("공격이 끝나고 다음 공격까지(초).")]
         [Min(0f)] public float attackGap = 0.35f;
         [Tooltip("분신이 나타나는 자리(불러낸 캐릭터 기준 오른쪽 m / 앞 m).")]
@@ -68,7 +66,7 @@ namespace Project1.Systems
             var cc = go.AddComponent<CharacterController>();
             if (ctx.TryGetComponent(out CharacterController ownerCc)) { cc.height = ownerCc.height; cc.radius = ownerCc.radius; cc.center = ownerCc.center; }
             var brain = go.AddComponent<CloneBrain>();
-            brain.Init(target, lifetime, attackRange, runDistance, attackGap);
+            brain.Init(target, lifetime, attackRange, attackGap);
             go.AddComponent<CharacterIdentity>().SetSummoner(owner);
             go.AddComponent<CharacterMotor>();
             go.AddComponent<AttackHitDetector>();

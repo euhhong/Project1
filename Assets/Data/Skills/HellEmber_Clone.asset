@@ -19,7 +19,6 @@ MonoBehaviour:
   castMoveSpeed: 0
   lifetime: 10
   attackRange: 1.7
-  runDistance: 4
   attackGap: 0.35
   spawnSide: 1.1
   spawnForward: 0.4
