@@ -29,23 +29,27 @@ namespace Project1.Systems
         public bool orbitWhileTurning = true;
         [Tooltip("최대 거리보다 먼 곳을 가리키면: 켜면 그 방향 최대 거리 자리로 당겨 놓는다(붉은나비), 끄면 못 놓는 자리.")]
         public bool clampToMax;
-        [Tooltip("우클릭으로 시점을 돌릴 때(안토니오): 마우스로 자리를 직접 민다 — 위·아래 = 멀리·가까이(dragDistancePerDegree), 좌·우 = 시점보다 더 많이 돈다(dragLateralGain). 켜면 orbitWhileTurning보다 먼저.")]
+        [Tooltip("우클릭으로 시점을 돌리는 중에 고르기 시작했을 때만(안토니오): 마우스로 자리를 직접 민다 — 위·아래 = 멀리·가까이(dragDistancePerDegree), 좌·우 = 시점보다 조금 더 돈다(dragLateralGain). 좌클릭을 먼저 누르고 시점을 돌리면 예전대로(화면 가운데를 따라감).")]
         public bool dragWhileTurning;
-        [Min(0f)] public float dragDistancePerDegree = 0.45f;
-        [Min(1f)] public float dragLateralGain = 1.6f;
+        [Min(0f)] public float dragDistancePerDegree = 0.25f;
+        [Min(1f)] public float dragLateralGain = 1.25f;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
         private bool set, viewLocked;
         private Vector3 viewLocal;
         private float lastAimYaw;
         private bool dragInit; private float dragDistance, dragAngle;
+        private bool started; // 이번 고르기의 첫 Update를 했는지
+
+        /// <summary>이번 고르기를 시점을 돌리는 중(우클릭, 커서 아님)에 시작했는지.</summary>
+        public bool StartedWhileTurning { get; private set; }
 
         public Vector3 Point { get; private set; }
         public bool Valid { get; private set; }
         public bool Cancels { get; private set; }
 
         /// <summary>새로 고르기 시작(지난 자리는 버린다).</summary>
-        public void Begin() { Valid = false; Cancels = false; set = false; viewLocked = false; dragInit = false; }
+        public void Begin() { Valid = false; Cancels = false; set = false; viewLocked = false; dragInit = false; started = false; StartedWhileTurning = false; }
 
         /// <summary>고르기를 끝냄(놓았거나 취소).</summary>
         public void Clear() { Valid = false; Cancels = false; }
@@ -53,7 +57,9 @@ namespace Project1.Systems
         public void Update(Transform owner, in CharacterInputFrame input)
         {
             Quaternion view = Quaternion.Euler(0f, input.LookYaw, 0f);
-            if (dragWhileTurning && !(input.HasAimPoint && input.AimFromCursor)) { Drag(owner, input); return; }
+            bool turning = !(input.HasAimPoint && input.AimFromCursor);
+            if (!started) { started = true; StartedWhileTurning = turning; }
+            if (dragWhileTurning && StartedWhileTurning && turning) { Drag(owner, input); return; }
             dragInit = false;
             if (!orbitWhileTurning && input.HasAimPoint)
             {

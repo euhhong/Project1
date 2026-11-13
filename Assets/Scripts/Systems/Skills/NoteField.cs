@@ -55,9 +55,9 @@ namespace Project1.Systems
         public float LastHitTime { get; private set; } = -1f;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
-        [Tooltip("음표 자리를 고르는 동안 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다).")]
+        [Tooltip("시점을 돌리는 중에 음표 자리를 고르기 시작했을 때 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다). 좌클릭을 먼저 누르고 돌리면 그대로.")]
         [SerializeField, Range(0f, 1f)] private float placingPitchScale = 0.1f;
-        public float PitchScale => Placing ? placingPitchScale : 1f;
+        public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
 
         private void Awake()
         {
