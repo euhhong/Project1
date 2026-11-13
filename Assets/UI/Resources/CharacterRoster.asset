@@ -51,7 +51,7 @@ MonoBehaviour:
     role: 0
     model: {fileID: 919132149155446097, guid: e58cd0b9b732fc440a3bba04dc442946, type: 3}
     scale: 4
-    gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
+    gameController: {fileID: 22100000, guid: 6ffbbcbabfd85534392bb55ecb082cd0, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 11400000, guid: 72b6187f150fd6943abea759df4eabe0, type: 2}
   - id: Survivor_MindsEye
@@ -67,7 +67,7 @@ MonoBehaviour:
     role: 0
     model: {fileID: 919132149155446097, guid: 4c8055dc4bdfd604ebc95cea8a5a9663, type: 3}
     scale: 4
-    gameController: {fileID: 9100000, guid: e099ea794d6892240bb060203ff43240, type: 2}
+    gameController: {fileID: 22100000, guid: e5cd27a606dbe5049b6d70b2444fcba9, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 11400000, guid: 710ddb7cfea67ba4db6347def87c36c4, type: 2}
   - id: Hunter_Antonio

@@ -45,7 +45,7 @@ namespace Project1.Presentation.EditorTools
             "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
-            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
+            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
         };
@@ -84,6 +84,9 @@ namespace Project1.Presentation.EditorTools
             ("Ripper", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Ripper"), ("Attack_Heavy", "Attack_Heavy_Ripper"), ("Attack_RunJump_Survivor", "Attack_RunJump_Ripper") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
+            // 손에 아무것도 들지 않은 생존자(용병·도둑): 훅 펀치. 무언가 든 생존자(공군·카우보이·의사·전위·맹인)는 그대로
+            ("Mercenary", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
+            ("Thief", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]

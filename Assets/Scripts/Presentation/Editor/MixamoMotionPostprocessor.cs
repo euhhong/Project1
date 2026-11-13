@@ -32,6 +32,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly Dictionary<string, Vector2> Trims = new()
         {
             ["Attack_Light"] = new Vector2(2, 30),             // Mutant Punch(생존자 기본 공격): 오른손 훅 6~11
+            ["Attack_Light_HookPunch"] = new Vector2(14, 56),  // Hook Punch(빈손 생존자 — 용병·도둑 기본 공격): 오른손 뒤로 당김(14~30) → 훅이 앞으로 꽂힘(30~36) → 되돌리기
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
             ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_Light_Luchino"] = new Vector2(4, 60),     // Standing Melee Attack Horizontal: 오른쪽 뒤로 당김 → 가로 베기(22~29) → 몸 되돌리기

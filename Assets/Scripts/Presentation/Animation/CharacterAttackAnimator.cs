@@ -24,6 +24,7 @@ namespace Project1.Presentation
         private static readonly Dictionary<string, Vector2> Timing = new()
         {
             ["Attack_Light"] = new Vector2(4f / 28f, 9f / 28f),             // Mutant Punch(원본 2~30): 오른손 훅 6~11
+            ["Attack_Light_HookPunch"] = new Vector2(16f / 42f, 22f / 42f), // Hook Punch(원본 14~56): 훅 30~36
             ["Attack_Light_Hunter"] = new Vector2(14f / 44f, 22f / 44f),    // Melee Attack Downward(원본 6~50): 내려치기 20~28
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
