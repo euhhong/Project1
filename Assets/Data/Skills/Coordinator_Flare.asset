@@ -25,7 +25,6 @@ MonoBehaviour:
   wallRadius: 0.08
   lifetime: 4
   targetRange: 40
-  targetAngle: 70
   launchPitchUp: 12
   heightRatio: 0.82
   sideOffset: 0.1
