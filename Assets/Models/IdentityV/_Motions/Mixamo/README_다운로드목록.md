@@ -7,7 +7,7 @@
   Animator Controller 재구성은 자동으로 된다(`Presentation/Editor/MixamoMotionPostprocessor.cs`,
   `CharacterMotionControllerBuilder.cs`, 메뉴 Tools > FE > 모션 컨트롤러 다시 만들기).
 - 생존자는 `_Motions/CharacterLocomotion.controller`를 쓴다. 감시자는 Override Controller를 쓴다:
-  공장장·사냥터지기·안토니오 = `HunterLocomotion`, 리퍼 = `RipperLocomotion`, 광대 = `SmileyFaceLocomotion`, 루키노 = `LuchinoLocomotion`,
+  사냥터지기·안토니오 = `HunterLocomotion`, 공장장 = `HellEmberLocomotion`, 리퍼 = `RipperLocomotion`, 광대 = `SmileyFaceLocomotion`, 루키노 = `LuchinoLocomotion`,
   붉은나비(게이샤) = `GeishaLocomotion`, 하스터 = `HasturLocomotion`. 감시자 공통 모션(`_Hunter`) 위에 캐릭터 모션(`_<이름>`)을 덮는다.
 - 공격 모션의 판정 순간(손·발이 맞는 프레임)은 `Presentation/Animation/CharacterAttackAnimator.cs`의 `Timing` 표에 적는다.
 
@@ -54,7 +54,8 @@
 | SelectIdle_Survivor | 캐릭터 선택 화면 생존자 대기(반복) | **받음** — `_Motions/SurvivorSelect.controller` | Standing Idle |
 | Idle | 가만히 서 있을 때(생존자) | **받음** — 감시자는 Idle_Hunter(예전 임시 대기, 감시자 대기 파일이 오면 교체) | Idle (1) |
 | Idle_Thief | (안 씀) 도둑 대기 → 사용자 요청으로 생존자 기본 대기로 되돌림. 파일만 남김 | 받음 — 연결 안 함 | Ninja Idle |
-| Idle_Luchino | (안 씀) 루키노 기본 자세 → 사용자 요청으로 감시자 공통 대기로 되돌림. 파일만 남김 | 받음 — 연결 안 함 | Crouch Idle |
+| Idle_Luchino | 루키노 대기 → `LuchinoLocomotion` | **Blender 수정**(`Tools/Blender/make_hunched_idle.py`, 바탕 = Mixamo Idle) — 사람보다 큰 돌연변이라 상체를 편하게 24° 앞으로 구부림, 머리는 앞, 팔은 편하게 늘어짐 | Idle → Blender (전: Crouch Idle) |
+| Idle_HellEmber | 공장장 대기 → `HellEmberLocomotion` | **받음** — 자연스러운 숨쉬기 대기(감시자 공통 임시 대기가 굳어 보여서) | Idle |
 | Air | 제자리 점프·떨어짐(공통) | **받음** — 0~22프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Jump (1) (전: Standing Jump) |
 | Air_F | 걸어서 점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 25~44프레임, 0.69초에 맞춰 재생 | Jumping |
 | Air_Run | 뛰면서 점프(공통) — 점프할 때 MoveZ > 1.75 | **받음** — 0~20프레임, 0.69초에 맞춰 재생 | Running Jump |

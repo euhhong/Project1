@@ -19,7 +19,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly HashSet<string> Looping = new()
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
-            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker",
+            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker",
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 

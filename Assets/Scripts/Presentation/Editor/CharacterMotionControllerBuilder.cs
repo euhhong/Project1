@@ -38,7 +38,7 @@ namespace Project1.Presentation.EditorTools
 
         private static readonly string[] Slots =
         {
-            "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye",
@@ -65,10 +65,13 @@ namespace Project1.Presentation.EditorTools
         };
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
-            // 감시자 공통: 공장장·사냥터지기·안토니오
+            // 감시자 공통: 사냥터지기·안토니오
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
-            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기. 대기는 감시자 공통(Crouch Idle는 사용자 요청으로 되돌림, 파일만 남김)
+            // 루키노: 가로 베기. 대기 = 사람보다 큰 돌연변이라 상체를 편하게 앞으로 구부린 대기(Idle_Luchino, Blender make_hunched_idle.py)
+            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino"), ("Idle", "Idle_Luchino") } }),
+            // 공장장: 대기 = 자연스러운 숨쉬기 대기(Mixamo Idle, 걷기처럼 몸이 굳지 않게)
+            ("HellEmber", new[] { HunterOverrides, new[] { ("Idle", "Idle_HellEmber") } }),
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
