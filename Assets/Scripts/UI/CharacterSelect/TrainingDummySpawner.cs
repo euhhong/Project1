@@ -49,6 +49,7 @@ namespace Project1.UI
             cc.height = 2.06f; cc.radius = 0.4f; cc.center = new Vector3(0f, 1.11f, 0f);
             go.AddComponent<CharacterIdentity>();
             go.AddComponent<CharacterHitReactionAnimator>();
+            go.AddComponent<HitFlash>(); // 맞으면 빨갛게 달궈짐
             go.SetActive(true);
             CharacterModelSwapper.Swap(go, entry.model, entry.scale, entry.gameController);
         }
