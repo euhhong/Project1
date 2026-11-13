@@ -27,6 +27,7 @@ namespace Project1.UI
             Ensure<CharacterSkillAnimator>(player);
             Ensure<CharacterHitReactionAnimator>(player);
             Ensure<SkillAreaIndicator>(player);
+            Ensure<AfterimageTrail>(player);
 
             // 캐릭터별 소품(무기). 다른 캐릭터로 바꾸면 지운다.
             SetProp<FanWeapon>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 접는 부채

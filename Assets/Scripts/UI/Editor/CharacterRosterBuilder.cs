@@ -22,6 +22,7 @@ namespace Project1.UI.EditorTools
         {
             ["Survivor_Doctor"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.SelfHealSkill>(); s.id = "Doctor_SelfHeal"; s.displayName = "자가치료"; s.castTime = 1.5f; s.cooldown = 0f /* 테스트 단계 0초, 원래 12 */; s.castMoveSpeed = 0f; s.healFraction = 0.4f; return s; },
             ["Hunter_Luchino"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.LeapSkill>(); s.id = "Luchino_Leap"; s.displayName = "도약 내려찍기"; s.castTime = 5f; s.cooldown = 0f /* 테스트 단계 0초, 원래 12 */; s.leapHeight = 12f; s.forwardSpeed = 9f; return s; },
+            ["Survivor_Mercenary"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.WallDashSkill>(); s.id = "Mercenary_Guard"; s.displayName = "아대"; s.castTime = 99999f; /* 켜 두는 스킬: 다시 누를 때까지 */ s.cooldown = 0f; return s; },
             ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 0f /* 테스트 단계 0초, 원래 15 */; s.chargeSpeed = 16f; return s; },
         };
 

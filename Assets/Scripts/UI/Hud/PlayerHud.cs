@@ -79,6 +79,7 @@ namespace Project1.UI
                     SkillState.Cooldown => $"{skill.CooldownRemaining:0.0}초",
                     _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
                 };
+                if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 "벽에 닿음 — 이동하면 도약!")
                 small.normal.textColor = skill.State == SkillState.Ready && skill.CanUse ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
                 GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {skill.SkillName}", small);
                 small.normal.textColor = Color.white;
