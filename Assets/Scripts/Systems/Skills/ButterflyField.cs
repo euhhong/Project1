@@ -7,6 +7,7 @@ namespace Project1.Systems
     /// <summary>
     /// 붉은나비(미치코)의 나비 놓기·겨누기(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 마우스가 가리키는 곳에 놓을 자리를 보여 준다(Placing, PreviewPoint — GroundPlacementPreview).
+    ///   누르지 않을 때도 놓으면 갈 자리를 계산해 둔다(AimPoint — FE 조준 보조 고리). 최대 100m, 더 먼 곳을 가리키면 그 방향 100m로 당긴다.
     ///   땅 위만 된다(면이 위를 향함, 공중·벽 불가). 떼면 그 자리에 나비를 놓는다(재사용 대기 placeCooldown, 테스트 0초).
     ///   취소: 누른 채 E를 누르거나(뗄 때까지 무시), 몸 근처로 끌어다 놓으면 놓지 않는다 — 취소는 재사용 대기가 생기지 않는다.
     ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다.
@@ -55,14 +56,25 @@ namespace Project1.Systems
         public bool WaitingRelease => waitRelease;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
+        [Tooltip("놓을 수 있는 최대 거리(m) / 시점을 돌리는 중 화면 가운데가 땅을 못 가리킬 때 앞쪽 거리(m).")]
+        [SerializeField, Min(1f)] private float placeDistance = 100f, turnDefaultDistance = 25f;
+
+        // 좌클릭을 누르지 않을 때도 지금 겨누는 대로 놓으면 나비가 갈 자리(조준 보조 고리).
+        [SerializeField] private GroundPlacementPreview aim = new();
+        public bool AimShown { get; private set; }
+        public Vector3 AimPoint => aim.Point;
+        public bool AimValid => AimShown && aim.Valid;
+
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
+            // 멀리까지 날린다: 최대 거리를 크게, 더 먼 곳을 가리키면 그 방향 최대 거리로 당긴다.
+            foreach (var p in new[] { placement, aim }) { p.maxPlaceDistance = placeDistance; p.defaultDistance = turnDefaultDistance; p.clampToMax = true; }
         }
 
         private void OnDisable()
         {
-            Placing = false; placement.Clear(); waitRelease = false;
+            Placing = false; placement.Clear(); waitRelease = false; AimShown = false;
         }
 
         private void FixedUpdate()
@@ -101,6 +113,10 @@ namespace Project1.Systems
                 }
                 Placing = false; placement.Clear();
             }
+
+            // 조준 보조: 누르지 않을 때도 지금 꾹 눌렀다 떼면 나비가 갈 자리를 미리 계산한다(FE가 고리로 보여 줌).
+            AimShown = !Placing && !blocked;
+            if (AimShown) { aim.Begin(); aim.Update(transform, input); }
 
             UpdateTarget(input);
         }

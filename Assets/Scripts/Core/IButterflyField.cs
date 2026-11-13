@@ -24,6 +24,11 @@ namespace Project1.Core
         /// <summary>미리보기 자리가 몸 근처라 떼면 놓기가 취소되는지(재사용 대기 없음).</summary>
         bool PreviewCancels { get; }
 
+        /// <summary>조준 보조: 놓는 중이 아닐 때, 지금 꾹 눌렀다 떼면 나비가 갈 자리를 보여 줄지 / 그 자리 / 놓을 수 있는 자리인지.</summary>
+        bool AimShown { get; }
+        Vector3 AimPoint { get; }
+        bool AimValid { get; }
+
         /// <summary>다음 나비를 놓기까지 남은 재사용 대기(초).</summary>
         float PlaceCooldownRemaining { get; }
 

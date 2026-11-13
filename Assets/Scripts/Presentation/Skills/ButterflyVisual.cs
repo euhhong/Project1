@@ -26,7 +26,7 @@ namespace Project1.Presentation
         private IButterflyField field;
         private readonly List<ButterflyModel> placed = new();
         private ButterflyModel preview;
-        private LineRenderer marker, previewRing;
+        private LineRenderer marker, previewRing, aimRing;
         private Transform root;
 
         private void OnDestroy()
@@ -67,6 +67,16 @@ namespace Project1.Presentation
                 previewRing.startColor = previewRing.endColor = field.PreviewCancels ? new Color(0.6f, 0.6f, 0.6f, 0.35f) : field.PreviewValid ? previewRingColor : new Color(1f, 0.25f, 0.2f, 0.6f);
                 preview.transform.localScale = Vector3.one * size * (field.PreviewCancels ? 0.6f : 1f);
                 SetRing(previewRing, field.PreviewPoint, markerRadius * 0.7f, 0f);
+            }
+
+            // 조준 보조: 놓는 중이 아닐 때도 나비가 갈 자리에 옅은 고리(못 놓는 자리면 옅은 붉은색)
+            if (aimRing == null) aimRing = Ring("AimRing", previewRingColor);
+            bool showAim = field.AimShown;
+            aimRing.gameObject.SetActive(showAim);
+            if (showAim)
+            {
+                aimRing.startColor = aimRing.endColor = field.AimValid ? new Color(1f, 1f, 1f, 0.35f) : new Color(1f, 0.25f, 0.2f, 0.3f);
+                SetRing(aimRing, field.AimPoint, markerRadius * 0.7f, 0f);
             }
 
             // 겨누는 나비 표적

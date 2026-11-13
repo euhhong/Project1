@@ -27,6 +27,8 @@ namespace Project1.Systems
         [Min(0.1f)] public float groundProbeUp = 3f, groundProbeDown = 8f;
         [Tooltip("우클릭으로 시점을 돌릴 때: 켜면 캐릭터 둘레로 거리를 지켜 돈다(붉은나비), 끄면 화면 가운데가 가리키는 땅을 자유롭게 따라간다(안토니오).")]
         public bool orbitWhileTurning = true;
+        [Tooltip("최대 거리보다 먼 곳을 가리키면: 켜면 그 방향 최대 거리 자리로 당겨 놓는다(붉은나비), 끄면 못 놓는 자리.")]
+        public bool clampToMax;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
         private bool set, viewLocked;
@@ -85,9 +87,18 @@ namespace Project1.Systems
 
         private void Evaluate(Transform owner, Vector3 point, Vector3 normal)
         {
+            Vector3 flat = point - owner.position; flat.y = 0f;
+            if (clampToMax && flat.magnitude > maxPlaceDistance)
+            {
+                // 너무 먼 곳: 그 방향 최대 거리 자리의 땅으로 당긴다.
+                Vector3 p = owner.position + flat.normalized * maxPlaceDistance;
+                p.y = point.y;
+                if (GroundAt(owner, p, out Vector3 gp, out Vector3 gn)) { point = gp; normal = gn; }
+                else point = p;
+                flat = point - owner.position; flat.y = 0f;
+            }
             Point = point;
             set = true;
-            Vector3 flat = point - owner.position; flat.y = 0f;
             Cancels = flat.magnitude <= cancelRadius;
             Valid = !Cancels && normal.y >= minGroundNormalY && flat.magnitude <= maxPlaceDistance;
         }
