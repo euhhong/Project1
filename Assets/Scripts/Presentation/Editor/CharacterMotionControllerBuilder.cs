@@ -76,7 +76,6 @@ namespace Project1.Presentation.EditorTools
             ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
-            ("Thief", new[] { new[] { ("Idle", "Idle_Thief") } }),                                     // 도둑: 가만히 있을 때 Ninja Idle
         };
 
         [MenuItem("Tools/FE/모션 컨트롤러 다시 만들기")]
