@@ -4,7 +4,8 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 아기자기한 로켓 폭죽 모형(광대의 무기). 코드로 만든 소품 — 줄무늬 몸통 + 노란 원뿔 머리 + 파란 날개 4장 + 꼬리 노즐 + 심지.
+    /// 아기자기한 로켓 폭죽 모형(광대의 무기). 모델은 Resources의 BlueRocket(사용자 모델 Stylized Blue Rocket, Blender로 줄이고 꼬리를 원점·머리를 +Z로, 길이 0.8m)을 쓴다.
+    /// 모델을 못 찾으면 코드로 만든 임시 모양(줄무늬 몸통 + 원뿔 머리 + 날개 4장 + 꼬리 노즐 + 심지).
     /// 원점은 꼬리(노즐) 끝이고 로켓은 +Z로 뻗는다. 크기는 실제 길이(m) 기준.
     /// </summary>
     [ExecuteAlways]
@@ -25,8 +26,13 @@ namespace Project1.Presentation
         [SerializeField] private Color finColor = new(0.2f, 0.45f, 0.95f);
         [SerializeField] private Color darkColor = new(0.15f, 0.13f, 0.12f);
 
+        private const string ModelResource = "BlueRocket/BlueRocket";
+        private const float ModelRadius = 0.129f; // BlueRocket 몸통 반지름(길이 0.8m 기준)
+
         public float Length => length;
-        public float Radius => radius;
+        public float Radius => model != null ? ModelRadius * length / 0.8f : radius;
+
+        private GameObject model;
 
         private Mesh mesh;
         private readonly List<Vector3> verts = new();
@@ -34,6 +40,7 @@ namespace Project1.Presentation
 
         private void OnEnable()
         {
+            if (UseModel()) return;
             var filter = GetComponent<MeshFilter>(); if (filter == null) filter = gameObject.AddComponent<MeshFilter>();
             var r = GetComponent<MeshRenderer>(); if (r == null) r = gameObject.AddComponent<MeshRenderer>();
             r.sharedMaterials = new[]
@@ -46,10 +53,27 @@ namespace Project1.Presentation
             Build();
         }
 
-        private void OnValidate() { if (mesh != null) Build(); }
+        /// <summary>모델이 있으면 자식으로 꺼내 쓴다(코드 메시는 만들지 않는다).</summary>
+        private bool UseModel()
+        {
+            if (model != null) return true;
+            var prefab = Resources.Load<GameObject>(ModelResource);
+            if (prefab == null) return false;
+            if (TryGetComponent(out MeshRenderer own)) own.enabled = false;
+            model = Instantiate(prefab, transform, false);
+            model.name = "Model";
+            if (!Application.isPlaying) model.hideFlags = HideFlags.DontSave;
+            model.transform.SetLocalPositionAndRotation(Vector3.zero, prefab.transform.localRotation);
+            model.transform.localScale = prefab.transform.localScale * (length / 0.8f);
+            foreach (var r in model.GetComponentsInChildren<Renderer>()) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+            return true;
+        }
+
+        private void OnValidate() { if (mesh != null && model == null) Build(); }
 
         private void OnDestroy()
         {
+            if (model != null) { if (Application.isPlaying) Destroy(model); else DestroyImmediate(model); }
             if (mesh == null) return;
             if (Application.isPlaying) Destroy(mesh); else DestroyImmediate(mesh);
         }

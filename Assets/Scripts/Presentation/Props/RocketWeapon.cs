@@ -23,7 +23,7 @@ namespace Project1.Presentation
         [Tooltip("꼬리를 오른손 뒤로 얼마나 빼는지(m).")]
         [SerializeField, Min(0f)] private float tailBehindHand = 0.15f;
         [Tooltip("로켓을 손바닥 위로 얼마나 띄울지(m, 왼손이 아래에서 받친다).")]
-        [SerializeField] private float liftAboveHands = 0.06f;
+        [SerializeField] private float liftAboveHands = 0.135f; // 로켓 모델(반지름 0.21m)이 손바닥 위에 얹히게
 
         [Header("공격 중 쥐는 법(통나무·각목처럼 두 손으로 꼬리 쪽)")]
         [Tooltip("꼬리 끝이 오른손(맨 끝 손)보다 얼마나 더 나오는지(m).")]
