@@ -59,5 +59,11 @@ namespace Project1.Core
 
         /// <summary>AimPoint 면의 바깥 방향(월드). 땅이면 위쪽에 가깝다.</summary>
         public Vector3 AimNormal;
+
+        /// <summary>AimPoint를 찾은 광선의 출발점(카메라)이 있는지. 있으면 출발점 → AimPoint 방향으로 벽 너머까지 이어 볼 수 있다(붉은나비 나비 — 벽 너머에도 놓기).</summary>
+        public bool HasAimRay;
+
+        /// <summary>AimPoint를 찾은 광선의 출발점(월드, 카메라). HasAimRay일 때만 의미 있다.</summary>
+        public Vector3 AimRayOrigin;
     }
 }

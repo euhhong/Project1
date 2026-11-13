@@ -11,6 +11,8 @@ namespace Project1.Systems
     /// - orbitWhileTurning을 끄면(안토니오): 시점을 돌리는 동안에도 화면 가운데가 가리키는 땅을 자유롭게 따라간다(거리 고정 없음).
     /// - 우클릭으로 시점을 돌리면(커서가 아님): 캐릭터를 원의 가운데로, 자리까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다(그 자리 바닥에 붙음).
     ///   시점을 돌리는 중에 새로 고르기 시작하면 화면 가운데가 가리키는 땅, 없으면 앞쪽 defaultDistance m.
+    /// - (붉은나비) 위층 바닥 끝 모서리 잡기(ledgeSnapHeight), 위로 높이차 제한(maxRiseHeight), 설 공간 검사(requireStandSpace),
+    ///   벽 너머 놓기(seeThroughWalls — 보이는지는 따지지 않고 설 공간만 본다).
     /// </summary>
     [Serializable]
     public class GroundPlacementPreview
@@ -39,8 +41,22 @@ namespace Project1.Systems
         [Min(0.01f)] public float ledgeSnapInset = 0.3f;
         [Tooltip("놓을 자리가 캐릭터 발보다 이만큼(m) 넘게 높으면 못 놓는다. 0 = 제한 없음.")]
         [Min(0f)] public float maxRiseHeight;
+        [Tooltip("켜면 캐릭터가 설 공간(standRadius·standHeight 캡슐 크기 빈 곳 + 바닥)이 있어야 놓는다. 벽에 너무 붙은 자리는 빈 곳으로 살짝 옮긴다. 캐릭터·트리거는 공간을 막지 않는다.")]
+        public bool requireStandSpace;
+        [Min(0.05f)] public float standRadius = 0.35f, standHeight = 1.8f;
+        [Tooltip("켜면 가리킨 곳이 놓을 수 없는 면(벽 등)일 때 그 광선을 벽 너머로 이어 처음으로 설 공간이 있는 바닥에 놓는다(보이지 않는 곳도 된다). 입력에 광선 출발점(HasAimRay)이 있어야 한다.")]
+        public bool seeThroughWalls;
+        [Min(1f)] public float seeThroughDistance = 150f;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
+        private static readonly RaycastHit[] BeyondHits = new RaycastHit[64];
+        private static readonly Collider[] SpaceHits = new Collider[16];
+        private static readonly float[] NudgeScales = { 0.6f, 1.2f };
+        private static readonly Vector3[] NudgeDirs =
+        {
+            Vector3.forward, Vector3.back, Vector3.left, Vector3.right,
+            new Vector3(0.7071f, 0f, 0.7071f), new Vector3(-0.7071f, 0f, 0.7071f), new Vector3(0.7071f, 0f, -0.7071f), new Vector3(-0.7071f, 0f, -0.7071f),
+        };
         private bool set, viewLocked;
         private Vector3 viewLocal;
         private float lastAimYaw;
@@ -70,14 +86,14 @@ namespace Project1.Systems
             if (!orbitWhileTurning && input.HasAimPoint)
             {
                 // 자유롭게: 커서든 화면 가운데든 가리키는 땅을 그대로 따라간다(거리 고정 없음)
-                Evaluate(owner, input.AimPoint, input.AimNormal);
+                EvaluateAim(owner, input);
                 return;
             }
             if (!(input.HasAimPoint && input.AimFromCursor))
             {
                 if (!set)
                 {
-                    if (input.HasAimPoint) Evaluate(owner, input.AimPoint, input.AimNormal);
+                    if (input.HasAimPoint) EvaluateAim(owner, input);
                     else
                     {
                         Vector3 ahead = owner.position + view * Vector3.forward * defaultDistance;
@@ -102,7 +118,122 @@ namespace Project1.Systems
             }
             viewLocked = false;
             lastAimYaw = input.LookYaw;
-            Evaluate(owner, input.AimPoint, input.AimNormal);
+            EvaluateAim(owner, input);
+        }
+
+        /// <summary>
+        /// 가리킨 곳(input.AimPoint)으로 고른다. 놓을 수 없는 면이면 ① 위층 바닥 끝 모서리(SnapToLedge) ② 벽 너머 설 공간이 있는 바닥(seeThroughWalls) 순으로 찾는다.
+        /// 보이는지(가려짐)는 따지지 않는다 — 설 공간만 있으면 된다.
+        /// </summary>
+        private void EvaluateAim(Transform owner, in CharacterInputFrame input)
+        {
+            Vector3 point = input.AimPoint, normal = input.AimNormal;
+            if (!Placeable(owner, ref point, normal))
+            {
+                Vector3 sp = point, sn = normal;
+                if (SnapToLedge(owner, ref sp, ref sn)) { point = sp; normal = sn; }
+                else if (seeThroughWalls && input.HasAimRay && FindBeyond(owner, input.AimRayOrigin, input.AimPoint, out Vector3 bp, out Vector3 bn)) { point = bp; normal = bn; }
+            }
+            Evaluate(owner, point, normal);
+        }
+
+        /// <summary>땅(위를 향함)이고 설 공간이 있는지. 벽에 붙어 공간이 모자라면 point를 빈 곳으로 살짝 옮긴다.</summary>
+        private bool Placeable(Transform owner, ref Vector3 point, Vector3 normal)
+            => normal.y >= minGroundNormalY && FindStandSpot(owner, ref point);
+
+        [Tooltip("벽 너머 놓기: 이보다 두꺼운 벽(m)은 뒷면을 찾지 않는다.")]
+        [Min(0.1f)] public float seeThroughMaxWall = 3f;
+
+        /// <summary>
+        /// 광선(origin → aimPoint)을 벽 너머로 이어 가까운 것부터 처음으로 놓을 수 있는 자리(위를 향한 바닥 + 설 공간 + 높이차 안)를 찾는다.
+        /// - 광선이 바닥에 닿으면 그 자리.
+        /// - 광선이 벽(옆면)에 닿으면 그 벽 뒷면 바로 너머에서 아래로 내려 바닥을 찾는다(올려다보며 벽을 가리켜도 벽 뒤 바닥).
+        /// 천장(밑면)은 그냥 지나간다(천장 위 위층에 놓지 않음).
+        /// </summary>
+        private bool FindBeyond(Transform owner, Vector3 origin, Vector3 aimPoint, out Vector3 point, out Vector3 normal)
+        {
+            point = aimPoint; normal = Vector3.up;
+            Vector3 dir = aimPoint - origin;
+            float toAim = dir.magnitude;
+            if (toAim < 1e-3f) return false;
+            dir /= toAim;
+            int n = Physics.RaycastNonAlloc(origin, dir, BeyondHits, toAim + seeThroughDistance, ~0, QueryTriggerInteraction.Ignore);
+            // 가까운 것부터
+            for (int i = 1; i < n; i++)
+            {
+                var h = BeyondHits[i]; int j = i - 1;
+                while (j >= 0 && BeyondHits[j].distance > h.distance) { BeyondHits[j + 1] = BeyondHits[j]; j--; }
+                BeyondHits[j + 1] = h;
+            }
+            Vector3 flat = new(dir.x, 0f, dir.z);
+            bool hasFlat = flat.sqrMagnitude > 1e-4f;
+            if (hasFlat) flat.Normalize();
+            for (int i = 0; i < n; i++)
+            {
+                var h = BeyondHits[i];
+                if (h.distance < toAim - 0.05f || h.collider.transform.IsChildOf(owner) || IsCharacter(h.collider)) continue; // 가리킨 곳 앞(카메라와 사이)은 보지 않는다
+                if (h.normal.y >= minGroundNormalY)
+                {
+                    if (Candidate(owner, h.point, h.normal, out point, out normal)) return true;
+                    continue;
+                }
+                if (!hasFlat || Mathf.Abs(h.normal.y) > 0.5f) continue; // 천장·밑면은 지나간다
+                // 벽: 뒷면(거꾸로 쏴서 찾음) 바로 너머에서 아래로 바닥을 찾는다.
+                Vector3 far = h.point + flat * seeThroughMaxWall;
+                if (!h.collider.Raycast(new Ray(far, -flat), out var back, seeThroughMaxWall)) continue; // 너무 두꺼움
+                Vector3 behind = back.point + flat * (standRadius + 0.05f);
+                if (!Probe(owner, behind + Vector3.up * 0.2f, Vector3.down, groundProbeDown, out Vector3 gp, out Vector3 gn)) continue;
+                if (Candidate(owner, gp, gn, out point, out normal)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>p가 놓을 수 있는 바닥 자리인지(위를 향함, 높이차 안, 설 공간 — 벽에 붙으면 살짝 옮김).</summary>
+        private bool Candidate(Transform owner, Vector3 p, Vector3 n, out Vector3 point, out Vector3 normal)
+        {
+            point = p; normal = n;
+            if (n.y < minGroundNormalY) return false;
+            if (maxRiseHeight > 0f && p.y - owner.position.y > maxRiseHeight) return false;
+            if (!FindStandSpot(owner, ref point)) return false;
+            return true;
+        }
+
+        private static bool IsCharacter(Collider c) => c is CharacterController || c.GetComponentInParent<CharacterIdentity>() != null;
+
+        /// <summary>
+        /// point에 캐릭터가 설 공간(캡슐)이 있는지. 없으면 둘레로 조금씩(반지름의 0.6·1.2배) 옮겨 같은 바닥에서 빈 곳을 찾는다. requireStandSpace가 꺼져 있으면 늘 된다.
+        /// </summary>
+        private bool FindStandSpot(Transform owner, ref Vector3 point)
+        {
+            if (!requireStandSpace || HasStandSpace(owner, point)) return true;
+            foreach (float k in NudgeScales)
+            {
+                foreach (var d in NudgeDirs)
+                {
+                    Vector3 c = point + d * (standRadius * k);
+                    if (!Probe(owner, c + Vector3.up * 0.5f, Vector3.down, 1f, out Vector3 gp, out Vector3 gn) || gn.y < minGroundNormalY) continue;
+                    if (!HasStandSpace(owner, gp)) continue;
+                    point = gp;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>발이 point에 있을 때 캐릭터 캡슐(standRadius·standHeight) 자리가 비었는지(자기 몸·캐릭터·트리거·판정은 무시).</summary>
+        public bool HasStandSpace(Transform owner, Vector3 point)
+        {
+            float r = standRadius;
+            Vector3 a = point + Vector3.up * (r + 0.12f), b = point + Vector3.up * Mathf.Max(r + 0.12f, standHeight - r);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            int n = Physics.OverlapCapsuleNonAlloc(a, b, r, SpaceHits, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = SpaceHits[i];
+                if (c.transform.IsChildOf(owner) || IsCharacter(c)) continue;
+                return false;
+            }
+            return true;
         }
 
         /// <summary>시점을 돌리는 동안: 마우스 위·아래로 멀리·가까이, 좌·우로 시점보다 많이 돌려 자리를 직접 옮긴다(카메라 상하는 거의 안 움직이게 따로 줄임).</summary>
@@ -132,7 +263,6 @@ namespace Project1.Systems
 
         private void Evaluate(Transform owner, Vector3 point, Vector3 normal)
         {
-            if (normal.y < minGroundNormalY) SnapToLedge(owner, ref point, ref normal);
             Vector3 flat = point - owner.position; flat.y = 0f;
             if (clampToMax && flat.magnitude > maxPlaceDistance)
             {
@@ -140,37 +270,47 @@ namespace Project1.Systems
                 Vector3 p = owner.position + flat.normalized * maxPlaceDistance;
                 p.y = point.y;
                 if (GroundAt(owner, p, out Vector3 gp, out Vector3 gn)) { point = gp; normal = gn; }
-                else point = p;
+                else { point = p; normal = Vector3.zero; } // 그 자리 아래에 바닥이 없음 = 못 놓음
                 flat = point - owner.position; flat.y = 0f;
             }
+            bool space = normal.y >= minGroundNormalY && FindStandSpot(owner, ref point); // 설 공간(벽에 붙으면 빈 곳으로 살짝 옮김)
             Point = point;
             set = true;
             Cancels = flat.magnitude <= cancelRadius;
             bool tooHigh = maxRiseHeight > 0f && point.y - owner.position.y > maxRiseHeight;
-            Valid = !Cancels && normal.y >= minGroundNormalY && flat.magnitude <= maxPlaceDistance && !tooHigh;
+            Valid = !Cancels && space && flat.magnitude <= maxPlaceDistance && !tooHigh;
         }
 
         /// <summary>
         /// 가리킨 곳이 바닥 판의 옆면·밑면(위를 향하지 않음)이면: 면 안쪽(옆면이면 면 반대 방향, 밑면이면 캐릭터에서 멀어지는 방향)으로
         /// ledgeSnapInset만큼 들어가 ledgeSnapHeight 위에서 내려 그 사이에 있는 윗면을 찾아 거기로 올린다(바닥·턱 끝 모서리).
-        /// 벽 한가운데처럼 위 가까이에 윗면이 없거나, 면 바깥쪽 위가 막혀 있으면(방 안 벽 꼭대기 = 천장 밑) 그대로 둔다(못 놓음).
+        /// 벽 한가운데처럼 위 가까이에 윗면이 없거나, 면 바깥쪽 위가 막혀 있거나(방 안 벽 꼭대기 = 천장 밑), 설 공간이 없으면 false(그대로 둠).
         /// </summary>
-        private void SnapToLedge(Transform owner, ref Vector3 point, ref Vector3 normal)
+        private bool SnapToLedge(Transform owner, ref Vector3 point, ref Vector3 normal)
         {
-            if (ledgeSnapHeight <= 0f) return;
+            if (ledgeSnapHeight <= 0f || normal.y >= minGroundNormalY) return false;
             Vector3 inward = -new Vector3(normal.x, 0f, normal.z);
             bool underside = inward.sqrMagnitude < 0.09f; // 거의 아래를 향함
             if (underside) { inward = point - owner.position; inward.y = 0f; }
-            if (inward.sqrMagnitude < 1e-4f) return;
+            if (inward.sqrMagnitude < 1e-4f) return false;
             inward.Normalize();
-            Vector3 origin = point + inward * ledgeSnapInset + Vector3.up * ledgeSnapHeight;
-            if (!Probe(owner, origin, Vector3.down, ledgeSnapHeight + 0.05f, out Vector3 gp, out Vector3 gn)) return;
-            if (gn.y < minGroundNormalY || gp.y < point.y - 0.05f) return;
-            // 끝 모서리인지: 면 바깥쪽(밑면이면 캐릭터 쪽으로 ledgeSnapInset)에서 윗면 높이까지 위가 트여 있어야 한다.
-            Vector3 outside = point - inward * (underside ? ledgeSnapInset : 0.05f) + Vector3.down * 0.02f;
-            if (Probe(owner, outside, Vector3.up, gp.y - outside.y + 0.1f, out _, out _)) return;
-            point = gp; normal = gn;
+            // 끝 모서리 안쪽으로 조금씩 더 들어가며 설 공간이 있는 윗면을 찾는다(위층 바깥벽이 끝에 서 있으면 그 벽 너머 위층 바닥).
+            foreach (float extra in LedgeDepths)
+            {
+                Vector3 origin = point + inward * (ledgeSnapInset + extra) + Vector3.up * ledgeSnapHeight;
+                if (!Probe(owner, origin, Vector3.down, ledgeSnapHeight + 0.05f, out Vector3 gp, out Vector3 gn)) continue;
+                if (gn.y < minGroundNormalY || gp.y < point.y - 0.05f) continue;
+                // 끝 모서리인지: 면 바깥쪽(밑면이면 캐릭터 쪽으로 ledgeSnapInset)에서 윗면 높이까지 위가 트여 있어야 한다.
+                Vector3 outside = point - inward * (underside ? ledgeSnapInset : 0.05f) + Vector3.down * 0.02f;
+                if (Probe(owner, outside, Vector3.up, gp.y - outside.y + 0.1f, out _, out _)) return false;
+                if (!FindStandSpot(owner, ref gp)) continue;
+                point = gp; normal = gn;
+                return true;
+            }
+            return false;
         }
+
+        private static readonly float[] LedgeDepths = { 0f, 0.5f, 1f };
 
         /// <summary>p 바로 위에서 아래로 내려 처음 닿는 바닥(owner 몸·트리거 제외).</summary>
         public bool GroundAt(Transform owner, Vector3 p, out Vector3 point, out Vector3 normal)

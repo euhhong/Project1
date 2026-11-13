@@ -63,7 +63,7 @@ namespace Project1.Systems
         [Tooltip("시점을 돌린 뒤 커서가 이만큼(픽셀) 움직여야 다시 커서로 겨눈다.")]
         [SerializeField, Min(0f)] private float unfreezePixels = 4f;
         private bool hasAim;
-        private Vector3 aimPoint, aimNormal;
+        private Vector3 aimPoint, aimNormal, aimOrigin;
         private bool aimFrozen;          // 시점을 돌리는 중이거나, 돌린 뒤 커서가 아직 안 움직임
         private bool aimFromCursor = true; // 지금 겨누는 곳이 마우스 커서 아래인지(false = 화면 가운데)
         private Vector2 frozenCursor;    // 잠금이 풀린 뒤 처음 커서 자리(-1 = 아직 모름)
@@ -100,6 +100,8 @@ namespace Project1.Systems
                 AimFromCursor = aimFromCursor,
                 AimPoint = aimPoint,
                 AimNormal = aimNormal,
+                HasAimRay = hasAim,
+                AimRayOrigin = aimOrigin,
             };
             jumpQueued = false;
             lightAttackQueued = false;
@@ -215,6 +217,7 @@ namespace Project1.Systems
                 best = h.distance;
                 aimPoint = h.point;
                 aimNormal = h.normal;
+                aimOrigin = ray.origin;
                 hasAim = true;
             }
         }

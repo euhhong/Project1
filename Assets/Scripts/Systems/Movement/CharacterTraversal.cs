@@ -10,6 +10,7 @@ namespace Project1.Systems
     /// - 창틀 넘기: 땅에서 창틀(키의 25~75% 높이, 두께 0.8m 이하, 위가 열림) 쪽으로 방향키를 누른 채 점프(감시자는 감시자 모션 Jump)
     ///   → 반대편 바닥이 같은 높이면 넘어간다(WindowVault — 점프 중 짚고 넘기와 같은 모션 Jumping (1), 빠르게). 반대편이 dropMin보다 낮으면 턱 위로 올라섰다가 뛰어내린다(WindowDrop, Jumping Down (2)).
     /// - 점프 중 날아가는 방향 앞에 창틀이 있으면 반드시 한 손으로 짚고 넘는다(WindowJump, Jumping (1)).
+    ///   창틀 뚫고 지나가기(windowPassThrough, 붉은나비): 넘기 모션 없이 감시자 넘기 길(곧게, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼).
     /// - 올라서기: 땅에서 중간 높이 턱(키의 35~110%, 위에 설 자리) 쪽으로 방향키 + 점프 → 뛰어 올라선다(ClimbUp, Running Jump).
     /// - 매달리기: 공중에서 턱 쪽으로 방향키를 누르고 있고 손이 턱에 닿을 높이면 잡고 매달린다(HangGrab → Hang).
     ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
@@ -126,6 +127,17 @@ namespace Project1.Systems
 
         /// <summary>감시자인지 정한다(캐릭터를 고를 때).</summary>
         public void SetHunterStyle(bool hunter) => hunterStyle = hunter;
+
+        public bool PassesThroughWindows => windowPassThrough;
+
+        [Tooltip("창틀 뚫고 지나가기(붉은나비): 창틀 넘기 모션 없이 감시자 넘기 길(곧은 길, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼). 캐릭터를 고를 때 SetWindowPassThrough로 정한다.")]
+        [SerializeField] private bool windowPassThrough;
+
+        /// <summary>창틀을 모션 없이 뚫고 지나갈지 정한다(캐릭터를 고를 때).</summary>
+        public void SetWindowPassThrough(bool pass) => windowPassThrough = pass;
+
+        /// <summary>창틀 넘기를 감시자 길(곧게 Jump 시간)로 하는지 — 감시자 또는 창틀 뚫고 지나가기.</summary>
+        private bool HunterPath => hunterStyle || windowPassThrough;
         public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
@@ -325,7 +337,7 @@ namespace Project1.Systems
             {
                 if (!StandRoom(w.Floor.point)) return false;
                 pathEnd = w.Floor.point;
-                StartAction(TraversalAction.WindowVault, hunterStyle ? hunterVaultTime : vaultTime);
+                StartAction(TraversalAction.WindowVault, HunterPath ? hunterVaultTime : vaultTime);
             }
             else
             {
@@ -334,7 +346,7 @@ namespace Project1.Systems
                 pathMid = w.Mid + Vector3.up * 0.02f;
                 pathEnd = edge;
                 // 창틀 모션은 생존자만: 감시자는 감시자 넘기(Jump)로 창밖까지 뛰어넘고 그대로 떨어진다.
-                if (hunterStyle) StartAction(TraversalAction.WindowVault, hunterVaultTime);
+                if (HunterPath) StartAction(TraversalAction.WindowVault, hunterVaultTime);
                 else StartAction(TraversalAction.WindowDrop, windowDropTime);
             }
             return true;
@@ -354,7 +366,7 @@ namespace Project1.Systems
             faceYaw = YawOf(-w.Sill.Normal);
             pathStart = pos;
             pathEnd = end;
-            StartAction(TraversalAction.WindowJump, hunterStyle ? hunterVaultTime : windowJumpTime);
+            StartAction(TraversalAction.WindowJump, HunterPath ? hunterVaultTime : windowJumpTime);
             return true;
         }
 
@@ -469,7 +481,7 @@ namespace Project1.Systems
             action = TraversalAction.None;
             actionTime = actionDuration = 0f;
             airborne = false;
-            jumpedFlag = was == TraversalAction.WindowDrop || (was == TraversalAction.WindowVault && hunterStyle); // 창밖으로 뛰어내림 = 점프해서 떨어진 것(높으면 구르기)
+            jumpedFlag = was == TraversalAction.WindowDrop || (was == TraversalAction.WindowVault && HunterPath); // 창밖으로 뛰어내림 = 점프해서 떨어진 것(높으면 구르기)
         }
 
         private void StartAction(TraversalAction a, float duration)
@@ -511,12 +523,12 @@ namespace Project1.Systems
                 }
                 case TraversalAction.WindowVault: // 생존자 Jumping (1)을 느리게: 손 짚음 → 다리 넘김(0.33~0.55) → 착지(0.78) / 감시자 Jump: 뛰어오름(0.1) → 착지(0.75)
                 {
-                    float f = hunterStyle ? Smooth(0.1f, 0.75f, p) : Smooth(0.08f, 0.82f, p);
+                    float f = HunterPath ? Smooth(0.1f, 0.75f, p) : Smooth(0.08f, 0.82f, p);
                     return Vector3.Lerp(s, e, f);
                 }
                 case TraversalAction.WindowJump: // Jumping (1): 손 짚음 → 다리 넘김(0.35~0.55) → 착지(0.78) — 날아오던 속도 그대로 앞으로
                 {
-                    Vector3 xz = Vector3.Lerp(s, e, hunterStyle ? Smooth(0.1f, 0.75f, p) : p);
+                    Vector3 xz = Vector3.Lerp(s, e, HunterPath ? Smooth(0.1f, 0.75f, p) : p);
                     xz.y = Mathf.Lerp(s.y, e.y, Smooth(0.1f, 0.78f, p)); // 모션이 넘는 높이를 낸다(높이는 모션 그대로) — 루트는 반대편 바닥으로
                     return xz;
                 }

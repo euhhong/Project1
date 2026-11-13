@@ -127,6 +127,10 @@ namespace Project1.Systems
         [Min(0.05f)] public float sillMaxThickness = 0.8f;
         [Tooltip("창틀 윗부분을 찾는 높이(m, 창턱 위). 이 안에 아무것도 없으면 창문이 아니라 낮은 벽이다(뚫지 않음).")]
         [Min(0.5f)] public float lintelSearch = 5f;
+        [Tooltip("창턱을 찾는 좌우 폭(m, 몸 가운데에서 한쪽으로). 창문 가운데가 아니라 옆쪽으로 비껴 지나가도(몸 옆이 창턱에 걸려도) 뚫린다. 창틀 옆·윗부분·벽은 이 폭 안이어도 막힌다.")]
+        [Min(0f)] public float sillSideReach = 0.9f;
+        [Tooltip("좌우로 살피는 간격(m).")]
+        [Min(0.05f)] public float sillSideStep = 0.15f;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
 
@@ -141,25 +145,56 @@ namespace Project1.Systems
             float h = cc.height;
             float look = cc.radius + glideSpeed * 0.12f;
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
-            for (float y = 0.15f; y <= sillMaxHeight * h; y += 0.2f)
+            Vector3 side = Vector3.Cross(Vector3.up, dir).normalized;
+            int steps = Mathf.CeilToInt(sillSideReach / sillSideStep);
+            for (int s = -steps; s <= steps; s++)
             {
-                int n = Physics.RaycastNonAlloc(pos + Vector3.up * y, dir, Hits, look, mask, QueryTriggerInteraction.Ignore);
-                for (int i = 0; i < n; i++)
+                Vector3 start = pos + side * Mathf.Clamp(s * sillSideStep, -sillSideReach, sillSideReach); // 몸 가운데 + 좌우로 비껴서도
+                for (float y = 0.15f; y <= sillMaxHeight * h; y += 0.2f)
                 {
-                    var col = Hits[i].collider;
-                    if (col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) continue;
-                    Bounds b = col.bounds;
-                    float top = b.max.y;
-                    if (top - pos.y > sillMaxHeight * h || top - pos.y < 0.1f) continue;           // 창턱 높이가 아니다
-                    float thick = Mathf.Abs(dir.x) * b.size.x + Mathf.Abs(dir.z) * b.size.z;
-                    if (thick > sillMaxThickness) continue;                                        // 두껍다(상자·벽)
-                    Vector3 mid = Hits[i].point + dir * (thick * 0.5f); mid.y = top;
-                    if (Physics.CheckSphere(mid + Vector3.up * 0.6f, 0.25f, mask, QueryTriggerInteraction.Ignore)) continue; // 위가 막힘
-                    if (!Physics.Raycast(mid + Vector3.up * 0.1f, Vector3.up, lintelSearch, mask, QueryTriggerInteraction.Ignore)) continue; // 위가 하늘 = 낮은 벽
-                    if (!ctx.TryGetComponent(out ColliderPassThrough pass)) pass = ctx.gameObject.AddComponent<ColliderPassThrough>();
-                    pass.Allow(col);
+                    int n = Physics.RaycastNonAlloc(start + Vector3.up * y, dir, Hits, look, mask, QueryTriggerInteraction.Ignore);
+                    for (int i = 0; i < n; i++)
+                    {
+                        var col = Hits[i].collider;
+                        if (IsSill(col, Hits[i].point, dir, pos.y, h, mask)) Pass(ctx, col);
+                    }
                 }
             }
+        }
+
+        private static void Pass(CharacterSkill ctx, Collider col)
+        {
+            if (!ctx.TryGetComponent(out ColliderPassThrough pass)) pass = ctx.gameObject.AddComponent<ColliderPassThrough>();
+            pass.Allow(col);
+        }
+
+        /// <summary>col이 창턱인지: 발(footY) 기준 낮고, 얇은 쪽 두께가 sillMaxThickness 이하, 윗면 위가 열려 있고 그 위에 창틀 윗부분이 있음.</summary>
+        public bool IsSill(Collider col, Vector3 hitPoint, Vector3 dir, float footY, float h, int mask)
+        {
+            if (col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) return false;
+            Bounds b = col.bounds;
+            float top = b.max.y;
+            if (top - footY > sillMaxHeight * h || top - footY < 0.1f) return false; // 창턱 높이가 아니다(창틀 옆·윗부분·벽은 더 높다)
+            // 두께 = 얇은 쪽(비스듬히 지나가도 긴 쪽 길이가 두께로 잡히지 않게).
+            float thick;
+            if (col is BoxCollider box)
+            {
+                Vector3 sc = col.transform.lossyScale;
+                thick = Mathf.Min(Mathf.Abs(box.size.x * sc.x), Mathf.Abs(box.size.z * sc.z));
+            }
+            else thick = Mathf.Min(b.size.x, b.size.z);
+            if (thick > sillMaxThickness) return false; // 두껍다(상자·벽)
+            // 위가 열린 창문인지: 닿은 자리 위, 또는 창턱 가운데 위(옆쪽으로 비껴 닿아 창틀 옆에 가까워도).
+            Vector3 atHit = hitPoint + dir * (thick * 0.5f); atHit.y = top;
+            Vector3 atCenter = new(b.center.x, top, b.center.z);
+            return OpenWindowAbove(atHit, mask) || OpenWindowAbove(atCenter, mask);
+        }
+
+        /// <summary>p(창턱 윗면) 위가 비었고(창문 틈), 그 위 lintelSearch 안에 창틀 윗부분이 있는지(없으면 하늘 = 낮은 벽).</summary>
+        private bool OpenWindowAbove(Vector3 p, int mask)
+        {
+            if (Physics.CheckSphere(p + Vector3.up * 0.6f, 0.25f, mask, QueryTriggerInteraction.Ignore)) return false; // 위가 막힘
+            return Physics.Raycast(p + Vector3.up * 0.1f, Vector3.up, lintelSearch, mask, QueryTriggerInteraction.Ignore);
         }
 
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)

@@ -14,7 +14,8 @@ namespace Project1.Systems
     ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다.
     ///   우클릭으로 시점을 돌리는 중에 좌클릭을 꾹 눌러도 꺼낼 수 있다(화면 가운데가 가리키는 땅, 없으면 앞쪽).
     /// - 나비는 최대 maxButterflies마리, 넘으면 가장 오래된 것이 사라진다.
-    /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
+    ///   캐릭터가 설 공간(몸 크기 캡슐 빈 곳 + 바닥)만 있으면 벽 너머 안 보이는 곳에도 놓는다(가리킨 벽 너머로 광선을 이어 찾음, placeBeyondWalls).
+    /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). 벽 등에 가려 안 보이는 나비는 겨누지 않는다(targetNeedsSight — 도약 표적만 안 뜸). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
     /// </summary>
     [DisallowMultipleComponent]
@@ -63,6 +64,12 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float ledgeSnapHeight = 1f;
         [Tooltip("놓을 자리가 캐릭터 발보다 이만큼(m) 넘게 높으면 못 놓는다(층고 5.5m — 1층에서 2층 바닥은 되고 그 위 지붕은 안 됨). 0 = 제한 없음.")]
         [SerializeField, Min(0f)] private float maxRiseHeight = 7f;
+        [Tooltip("벽 너머 놓기: 가리킨 곳이 벽 등 놓을 수 없는 면이면 그 너머로 이어 처음으로 캐릭터가 설 공간(캡슐 크기 빈 곳 + 바닥)이 있는 자리에 놓는다. 보이는지는 따지지 않는다(도약 표적만 보이는 나비).")]
+        [SerializeField] private bool placeBeyondWalls = true;
+        [Tooltip("도약 표적: 눈에서 나비까지 벽 등에 가려지면 겨누지 않는다(E 표적 표시가 안 뜸). 나비 위 이 높이들(m) 중 하나라도 보이면 보인다.")]
+        [SerializeField] private bool targetNeedsSight = true;
+        [SerializeField] private float[] sightHeights = { 0.55f, 1.3f };
+        private static readonly RaycastHit[] SightHits = new RaycastHit[16];
 
         // 좌클릭을 누르지 않을 때도 지금 겨누는 대로 놓으면 나비가 갈 자리(조준 보조 고리).
         [SerializeField] private GroundPlacementPreview aim = new();
@@ -83,11 +90,15 @@ namespace Project1.Systems
         private void ApplyPlacementSettings()
         {
             // 멀리까지 날린다: 최대 거리를 크게, 더 먼 곳을 가리키면 그 방향 최대 거리로 당긴다.
+            // 설 공간 = 이 캐릭터 몸(CharacterController) 크기.
+            bool hasCc = TryGetComponent(out CharacterController cc);
             foreach (var p in new[] { placement, aim })
             {
                 if (p == null) continue;
                 p.maxPlaceDistance = placeDistance; p.defaultDistance = turnDefaultDistance; p.clampToMax = true;
                 p.ledgeSnapHeight = ledgeSnapHeight; p.maxRiseHeight = maxRiseHeight;
+                p.requireStandSpace = true; p.seeThroughWalls = placeBeyondWalls;
+                if (hasCc) { p.standRadius = cc.radius * transform.lossyScale.x; p.standHeight = cc.height * transform.lossyScale.y; }
             }
         }
 
@@ -162,8 +173,32 @@ namespace Project1.Systems
                 float d = to.magnitude;
                 if (flat.magnitude < minTargetDistance || d > maxTargetDistance) continue;
                 float angle = Vector3.Angle(look, to);
-                if (angle <= bestAngle) { bestAngle = angle; TargetIndex = i; }
+                if (angle > bestAngle) continue;
+                if (targetNeedsSight && !Visible(eye, butterflies[i])) continue; // 벽 너머(안 보이는) 나비는 도약 표적이 아니다
+                bestAngle = angle; TargetIndex = i;
             }
+        }
+
+        /// <summary>눈에서 나비(위 sightHeights 중 한 높이)까지 가리는 것이 없는지(자기 몸·캐릭터·트리거·판정은 무시).</summary>
+        public bool Visible(Vector3 eye, Vector3 butterfly)
+        {
+            if (sightHeights == null || sightHeights.Length == 0) return true;
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            foreach (float h in sightHeights)
+            {
+                Vector3 to = butterfly + Vector3.up * h - eye;
+                float dist = to.magnitude;
+                if (dist < 0.01f) return true;
+                int n = Physics.RaycastNonAlloc(eye, to / dist, SightHits, dist - 0.05f, mask, QueryTriggerInteraction.Ignore);
+                bool blocked = false;
+                for (int k = 0; k < n && !blocked; k++)
+                {
+                    var c = SightHits[k].collider;
+                    blocked = !c.transform.IsChildOf(transform) && c is not CharacterController && c.GetComponentInParent<CharacterIdentity>() == null;
+                }
+                if (!blocked) return true;
+            }
+            return false;
         }
     }
 }
