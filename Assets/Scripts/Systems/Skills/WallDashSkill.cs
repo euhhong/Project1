@@ -9,6 +9,8 @@ namespace Project1.Systems
     /// - 그다음 첫 이동(벽에 닿을 때 누르던 방향과 다른 방향을 누르거나, 멈췄다가 다시 움직이면)에
     ///   그 방향으로 초고속(dashSpeed)으로 dashTime 동안 튀어 나간다(잔상). 점프는 못 한다.
     /// - 벽에 닿은 뒤 autoDashDelay(0.5초) 안에 방향 입력이 없으면 바라보는 방향(카메라 앞)으로 저절로 도약한다.
+    /// - 도약은 월드 방향으로 곧게 간다(시점을 돌려도 휘지 않음). 도약 중반(steerStart)부터 처음 누른 방향키 하나로 휘는 쪽을 정하고
+    ///   그 방향키가 가리키는 쪽으로 최대 곡선(steerRate)까지 휜다. 반대쪽으로는 못 휜다(S자 불가). 시점을 휙 돌리면 U자(maxTurn)까지.
     /// - 도약이 끝나면 다시 켜진 상태로 돌아가고, 벽에 또 닿으면 또 도약할 수 있다.
     /// 켜져 있어도 걷기·달리기·공격은 평소대로 한다(공격해도 꺼지지 않는다).
     /// </summary>
@@ -79,15 +81,13 @@ namespace Project1.Systems
                     if (ctx.PhaseTime >= autoDashDelay)
                     {
                         // autoDashDelay 안에 새 방향 입력이 없었다 → 바라보는 방향(시야 = 카메라 앞)으로 저절로 도약.
-                        ctx.SetPhase(Dashing);
-                        ctx.Direction = Vector3.forward;
+                        StartDash(ctx, Vector3.forward);
                         break;
                     }
                     if (moving && (ctx.Direction == Vector3.zero || Vector3.Dot(dir, ctx.Direction) < newDirectionDot))
                     {
                         // 새 이동(다른 방향, 또는 멈췄다가 다시 움직임) → 그 방향으로 도약.
-                        ctx.SetPhase(Dashing);
-                        ctx.Direction = dir;
+                        StartDash(ctx, dir);
                         break;
                     }
                     if (!moving) ctx.Direction = Vector3.zero;   // 멈췄다가 다시 움직이면 어느 방향이든 도약
@@ -96,11 +96,61 @@ namespace Project1.Systems
                 }
 
                 case Dashing:
-                    if (motor != null && motor.HitObstacle && IsWall(ctx, motor.LastObstacle)) SlideAlongWall(ctx, motor.LastObstacleNormal);
+                {
+                    Quaternion body = Quaternion.Euler(0f, ctx.transform.eulerAngles.y, 0f);
+                    Steer(ctx, body, moving ? new Vector3(move.x, 0f, move.y).normalized : Vector3.zero);
+                    ctx.Direction = Quaternion.Inverse(body) * ctx.Heading; // 월드 방향 그대로(시점을 돌려도 휘지 않음)
+                    if (motor != null && motor.HitObstacle && IsWall(ctx, motor.LastObstacle)) { SlideAlongWall(ctx, motor.LastObstacleNormal); ctx.Heading = body * ctx.Direction; }
                     if (ctx.PhaseTime >= dashTime) ctx.SetPhase(Active);
                     break;
+                }
             }
             return false;
+        }
+
+        [Header("도약 중 휘기")]
+        [Tooltip("도약 시간의 이 비율(0~1)이 지난 뒤 처음 누른 방향키로 휘는 쪽을 정한다(그 뒤로는 반대쪽으로 못 휨 — S자 불가).")]
+        [Range(0f, 1f)] public float steerStart = 0.5f;
+        [Tooltip("휘는 빠르기(도/초) — 최대 곡선.")]
+        [Min(0f)] public float steerRate = 1200f;
+        [Tooltip("한 번 도약에서 휠 수 있는 최대 각도(도). 180 = U자(시점을 휙 돌리면 뒤쪽까지).")]
+        [Range(0f, 360f)] public float maxTurn = 180f;
+
+        /// <summary>도약 시작: 시야 기준 방향을 월드 방향(Heading)으로 바꿔 고정한다. 휘기는 아직 정하지 않음.</summary>
+        private void StartDash(CharacterSkill ctx, Vector3 localDir)
+        {
+            ctx.SetPhase(Dashing);
+            ctx.Direction = localDir;
+            ctx.Heading = (Quaternion.Euler(0f, ctx.transform.eulerAngles.y, 0f) * localDir).normalized;
+            ctx.SteerSide = 0; ctx.Turned = 0f; ctx.SteerInput = Vector3.zero;
+        }
+
+        /// <summary>
+        /// 도약 중 휘기: steerStart가 지난 뒤 처음 누른 방향키(그 값 하나만)로 휘는 쪽을 정하고, 그 방향키가 가리키는 월드 방향(= 지금 시야 기준)으로
+        /// steerRate만큼씩 휜다. 정한 쪽으로만 휘고(S자 불가), 그 방향에 닿거나 maxTurn에 이르면 멈춘다.
+        /// 방향키 값은 처음 것 그대로라, 시점을 휙 돌리면 목표가 따라 돌아 U자(최대 maxTurn)까지 휜다.
+        /// </summary>
+        private void Steer(CharacterSkill ctx, Quaternion body, Vector3 localInput)
+        {
+            if (ctx.SteerSide == 2) return;
+            if (ctx.SteerSide == 0)
+            {
+                if (ctx.PhaseTime < dashTime * steerStart || localInput == Vector3.zero) return;
+                float first = Vector3.SignedAngle(ctx.Heading, body * localInput, Vector3.up);
+                // 가는 방향 그대로(도약을 시작한 방향키를 계속 누름) 또는 곧장 뒤는 휘는 쪽을 정하지 않는다 — 다른 쪽을 처음 누를 때 정한다.
+                if (Mathf.Abs(first) < 8f || Mathf.Abs(first) > 172f) return;
+                ctx.SteerInput = localInput;
+                ctx.SteerSide = first < 0f ? 1 : -1;
+            }
+            Vector3 target = body * ctx.SteerInput;
+            // 정한 쪽(왼쪽 = 반시계)으로 잰 목표까지 남은 각도. 목표를 살짝 지나쳐 반대쪽에 있으면(270도 넘음) 다 온 것.
+            float a = Vector3.SignedAngle(ctx.Heading, target, Vector3.up) * -ctx.SteerSide;
+            if (a < 0f) a += 360f;
+            if (a > 270f) return;
+            float step = Mathf.Min(steerRate * Time.fixedDeltaTime, a, maxTurn - ctx.Turned);
+            if (step <= 0f) return;
+            ctx.Heading = (Quaternion.AngleAxis(-ctx.SteerSide * step, Vector3.up) * ctx.Heading).normalized;
+            ctx.Turned += step;
         }
 
         [Tooltip("도약 중 벽에 닿았을 때, 벽을 따라가는 성분이 이 값(0~1)보다 크면 벽을 따라 같은 속도로 미끄러진다(ㄱ자 이동). 정면으로 박으면 그대로.")]

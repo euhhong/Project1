@@ -45,6 +45,7 @@
 | Skill_SmileyFace_RocketCharge_Raise | 광대 로켓 돌진(E): E를 꾹 누르는 동안 로켓을 두 손으로 머리 위로 치켜듦 — 상체만(SkillUpper), 다리는 걷기 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter) | (직접 만듦) |
 | Skill_SmileyFace_RocketCharge | 광대 로켓 돌진(E): E를 떼면 돌진(8m/s = 전위의 0.5배) — 무게중심을 낮추고 로켓을 껴안은 채 머리를 정면으로 들이받음, 다리는 달리기 모션(Run_F)의 다리·엉덩이를 가져와 엇갈려 뜀(1.2배속), 상체 떨림 없음. 벽에 부딪히면 Fall_1 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter + Run_F 다리) | (직접 만듦) |
 | Skill_Coordinator_Flare | 공군 신호총 쏘기(E) — 신호총은 이때만 꺼내 듦 | **Blender로 바꿔 씀**(`Tools/Blender/make_flare_shot.py`) — 바탕의 왼쪽으로 도는 발걸음을 줄여 몸을 옆으로 틀며 오른팔로 목표(앞, 12° 위)를 겨눔(0.2초) → 쏨 → 반동으로 팔이 튐 → 겨눈 채 → 내림(0.8초) | Turn Left 45 Degrees → Blender |
+| Skill_Thief_Flashlight | 도둑 손전등(E) — 오른팔을 앞으로 곧게 뻗어 어깨 높이로 들고 비춤(상체만, 다리는 걷기·달리기). 반복 | **Blender로 만듦**(`Tools/Blender/make_flashlight_hold.py`) — 생존자 대기(Idle) 위에 오른팔만 앞(4° 아래)으로 겨눔, 머리는 앞을 봄 | Idle → Blender |
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |

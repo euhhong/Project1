@@ -34,7 +34,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1"), ("SmileyFace_RocketCharge", "Fall_1") };
 
         // 상체만 쓰는 스킬 모션(SkillUpper 레이어, 다리는 걷기·달리기 그대로): 광대 로켓 치켜들고 걷기, 용병 벽 짚기(다리는 계속 달림).
-        private static readonly HashSet<string> UpperBodySkillClips = new() { "Skill_SmileyFace_RocketCharge_Raise", "Skill_Mercenary_Guard_Wall" };
+        private static readonly HashSet<string> UpperBodySkillClips = new() { "Skill_SmileyFace_RocketCharge_Raise", "Skill_Mercenary_Guard_Wall", "Skill_Thief_Flashlight" /* 도둑 손전등: 오른팔을 앞으로 뻗어 비춤(Tools/Blender/make_flashlight_hold.py), 다리는 걷기 */ };
 
         // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속) — Mixamo/Skill_<스킬 ID>.fbx가 없을 때만.
         // 사냥터지기 그랩 쏘기는 이제 전용 파일 Skill_Gamekeeper_Grab.fbx(감시자 내려치기 + 머리는 앞을 봄, Blender로 수정)를 쓴다.

@@ -50,6 +50,13 @@ namespace Project1.Systems
         public float Reach { get; set; }
         /// <summary>뻗어 나가는 시작점(월드, 예: 사냥터지기 그랩 = 서 있을 때의 오른쪽 어깨).</summary>
         public Vector3 ReachOrigin { get; set; }
+        /// <summary>월드 기준 진행 방향(예: 용병 도약 — 시점을 돌려도 그대로 가고, 방향키로만 휜다).</summary>
+        public Vector3 Heading { get; set; }
+        /// <summary>휘는 쪽(예: 용병 도약: 0 = 아직 정하지 않음, 1 = 왼쪽, -1 = 오른쪽, 2 = 휘지 않음으로 정해짐)과 휜 각도(도, 누적).</summary>
+        public int SteerSide { get; set; }
+        public float Turned { get; set; }
+        /// <summary>휘는 방향을 정할 때 받은 방향키(시야 기준 x = 우, z = 앞).</summary>
+        public Vector3 SteerInput { get; set; }
 
         public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
         public string StatusText => skill == null ? null : State == SkillState.Casting ? skill.StatusText(this) : skill.IdleStatusText(this);
@@ -83,6 +90,7 @@ namespace Project1.Systems
                 if (skill == null) { BlockedReason = "스킬 없음"; return false; }
                 if (State != SkillState.Ready) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
+                if (TryGetComponent(out ISkillLock skillLock) && skillLock.SkillLocked) { BlockedReason = skillLock.LockReason; return false; } // 예: 도둑 손전등에 지져짐
                 if (attack != null && attack.AttackState != CharacterAttackState.None) { BlockedReason = "공격 중"; return false; }
                 bool ok = skill.CanStart(gameObject, out var reason);
                 BlockedReason = ok ? null : reason;
