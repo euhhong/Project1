@@ -109,7 +109,9 @@ namespace Project1.Systems
             _ => "켜짐 (E로 끄기)",
         };
 
-        public override string AnimationState(CharacterSkill ctx) => ctx.Phase == Dashing ? id + "_Dash" : string.Empty;
+        // 벽에 닿아 도약을 기다리는 동안 = ID_Wall(벽을 손으로 짚는 자세, Male Action Pose), 도약 중 = ID_Dash(모션이 있으면).
+        public override string AnimationState(CharacterSkill ctx) =>
+            ctx.Phase == Armed ? id + "_Wall" : ctx.Phase == Dashing ? id + "_Dash" : string.Empty;
 
         public override void Complete(GameObject owner) { }
 
