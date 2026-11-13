@@ -16,7 +16,7 @@ namespace Project1.Systems
     ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
     ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
     ///   벽 한 장(창틀 윗부분·담 꼭대기처럼 얇고 반대편이 낮음)이면 앞 → 꼭대기를 잡은 채 끌어 올라 넘어가자마자 반대편으로 떨어진다(HangClimbOver, Freehang Climb 앞부분).
-    ///   뒤(S) → 놓고 떨어진다. 잡는 턱은 손이 닿는 가장 높은 윗면(창틀·벽 맨 꼭대기, 창틀 없는 바닥 끝도).
+    ///   뒤(S) → 놓고 떨어진다(생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비를 돌아 아래 바닥에 내려선다 — HangFlip, Backflip). 잡는 턱은 손이 닿는 가장 높은 윗면(창틀·벽 맨 꼭대기, 창틀 없는 바닥 끝도).
     ///   벽 종류·두께와 상관없이 같은 규칙: 올라서기로는 못 가는 낮은 벽(약 1.8~2.9m)도 발로 벽을 짚고 매달린다(루트는 바닥 아래로 내려가도 되고, 놓으면 바닥 위로 올림).
     /// - 감시자(HunterStyle): 창틀 넘기·올라서기는 들어오던 속도로 출발해 속도를 이어 나가고(Carry), 매달려 오르기는 붙기·옮기기 끝을 조금 늘려 덜 끊긴다.
     /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
@@ -102,6 +102,11 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float landHighStop = 0.3f, landHardStop = 0.65f;
         [Tooltip("턱에 매달렸다가 놓아(뒤 S) 떨어지면 매달린 높이부터 이 높이(m) 미만은 다치지 않는다 — 낙하 데미지·크게 착지(경직) 없이 가볍게 착지. 이 이상이면 보통 낙하 규칙.")]
         [SerializeField, Min(0f)] private float hangDropSafeHeight = 6f;
+        [Tooltip("생존자: 매달려서 뒤(S) → 다치지 않을 높이면 벽을 박차고 뒤로 공중제비(Backflip)를 돌아 이만큼(m) 물러난 아래 바닥에 내려선다. 뒤가 막혀 0.5m도 못 물러나면 그냥 놓는다.")]
+        [SerializeField, Min(0f)] private float flipBack = 1.4f;
+        [Tooltip("공중제비 시간(초, Backflip 17~58프레임 = 1.37초) / 발이 바닥에 닿는 진행도(40프레임).")]
+        [SerializeField, Min(0.1f)] private float flipTime = 1.37f;
+        [SerializeField, Range(0.2f, 0.9f)] private float flipLand = 0.56f;
         [Tooltip("착지하는 동안 걷기 속도 대비 빠르기.")]
         [SerializeField, Range(0f, 1f)] private float landSlow = 0.5f;
 
@@ -154,7 +159,7 @@ namespace Project1.Systems
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
         private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
-                                                             || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver;
+                                                             || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver || a == TraversalAction.HangFlip;
         private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
 
         private void Awake() => Init();
@@ -202,7 +207,7 @@ namespace Project1.Systems
             switch (action)
             {
                 case TraversalAction.ClimbUp: case TraversalAction.WindowVault: case TraversalAction.WindowDrop: case TraversalAction.WindowJump:
-                case TraversalAction.HangClimb: case TraversalAction.HangClimbRail: case TraversalAction.HangClimbOver:
+                case TraversalAction.HangClimb: case TraversalAction.HangClimbRail: case TraversalAction.HangClimbOver: case TraversalAction.HangFlip:
                     actionTime += dt;
                     // 진행도 1인 틱에 이동이 끝 자리로 옮긴 뒤 다음 틱에 끝낸다.
                     if (actionTime > actionDuration + dt * 0.5f) FinishScripted();
@@ -455,7 +460,31 @@ namespace Project1.Systems
         {
             // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
             if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
-            if (input.Move.y < -0.5f) Release();
+            if (input.Move.y < -0.5f && !TryStartHangFlip()) Release(); // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
+        }
+
+        /// <summary>
+        /// 생존자: 매달린 채 뒤(S) — 벽 반대쪽으로 flipBack 물러난 아래 바닥이 다치지 않을 높이(hangDropSafeHeight 미만)면 벽을 박차고 뒤로 공중제비를 돌아 거기 내려선다.
+        /// 감시자이거나 뒤가 막혔거나 너무 높으면 거짓(그냥 놓고 떨어진다).
+        /// </summary>
+        private bool TryStartHangFlip()
+        {
+            if (hunterStyle) return false;
+            float hu = HumanUnit();
+            Vector3 pos = transform.position, n = ledge.Normal;
+            Vector3 body = pos + Vector3.up * (BracedFeet * hu); // 매달린 몸(벽을 짚은 발) 높이 — 낮은 벽에서 루트가 바닥 아래여도 바닥 위
+            float back = flipBack;
+            if (Cast(body, n, back + cc.radius, out var blocked)) back = blocked.distance - cc.radius - 0.05f;
+            if (back < 0.5f) return false;
+            Vector3 land = body + n * back;
+            if (OverlapSphere(land, cc.radius * 0.8f)) return false;
+            if (!Cast(land, Vector3.down, BracedFeet * hu + hangDropSafeHeight, out var floor) || floor.normal.y < 0.7f) return false;
+            if (pos.y - floor.point.y >= hangDropSafeHeight || !StandRoom(floor.point)) return false;
+            pathStart = pos;
+            pathEnd = floor.point;
+            StartAction(TraversalAction.HangFlip, flipTime);
+            hangDrop = true; // 매달렸다 놓은 낙하로 친다 — 다치지 않는다(StartAction이 끈 뒤에 켠다)
+            return true;
         }
 
         private bool TryStartHangClimb()
@@ -643,6 +672,13 @@ namespace Project1.Systems
                     float top = railTop + 0.05f;
                     Vector3 xz = Vector3.Lerp(s, e, Smooth(0.4f, Mathf.Min(1f, 0.95f + spread), p));
                     xz.y = y0 + railClimbRise.Evaluate(p) * (top - root0) - Smooth(0.7f, 1f, p) * (top - e.y); // 난간을 넘은 뒤 그 뒤 바닥으로 내려선다
+                    return xz;
+                }
+                case TraversalAction.HangFlip: // Backflip: 벽을 박차고 뛰어오름 → 뒤로 돌며 떨어짐(높이는 점점 빨리 — 중력처럼) → 발이 닿음(flipLand) → 일어섬
+                {
+                    float u = Mathf.Clamp01(p / flipLand);
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0f, flipLand, p));
+                    xz.y = Mathf.Lerp(s.y, e.y, u * u);
                     return xz;
                 }
                 case TraversalAction.HangClimbOver: // Freehang Climb 앞부분(OverClipShare): 손은 꼭대기에 둔 채 끌어 올라 무릎·발을 올림 → 꼭대기에 올라섬 → 넘어감. 끝나면 바로 떨어진다.

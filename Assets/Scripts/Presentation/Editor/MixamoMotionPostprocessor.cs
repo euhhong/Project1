@@ -218,6 +218,8 @@ namespace Project1.Presentation.EditorTools
             ["Traversal_HangClimb"] = new[] { ("Traversal_HangClimb", new Vector2(1, 115), Height.Feet) },
             // 난간 넘어 올라가기(Climbing의 뒷부분): 두 손으로 난간을 잡고 발로 벽을 짚음(52) → 넘어감(79) → 일어섬(112). 도착 높이는 BE가 난간 뒤 바닥으로 낮춘다.
             ["Traversal_HangClimbRail"] = new[] { ("Traversal_HangClimbRail", new Vector2(52, 112), Height.Feet) },
+            // 매달렸다 놓아 다치지 않을 높이로 떨어짐(생존자, Backflip): 웅크림은 빼고 벽을 박차고 뛰어오름(17~19) → 뒤로 돌며 꼭대기(28) → 발이 닿아 웅크림(40~43) → 일어섬(58).
+            ["Traversal_HangFlip"] = new[] { ("Traversal_HangFlip", new Vector2(17, 58), Height.Bake) },
             // 중간 높이로 올라서기(Running Jump): 도약(16) → 높은 바닥에 발이 닿음(25) → 일어섬(40).
             ["Traversal_ClimbUp"] = new[] { ("Traversal_ClimbUp", new Vector2(14, 40), Height.Feet) },
             // 걸어서 높은 곳에서 떨어짐(Jumping): 떨어지는 자세(31~43) / 높은 곳 착지 — 깊이 웅크려 한 손 짚기(43~67).

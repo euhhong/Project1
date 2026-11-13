@@ -96,7 +96,8 @@ namespace Project1.Presentation
             TraversalAction.Hang => t.BracedHang ? "HangBraced" : "Hang",
             TraversalAction.HangClimb => "HangClimb",
             TraversalAction.HangClimbRail => "HangClimbRail",
-            TraversalAction.HangClimbOver => "HangClimb", // 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
+            TraversalAction.HangFlip => "HangFlip", // 생존자: 벽을 박차고 뒤로 공중제비(Backflip) → 아래 바닥에 내려섬
+            TraversalAction.HangClimbOver => "HangClimb",// 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",

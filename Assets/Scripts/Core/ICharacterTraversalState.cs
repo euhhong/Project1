@@ -32,6 +32,8 @@ namespace Project1.Core
         LandRoll,
         /// <summary>고공 낙하 착지(Hard Landing).</summary>
         LandHard,
+        /// <summary>생존자: 매달렸다가 놓을 때 다치지 않을 높이면 벽을 박차고 뒤로 공중제비를 돌아 아래 바닥에 내려선다(Backflip).</summary>
+        HangFlip,
     }
 
     /// <summary>캐릭터의 오르기·매달리기·낙하 상태. 캐릭터 루트에서 GetComponent로 얻는다.</summary>
