@@ -763,6 +763,7 @@ namespace Project1.Systems
             Vector3 start = new(inside.x, feet.y + maxAbove + 0.35f, inside.z);
             if (OverlapSphere(start, 0.08f)) return false; // 위가 막힘(벽이 더 높거나 천장)
             if (!Cast(start, Vector3.down, maxAbove + 0.4f - minAbove, out var topHit) || topHit.normal.y < 0.7f) return false;
+            if (NoGrab(wall.collider) || NoGrab(topHit.collider)) return false; // 계단(단·옆면·경사)·잡지 않기로 표시한 것은 턱이 아니다
             float above = topHit.point.y - feet.y;
             if (above < minAbove || above > maxAbove) return false;
             if (OverlapSphere(new Vector3(inside.x, topHit.point.y + 0.3f, inside.z), 0.12f)) return false; // 손 놓을 자리 위가 막힘
@@ -820,6 +821,20 @@ namespace Project1.Systems
         // ───────────────────── 물리 검사(캐릭터·판정·트리거 무시) ─────────────────────
 
         private static int Mask => ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+
+        /// <summary>
+        /// 잡거나 올라서는 턱이 될 수 없는 것: NoLedgeGrab 표시가 붙은 것(과 그 자식), 블록아웃 계단(Ramp_Collider 경사 자신, 또는 형제에 Ramp_Collider가 있는 단).
+        /// </summary>
+        private static bool NoGrab(Collider c)
+        {
+            if (c == null) return false;
+            if (c.GetComponentInParent<NoLedgeGrab>() != null) return true;
+            if (c.name == StairRampName) return true;
+            Transform p = c.transform.parent;
+            return p != null && p.Find(StairRampName) != null;
+        }
+
+        private const string StairRampName = "Ramp_Collider"; // MapBlockoutBuilder.Stair()가 단 모서리를 잇는 보이지 않는 경사
 
         private static bool Ignored(Collider c) => c is CharacterController || c.GetComponentInParent<CharacterIdentity>() != null;
 
