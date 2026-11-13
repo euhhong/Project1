@@ -19,7 +19,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly HashSet<string> Looping = new()
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
-            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
+            "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
@@ -37,7 +37,7 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_Light_Luchino"] = new Vector2(4, 60),     // Standing Melee Attack Horizontal: 오른쪽 뒤로 당김 → 가로 베기(22~29) → 몸 되돌리기
             ["Attack_Light_Geisha"] = new Vector2(7, 61),      // Standing Torch Melee Attack Stab을 Blender로 좌우 뒤집음(Tools/Blender/mirror_motion.py, 프레임 1 밀림): 오른팔로 길게 찌르기
-            ["Attack_Light_Hastur"] = new Vector2(8, 44),      // Standing 2H Magic Attack 03: 두 손 들기 → 앞으로 내뻗기(28~36). 뒤의 긴 유지 자세는 뺌
+            ["Attack_Light_Hastur"] = new Vector2(19, 64),     // Zombie Attack: 두 손 높이 들기(19~41) → 앞으로 내려찍기(41~49) → 거두기
             ["Attack_Light_MindsEye"] = new Vector2(10, 48),   // Standing Melee Combo Attack Ver. 3: 첫 타 가로 베기(24~31) → 한 바퀴 돌아 앞을 봄(48). 두 번째 타는 뺌
             ["Attack_SwipeL"] = new Vector2(22, 42),          // 맹인 왼쪽 후리기(Melee Combo Attack Ver. 3 첫 타만): 오른쪽 뒤 → 앞(29~32) → 왼쪽
             ["Attack_SwipeR"] = new Vector2(23, 43),          // 맹인 오른쪽 후리기(위를 Blender로 거꾸로, 프레임 1 밀림): 왼쪽 → 앞(31~34) → 오른쪽

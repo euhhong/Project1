@@ -34,8 +34,8 @@ ModelImporter:
       name: Attack_Light_Hastur
       takeName: mixamo.com
       internalID: -203655887218126122
-      firstFrame: 8
-      lastFrame: 44
+      firstFrame: 19
+      lastFrame: 64
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

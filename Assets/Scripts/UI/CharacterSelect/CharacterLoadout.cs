@@ -55,6 +55,7 @@ namespace Project1.UI
             {
                 var slots = entry.id == "Hunter_Ripper" ? Project1.Core.HitboxSlot.LeftHand | Project1.Core.HitboxSlot.Weapon
                           : entry.id == "Survivor_MindsEye" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.Weapon // 맹인: 지팡이(무기)로 맞힌다
+                          : entry.id == "Hunter_Hastur" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.LeftHand  // 하스터: 두 손으로 내려찍는다
                           : Project1.Core.HitboxSlot.None;
                 attack.SetAttackSlots(slots, slots);
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기

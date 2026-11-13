@@ -28,7 +28,7 @@ namespace Project1.Presentation
             ["Attack_Light_Hunter"] = new Vector2(14f / 44f, 22f / 44f),    // Melee Attack Downward(원본 6~50): 내려치기 20~28
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
-            ["Attack_Light_Hastur"] = new Vector2(20f / 36f, 28f / 36f),    // 2H Magic Attack 03(원본 8~44): 내뻗기 28~36
+            ["Attack_Light_Hastur"] = new Vector2(22f / 45f, 30f / 45f),    // Zombie Attack(원본 19~64): 두 손 내려찍기 41~49
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
             ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
             ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34

@@ -42,7 +42,7 @@ namespace Project1.Presentation.EditorTools
 
         private static readonly string[] Slots =
         {
-            "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
+            "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
@@ -67,6 +67,12 @@ namespace Project1.Presentation.EditorTools
             ("Walk_F", "Idle_Hunter"), ("Walk_B", "Idle_Hunter"), ("Walk_L", "Idle_Hunter"), ("Walk_R", "Idle_Hunter"),
             ("Run_F", "Idle_Hunter"), ("Run_B", "Idle_Hunter"), ("Run_L", "Idle_Hunter"), ("Run_R", "Idle_Hunter"),
         };
+        // 하스터: 발이 없어 걷기·달리기 모두 꾸물대며 미끄러지는 모션 하나로
+        private static readonly (string from, string to)[] HasturCrawl =
+        {
+            ("Walk_F", "Move_Hastur"), ("Walk_B", "Move_Hastur"), ("Walk_L", "Move_Hastur"), ("Walk_R", "Move_Hastur"),
+            ("Run_F", "Move_Hastur"), ("Run_B", "Move_Hastur"), ("Run_L", "Move_Hastur"), ("Run_R", "Move_Hastur"),
+        };
         private static readonly (string name, (string from, string to)[][] tables)[] OverrideControllers =
         {
             // 감시자 공통: 사냥터지기·안토니오
@@ -79,7 +85,8 @@ namespace Project1.Presentation.EditorTools
             // 안토니오: 대기 = 바이올린 켜기(Mixamo Playing The Violin의 활 긋기 부분만, 1.5배속 — Tools/Blender/make_loop_clip.py)
             ("Antonio", new[] { HunterOverrides, new[] { ("Idle", "Idle_Antonio") } }),
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
-            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
+            // 하스터: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다. 공격 = 두 손 내려찍기(Zombie Attack)
+            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl }),
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
             ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
             // 리퍼: 무기가 없고 왼손 자체가 무기 → 모든 공격을 왼손으로(감시자 공격을 Blender로 좌우 뒤집은 모션)
