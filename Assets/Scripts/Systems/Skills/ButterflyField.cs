@@ -10,6 +10,7 @@ namespace Project1.Systems
     ///   땅 위만 된다(면이 위를 향함, 공중·벽 불가). 떼면 그 자리에 나비를 놓는다(재사용 대기 placeCooldown, 테스트 0초).
     ///   취소: 누른 채 E를 누르거나(뗄 때까지 무시), 몸 근처(cancelRadius)로 끌어다 놓으면 놓지 않는다 — 취소는 재사용 대기가 생기지 않는다.
     ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다(그 자리 바닥에 붙음).
+    ///   우클릭으로 시점을 돌리는 중에 좌클릭을 꾹 눌러도 꺼낼 수 있다(화면 가운데가 가리키는 땅, 없으면 앞쪽 defaultDistance).
     /// - 나비는 최대 maxButterflies마리, 넘으면 가장 오래된 것이 사라진다.
     /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
@@ -48,6 +49,8 @@ namespace Project1.Systems
         private bool previewSet, viewLocked;
         private Vector3 viewLocal;
         private float lastAimYaw;
+        [Tooltip("시점을 돌리는 중에 새로 꺼냈는데 화면 가운데가 땅을 가리키지 않으면(하늘 등) 앞쪽 이 거리(m)에 꺼낸다.")]
+        [SerializeField, Min(0f)] private float defaultDistance = 6f;
 
         public IReadOnlyList<Vector3> Butterflies => butterflies;
         public bool Placing { get; private set; }
@@ -118,11 +121,24 @@ namespace Project1.Systems
         private void UpdatePreview(in CharacterInputFrame input)
         {
             Quaternion view = Quaternion.Euler(0f, input.LookYaw, 0f);
-            if (!input.HasAimPoint)
+            if (!(input.HasAimPoint && input.AimFromCursor))
             {
-                // 커서가 가리키는 곳이 없음(우클릭으로 시점을 돌리는 중 등):
-                // 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 보고 시야 기준 방향을 그대로 지킨 채 시점을 따라 돌린다.
-                if (!previewSet) return; // 아직 한 번도 겨누지 않음
+                // 커서가 가리키는 곳이 아님(우클릭으로 시점을 돌리는 중 등).
+                if (!previewSet)
+                {
+                    // 시점을 돌리는 중에 새로 꺼냄: 화면 가운데가 가리키는 땅, 없으면(하늘 등) 앞쪽 defaultDistance m 바닥.
+                    if (input.HasAimPoint) Evaluate(input.AimPoint, input.AimNormal);
+                    else
+                    {
+                        Vector3 ahead = transform.position + view * Vector3.forward * defaultDistance;
+                        if (GroundAt(ahead, out Vector3 gp, out Vector3 gn)) Evaluate(gp, gn);
+                        else return;
+                    }
+                    lastAimYaw = input.LookYaw;
+                    viewLocked = false;
+                    return;
+                }
+                // 이미 꺼낸 자리: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 보고 시야 기준 방향을 그대로 지킨 채 시점을 따라 돌린다.
                 if (!viewLocked)
                 {
                     Vector3 off = PreviewPoint - transform.position; off.y = 0f;

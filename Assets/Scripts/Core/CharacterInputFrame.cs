@@ -36,11 +36,17 @@ namespace Project1.Core
         /// <summary>지난 틱 이후 고유 스킬 키(E)가 눌렸다.</summary>
         public bool Skill;
 
+        /// <summary>고유 스킬 키(E)를 지금 누르고 있는 중(꾹 눌러 모으는 스킬용, 예: 광대 로켓 돌진).</summary>
+        public bool SkillHeld;
+
         /// <summary>지난 틱 이후 공격 키가 눌렸다(누른 순간, 짧게/길게와 상관없이). 공중 공격처럼 바로 나가야 할 때 쓴다.</summary>
         public bool AttackPressed;
 
-        /// <summary>마우스 커서가 가리키는 곳이 있는지(화면 안에서 무언가에 닿음). 우클릭으로 시점을 돌리는 동안·돌린 뒤 커서가 아직 안 움직인 동안은 false(커서가 가리키는 곳이 아님).</summary>
+        /// <summary>겨누는 곳이 있는지(화면 안에서 무언가에 닿음). 보통은 마우스 커서 아래, 우클릭으로 시점을 돌리는 동안·돌린 뒤 커서가 아직 안 움직인 동안은 화면 가운데(AimFromCursor = false).</summary>
         public bool HasAimPoint;
+
+        /// <summary>AimPoint가 마우스 커서 아래인지(false = 시점을 돌리는 중이라 화면 가운데). 나비 미리보기는 커서일 때만 따라 옮긴다.</summary>
+        public bool AimFromCursor;
 
         /// <summary>마우스 커서가 가리키는 곳(월드). HasAimPoint일 때만 의미 있다(예: 붉은나비 나비 놓을 자리).</summary>
         public Vector3 AimPoint;
