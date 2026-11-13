@@ -17,6 +17,8 @@ namespace Project1.Systems
     ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
     ///   벽 한 장(창틀 윗부분·담 꼭대기처럼 얇고 반대편이 낮음)이면 앞 → 꼭대기를 잡은 채 끌어 올라 넘어가자마자 반대편으로 떨어진다(HangClimbOver, Freehang Climb 앞부분).
     ///   뒤(S) → 놓고 떨어진다. 잡는 턱은 손이 닿는 가장 높은 윗면(창틀·벽 맨 꼭대기, 창틀 없는 바닥 끝도).
+    ///   벽 종류·두께와 상관없이 같은 규칙: 올라서기로는 못 가는 낮은 벽(약 1.8~2.9m)도 발로 벽을 짚고 매달린다(루트는 바닥 아래로 내려가도 되고, 놓으면 바닥 위로 올림).
+    /// - 감시자(HunterStyle): 창틀 넘기·올라서기는 들어오던 속도로 출발해 속도를 이어 나가고(Carry), 매달려 오르기는 붙기·옮기기 끝을 조금 늘려 덜 끊긴다.
     /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
     /// - 착지: 떨어진 높이(가장 높았던 곳 → 착지)로 고른다 — 고공(hardFall 이상) = Hard Landing, 점프해서 높이 = 앞구르기(Falling To Roll),
     ///   걸어서 높이 = 깊이 웅크림(Jumping), 낮게 = 살짝 웅크림(Jumping Down). 크게 착지하면 잠깐 못 움직인다.
@@ -33,6 +35,7 @@ namespace Project1.Systems
         private const float FreeHangTop = 2.05f;   // Jump To Freehang: 매달린 자세의 턱 윗면(손목 1.93 + 손가락)
         private const float BracedHangTop = 2.28f; // Idle To Braced Hang(손목 2.16)
         private const float BracedFeet = 1.0f;     // Braced Hang에서 벽을 짚는 발 높이
+        private const float BracedFloorGap = 0.1f; // 벽을 짚은 발과 바닥 사이에 남길 틈(m) — 낮은 벽(약 1.8m~)도 발로 짚고 매달린다
         private const float HangClimbTop = 2.2f;   // Freehang Climb 첫 자세의 턱 윗면(발 기준)
         private const float RailClimbTop = 2.12f;  // Climbing(난간 넘기) 첫 자세의 난간 윗면(발 기준)
         private const float LedgeInset = 0.06f;    // 턱 윗면을 찾을 때 앞면에서 안으로 들어가는 거리(난간 두께 0.15보다 얇게)
@@ -81,6 +84,12 @@ namespace Project1.Systems
             new Keyframe(0f, 0f), new Keyframe(0.2f, 0f), new Keyframe(0.27f, 0.08f), new Keyframe(0.33f, 0.24f), new Keyframe(0.4f, 0.41f),
             new Keyframe(0.47f, 0.59f), new Keyframe(0.53f, 0.83f), new Keyframe(0.6f, 1f), new Keyframe(1f, 1f));
 
+        [Header("감시자 넘기 (부드럽게)")]
+        [Tooltip("감시자: 창틀 넘기·뛰어 올라서기를 들어오던 속도로 출발해, 끝날 때 이 비율의 속도로 이어 나간다(0 = 멈췄다 출발하고 멈춰 끝남). 생존자는 쓰지 않는다.")]
+        [SerializeField, Range(0f, 1f)] private float hunterSpeedCarry = 1f;
+        [Tooltip("감시자: 매달려 올라가기·난간 넘기·벽 한 장 넘기에서 매달린 자리 → 오르기 시작 자세로 붙는 구간과, 턱 위로 옮겨 가는 구간의 끝을 이만큼(진행도) 늘려 천천히 옮긴다.")]
+        [SerializeField, Range(0f, 0.2f)] private float hunterClimbSpread = 0.08f;
+
         [Header("낙하·착지 (떨어진 높이, m)")]
         [SerializeField, Min(0f)] private float fallStartDrop = 0.5f;
         [Tooltip("이보다 빨리(m/s) 뒤로 가다 떨어지면 허우적대며 떨어진다.")]
@@ -108,7 +117,7 @@ namespace Project1.Systems
         private float actionTime, actionDuration, landStop, rollSpeed, regrab, faceYaw;
         private bool braced, fallBackward;
         private Ledge ledge;
-        private Vector3 pathStart, pathMid, pathEnd, hangPos;
+        private Vector3 pathStart, pathMid, pathEnd, hangPos, entryVelocity;
         private float root0, railTop;
         private bool airborne, jumped, jumpedFlag, knocked;
         private float peakY, airStartY;
@@ -386,23 +395,53 @@ namespace Project1.Systems
 
         private bool TryStartHang(Vector3 dir)
         {
-            float hu = HumanUnit();
-            Vector3 pos = transform.position;
-            float lo = (FreeHangTop - pullDown) * hu, hi = (BracedHangTop + pullUp) * hu;
-            if (!FindLedge(dir, transform.position.y, lo, hi, hangReach, out var l)) return false;
-            Vector3 basePos = l.Face + l.Normal * (cc.radius + Skin);
-            // 턱 아래 벽이 있으면 발로 짚는다.
-            Vector3 foot = basePos; foot.y = l.Top - (BracedHangTop - BracedFeet) * hu;
-            bool wall = Cast(foot, -l.Normal, cc.radius + 0.4f, out _);
-            Vector3 hp = basePos; hp.y = l.Top - (wall ? BracedHangTop : FreeHangTop) * hu;
-            float dy = pos.y - hp.y;
-            if (dy < -pullUp * hu || dy > pullDown * hu) return false;
-            if (Cast(hp + Vector3.up * 0.3f, Vector3.down, 0.45f, out _)) return false; // 발밑이 바로 바닥 — 매달릴 높이가 아니다
+            if (!FindHang(transform.position, dir, out var l, out bool wall, out var hp)) return false;
             ledge = l;
             braced = wall;
             hangPos = hp;
             faceYaw = YawOf(-l.Normal);
             StartAction(TraversalAction.HangGrab, wall ? bracedGrabTime : grabTime);
+            return true;
+        }
+
+        /// <summary>
+        /// 발이 pos에 있을 때 dir 쪽으로 잡을 턱과 매달릴 자리(hp = 매달린 자세의 루트). 벽 종류·두께와 상관없이 손이 닿는 모서리면 잡는다.
+        /// 턱 아래가 벽이면 발로 벽을 짚고(루트는 바닥 아래로 내려가도 된다 — 몸의 가장 낮은 곳은 벽을 짚은 발), 비었으면 늘어져 매달린다(늘어진 발 = 루트).
+        /// </summary>
+        private bool FindHang(Vector3 pos, Vector3 dir, out Ledge l, out bool wall, out Vector3 hp)
+        {
+            float hu = HumanUnit();
+            wall = false; hp = default;
+            float lo = (FreeHangTop - pullDown) * hu, hi = (BracedHangTop + pullUp) * hu;
+            if (!FindLedge(pos, dir, lo, hi, hangReach, out l)) return false;
+            Vector3 basePos = l.Face + l.Normal * (cc.radius + Skin);
+            // 턱 아래 벽이 있으면 발로 짚는다.
+            Vector3 foot = basePos; foot.y = l.Top - (BracedHangTop - BracedFeet) * hu;
+            wall = Cast(foot, -l.Normal, cc.radius + 0.4f, out _);
+            hp = basePos; hp.y = l.Top - (wall ? BracedHangTop : FreeHangTop) * hu;
+            float dy = pos.y - hp.y;
+            // 손이 닿는 가장 높은 턱은 늘어진 매달림도 벽을 짚는 매달림과 같게(늘어진 자세는 손이 낮은 만큼 더 끌어 올린다).
+            float pull = (pullUp + (wall ? 0f : BracedHangTop - FreeHangTop)) * hu;
+            if (dy < -pull || dy > pullDown * hu) return false;
+            // 몸의 가장 낮은 곳(늘어진 발 = 루트, 벽을 짚은 발 = 루트 + BracedFeet) 바로 아래가 바닥이면 매달릴 높이가 아니다.
+            Vector3 low = hp + Vector3.up * ((wall ? BracedFeet * hu - BracedFloorGap : 0f) + 0.3f);
+            if (OverlapSphere(low, 0.05f) || Cast(low, Vector3.down, 0.45f, out _)) return false;
+            return true;
+        }
+
+        /// <summary>
+        /// 발이 feet에 있을 때 dir 쪽 턱을 점프해서 잡을 수 있는지, 매달린 뒤 앞으로 가면 무엇을 하는지(HangClimb = 위에 섬, HangClimbRail = 난간 넘어 뒤 바닥,
+        /// HangClimbOver = 벽 한 장 넘어 반대편으로 떨어짐, None = 매달리기만). 상태는 바꾸지 않는다(에디터 검사·AI용).
+        /// </summary>
+        public bool ProbeGrab(Vector3 feet, Vector3 dir, out TraversalAction climb)
+        {
+            climb = TraversalAction.None;
+            if (cc == null) Init();
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-4f || !FindHang(feet, dir.normalized, out var l, out _, out _)) return false;
+            climb = HasStandRoom(l, out _) ? TraversalAction.HangClimb
+                  : FindFloorBehindRail(l, out _) ? TraversalAction.HangClimbRail
+                  : FindOverThinTop(l, out _) ? TraversalAction.HangClimbOver : TraversalAction.None;
             return true;
         }
 
@@ -468,11 +507,23 @@ namespace Project1.Systems
 
         private void Release()
         {
+            LiftOutOfFloor();
             action = TraversalAction.None;
             actionTime = actionDuration = 0f;
             regrab = regrabDelay;
             airborne = false; // 놓은 자리부터 떨어진 높이를 잰다
             jumpedFlag = false;
+        }
+
+        /// <summary>낮은 벽에 발로 짚고 매달리면 루트(모션의 바닥)가 바닥 아래에 있을 수 있다 — 놓을 때 발을 바닥 위로 올린다.</summary>
+        private void LiftOutOfFloor()
+        {
+            Vector3 pos = transform.position;
+            float half = cc.height * 0.5f;
+            if (!Cast(pos + Vector3.up * half, Vector3.down, half, out var floor) || floor.normal.y < 0.7f || floor.point.y <= pos.y) return;
+            cc.enabled = false;
+            transform.position = new Vector3(pos.x, floor.point.y, pos.z);
+            cc.enabled = true;
         }
 
         private void FinishScripted()
@@ -490,6 +541,31 @@ namespace Project1.Systems
             actionTime = 0f;
             actionDuration = duration;
             fallBackward = false;
+            // 감시자: 들어오던 수평 속도(월드)를 기억해 넘기 길이 그 속도로 출발하게 한다.
+            Vector2 v = state != null ? state.LocalPlanarVelocity : Vector2.zero;
+            entryVelocity = transform.rotation * new Vector3(v.x, 0f, v.y);
+        }
+
+        /// <summary>
+        /// 감시자 넘기 진행도(0~1): a~b 동안 들어오던 속도(× hunterSpeedCarry)로 출발해, carryOut이면 같은 빠르기로 끝난다(Hermite — 멈췄다 출발하지 않게).
+        /// carryOut이 아니면(b 뒤에 멈춰 있는 길) 멈추며 끝난다. maxIn = 출발 기울기 한도(작을수록 처음에 덜 앞서 간다). 가만히 서서 시작하면 SmoothStep과 같다.
+        /// </summary>
+        private float Carry(float p, float a, float b, bool carryOut = true, float maxIn = 2.1f)
+        {
+            float u = Mathf.InverseLerp(a, b, p);
+            Vector3 path = pathEnd - pathStart; path.y = 0f;
+            float length = path.magnitude, span = (b - a) * actionDuration;
+            float m0 = 0f, m1 = 0f;
+            if (length > 0.05f && span > 0.01f)
+            {
+                Vector3 along = path / length;
+                float inSpeed = Mathf.Max(0f, Vector3.Dot(entryVelocity, along)) * hunterSpeedCarry;
+                // 기울기 2.1 이하(두 기울기 제곱 합 ≤ 9): 길을 지나쳤다 되돌아오지 않는다.
+                m0 = Mathf.Min(inSpeed * span / length, Mathf.Min(maxIn, 2.1f));
+                if (carryOut) m1 = Mathf.Min(entryVelocity.magnitude * hunterSpeedCarry * span / length, 2.1f);
+            }
+            float u2 = u * u, u3 = u2 * u;
+            return (u3 - 2f * u2 + u) * m0 + (3f * u2 - 2f * u3) + (u3 - u2) * m1;
         }
 
         // ───────────────────── 이동 대신 정하기(CharacterMotor가 부른다) ─────────────────────
@@ -502,7 +578,7 @@ namespace Project1.Systems
             Vector3 pos = transform.position;
             if (action == TraversalAction.HangGrab || action == TraversalAction.Hang)
             {
-                worldVelocity = Vector3.ClampMagnitude((hangPos - pos) / snapTime, 25f);
+                worldVelocity = Vector3.ClampMagnitude((hangPos - pos) / (hunterStyle ? snapTime * 1.6f : snapTime), 25f); // 감시자는 조금 천천히 붙는다
                 return true;
             }
             if (!IsScripted(action)) return false;
@@ -513,22 +589,28 @@ namespace Project1.Systems
         private Vector3 PathPoint(float p)
         {
             Vector3 s = pathStart, e = pathEnd;
+            // 감시자: 넘기·올라서기는 들어오던 속도로 출발해 속도를 이어 나가고(Carry), 매달려 올라가기는 턱 쪽으로 옮기는 구간을 늘린다.
+            bool hunter = hunterStyle;
+            float spread = hunter ? hunterClimbSpread : 0f;
             switch (action)
             {
                 case TraversalAction.ClimbUp: // Running Jump: 발이 떨어짐(0.08) → 높은 바닥에 닿음(0.42)
                 {
-                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.12f, 0.6f, p));
+                    // 감시자: 달려오던 속도로 출발(발이 아직 낮을 때 너무 앞서 가 벽에 파묻히지 않게 기울기 1까지), 올라선 뒤(0.6~)는 그대로 — 끝 속도는 모션이 멈춰 서므로 이어 가지 않는다.
+                    Vector3 xz = Vector3.Lerp(s, e, hunter ? Carry(p, 0f, 0.6f, false, 1f) : Smooth(0.12f, 0.6f, p));
                     xz.y = Mathf.Lerp(s.y, e.y + 0.02f, Smooth(0.08f, 0.42f, p));
                     return xz;
                 }
                 case TraversalAction.WindowVault: // 생존자 Jumping (1)을 느리게: 손 짚음 → 다리 넘김(0.33~0.55) → 착지(0.78) / 감시자 Jump: 뛰어오름(0.1) → 착지(0.75)
                 {
-                    float f = HunterPath ? Smooth(0.1f, 0.75f, p) : Smooth(0.08f, 0.82f, p);
-                    return Vector3.Lerp(s, e, f);
+                    if (!HunterPath) return Vector3.Lerp(s, e, Smooth(0.08f, 0.82f, p));
+                    Vector3 xz = Vector3.Lerp(s, e, hunter ? Carry(p, 0f, 1f) : Smooth(0.1f, 0.75f, p));
+                    xz.y = Mathf.Lerp(s.y, e.y, Smooth(0.1f, 0.75f, p));
+                    return xz;
                 }
                 case TraversalAction.WindowJump: // Jumping (1): 손 짚음 → 다리 넘김(0.35~0.55) → 착지(0.78) — 날아오던 속도 그대로 앞으로
                 {
-                    Vector3 xz = Vector3.Lerp(s, e, HunterPath ? Smooth(0.1f, 0.75f, p) : p);
+                    Vector3 xz = Vector3.Lerp(s, e, hunter ? Carry(p, 0f, 1f) : HunterPath ? Smooth(0.1f, 0.75f, p) : p);
                     xz.y = Mathf.Lerp(s.y, e.y, Smooth(0.1f, 0.78f, p)); // 모션이 넘는 높이를 낸다(높이는 모션 그대로) — 루트는 반대편 바닥으로
                     return xz;
                 }
@@ -540,23 +622,23 @@ namespace Project1.Systems
                 }
                 case TraversalAction.HangClimb:
                 {
-                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.06f, p));
-                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.72f, 0.9f, p));
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.06f + spread, p));
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.72f, Mathf.Min(1f, 0.9f + spread), p)); // 시작은 그대로(발이 턱보다 낮을 때 벽 쪽으로 가지 않게), 끝만 늘림
                     xz.y = y0 + hangClimbRise.Evaluate(p) * (e.y - root0);
                     return xz;
                 }
                 case TraversalAction.HangClimbRail:
                 {
-                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.08f, p));
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.08f + spread, p));
                     float top = railTop + 0.05f;
-                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.4f, 0.95f, p));
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.4f, Mathf.Min(1f, 0.95f + spread), p));
                     xz.y = y0 + railClimbRise.Evaluate(p) * (top - root0) - Smooth(0.7f, 1f, p) * (top - e.y); // 난간을 넘은 뒤 그 뒤 바닥으로 내려선다
                     return xz;
                 }
                 case TraversalAction.HangClimbOver: // Freehang Climb 앞부분(OverClipShare): 손은 꼭대기에 둔 채 끌어 올라 무릎·발을 올림 → 꼭대기에 올라섬 → 넘어감. 끝나면 바로 떨어진다.
                 {
                     float q = p * OverClipShare; // 원래 모션(매달려 올라가기) 기준 진행도
-                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.06f, q));
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.06f + spread, q));
                     Vector3 xz = Vector3.Lerp(s, e, Smooth(0.86f, 1f, p)); // 꼭대기에 다 올라선 뒤 넘어간다
                     xz.y = y0 + hangClimbRise.Evaluate(q) * (railTop + 0.03f - root0);
                     return xz;
@@ -608,8 +690,14 @@ namespace Project1.Systems
         /// </summary>
         private bool FindLedge(Vector3 dir, float feetY, float minAbove, float maxAbove, float reach, out Ledge result)
         {
+            Vector3 feet = transform.position; feet.y = feetY; // 높이 기준(땅에서는 발, 공중 창틀 짚기는 아래 바닥)
+            return FindLedge(feet, dir, minAbove, maxAbove, reach, out result);
+        }
+
+        private bool FindLedge(Vector3 feet, Vector3 dir, float minAbove, float maxAbove, float reach, out Ledge result)
+        {
             result = default;
-            Vector3 up = Vector3.up, feet = transform.position; feet.y = feetY; // 높이 기준(땅에서는 발, 공중 창틀 짚기는 아래 바닥)
+            Vector3 up = Vector3.up;
             float dist = cc.radius + reach;
             bool found = false;
             RaycastHit wall = default;

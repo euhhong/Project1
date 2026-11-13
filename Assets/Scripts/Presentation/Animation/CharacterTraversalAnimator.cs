@@ -20,6 +20,9 @@ namespace Project1.Presentation
         [SerializeField, Min(0.01f)] private float fadeOut = 0.18f;
         [Tooltip("반복 상태로 바뀔 때 섞는 시간(초).")]
         [SerializeField, Min(0f)] private float crossFade = 0.15f;
+        [Tooltip("감시자(HunterStyle): 넘기·오르기 모션으로 들어가기/나오기/동작 사이 섞는 시간(초) — 생존자보다 길게 섞어 덜 끊겨 보이게.")]
+        [SerializeField, Min(0.01f)] private float hunterFadeIn = 0.16f, hunterFadeOut = 0.32f;
+        [SerializeField, Min(0f)] private float hunterCrossFade = 0.24f;
 
         // CharacterPush.pushLeanTime(기본 0.4초)과 같게 — 기울이는 모션을 이 시간에 맞춰 재생한다.
         private const float PushLeanTime = 0.4f;
@@ -58,7 +61,10 @@ namespace Project1.Presentation
             string name = pushing ? (leaning ? "PushStart" : "Push") : StateName(traversal);
             int state = name != null ? Animator.StringToHash(name) : 0;
             bool active = state != 0 && animator.HasState(layer, state);
-            weight = Mathf.MoveTowards(weight, active ? 1f : 0f, Time.deltaTime / (active ? fadeIn : fadeOut));
+            bool hunter = traversal.HunterStyle && !pushing;
+            float fade = active ? (hunter ? hunterFadeIn : fadeIn) : (hunter ? hunterFadeOut : fadeOut);
+            float cross = hunter ? hunterCrossFade : crossFade;
+            weight = Mathf.MoveTowards(weight, active ? 1f : 0f, Time.deltaTime / fade);
             animator.SetLayerWeight(layer, weight);
             if (!active) { playing = 0; return; }
 
@@ -69,8 +75,8 @@ namespace Project1.Presentation
             {
                 // 동작이 바뀌면 앞 모션에서 섞어 넘어간다(예: 매달림 → 올라가기가 한 프레임에 확 바뀌지 않게). 레이어를 막 켰을 때는 바로.
                 if (playing == 0 || weight < 0.5f) animator.Play(state, layer, synced ? at : 0f);
-                else animator.CrossFadeInFixedTime(state, crossFade, layer, synced ? at * StateLength(state) : 0f);
-                blendLeft = playing == 0 ? 0f : crossFade;
+                else animator.CrossFadeInFixedTime(state, cross, layer, synced ? at * StateLength(state) : 0f);
+                blendLeft = playing == 0 ? 0f : cross;
             }
             else if (synced && blendLeft <= 0f)
                 animator.Play(state, layer, at); // 재생 위치를 BE 진행도에 맞춘다(섞는 동안은 그대로 재생)
