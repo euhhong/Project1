@@ -40,6 +40,7 @@ namespace Project1.Presentation
         {
             if (!TryGetComponent(out HasturArmWalk _)) gameObject.AddComponent<HasturArmWalk>(); // 걸을 때 두 촉수 팔·어깨도 움직인다
             if (!TryGetComponent(out HasturBodyBob _)) gameObject.AddComponent<HasturBodyBob>(); // 걸을 때 몸 전체가 위아래로 들썩인다
+            if (!TryGetComponent(out HasturClawHitboxes _)) gameObject.AddComponent<HasturClawHitboxes>(); // 두 촉수 팔 끝(손톱)에 때리는 판정
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
