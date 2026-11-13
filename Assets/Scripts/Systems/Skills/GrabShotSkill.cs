@@ -24,13 +24,13 @@ namespace Project1.Systems
         [Tooltip("그랩이 다 돌아온 뒤 팔을 거둬 서 있는 자세로 돌아오는 시간(초).")]
         [Min(0f)] public float followThrough = 0.6f;
         [Tooltip("최대 사거리(m).")]
-        [Min(0.5f)] public float range = 12f;
+        [Min(0.5f)] public float range = 16f;
         [Tooltip("뻗는 속도(m/s).")]
         [Min(0.1f)] public float extendSpeed = 45f;
         [Tooltip("못 맞혔을 때 되감는 속도(m/s).")]
         [Min(0.1f)] public float retractSpeed = 60f;
         [Tooltip("판정 굵기(반지름, m).")]
-        [Min(0.05f)] public float hitRadius = 0.45f;
+        [Min(0.05f)] public float hitRadius = 0.6f;
         [Tooltip("그랩이 나가는 높이(캐릭터 키 대비). 던진 자세에서 앞으로 뻗은 오른손 높이(서 있을 때 어깨 높이쯤).")]
         [Range(0.1f, 1f)] public float heightRatio = 0.85f;
         [Tooltip("그랩이 나가는 곳: 몸 가운데에서 오른쪽(m) / 앞(m). 던진 자세의 오른손(오른쪽 어깨 줄 앞).")]

@@ -19,10 +19,10 @@ MonoBehaviour:
   castMoveSpeed: 0
   windup: 0.3
   followThrough: 0.6
-  range: 12
+  range: 16
   extendSpeed: 45
   retractSpeed: 60
-  hitRadius: 0.45
+  hitRadius: 0.6
   heightRatio: 0.85
   sideOffset: 0.3
   forwardOffset: 0.8
