@@ -105,6 +105,11 @@ namespace Project1.Map.EditorTools
             Undo.RegisterCreatedObjectUndo(root.gameObject, "Build MapBlockout");
 
             BuildMansion(Group(root, "Mansion", MansionOrigin));
+            BuildHall(Group(root, "Hall_West", new Vector3(-44f, 0f, 8f)), false);
+            BuildHall(Group(root, "Hall_East", new Vector3(20f, 0f, 8f)), true);
+            var connectors = Group(root, "Connectors", Vector3.zero);
+            BuildConnector(connectors, "Connector_W", -28f, -20f);
+            BuildConnector(connectors, "Connector_E", 20f, 28f);
             BuildGrounds(Group(root, "Grounds", Vector3.zero));
             BuildPerimeter(Group(root, "Perimeter", Vector3.zero));
 
@@ -137,7 +142,7 @@ namespace Project1.Map.EditorTools
             // ── 1F
             var w1 = Group(m, "1F_Walls", Vector3.zero);
             WallX(w1, "Outer_N", -0.2f, 60.2f, 36f, G, Story, WallT, wallMat,
-                Win(4f), Win(10f), Win(17f), Win(22f), MainDoor(30f), Win(38f), Win(43f), Win(50f), Win(56f));
+                Door(6f), Win(17f), Win(22f), MainDoor(30f), Win(38f), Win(43f), Door(54f)); // 6·54 = 연결동 1층 회랑
             WallX(w1, "Outer_S", -0.2f, 60.2f, 0f, G, Story, WallT, wallMat,
                 Door(3f), Win(17f), Door(22f), Win(26f), Win(34f), Door(38f), Win(43f), Door(57f));
             WallZ(w1, "Outer_W", 0f, 36f, 0f, G, Story, WallT, wallMat, Win(4f), Door(8.5f), Win(28f), Door(31.5f));
@@ -176,16 +181,22 @@ namespace Project1.Map.EditorTools
 
             BuildLobby(Group(m, "Lobby", Vector3.zero));
 
-            // ── 2F
+            // ── 2F: 로비 둘레 복도(남·북 복도 + 서·동 회랑) + 남쪽 방 4개(뒤 테라스 문) + 북쪽 방 3개(가운데 응접실 → 정문 발코니)
             var w2 = Group(m, "2F_Walls", Vector3.zero);
             WallX(w2, "Outer_N", -0.2f, 60.2f, 36f, F2, InH, WallT, wallMat,
-                Win(4f), Win(10f), Win(17f), Win(22f), Win(26f), Door(30f), Win(34f), Win(38f), Win(43f), Win(50f), Win(56f));
+                Door(6f), Win(17f), Win(22f), Win(26f), Door(30f), Win(34f), Win(38f), Win(43f), Door(54f)); // 6·54 = 연결동 2F 복도
             WallX(w2, "Outer_S", -0.2f, 60.2f, 0f, F2, InH, WallT, wallMat,
-                Win(4f), Win(10f), Door(17f), Win(22f), Win(27f), Door(30f), Win(33f), Win(38f), Door(43f), Win(50f), Win(56f));
+                Win(4f), Win(10f), Door(17f), Win(21.5f), Door(27.5f), Door(32.5f), Win(39f), Door(43f), Win(50f), Win(56f));
             WallZ(w2, "Outer_W", 0f, 36f, 0f, F2, InH, WallT, wallMat, Win(4f), Win(8.5f), Win(28f), Win(32f));
             WallZ(w2, "Outer_E", 0f, 36f, 60f, F2, InH, WallT, wallMat, Win(4f), Win(8.5f), Win(28f), Win(32f));
-            WallZ(w2, "Div_W", 0f, 36f, 14f, F2, InH, WallT, wallMat, Door(5f), Door(18f), Door(31f));
-            WallZ(w2, "Div_E", 0f, 36f, 46f, F2, InH, WallT, wallMat, Door(5f), Door(18f), Door(31f));
+            WallZ(w2, "Div_W", 0f, 36f, 14f, F2, InH, WallT, wallMat, Door(6.75f), Door(18f), Door(31.25f));
+            WallZ(w2, "Div_E", 0f, 36f, 46f, F2, InH, WallT, wallMat, Door(6.75f), Door(18f), Door(31.25f));
+            WallX(w2, "Corridor_S", 14.2f, 45.8f, 5.5f, F2, InH, WallT, wallMat, Door(18.25f), Door(26.25f), Door(33.75f), Door(41.75f));
+            foreach (float x in new[] { 22.5f, 30f, 37.5f })
+                WallZ(w2, $"RoomS_{x:0.#}", 0.2f, 5.5f, x, F2, InH, WallT, wallMat);
+            WallX(w2, "Corridor_N", 14.2f, 45.8f, 32.5f, F2, InH, WallT, wallMat, Door(19f), Door(30f), Door(41f));
+            WallZ(w2, "RoomN_W", 32.5f, 35.8f, 24f, F2, InH, WallT, wallMat, Door(34.15f));
+            WallZ(w2, "RoomN_E", 32.5f, 35.8f, 36f, F2, InH, WallT, wallMat, Door(34.15f));
             WallX(w2, "WingW_S", 0.2f, 14f, 10f, F2, InH, WallT, wallMat, Door(10f));
             WallX(w2, "WingW_N", 0.2f, 14f, 26f, F2, InH, WallT, wallMat, Door(10f));
             WallX(w2, "WingE_S", 46f, 59.8f, 10f, F2, InH, WallT, wallMat, Door(50f));
@@ -219,18 +230,27 @@ namespace Project1.Map.EditorTools
             Stair(rt, "Stair_W", new Vector3(14f - StairLen, 0f, -2.2f), Vector3.right, 2.8f, F2);
             Stair(rt, "Stair_E", new Vector3(46f + StairLen, 0f, -2.2f), Vector3.left, 2.8f, F2);
 
-            // ── 3F (본채만) + 날개 옥상 테라스
+            // ── 3F (본채만): 서·동 회랑(옥상 테라스 문) + 남쪽 전시실(받침대·전시벽) + 북쪽 방 3개(로비 쪽 벽에 안창 — 로비가 내려다보임)
             var w3 = Group(m, "3F_Walls", Vector3.zero);
             WallX(w3, "Outer_N", 13.8f, 46.2f, 36f, F3, InH, WallT, wallMat,
-                Win(17f), Win(22f), Win(26f), BigWin(30f), Win(34f), Win(38f), Win(43f));
+                Win(17f), Win(22f), BigWin(30f), Win(38f), Win(43f));
             WallX(w3, "Outer_S", 13.8f, 46.2f, 0f, F3, InH, WallT, wallMat,
                 Win(17f), Win(22f), Win(27f), Win(30f), Win(33f), Win(38f), Win(43f));
-            WallZ(w3, "Outer_W", -0.2f, 36.2f, 14f, F3, InH, WallT, wallMat, Door(5f), Win(11f), Door(18f), Win(25f), Door(31f));
-            WallZ(w3, "Outer_E", -0.2f, 36.2f, 46f, F3, InH, WallT, wallMat, Door(5f), Win(11f), Door(18f), Win(25f), Door(31f));
+            WallZ(w3, "Outer_W", -0.2f, 36.2f, 14f, F3, InH, WallT, wallMat, Door(5f), Win(11f), Door(18f), Win(25f), Door(33f));
+            WallZ(w3, "Outer_E", -0.2f, 36.2f, 46f, F3, InH, WallT, wallMat, Door(5f), Win(11f), Door(18f), Win(25f), Door(33f));
+            WallX(w3, "Rooms_N_Front", 14.2f, 45.8f, 30f, F3, InH, WallT, wallMat, Door(16f), Win(24.9f), Win(30f), Win(35.1f), Win(39.6f), Door(44f)); // 안창은 기둥 사이
+            WallZ(w3, "Rooms_N_W", 30.2f, 35.8f, 26f, F3, InH, WallT, wallMat, Door(33f));
+            WallZ(w3, "Rooms_N_E", 30.2f, 35.8f, 34f, F3, InH, WallT, wallMat, Door(33f));
+            var exhibit = Group(m, "3F_Exhibit", Vector3.zero);
+            foreach (float x in new[] { 19.5f, 24.5f, 35.5f, 40.5f })
+            {
+                Box(exhibit, $"Pedestal_{x:0.#}", new Vector3(x, F3 + 0.5f, 4f), new Vector3(1.2f, 1f, 1.2f), accentMat);
+                Box(exhibit, $"Bust_{x:0.#}", new Vector3(x, F3 + 1.5f, 4f), new Vector3(0.6f, 1f, 0.6f), wallMat);
+            }
+            WallX(exhibit, "DisplayWall", 27f, 33f, 4f, F3, 2.8f, 0.4f, wallMat);
 
             var r3 = Group(m, "3F_Railings", Vector3.zero);
             WallX(r3, "Atrium_S", 18f, 42f, 8f, F3, RailH, RailT, accentMat, Gap(29f, 31f));
-            WallX(r3, "Atrium_N", 18f, 42f, 30f, F3, RailH, RailT, accentMat, Gap(28.5f, 31.5f));
             WallZ(r3, "Atrium_W", 8f, 30f, 18f, F3, RailH, RailT, accentMat);
             WallZ(r3, "Atrium_E", 8f, 30f, 42f, F3, RailH, RailT, accentMat);
 
@@ -254,7 +274,8 @@ namespace Project1.Map.EditorTools
         {
             float outerX = west ? x0 - 0.25f + RailT / 2f : x1 + 0.25f - RailT / 2f;
             WallX(t, "Rail_S", x0 - 0.25f, x1 + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat);
-            WallX(t, "Rail_N", x0 - 0.25f, x1 + 0.25f, 36.25f - RailT / 2f, F3, RailH, RailT, accentMat);
+            // 북쪽 난간 틈 = 연결동 옥상 길(본채 로컬 x 2..10 / 50..58)
+            WallX(t, "Rail_N", x0 - 0.25f, x1 + 0.25f, 36.25f - RailT / 2f, F3, RailH, RailT, accentMat, west ? Gap(2f, 10f) : Gap(50f, 58f));
             WallZ(t, "Rail_Out", -0.25f, 36.25f, outerX, F3, RailH, RailT, accentMat);
             WallZ(t, "Hole_W", hole.z0, hole.z1, hole.x0, F3, RailH, RailT, accentMat);
             WallZ(t, "Hole_E", hole.z0, hole.z1, hole.x1, F3, RailH, RailT, accentMat);
@@ -316,11 +337,11 @@ namespace Project1.Map.EditorTools
                 Buttress(g, $"Butt_N_{x:0.#}", x, 36.2f, 1.2f, RoofTop + 1f);
             foreach (float x in new[] { 19.5f, 24.5f, 35.5f, 40.5f })
                 Buttress(g, $"Butt_S_{x:0.#}", x, -0.2f, -1.2f, RoofTop + 1f);
-            foreach (float x in new[] { 7f, 53f })
+            foreach (float x in new float[0]) // 날개 정면은 연결동이 붙어 버팀벽 없음
                 Buttress(g, $"Butt_WingN_{x:0}", x, 36.2f, 1.2f, F3 + 1.2f);
 
             // 모서리 탑(속이 찬 돌탑 + 단계로 좁아지는 뾰족 지붕)
-            foreach (var c in new[] { new Vector2(-2.2f, -2.2f), new Vector2(-2.2f, 38.2f), new Vector2(62.2f, -2.2f), new Vector2(62.2f, 38.2f) })
+            foreach (var c in new[] { new Vector2(-2.2f, -2.2f), new Vector2(62.2f, -2.2f) }) // 뒤쪽 모서리만(앞쪽은 연결동·안뜰)
             {
                 var t = Group(g, $"Tower_{c.x:0}_{c.y:0}", new Vector3(c.x, 0f, c.y));
                 Box(t, "Base", new Vector3(0f, (-0.3f + 22f) / 2f, 0f), new Vector3(6f, 22.3f, 6f), wallMat);
@@ -354,66 +375,225 @@ namespace Project1.Map.EditorTools
             BoxMM(p, name, new Vector3(x - 0.4f, -0.3f, z0), new Vector3(x + 0.4f, top, z1), wallMat);
         }
 
+        // ───────────────────────────── 서·동 별관(3층) ─────────────────────────────
+        // 로컬 좌표(서관 기준): x 0..24(동 = 안뜰 쪽), z 0..30(북). 동관은 x를 뒤집어(mirror) 같은 뼈대 — 안뜰 쪽 복도가 서쪽에 온다.
+        //   높은 방(z 0..9): 1층부터 3층 천장까지 트인 방 하나(서관 = 서재, 동관 = 온실). 2F·3F는 벽을 따라 도는 회랑(난간, 틈으로 뛰어내림).
+        //   1F: 안뜰 쪽 복도(문 3개) + 높은 방 + 계단실 + 부엌(조리대 섬)/식당(식탁)
+        //   2F: 가운데 복도 + 양쪽 방, 부서진 바닥 구멍(1층 계단실로 떨어짐). 높은 방 동쪽 전실 = 연결동 2F 복도
+        //   3F(z 9..30): 서관 = 강당(무대 1m, 계단식 객석 0.5m씩 4단, 맨 뒤 2m 낭떠러지), 동관 = 예배당(제단·장의자 줄). 전실 남쪽 문 = 연결동 옥상 길
+        //   계단(1F→2F, 2F→3F 나란히), 박공지붕, 바깥 모서리 탑.
+        private const float HallW = 24f, HallD = 30f;
+
+        private static void BuildHall(Transform h, bool mirror)
+        {
+            float X(float x) => mirror ? HallW - x : x;
+            Opening MX(Opening o) => mirror ? new Opening(HallW - o.to, HallW - o.from, o.bottom, o.top) : o;
+            Rect2 R(float x0, float z0, float x1, float z1) => new(Mathf.Min(X(x0), X(x1)), z0, Mathf.Max(X(x0), X(x1)), z1);
+            void HX(Transform p, string n, float xa, float xb, float z, float y0, float hh, float t, Material mat, params Opening[] ops)
+                => WallX(p, n, Mathf.Min(X(xa), X(xb)), Mathf.Max(X(xa), X(xb)), z, y0, hh, t, mat, ops.Select(MX).ToArray());
+            void HZ(Transform p, string n, float za, float zb, float x, float y0, float hh, float t, Material mat, params Opening[] ops)
+                => WallZ(p, n, za, zb, X(x), y0, hh, t, mat, ops);
+            void HB(Transform p, string n, Vector3 a, Vector3 b, Material mat)
+                => BoxMM(p, n, new Vector3(Mathf.Min(X(a.x), X(b.x)), a.y, a.z), new Vector3(Mathf.Max(X(a.x), X(b.x)), b.y, b.z), mat);
+
+            var holeS1 = R(0.2f, 11.5f, 3.7f, 11.5f + StairLen); // 1F→2F
+            var holeS2 = R(3.7f, 11.5f, 7.2f, 11.5f + StairLen); // 2F→3F
+            var broken = R(15f, 10.5f, 18f, 13.5f);              // 2F 부서진 바닥(1층 계단실로 떨어짐)
+            var tall = R(3f, 0.2f, 17f, 6.5f);                   // 3층 높이 방(서재·온실)의 트인 곳 — 2F·3F는 벽을 따라 걷는 회랑
+            float sTop = 11.5f + StairLen;                       // 19.9
+            const float TallN = 9f;                              // 높은 방 북쪽 벽
+
+            var floors = Group(h, "Floors", Vector3.zero);
+            Slab(floors, "1F_Floor", R(-0.1f, -0.1f, HallW + 0.1f, HallD + 0.1f), G, 0.35f, floorMat);
+            Slab(floors, "2F_Floor", R(-0.1f, -0.1f, HallW + 0.1f, HallD + 0.1f), F2, SlabT, floorMat, holeS1, broken, tall);
+            Slab(floors, "3F_Floor", R(-0.1f, -0.1f, HallW + 0.1f, HallD + 0.1f), F3, SlabT, floorMat, holeS2, tall);
+            Slab(floors, "Roof", R(-0.25f, -0.25f, HallW + 0.25f, HallD + 0.25f), RoofTop, SlabT, accentMat);
+
+            // 1F: 안뜰 쪽 복도(x 20..24) + 높은 방(z 0..9) + 계단실(z 9..20) + 부엌/식당(z 20..30)
+            var w1 = Group(h, "1F_Walls", Vector3.zero);
+            HX(w1, "Outer_S", -0.2f, HallW + 0.2f, 0f, G, Story, WallT, wallMat, Win(5f), Win(12f), Door(22f));
+            HX(w1, "Outer_N", -0.2f, HallW + 0.2f, HallD, G, Story, WallT, wallMat, Win(5f), Door(12f), Win(19f));
+            HZ(w1, "Outer_Out", 0f, HallD, 0f, G, Story, WallT, wallMat, Win(4.5f), Door(15f), Win(25f));
+            HZ(w1, "Outer_Court", 0f, HallD, HallW, G, Story, WallT, wallMat, Win(3f), Door(8f), Win(13f), Door(18f), Win(23f), Door(27.5f));
+            HZ(w1, "Corridor", 0.2f, HallD - 0.2f, 20f, G, InH, WallT, wallMat, Door(4.5f), Door(15f), Door(25f));
+            HX(w1, "Room_S", 0.2f, 20f, TallN, G, InH, WallT, wallMat, Door(10f));
+            HX(w1, "Room_N", 0.2f, 20f, 20f, G, InH, WallT, wallMat, Door(10f));
+            var f1 = Group(h, "1F_Furniture", Vector3.zero);
+            if (!mirror)
+            {
+                foreach (float x in new[] { 5f, 8.5f, 12f, 15.5f }) // 서재: 2.8m 책장 줄(통로 3m)
+                    HZ(f1, $"Shelf_{x:0.#}", 1.5f, 7f, x, G, 2.8f, 0.6f, accentMat);
+                HB(f1, "Island_A", new Vector3(4f, G, 23f), new Vector3(9f, G + 1f, 25f), accentMat); // 부엌: 조리대 섬(1m, 넘음)
+                HB(f1, "Island_B", new Vector3(12f, G, 23f), new Vector3(17f, G + 1f, 25f), accentMat);
+                HB(f1, "Island_C", new Vector3(6f, G, 27f), new Vector3(14f, G + 1f, 28.4f), accentMat);
+                HB(f1, "Pantry", new Vector3(0.2f, G, 27.5f), new Vector3(1.4f, G + 2.4f, 29.8f), wallMat);
+            }
+            else
+            {
+                foreach (float x in new[] { 5f, 10f, 15f }) // 온실: 화분대(1m) + 큰 나무(높은 방 가운데로 솟음)
+                    foreach (float z in new[] { 2.2f, 6f })
+                        HB(f1, $"Planter_{x:0}_{z:0.#}", new Vector3(x - 1f, G, z - 0.9f), new Vector3(x + 1f, G + 1f, z + 0.9f), accentMat);
+                HB(f1, "Tree_Trunk", new Vector3(9.4f, G, 3.4f), new Vector3(10.6f, F3 + 2f, 4.6f), wallMat);
+                HB(f1, "Tree_Crown", new Vector3(7.5f, F3 + 1f, 1.5f), new Vector3(12.5f, F3 + 4f, 6f), accentMat);
+                HB(f1, "Dining_Top", new Vector3(5f, G + 0.85f, 24f), new Vector3(15f, G + 1.05f, 26f), accentMat); // 식당: 식탁 + 의자
+                for (int i = 0; i < 6; i++)
+                {
+                    float x = X(6f + i * 1.6f);
+                    Chair(f1, $"Chair_S_{i}", new Vector3(x, G, 23.35f), Vector3.back);
+                    Chair(f1, $"Chair_N_{i}", new Vector3(x, G, 26.65f), Vector3.forward);
+                }
+            }
+
+            var st = Group(h, "Stairs", Vector3.zero);
+            Stair(st, "1F_2F", new Vector3(X(1.95f), G, 11.5f), Vector3.forward, 3.5f, Story);
+            Stair(st, "2F_3F", new Vector3(X(5.45f), F2, sTop), Vector3.back, 3.5f, Story);
+
+            // 높은 방 회랑(2F·3F): 트인 곳 가장자리 난간(가운데 틈 = 뛰어내림), 동쪽 끝 전실(x 20..24 — 연결동 문)
+            foreach (var (fy, tag) in new[] { (F2, "2F"), (F3, "3F") })
+            {
+                var tg = Group(h, $"{tag}_TallRoom", Vector3.zero);
+                HZ(tg, "Rail_W", 0.2f, 6.5f, 3f, fy, RailH, RailT, accentMat, Gap(2.5f, 4f));
+                HZ(tg, "Rail_E", 0.2f, 6.5f, 17f, fy, RailH, RailT, accentMat);
+                HX(tg, "Rail_N", 3f, 17f, 6.5f, fy, RailH, RailT, accentMat, Gap(9f, 11f));
+                HX(tg, "Wall_N", 0.2f, HallW - 0.2f, TallN, fy, InH, WallT, wallMat, Door(11.5f), Door(22f));
+                HZ(tg, "Wall_Ante", 0.2f, TallN, 20f, fy, InH, WallT, wallMat, Door(4.5f));
+            }
+
+            // 2F: 가운데 복도(x 10..13, z 9..30) + 서쪽 방 2개(계단실·북쪽 방) + 동쪽 방 3개(부서진 바닥 방 포함)
+            var w2 = Group(h, "2F_Walls", Vector3.zero);
+            HX(w2, "Outer_S", -0.2f, HallW + 0.2f, 0f, F2, InH, WallT, wallMat, Win(1.6f), Win(10f), Door(22f));
+            HX(w2, "Outer_N", -0.2f, HallW + 0.2f, HallD, F2, InH, WallT, wallMat, Win(5f), Win(11.5f), Win(19f));
+            HZ(w2, "Outer_Out", 0f, HallD, 0f, F2, InH, WallT, wallMat, Win(4.5f), Win(25f));
+            HZ(w2, "Outer_Court", 0f, HallD, HallW, F2, InH, WallT, wallMat, Win(4.5f), Win(12.5f), Win(19.5f), Win(26.5f));
+            HZ(w2, "Corridor_W", TallN + 0.2f, HallD - 0.2f, 10f, F2, InH, WallT, wallMat, Door(15f), Door(21f), Door(26.5f));
+            HZ(w2, "Corridor_E", TallN + 0.2f, HallD - 0.2f, 13f, F2, InH, WallT, wallMat, Door(12.5f), Door(19.5f), Door(26.5f));
+            HX(w2, "RoomW", 0.2f, 10f, 22.5f, F2, InH, WallT, wallMat, Door(8.5f));
+            HX(w2, "RoomE_A", 13f, HallW - 0.2f, 16f, F2, InH, WallT, wallMat, Door(17f));
+            HX(w2, "RoomE_B", 13f, HallW - 0.2f, 23f, F2, InH, WallT, wallMat, Door(20f));
+            HX(w2, "StairRail", 0.2f, 3.7f, 11.5f, F2, RailH, RailT, accentMat);
+
+            // 3F: 높은 방 회랑 + 북쪽 강당/예배당(z 9..30)
+            var w3 = Group(h, "3F_Walls", Vector3.zero);
+            HX(w3, "Outer_S", -0.2f, HallW + 0.2f, 0f, F3, InH, WallT, wallMat, Win(1.6f), Win(10f), Door(22f));
+            HX(w3, "Outer_N", -0.2f, HallW + 0.2f, HallD, F3, InH, WallT, wallMat, Win(5f), Win(12f), Win(19f));
+            HZ(w3, "Outer_Out", 0f, HallD, 0f, F3, InH, WallT, wallMat, Win(4.5f), Win(15f), Win(25f));
+            HZ(w3, "Outer_Court", 0f, HallD, HallW, F3, InH, WallT, wallMat, Win(4.5f), Win(13f), Win(18f), Win(26f));
+            HZ(w3, "StairRail_W", 11.5f, sTop, 3.7f, F3, RailH, RailT, accentMat);
+            HZ(w3, "StairRail_E", 11.5f, sTop, 7.2f, F3, RailH, RailT, accentMat);
+            HX(w3, "StairRail_N", 3.7f, 7.2f, sTop, F3, RailH, RailT, accentMat);
+
+            var hall = Group(h, mirror ? "3F_Chapel" : "3F_Auditorium", Vector3.zero);
+            if (!mirror)
+            {
+                // 강당: 북쪽 무대(1m) + 강연대, 남쪽으로 올라가는 계단식 객석(0.5m씩 4단), 서쪽 통로 계단(0.25m씩), 맨 뒤(남쪽) 2m 낭떠러지(난간 가운데 틈)
+                HB(hall, "Stage", new Vector3(6f, F3 - 0.05f, 25.8f), new Vector3(18f, F3 + 1f, HallD - 0.2f), accentMat);
+                HB(hall, "Lectern", new Vector3(11.5f, F3 + 1f, 27f), new Vector3(12.5f, F3 + 2.2f, 27.8f), wallMat);
+                for (int i = 0; i < 4; i++)
+                    HB(hall, $"Tier_{i}", new Vector3(9f, F3 - 0.05f, 18f - i * 2f), new Vector3(23f, F3 + 0.5f * (i + 1), 20f - i * 2f), accentMat);
+                for (int i = 0; i < 8; i++)
+                    HB(hall, $"AisleStep_{i}", new Vector3(7.5f, F3 - 0.05f, 19f - i), new Vector3(9f, F3 + 0.25f * (i + 1), 20f - i), floorMat);
+                HX(hall, "BackRail", 9f, 23f, 12f + RailT / 2f, F3 + 2f, RailH, RailT, accentMat, Gap(14f, 18f));
+            }
+            else
+            {
+                // 예배당: 북쪽 제단(1m 단) + 제단석, 가운데 통로를 두고 장의자 줄(앉는 판 0.5m + 등받이, 제단 쪽을 봄)
+                HB(hall, "AltarStep", new Vector3(6f, F3 - 0.05f, 26.5f), new Vector3(18f, F3 + 1f, HallD - 0.2f), accentMat);
+                HB(hall, "Altar", new Vector3(11f, F3 + 1f, 28f), new Vector3(13f, F3 + 2.2f, 29f), wallMat);
+                for (int i = 0; i < 6; i++)
+                {
+                    float z = 23f - i * 2f;
+                    foreach (var (a, b) in new[] { (9f, 15f), (17f, 23f) })
+                    {
+                        HB(hall, $"Pew_{i}_{a:0}", new Vector3(a, F3 - 0.05f, z), new Vector3(b, F3 + 0.5f, z + 0.6f), accentMat);
+                        HB(hall, $"PewBack_{i}_{a:0}", new Vector3(a, F3 + 0.5f, z - 0.15f), new Vector3(b, F3 + 1.2f, z), accentMat);
+                    }
+                }
+            }
+
+            // 지붕·탑
+            var g = Group(h, "Gothic", Vector3.zero);
+            GableRoof(g, "Roof", -0.25f, HallW + 0.25f, -0.25f, HallD + 0.25f, RoofTop, 9f);
+            Tower(g, "Tower", new Vector3(X(-2.2f), 0f, HallD + 2.2f));
+        }
+
+        // ───────────────────────────── 연결동 ─────────────────────────────
+        // 월드 좌표, 본채 북쪽 벽(z 0) ↔ 별관 남쪽 벽(z 8). 1F = 기둥 회랑(밖, 지나다님), 2F = 막힌 복도(창), 옥상(3F 높이) = 난간 길.
+        private static void BuildConnector(Transform p, string name, float x0, float x1)
+        {
+            var c = Group(p, name, Vector3.zero);
+            foreach (float x in new[] { x0 + 0.4f, x1 - 0.4f })
+                foreach (float z in new[] { 2.5f, 5.5f })
+                    Pillar(c, $"Pillar_{x:0.#}_{z:0.#}", x, z, 0.7f, -0.3f, F2 - SlabT);
+            Slab(c, "2F_Floor", new Rect2(x0, 0.15f, x1, 7.85f), F2, SlabT, floorMat);
+            Slab(c, "Walkway", new Rect2(x0, 0.25f, x1, 7.85f), F3, SlabT, floorMat);
+            WallZ(c, "2F_Wall_W", 0.2f, 7.8f, x0 + WallT / 2f, F2, InH, WallT, wallMat, Win(2.5f), Win(5.5f));
+            WallZ(c, "2F_Wall_E", 0.2f, 7.8f, x1 - WallT / 2f, F2, InH, WallT, wallMat, Win(2.5f), Win(5.5f));
+            WallZ(c, "Rail_W", 0.25f, 7.8f, x0 + RailT / 2f, F3, RailH, RailT, accentMat);
+            WallZ(c, "Rail_E", 0.25f, 7.8f, x1 - RailT / 2f, F3, RailH, RailT, accentMat);
+        }
+
         // ───────────────────────────── 정원 ─────────────────────────────
-        // 월드 좌표. 시작 지점 근처(x -5..15, z 10..20: 플레이어·허수아비·연습 벽)는 비워 둔다.
+        // 월드 좌표. 야외는 건물 둘레 좁은 띠 + 앞 안뜰(x -20..20, z 0..38, 시작 지점 x -5..15·z 10..20은 비움) + 북쪽 띠.
         private static void BuildGrounds(Transform g)
         {
             const float B = -0.3f;
 
-            // 앞뜰: 분수, 석상, 산울타리 L자, 정자, 상자
-            var front = Group(g, "Front", Vector3.zero);
-            Fountain(front, "Fountain", new Vector3(0f, 0f, 32f), 5f);
-            foreach (var p in new[] { new Vector2(-8f, 42f), new Vector2(8f, 42f), new Vector2(-20f, 30f), new Vector2(20f, 30f) })
+            // 앞 안뜰: 분수, 석상, 낮은 벽
+            var court = Group(g, "Courtyard", Vector3.zero);
+            Fountain(court, "Fountain", new Vector3(0f, 0f, 27f), 5f);
+            foreach (var p in new[] { new Vector2(-12f, 34f), new Vector2(12f, 34f), new Vector2(-14f, 20f) })
             {
-                Box(front, $"Plinth_{p.x:0}_{p.y:0}", new Vector3(p.x, 0.25f, p.y), new Vector3(2f, 1.1f, 2f), accentMat);
-                Pillar(front, $"Statue_{p.x:0}_{p.y:0}", p.x, p.y, 1f, 0.8f, 4.3f);
+                Box(court, $"Plinth_{p.x:0}_{p.y:0}", new Vector3(p.x, 0.25f, p.y), new Vector3(2f, 1.1f, 2f), accentMat);
+                Pillar(court, $"Statue_{p.x:0}_{p.y:0}", p.x, p.y, 1f, 0.8f, 4.3f);
             }
-            WallX(front, "Hedge_W_A", -30f, -20f, 8f, B, 2.8f - B, 1f, wallMat);
-            WallZ(front, "Hedge_W_B", 8f, 16f, -30f, B, 2.8f - B, 1f, wallMat);
-            WallX(front, "Hedge_E_A", 20f, 30f, 8f, B, 2.8f - B, 1f, wallMat);
-            WallZ(front, "Hedge_E_B", 8f, 16f, 30f, B, 2.8f - B, 1f, wallMat);
-            Gazebo(front, "Gazebo", new Vector3(-38f, 0f, 32f), 7f);
-            Crates(front, "Crates_NE", new Vector2(38f, 36f));
+            WallX(court, "LowWall_W", -16f, -9f, 9f, B, 1f - B, 0.4f, accentMat);
+            WallX(court, "LowWall_E", 9f, 15f, 6f, B, 1f - B, 0.4f, accentMat);
 
-            // 서쪽 정원: 창고, 창문 벽 2개, 낮은 벽, 기둥
-            var west = Group(g, "West", Vector3.zero);
-            Shack(west, "Shed", new Vector3(-48f, 0f, 8f), 7f, 6f,
+            // 북쪽 띠: 정자, 석상, 서쪽 창고, 동쪽 묘지(낮은 담·묘비·납골당), 상자
+            var north = Group(g, "North", Vector3.zero);
+            Gazebo(north, "Gazebo", new Vector3(0f, 0f, 46f), 7f);
+            Pillar(north, "Statue_W", -12f, 46f, 1f, B, 4f);
+            Pillar(north, "Statue_E", 12f, 46f, 1f, B, 4f);
+            Shack(north, "Shed", new Vector3(-42f, 0f, 43f), 7f, 6f,
                 s: new[] { Win(3.5f) }, n: new[] { Win(3.5f) }, w: new[] { Door(3f) }, e: new[] { Door(3f) });
-            WallX(west, "WindowWall_N", -48f, -38f, -6f, B, 3.3f, 0.5f, wallMat, Notch(-43f, 2f, WinSill - B));
-            WallZ(west, "WindowWall_S", -32f, -16f, -44f, B, 3.3f, 0.5f, wallMat, Notch(-24f, 2f, WinSill - B));
-            WallX(west, "LowWall", -42f, -36f, -40f, B, 1f - B, 0.4f, accentMat);
-            Pillar(west, "Pillar_A", -40f, -30f, 1.2f, B, 3.5f);
-            Pillar(west, "Pillar_B", -46f, -36f, 1.2f, B, 3.5f);
+            Crates(north, "Crates_NW", new Vector2(-26f, 46f));
+            var yard = Group(north, "Graveyard", Vector3.zero);
+            WallX(yard, "Wall_S", 22f, 42f, 41f, B, 1f - B, 0.4f, accentMat, Gap(31f, 34f));
+            WallX(yard, "Wall_N", 22f, 42f, 52f, B, 1f - B, 0.4f, accentMat, Gap(31f, 34f));
+            WallZ(yard, "Wall_W", 41f, 52f, 22f, B, 1f - B, 0.4f, accentMat, Gap(45f, 48f));
+            WallZ(yard, "Wall_E", 41f, 52f, 42f, B, 1f - B, 0.4f, accentMat, Gap(45f, 48f));
+            Shack(yard, "Mausoleum", new Vector3(30f, 0f, 43.5f), 6f, 6f,
+                s: new[] { Door(3f) }, n: new[] { Door(3f) }, w: new[] { Win(3f) }, e: new[] { Win(3f) });
+            foreach (float x in new[] { 24.5f, 27.5f, 38.5f })
+                foreach (float z in new[] { 43f, 46f, 49f })
+                    Box(yard, $"Tomb_{x:0}_{z:0}", new Vector3(x, 0.5f, z), new Vector3(0.9f, 1.3f, 0.3f), accentMat);
 
-            // 동쪽 묘지: 낮은 담(동쪽은 울타리), 묘비, 납골당
-            var yard = Group(g, "Graveyard", Vector3.zero);
-            WallX(yard, "Wall_S", 38f, 49f, -32f, B, 1f - B, 0.4f, accentMat, Gap(41.5f, 44f));
-            WallX(yard, "Wall_N", 38f, 49f, -2f, B, 1f - B, 0.4f, accentMat, Gap(41.5f, 44f));
-            WallZ(yard, "Wall_W", -32f, -2f, 38f, B, 1f - B, 0.4f, accentMat, Gap(-25f, -22.5f), Gap(-11f, -8.5f));
-            Shack(yard, "Mausoleum", new Vector3(40.5f, 0f, -20f), 6f, 7f,
-                s: new[] { Door(3f) }, n: new[] { Door(3f) }, w: new[] { Win(3.5f) }, e: new[] { Win(3.5f) });
-            foreach (float x in new[] { 40.5f, 43.5f, 46.5f })
-                for (float z = -29f; z <= -4f; z += 3f)
-                {
-                    if (z > -21.5f && z < -12f) continue; // 납골당 자리
-                    Box(yard, $"Tomb_{x:0}_{-z:0}", new Vector3(x, 0.5f, z), new Vector3(0.9f, 1.3f, 0.3f), accentMat);
-                }
+            // 서·동 띠: 창문 벽, 기둥, 상자
+            var sides = Group(g, "Sides", Vector3.zero);
+            WallZ(sides, "WindowWall_W", 12f, 28f, -49f, B, 3.3f, 0.5f, wallMat, Notch(20f, 2f, WinSill - B));
+            WallZ(sides, "WindowWall_E", 12f, 28f, 49f, B, 3.3f, 0.5f, wallMat, Notch(20f, 2f, WinSill - B));
+            WallX(sides, "WindowWall_SW", -50f, -40f, -30f, B, 3.3f, 0.5f, wallMat, Notch(-45f, 2f, WinSill - B));
+            WallX(sides, "WindowWall_SE", 40f, 50f, -30f, B, 3.3f, 0.5f, wallMat, Notch(45f, 2f, WinSill - B));
+            foreach (var p in new[] { new Vector2(-42f, -44f), new Vector2(-48f, -36f), new Vector2(42f, -44f), new Vector2(48f, -36f) })
+                Pillar(sides, $"Pillar_{p.x:0}_{p.y:0}", p.x, p.y, 1.2f, B, 3.5f);
+            Crates(sides, "Crates_E", new Vector2(46f, -8f));
+            Crates(sides, "Crates_W", new Vector2(-47f, -6f));
 
-            // 뒤뜰: L벽 2개, 기둥, 상자
+            // 뒤 띠: L벽 2개, 기둥, 상자
             var rear = Group(g, "Rear", Vector3.zero);
-            WallX(rear, "LWall_W_A", -12f, -4f, -45f, B, 3.3f, 0.5f, wallMat);
-            WallZ(rear, "LWall_W_B", -48f, -45f, -4f, B, 3.3f, 0.5f, wallMat);
-            WallX(rear, "LWall_E_A", 4f, 12f, -45f, B, 3.3f, 0.5f, wallMat);
-            WallZ(rear, "LWall_E_B", -48f, -45f, 4f, B, 3.3f, 0.5f, wallMat);
-            Pillar(rear, "Pillar_C", 0f, -46f, 1.2f, B, 3.5f);
-            Crates(rear, "Crates_W", new Vector2(-26f, -46f));
-            Crates(rear, "Crates_E", new Vector2(24f, -46f));
+            WallX(rear, "LWall_W_A", -12f, -4f, -46f, B, 3.3f, 0.5f, wallMat);
+            WallZ(rear, "LWall_W_B", -50f, -46f, -4f, B, 3.3f, 0.5f, wallMat);
+            WallX(rear, "LWall_E_A", 4f, 12f, -46f, B, 3.3f, 0.5f, wallMat);
+            WallZ(rear, "LWall_E_B", -50f, -46f, 4f, B, 3.3f, 0.5f, wallMat);
+            Pillar(rear, "Pillar_C", 0f, -48f, 1.2f, B, 3.5f);
+            Crates(rear, "Crates_W", new Vector2(-26f, -47f));
+            Crates(rear, "Crates_E", new Vector2(24f, -47f));
         }
 
-        // 둘레 철책 x·z ±49(지형 둔덕 안쪽), 모서리 7m 깎음, 기둥 6m마다.
+        // 둘레 철책 x·z ±54, 모서리 7m 깎음, 기둥 6m마다. 가장자리 둔덕(+2m 안팎)에 묻히지 않게 높게.
         private static void BuildPerimeter(Transform p)
         {
-            const float x0 = -49f, x1 = 49f, z0 = -49f, z1 = 49f, c = 7f, h = 3.5f, t = 0.3f, b = -0.3f;
+            const float x0 = -54f, x1 = 54f, z0 = -54f, z1 = 54f, c = 7f, h = 6f, t = 0.3f, b = -0.3f;
             WallX(p, "S", x0 + c, x1 - c, z0, b, h, t, wallMat);
             WallX(p, "N", x0 + c, x1 - c, z1, b, h, t, wallMat);
             WallZ(p, "W", z0 + c, z1 - c, x0, b, h, t, wallMat);
@@ -429,6 +609,38 @@ namespace Project1.Map.EditorTools
                 Pillar(p, $"Post_W_{a:0}", x0, a, 0.7f, b, h + 0.7f);
                 Pillar(p, $"Post_E_{a:0}", x1, a, 0.7f, b, h + 0.7f);
             }
+        }
+
+        /// <summary>가파른 박공지붕(용마루 남북 방향) + 계단식 박공벽 + 첨탑.</summary>
+        private static void GableRoof(Transform g, string name, float x0, float x1, float z0, float z1, float baseY, float ridge)
+        {
+            float half = (x1 - x0) / 2f, mid = (x0 + x1) / 2f, zc = (z0 + z1) / 2f, depth = z1 - z0;
+            float angle = Mathf.Atan2(ridge, half) * Mathf.Rad2Deg;
+            float len = Mathf.Sqrt(half * half + ridge * ridge);
+            BoxR(g, $"{name}_W", new Vector3(x0 + half / 2f, baseY + ridge / 2f, zc), new Vector3(len, 0.4f, depth + 0.5f), Quaternion.Euler(0f, 0f, angle), accentMat, true);
+            BoxR(g, $"{name}_E", new Vector3(x1 - half / 2f, baseY + ridge / 2f, zc), new Vector3(len, 0.4f, depth + 0.5f), Quaternion.Euler(0f, 0f, -angle), accentMat, true);
+            const int steps = 4;
+            for (int i = 0; i < steps; i++)
+            {
+                float w = (x1 - x0) * (1f - (float)i / steps) - 1f;
+                float sh = ridge / steps;
+                foreach (float z in new[] { z1 - 0.25f, z0 + 0.25f })
+                    Box(g, $"{name}_Gable_{(z > zc ? "N" : "S")}_{i}", new Vector3(mid, baseY + i * sh + sh / 2f, z), new Vector3(w, sh, WallT), wallMat);
+            }
+            Box(g, $"{name}_Fleche", new Vector3(mid, baseY + ridge + 3f, zc), new Vector3(1f, 6f, 1f), accentMat);
+            Box(g, $"{name}_FlecheTip", new Vector3(mid, baseY + ridge + 7.5f, zc), new Vector3(0.3f, 3f, 0.3f), accentMat);
+        }
+
+        /// <summary>속이 찬 돌탑 + 단계로 좁아지는 뾰족 지붕. at = 탑 가운데(바닥).</summary>
+        private static void Tower(Transform g, string name, Vector3 at)
+        {
+            var t = Group(g, name, at);
+            Box(t, "Base", new Vector3(0f, (-0.3f + 22f) / 2f, 0f), new Vector3(6f, 22.3f, 6f), wallMat);
+            Box(t, "Cornice", new Vector3(0f, 22.3f, 0f), new Vector3(6.6f, 0.6f, 6.6f), accentMat);
+            Box(t, "Spire_1", new Vector3(0f, 24f, 0f), new Vector3(4.4f, 3f, 4.4f), accentMat);
+            Box(t, "Spire_2", new Vector3(0f, 27f, 0f), new Vector3(2.8f, 3f, 2.8f), accentMat);
+            Box(t, "Spire_3", new Vector3(0f, 30.5f, 0f), new Vector3(1.2f, 4f, 1.2f), accentMat);
+            Box(t, "Spire_Tip", new Vector3(0f, 34f, 0f), new Vector3(0.4f, 3f, 0.4f), accentMat);
         }
 
         // ───────────────────────────── 가구·장식 ─────────────────────────────
