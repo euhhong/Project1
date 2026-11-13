@@ -74,6 +74,7 @@ namespace Project1.Systems
         private ICharacterSkillState skillState; // 실행 중에 붙을 수 있어 필요할 때 찾는다
         private ICharacterStun stun;
         private ICharacterHealth health; // 쓰러지면 공격하지 않는다
+        private ICharacterTraversalState traversal; // 오르기·매달리기 중에는 공격하지 않는다
         private bool waitAirRelease; // 공중에서 누른 공격 키를 뗄 때까지 새 입력을 받지 않는다
 
         private float phaseTime;
@@ -201,7 +202,9 @@ namespace Project1.Systems
                     if (skillState == null) TryGetComponent(out skillState);
                     if (stun == null) TryGetComponent(out stun);
                     if (health == null) TryGetComponent(out health);
-                    if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead))
+                    if (traversal == null) TryGetComponent(out traversal);
+                    if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead)
+                        || (traversal != null && traversal.LocksActions)) // 오르는 중·매달림·구르기·크게 착지하는 중
                     {
                         break;
                     }

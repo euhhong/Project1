@@ -19,6 +19,8 @@ namespace Project1.UI
             health.ResetToFull();
 
             Ensure<CharacterStun>(player);
+            Ensure<CharacterTraversal>(player).SetHunterStyle(entry.role == CharacterRole.Hunter); // 창틀 넘기·올라서기·매달리기·낙하·착지(BE, 감시자는 창틀을 감시자 모션으로) — 이동이 알도록 아래 RefreshSpeedLimits 전에
+            Ensure<CharacterTraversalAnimator>(player); // 그 모션(FE, Animator 레이어 Traversal)
             var skill = Ensure<CharacterSkill>(player);
             skill.SetSkill(entry.skill);
             // 스킬·기절이 이동을 제한하거나 대신 정하므로, 이동 컴포넌트가 새 컴포넌트를 알게 한다.

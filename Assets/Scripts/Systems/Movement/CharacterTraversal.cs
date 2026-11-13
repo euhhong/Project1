@@ -1,0 +1,663 @@
+using Project1.Core;
+using UnityEngine;
+
+namespace Project1.Systems
+{
+    /// <summary>
+    /// 오르기·매달리기·창틀 넘기·낙하·착지(BE). 모션은 FE(CharacterTraversalAnimator, Animator 레이어 Traversal)가 보여 준다.
+    /// 턱은 따로 표시하지 않고 지형 모양으로 찾는다(앞쪽 수직 면 + 그 위 윗면 + 위가 빔). 캐릭터·판정·트리거는 무시한다.
+    ///
+    /// - 창틀 넘기: 땅에서 창틀(키의 25~75% 높이, 두께 0.8m 이하, 위가 열림) 쪽으로 방향키를 누른 채 점프(감시자는 감시자 모션 Jump)
+    ///   → 반대편 바닥이 같은 높이면 넘어간다(WindowVault, Entry). 반대편이 dropMin보다 낮으면 턱 위로 올라섰다가 뛰어내린다(WindowDrop, Jumping Down (2)).
+    /// - 점프 중 날아가는 방향 앞에 창틀이 있으면 반드시 한 손으로 짚고 넘는다(WindowJump, Jumping (1)).
+    /// - 올라서기: 땅에서 중간 높이 턱(키의 35~110%, 위에 설 자리) 쪽으로 방향키 + 점프 → 뛰어 올라선다(ClimbUp, Running Jump).
+    /// - 매달리기: 공중에서 턱 쪽으로 방향키를 누르고 있고 손이 턱에 닿을 높이면 잡고 매달린다(HangGrab → Hang).
+    ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
+    ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
+    ///   뒤(S) → 놓고 떨어진다.
+    /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling).
+    /// - 착지: 떨어진 높이(가장 높았던 곳 → 착지)로 고른다 — 고공(hardFall 이상) = Hard Landing, 점프해서 높이 = 앞구르기(Falling To Roll),
+    ///   걸어서 높이 = 깊이 웅크림(Jumping), 낮게 = 살짝 웅크림(Jumping Down). 크게 착지하면 잠깐 못 움직인다.
+    /// 오르는 중·매달림·구르기·크게 착지하는 중에는 공격·스킬을 막는다(LocksActions). 기절·쓰러지면 놓친다.
+    /// 높이 기준은 모델의 Humanoid 단위(Animator.humanScale × 모델 크기, 골반 높이 ≈ 1)라서 키가 다른 캐릭터도 손이 턱에 맞는다.
+    /// 캐릭터 루트에 붙인다(CharacterLoadout).
+    /// </summary>
+    [DefaultExecutionOrder(-50)] // 이동(CharacterMotor)보다 먼저: 점프 입력을 창틀 넘기·올라서기로 가로챈다
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(CharacterController))]
+    public class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit
+    {
+        // 모션 기준 높이(Humanoid 단위, 루트 = 모션의 바닥). 의사·루키노 모델에 모션을 입혀 잼 — 모델이 달라도 같다.
+        private const float FreeHangTop = 2.05f;   // Jump To Freehang: 매달린 자세의 턱 윗면(손목 1.93 + 손가락)
+        private const float BracedHangTop = 2.28f; // Idle To Braced Hang(손목 2.16)
+        private const float BracedFeet = 1.0f;     // Braced Hang에서 벽을 짚는 발 높이
+        private const float HangClimbTop = 2.2f;   // Freehang Climb 첫 자세의 턱 윗면(발 기준)
+        private const float RailClimbTop = 2.12f;  // Climbing(난간 넘기) 첫 자세의 난간 윗면(발 기준)
+        private const float LedgeInset = 0.06f;    // 턱 윗면을 찾을 때 앞면에서 안으로 들어가는 거리(난간 두께 0.15보다 얇게)
+        private const float Skin = 0.03f;
+
+        [Header("창틀 넘기 (방향키 + 점프)")]
+        [Tooltip("창틀 높이(키 대비) 범위.")]
+        [SerializeField, Range(0f, 1f)] private float sillMin = 0.25f, sillMax = 0.75f;
+        [Tooltip("창틀까지 거리(m, 몸 둘레에서).")]
+        [SerializeField, Min(0f)] private float sillReach = 0.7f;
+        [Tooltip("이보다 두꺼우면 창틀이 아니다(m).")]
+        [SerializeField, Min(0.1f)] private float sillMaxThickness = 0.8f;
+        [Tooltip("반대편 바닥이 이만큼(m) 넘게 낮으면 넘지 않고 턱 위에서 뛰어내린다.")]
+        [SerializeField, Min(0f)] private float dropMin = 0.8f;
+        [SerializeField, Min(0.1f)] private float vaultTime = 1.6f, windowDropTime = 0.9f;
+        [Tooltip("감시자 창틀 넘기(Jump) 시간(초).")]
+        [SerializeField, Min(0.1f)] private float hunterVaultTime = 0.85f;
+        [Tooltip("점프 중 창틀을 짚고 넘기(Jumping (1)) 시간(초). 넘은 뒤 반대편으로 더 가는 거리(m).")]
+        [SerializeField, Min(0.1f)] private float windowJumpTime = 0.75f;
+        [SerializeField, Min(0f)] private float windowJumpCarry = 0.6f;
+
+        [Header("올라서기 (중간 높이, 방향키 + 점프)")]
+        [Tooltip("턱 높이(키 대비) 범위.")]
+        [SerializeField, Min(0f)] private float climbMin = 0.35f, climbMax = 1.1f;
+        [SerializeField, Min(0f)] private float climbReach = 0.9f;
+        [SerializeField, Min(0.1f)] private float climbTime = 0.65f;
+
+        [Header("매달리기 (공중에서 방향키)")]
+        [SerializeField, Min(0f)] private float hangReach = 0.45f;
+        [Tooltip("매달릴 자리보다 이만큼 아래에서도 끌어 올려 잡는다 / 위에서도 내려 잡는다(Humanoid 단위).")]
+        [SerializeField, Min(0f)] private float pullUp = 0.25f, pullDown = 0.9f;
+        [Tooltip("매달릴 자리로 붙는 시간(초).")]
+        [SerializeField, Min(0.01f)] private float snapTime = 0.1f;
+        [SerializeField, Min(0.1f)] private float grabTime = 0.6f, bracedGrabTime = 0.55f;
+        [Tooltip("놓은 뒤 다시 잡을 수 있을 때까지(초).")]
+        [SerializeField, Min(0f)] private float regrabDelay = 0.4f;
+        [SerializeField, Min(0.1f)] private float hangClimbTime = 1.9f, railClimbTime = 1.4f;
+        [Tooltip("매달려 올라갈 때 발 높이(0 = 매달린 자리, 1 = 턱 위) — Freehang Climb의 낮은 발 높이를 따른다.")]
+        [SerializeField] private AnimationCurve hangClimbRise = new(
+            new Keyframe(0f, 0f), new Keyframe(0.08f, 0.06f), new Keyframe(0.13f, 0.29f), new Keyframe(0.16f, 0.42f), new Keyframe(0.21f, 0.55f),
+            new Keyframe(0.26f, 0.81f), new Keyframe(0.29f, 0.84f), new Keyframe(0.4f, 0.68f), new Keyframe(0.47f, 0.54f), new Keyframe(0.58f, 0.64f),
+            new Keyframe(0.66f, 0.62f), new Keyframe(0.71f, 0.86f), new Keyframe(0.74f, 0.97f), new Keyframe(0.77f, 1f), new Keyframe(1f, 1f));
+        [Tooltip("난간 넘을 때 발 높이(0 = 매달린 자리, 1 = 난간 위) — Climbing의 낮은 발 높이를 따른다. 그 뒤 난간 뒤 바닥으로 내려간다.")]
+        [SerializeField] private AnimationCurve railClimbRise = new(
+            new Keyframe(0f, 0f), new Keyframe(0.2f, 0f), new Keyframe(0.27f, 0.08f), new Keyframe(0.33f, 0.24f), new Keyframe(0.4f, 0.41f),
+            new Keyframe(0.47f, 0.59f), new Keyframe(0.53f, 0.83f), new Keyframe(0.6f, 1f), new Keyframe(1f, 1f));
+
+        [Header("낙하·착지 (떨어진 높이, m)")]
+        [SerializeField, Min(0f)] private float fallStartDrop = 0.5f;
+        [Tooltip("이보다 빨리(m/s) 뒤로 가다 떨어지면 허우적대며 떨어진다.")]
+        [SerializeField, Min(0f)] private float backwardSpeed = 0.5f;
+        [Tooltip("걸어서 떨어진 낮은 착지 / 점프 포함 낮은 착지 / 걸어서 높은 착지 / 점프해서 구르기 / 고공 착지.")]
+        [SerializeField, Min(0f)] private float lowFall = 0.8f, landAny = 1.9f, highFall = 2.5f, rollFall = 2.6f, hardFall = 6f;
+        [SerializeField, Min(0.1f)] private float landTime = 0.45f, landHighTime = 0.65f, landRollTime = 1f, landHardTime = 1.1f;
+        [Tooltip("높은·고공 착지 뒤 못 움직이는 시간(초).")]
+        [SerializeField, Min(0f)] private float landHighStop = 0.3f, landHardStop = 0.65f;
+        [Tooltip("착지하는 동안 걷기 속도 대비 빠르기.")]
+        [SerializeField, Range(0f, 1f)] private float landSlow = 0.5f;
+
+        private struct Ledge { public float Top; public Vector3 Face; public Vector3 Normal; }
+
+        private CharacterController cc;
+        private ICharacterInputSource inputSource;
+        private ICharacterState state;
+        private ICharacterAttackState attack;
+        private ICharacterSkillState skill;
+        private ICharacterStun stun;
+        private ICharacterHealth health;
+        private Animator animator;
+
+        private TraversalAction action;
+        private float actionTime, actionDuration, landStop, rollSpeed, regrab, faceYaw;
+        private bool braced, fallBackward;
+        private Ledge ledge;
+        private Vector3 pathStart, pathMid, pathEnd, hangPos;
+        private float root0, railTop;
+        private bool airborne, jumped, jumpedFlag, knocked;
+        private float peakY, airStartY;
+
+        private static readonly RaycastHit[] Hits = new RaycastHit[16];
+        private static readonly Collider[] Overlaps = new Collider[16];
+
+        public TraversalAction Action => action;
+        public float ActionProgress => actionDuration > 0f ? Mathf.Clamp01(actionTime / actionDuration) : 0f;
+        public bool BracedHang => braced;
+        public bool FallBackward => fallBackward;
+        public bool HunterStyle => hunterStyle;
+
+        [Tooltip("감시자: 창틀을 감시자 모션(Jump)으로 뛰어넘는다. 캐릭터를 고를 때 SetHunterStyle로 정한다.")]
+        [SerializeField] private bool hunterStyle;
+
+        /// <summary>감시자인지 정한다(캐릭터를 고를 때).</summary>
+        public void SetHunterStyle(bool hunter) => hunterStyle = hunter;
+        public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll
+                                    || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
+
+        private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
+                                                             || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail;
+        private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
+
+        private void Awake() => Init();
+
+        private void Init()
+        {
+            cc = GetComponent<CharacterController>();
+            inputSource = GetComponent<ICharacterInputSource>();
+            state = GetComponent<ICharacterState>();
+            attack = GetComponent<ICharacterAttackState>();
+        }
+
+        private void OnEnable()
+        {
+            state ??= GetComponent<ICharacterState>();
+            if (state != null) state.Jumped += OnJumped;
+        }
+
+        private void OnDisable()
+        {
+            if (state != null) state.Jumped -= OnJumped;
+            action = TraversalAction.None;
+        }
+
+        private void OnJumped() => jumpedFlag = true;
+
+        private void FixedUpdate()
+        {
+            if (cc == null) Init(); // Play 중 재컴파일로 참조가 비었을 때
+            CharacterInputFrame input = inputSource != null ? inputSource.ReadInput() : default;
+            float dt = Time.fixedDeltaTime;
+            regrab -= dt;
+            if (skill == null) TryGetComponent(out skill);
+            if (stun == null) TryGetComponent(out stun);
+            if (health == null) TryGetComponent(out health);
+            bool dead = health != null && health.IsDead;
+            bool stunned = stun != null && stun.IsStunned;
+            bool grounded = state == null || state.IsGrounded;
+
+            if ((IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang) && (dead || stunned))
+            {
+                Release(); // 기절·쓰러짐: 놓친다
+                return;
+            }
+            switch (action)
+            {
+                case TraversalAction.ClimbUp: case TraversalAction.WindowVault: case TraversalAction.WindowDrop: case TraversalAction.WindowJump:
+                case TraversalAction.HangClimb: case TraversalAction.HangClimbRail:
+                    actionTime += dt;
+                    // 진행도 1인 틱에 이동이 끝 자리로 옮긴 뒤 다음 틱에 끝낸다.
+                    if (actionTime > actionDuration + dt * 0.5f) FinishScripted();
+                    return;
+                case TraversalAction.HangGrab:
+                    actionTime += dt;
+                    if (actionTime >= actionDuration) { action = TraversalAction.Hang; actionTime = 0f; actionDuration = 0f; }
+                    return;
+                case TraversalAction.Hang:
+                    HandleHang(input);
+                    return;
+            }
+            if (IsLanding(action))
+            {
+                actionTime += dt;
+                if (actionTime >= actionDuration) { action = TraversalAction.None; actionTime = actionDuration = 0f; }
+            }
+
+            TrackAir(grounded, dead);
+            if (dead || stunned || IsBusy()) return;
+
+            Vector3 dir = MoveDirection(input);
+            // 점프 중 창틀을 넘어가려 하면(날아가는 방향 앞에 창틀) 반드시 짚고 넘는다 — 방향키를 놓아도 날아가던 방향으로.
+            if (!grounded && airborne && jumped && action == TraversalAction.None && TryStartWindowJump(FlightDirection(dir))) return;
+            if (dir == Vector3.zero) return;
+            if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))
+            {
+                if (TryStartWindow(dir) || TryStartClimbUp(dir)) return;
+            }
+            if (!grounded && regrab <= 0f && (action == TraversalAction.None || action == TraversalAction.Fall)) TryStartHang(dir);
+        }
+
+        /// <summary>공중에서 날아가는 수평 방향(빠르면 속도 방향, 아니면 방향키).</summary>
+        private Vector3 FlightDirection(Vector3 inputDir)
+        {
+            if (state == null) return inputDir;
+            Vector2 v = state.LocalPlanarVelocity;
+            if (v.sqrMagnitude < 1f) return inputDir;
+            Vector3 w = transform.rotation * new Vector3(v.x, 0f, v.y);
+            w.y = 0f;
+            return w.normalized;
+        }
+
+        /// <summary>공격 중·스킬 시전 중에는 오르지 않는다.</summary>
+        private bool IsBusy() =>
+            (attack != null && attack.AttackState != CharacterAttackState.None) || SkillBusy();
+
+        private bool SkillBusy() => skill != null && (skill.LocksActions || skill.State == SkillState.Casting || skill.State == SkillState.Recovering);
+
+        /// <summary>방향키가 가리키는 월드 수평 방향(몸 = 시야 방향 기준). 누르지 않으면 0.</summary>
+        private Vector3 MoveDirection(in CharacterInputFrame input)
+        {
+            if (input.Move.sqrMagnitude < 0.25f) return Vector3.zero;
+            Vector3 d = Quaternion.Euler(0f, input.LookYaw, 0f) * new Vector3(input.Move.x, 0f, input.Move.y);
+            d.y = 0f;
+            return d.normalized;
+        }
+
+        // ───────────────────── 낙하·착지 ─────────────────────
+
+        private void TrackAir(bool grounded, bool dead)
+        {
+            Vector3 pos = transform.position;
+            if (!grounded)
+            {
+                if (!airborne)
+                {
+                    airborne = true;
+                    airStartY = peakY = pos.y;
+                    jumped = jumpedFlag;
+                    knocked = TryGetComponent(out Knockback kb) && kb.Active;
+                }
+                jumpedFlag = false;
+                peakY = Mathf.Max(peakY, pos.y);
+                if (IsLanding(action)) action = TraversalAction.None; // 착지하다 다시 떨어짐(구르다 턱 끝에서 등)
+                if (action == TraversalAction.None && !jumped && airStartY - pos.y > fallStartDrop && !SkillBusy())
+                {
+                    bool back = knocked || (TryGetComponent(out Knockback k) && k.Active)
+                                || (state != null && state.LocalPlanarVelocity.y < -backwardSpeed);
+                    StartAction(TraversalAction.Fall, 0f);
+                    fallBackward = back;
+                }
+                return;
+            }
+            if (!airborne) { jumpedFlag = false; return; }
+            airborne = false;
+            bool walkedOff = action == TraversalAction.Fall;
+            if (walkedOff) action = TraversalAction.None;
+            if (!dead && !SkillBusy()) StartLanding(peakY - pos.y, jumped, walkedOff);
+            jumped = false;
+        }
+
+        private void StartLanding(float drop, bool fromJump, bool walkedOff)
+        {
+            if (drop >= hardFall) { StartAction(TraversalAction.LandHard, landHardTime); landStop = landHardStop; }
+            else if (fromJump && drop >= rollFall)
+            {
+                StartAction(TraversalAction.LandRoll, landRollTime);
+                faceYaw = transform.eulerAngles.y;
+                float run = state != null ? state.RunSpeed : 6f;
+                float planar = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
+                rollSpeed = Mathf.Max(run * 0.7f, planar);
+            }
+            else if (!fromJump && drop >= highFall) { StartAction(TraversalAction.LandHigh, landHighTime); landStop = landHighStop; }
+            else if ((walkedOff && drop >= lowFall) || drop >= landAny) { StartAction(TraversalAction.Land, landTime); landStop = 0f; }
+        }
+
+        // ───────────────────── 창틀 넘기·올라서기 ─────────────────────
+
+        private struct Window { public Ledge Sill; public Vector3 Mid, Beyond; public RaycastHit Floor; public float OtherDrop; }
+
+        /// <summary>
+        /// dir 쪽 창틀: 바닥(groundY) 기준 키의 sillMin~sillMax 높이 턱, 두께 sillMaxThickness 이하, 위가 열린 틈, 반대편 바닥.
+        /// OtherDrop = 이쪽 바닥 - 반대편 바닥(+ = 반대편이 낮다).
+        /// </summary>
+        private bool FindWindow(Vector3 dir, float groundY, float reach, out Window w)
+        {
+            w = default;
+            float h = cc.height;
+            Vector3 up = Vector3.up;
+            if (!FindLedge(dir, groundY, sillMin * h, sillMax * h, reach, out var l)) return false;
+            // 두께: 반대편에서 거꾸로 쏴서 뒷면을 찾는다(너무 두꺼우면 시작점이 벽 안이라 안 맞는다).
+            float probe = sillMaxThickness + 0.05f;
+            Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
+            if (!Cast(far, l.Normal, probe, out var back)) return false;
+            float thick = probe - back.distance;
+            Vector3 mid = l.Face - l.Normal * (thick * 0.5f); mid.y = l.Top;
+            // 위가 열린 틈이어야 한다(창문).
+            if (OverlapSphere(mid + up * 0.6f, 0.25f) || OverlapSphere(mid + up * Mathf.Min(1.4f, h * 0.6f), 0.25f)) return false;
+            // 반대편 바닥
+            Vector3 o = l.Face - l.Normal * (thick + cc.radius + 0.2f); o.y = l.Top + 0.3f;
+            if (OverlapSphere(o, 0.1f) || !Cast(o, Vector3.down, o.y - groundY + 8f, out var floor) || floor.normal.y < 0.7f) return false;
+            w = new Window { Sill = l, Mid = mid, Beyond = o, Floor = floor, OtherDrop = groundY - floor.point.y };
+            return w.OtherDrop >= -0.4f; // 반대편이 더 높으면 넘지 않는다
+        }
+
+        private bool TryStartWindow(Vector3 dir)
+        {
+            Vector3 pos = transform.position;
+            if (!FindWindow(dir, pos.y, sillReach, out var w)) return false;
+            faceYaw = YawOf(-w.Sill.Normal);
+            pathStart = pos;
+            if (w.OtherDrop <= dropMin)
+            {
+                if (!StandRoom(w.Floor.point)) return false;
+                pathEnd = w.Floor.point;
+                StartAction(TraversalAction.WindowVault, hunterStyle ? hunterVaultTime : vaultTime);
+            }
+            else
+            {
+                Vector3 edge = new(w.Beyond.x, w.Sill.Top + 0.02f, w.Beyond.z); // 창밖 허공(턱 높이) — 여기서 놓으면 떨어진다
+                if (OverlapCapsule(edge, cc.radius * 0.9f)) return false;
+                pathMid = w.Mid + Vector3.up * 0.02f;
+                pathEnd = edge;
+                // 창틀 모션은 생존자만: 감시자는 감시자 넘기(Jump)로 창밖까지 뛰어넘고 그대로 떨어진다.
+                if (hunterStyle) StartAction(TraversalAction.WindowVault, hunterVaultTime);
+                else StartAction(TraversalAction.WindowDrop, windowDropTime);
+            }
+            return true;
+        }
+
+        /// <summary>점프 중: 날아가는 방향 앞에 창틀이 있고 반대편 바닥이 비슷한 높이면 반드시 창틀을 짚고 넘는다.</summary>
+        private bool TryStartWindowJump(Vector3 dir)
+        {
+            if (dir == Vector3.zero) return false;
+            Vector3 pos = transform.position;
+            if (!Cast(pos + Vector3.up * 0.1f, Vector3.down, 3f, out var ground)) return false; // 바닥 높이 기준으로 창틀을 잰다
+            float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
+            if (!FindWindow(dir, ground.point.y, sillReach + speed * 0.12f, out var w) || w.OtherDrop > dropMin) return false;
+            if (pos.y > w.Sill.Top + cc.height * 0.5f) return false; // 창틀보다 한참 위로 날아감(짚을 수 없다)
+            Vector3 end = w.Floor.point - w.Sill.Normal * windowJumpCarry;
+            if (!StandRoom(end)) { end = w.Floor.point; if (!StandRoom(end)) return false; }
+            faceYaw = YawOf(-w.Sill.Normal);
+            pathStart = pos;
+            pathEnd = end;
+            StartAction(TraversalAction.WindowJump, hunterStyle ? hunterVaultTime : windowJumpTime);
+            return true;
+        }
+
+        private bool TryStartClimbUp(Vector3 dir)
+        {
+            float h = cc.height;
+            if (!FindLedge(dir, transform.position.y, climbMin * h, climbMax * h, climbReach, out var l)) return false;
+            if (!HasStandRoom(l, out var stand)) return false;
+            faceYaw = YawOf(-l.Normal);
+            pathStart = transform.position;
+            pathEnd = stand;
+            StartAction(TraversalAction.ClimbUp, climbTime);
+            return true;
+        }
+
+        // ───────────────────── 매달리기 ─────────────────────
+
+        private bool TryStartHang(Vector3 dir)
+        {
+            float hu = HumanUnit();
+            Vector3 pos = transform.position;
+            float lo = (FreeHangTop - pullDown) * hu, hi = (BracedHangTop + pullUp) * hu;
+            if (!FindLedge(dir, transform.position.y, lo, hi, hangReach, out var l)) return false;
+            Vector3 basePos = l.Face + l.Normal * (cc.radius + Skin);
+            // 턱 아래 벽이 있으면 발로 짚는다.
+            Vector3 foot = basePos; foot.y = l.Top - (BracedHangTop - BracedFeet) * hu;
+            bool wall = Cast(foot, -l.Normal, cc.radius + 0.4f, out _);
+            Vector3 hp = basePos; hp.y = l.Top - (wall ? BracedHangTop : FreeHangTop) * hu;
+            float dy = pos.y - hp.y;
+            if (dy < -pullUp * hu || dy > pullDown * hu) return false;
+            if (Cast(hp + Vector3.up * 0.3f, Vector3.down, 0.45f, out _)) return false; // 발밑이 바로 바닥 — 매달릴 높이가 아니다
+            ledge = l;
+            braced = wall;
+            hangPos = hp;
+            faceYaw = YawOf(-l.Normal);
+            StartAction(TraversalAction.HangGrab, wall ? bracedGrabTime : grabTime);
+            return true;
+        }
+
+        private void HandleHang(in CharacterInputFrame input)
+        {
+            // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
+            if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
+            if (input.Move.y < -0.5f) Release();
+        }
+
+        private bool TryStartHangClimb()
+        {
+            float hu = HumanUnit();
+            pathStart = transform.position;
+            if (HasStandRoom(ledge, out var stand))
+            {
+                pathEnd = stand;
+                root0 = ledge.Top - HangClimbTop * hu;
+                StartAction(TraversalAction.HangClimb, hangClimbTime);
+                return true;
+            }
+            if (FindFloorBehindRail(ledge, out stand))
+            {
+                pathEnd = stand;
+                root0 = ledge.Top - RailClimbTop * hu;
+                railTop = ledge.Top;
+                StartAction(TraversalAction.HangClimbRail, railClimbTime);
+                return true;
+            }
+            return false;
+        }
+
+        private void Release()
+        {
+            action = TraversalAction.None;
+            actionTime = actionDuration = 0f;
+            regrab = regrabDelay;
+            airborne = false; // 놓은 자리부터 떨어진 높이를 잰다
+            jumpedFlag = false;
+        }
+
+        private void FinishScripted()
+        {
+            var was = action;
+            action = TraversalAction.None;
+            actionTime = actionDuration = 0f;
+            airborne = false;
+            jumpedFlag = was == TraversalAction.WindowDrop || (was == TraversalAction.WindowVault && hunterStyle); // 창밖으로 뛰어내림 = 점프해서 떨어진 것(높으면 구르기)
+        }
+
+        private void StartAction(TraversalAction a, float duration)
+        {
+            action = a;
+            actionTime = 0f;
+            actionDuration = duration;
+            fallBackward = false;
+        }
+
+        // ───────────────────── 이동 대신 정하기(CharacterMotor가 부른다) ─────────────────────
+
+        public bool TryGetVelocity(out Vector3 worldVelocity, out bool passThrough)
+        {
+            passThrough = true;
+            worldVelocity = Vector3.zero;
+            float dt = Time.fixedDeltaTime;
+            Vector3 pos = transform.position;
+            if (action == TraversalAction.HangGrab || action == TraversalAction.Hang)
+            {
+                worldVelocity = Vector3.ClampMagnitude((hangPos - pos) / snapTime, 25f);
+                return true;
+            }
+            if (!IsScripted(action)) return false;
+            worldVelocity = Vector3.ClampMagnitude((PathPoint(ActionProgress) - pos) / dt, 30f);
+            return true;
+        }
+
+        private Vector3 PathPoint(float p)
+        {
+            Vector3 s = pathStart, e = pathEnd;
+            switch (action)
+            {
+                case TraversalAction.ClimbUp: // Running Jump: 발이 떨어짐(0.08) → 높은 바닥에 닿음(0.42)
+                {
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.12f, 0.6f, p));
+                    xz.y = Mathf.Lerp(s.y, e.y + 0.02f, Smooth(0.08f, 0.42f, p));
+                    return xz;
+                }
+                case TraversalAction.WindowVault: // 생존자 Entry: 다리 넘김(0.3) → 몸이 빠져나감(0.85) / 감시자 Jump: 뛰어오름(0.1) → 착지(0.75)
+                {
+                    float f = hunterStyle ? Smooth(0.1f, 0.75f, p) : Smooth(0.28f, 0.88f, p);
+                    return Vector3.Lerp(s, e, f);
+                }
+                case TraversalAction.WindowJump: // Jumping (1): 손 짚음 → 다리 넘김(0.35~0.55) → 착지(0.78) — 날아오던 속도 그대로 앞으로
+                {
+                    Vector3 xz = Vector3.Lerp(s, e, hunterStyle ? Smooth(0.1f, 0.75f, p) : p);
+                    xz.y = Mathf.Lerp(s.y, e.y, Smooth(0.1f, 0.78f, p)); // 모션이 넘는 높이를 낸다(높이는 모션 그대로) — 루트는 반대편 바닥으로
+                    return xz;
+                }
+                case TraversalAction.WindowDrop: // 턱 위로 올라섬(0~0.3) → 앞으로 뛰어내림(0.75~1)
+                {
+                    Vector3 onSill = Vector3.Lerp(s, pathMid, Smooth(0.05f, 0.35f, p));
+                    onSill.y = Mathf.Lerp(s.y, pathMid.y, Smooth(0f, 0.3f, p));
+                    return Vector3.Lerp(onSill, e, Smooth(0.75f, 1f, p));
+                }
+                case TraversalAction.HangClimb:
+                {
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.06f, p));
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.72f, 0.9f, p));
+                    xz.y = y0 + hangClimbRise.Evaluate(p) * (e.y - root0);
+                    return xz;
+                }
+                case TraversalAction.HangClimbRail:
+                {
+                    float y0 = Mathf.Lerp(s.y, root0, Smooth(0f, 0.08f, p));
+                    float top = railTop + 0.05f;
+                    Vector3 xz = Vector3.Lerp(s, e, Smooth(0.4f, 0.95f, p));
+                    xz.y = y0 + railClimbRise.Evaluate(p) * (top - root0) - Smooth(0.7f, 1f, p) * (top - e.y); // 난간을 넘은 뒤 그 뒤 바닥으로 내려선다
+                    return xz;
+                }
+            }
+            return transform.position;
+        }
+
+        public bool TryGetMoveOverride(out Vector2 localMove, out float speed, out bool allowJump)
+        {
+            if (action == TraversalAction.LandRoll)
+            {
+                localMove = Vector2.up; // 착지한 방향으로 구른다
+                speed = Mathf.Lerp(rollSpeed, (state != null ? state.WalkSpeed : 3.6f) * 0.6f, ActionProgress);
+                allowJump = false;
+                return true;
+            }
+            localMove = Vector2.zero; speed = 0f; allowJump = true;
+            return false;
+        }
+
+        public bool TryGetFacingYaw(out float yaw)
+        {
+            yaw = faceYaw;
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll;
+        }
+
+        public bool TryGetSpeedLimit(out float maxSpeed)
+        {
+            float walk = state != null ? state.WalkSpeed : 3.6f;
+            maxSpeed = 0f;
+            switch (action)
+            {
+                case TraversalAction.Land:
+                    maxSpeed = walk * landSlow;
+                    return ActionProgress < 0.6f;
+                case TraversalAction.LandHigh:
+                case TraversalAction.LandHard:
+                    maxSpeed = actionTime < landStop ? 0f : walk * landSlow;
+                    return true;
+            }
+            return false;
+        }
+
+        // ───────────────────── 지형 찾기 ─────────────────────
+
+        /// <summary>
+        /// dir 쪽 앞(몸 둘레 + reach 안)의 턱: 마주 본 수직 면, 그 위 윗면(feetY 기준 minAbove~maxAbove 높이), 윗면 바로 위는 빔.
+        /// </summary>
+        private bool FindLedge(Vector3 dir, float feetY, float minAbove, float maxAbove, float reach, out Ledge result)
+        {
+            result = default;
+            Vector3 up = Vector3.up, feet = transform.position; feet.y = feetY; // 높이 기준(땅에서는 발, 공중 창틀 짚기는 아래 바닥)
+            float dist = cc.radius + reach;
+            bool found = false;
+            RaycastHit wall = default;
+            // 낮은 곳부터 높은 곳까지 앞으로 쏴서, 맞은 것 중 가장 높은 수직 면(창문이면 창턱 바로 아래)을 쓴다.
+            for (float h = Mathf.Max(0.15f, minAbove - 0.3f); h <= maxAbove - 0.02f; h += 0.12f)
+                if (Cast(feet + up * h, dir, dist, out var hit) && Mathf.Abs(hit.normal.y) < 0.3f) { wall = hit; found = true; }
+            if (!found) return false;
+            Vector3 n = Vector3.ProjectOnPlane(wall.normal, up);
+            if (n.sqrMagnitude < 0.25f) return false;
+            n.Normalize();
+            if (Vector3.Dot(n, -dir) < 0.64f) return false; // 마주 본 면만(약 50도 안)
+            Vector3 inside = wall.point - n * LedgeInset;
+            Vector3 start = new(inside.x, feet.y + maxAbove + 0.35f, inside.z);
+            if (OverlapSphere(start, 0.08f)) return false; // 위가 막힘(벽이 더 높거나 천장)
+            if (!Cast(start, Vector3.down, maxAbove + 0.4f - minAbove, out var topHit) || topHit.normal.y < 0.7f) return false;
+            float above = topHit.point.y - feet.y;
+            if (above < minAbove || above > maxAbove) return false;
+            if (OverlapSphere(new Vector3(inside.x, topHit.point.y + 0.3f, inside.z), 0.12f)) return false; // 손 놓을 자리 위가 막힘
+            result = new Ledge { Top = topHit.point.y, Face = new Vector3(wall.point.x, topHit.point.y, wall.point.z), Normal = n };
+            return true;
+        }
+
+        /// <summary>턱 위에 설 자리(턱과 같은 높이의 바닥, 몸이 들어갈 빈 곳, 턱 끝에 난간 없음).</summary>
+        private bool HasStandRoom(in Ledge l, out Vector3 stand)
+        {
+            stand = l.Face - l.Normal * (cc.radius + 0.2f);
+            if (!Cast(stand + Vector3.up * 0.4f, Vector3.down, 0.6f, out var floor) || floor.normal.y < 0.7f || Mathf.Abs(floor.point.y - l.Top) > 0.15f) return false;
+            stand = floor.point;
+            if (!StandRoom(stand)) return false;
+            // 턱 끝(앞면 바로 안쪽)에 난간이 있으면 못 올라선다(난간 넘기로).
+            Vector3 lip = l.Face - l.Normal * (cc.radius * 0.5f);
+            float r = cc.radius * 0.45f;
+            return !OverlapCapsule(lip + Vector3.up * (0.1f + r), lip + Vector3.up * 1.2f, r);
+        }
+
+        /// <summary>난간(얇은 턱) 뒤의 바닥(난간 윗면보다 0.3~1.5m 아래, 설 자리 있음).</summary>
+        private bool FindFloorBehindRail(in Ledge l, out Vector3 stand)
+        {
+            foreach (float d in new[] { 0.35f, 0.6f, 0.85f })
+            {
+                Vector3 p = l.Face - l.Normal * (d + cc.radius); p.y = l.Top + 0.1f;
+                if (OverlapSphere(p, 0.06f)) continue;
+                if (!Cast(p, Vector3.down, 1.7f, out var floor) || floor.normal.y < 0.7f) continue;
+                float below = l.Top - floor.point.y;
+                if (below < 0.3f || below > 1.5f || !StandRoom(floor.point)) continue;
+                stand = floor.point;
+                return true;
+            }
+            stand = default;
+            return false;
+        }
+
+        private bool StandRoom(Vector3 feet) => !OverlapCapsule(feet, cc.radius * 0.95f);
+
+        private bool OverlapCapsule(Vector3 feet, float r) =>
+            OverlapCapsule(feet + Vector3.up * (r + 0.05f), feet + Vector3.up * Mathf.Max(cc.height - r, r + 0.06f), r);
+
+        /// <summary>Humanoid 단위(m): 모델 골반 높이 ≈ 1. 모션 높이를 이 캐릭터 크기로 바꿀 때 쓴다.</summary>
+        private float HumanUnit()
+        {
+            if (animator == null || !animator.isActiveAndEnabled) animator = GetComponentInChildren<Animator>();
+            if (animator != null && animator.isHuman && animator.humanScale > 0.01f) return animator.humanScale * animator.transform.lossyScale.y;
+            return cc.height / 1.75f;
+        }
+
+        private static float YawOf(Vector3 d) => Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg;
+
+        private static float Smooth(float a, float b, float x) => Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, x));
+
+        // ───────────────────── 물리 검사(캐릭터·판정·트리거 무시) ─────────────────────
+
+        private static int Mask => ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+
+        private static bool Ignored(Collider c) => c is CharacterController || c.GetComponentInParent<CharacterIdentity>() != null;
+
+        private static bool Cast(Vector3 origin, Vector3 dir, float distance, out RaycastHit best)
+        {
+            best = default;
+            int n = Physics.RaycastNonAlloc(origin, dir, Hits, distance, Mask, QueryTriggerInteraction.Ignore);
+            float bestDistance = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                if (Ignored(Hits[i].collider) || Hits[i].distance >= bestDistance) continue;
+                best = Hits[i];
+                bestDistance = Hits[i].distance;
+            }
+            return bestDistance < float.MaxValue;
+        }
+
+        private static bool OverlapSphere(Vector3 center, float radius)
+        {
+            int n = Physics.OverlapSphereNonAlloc(center, radius, Overlaps, Mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++) if (!Ignored(Overlaps[i])) return true;
+            return false;
+        }
+
+        private static bool OverlapCapsule(Vector3 a, Vector3 b, float radius)
+        {
+            int n = Physics.OverlapCapsuleNonAlloc(a, b, radius, Overlaps, Mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++) if (!Ignored(Overlaps[i])) return true;
+            return false;
+        }
+    }
+}

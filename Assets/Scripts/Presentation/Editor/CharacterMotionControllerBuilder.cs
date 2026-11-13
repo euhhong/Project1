@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
@@ -268,6 +269,8 @@ namespace Project1.Presentation.EditorTools
                 getUp.AddCondition(AnimatorConditionMode.IfNot, 0, "IsDown");
             }
 
+            AddTraversalLayer(ac);
+
             // 들고 다니기 레이어(두 팔만, 공격보다 아래): 무기를 두 손으로 받쳐 든 자세(광대 = Walk With Rifle의 팔).
             // 다리는 걷기·달리기 그대로. 무게는 CharacterCarryPose가 켠다(기본 0 → 다른 캐릭터는 영향 없음).
             if (HasMotionFile("Carry_Joker"))
@@ -393,6 +396,35 @@ namespace Project1.Presentation.EditorTools
 
             EditorUtility.SetDirty(ac);
             return ac;
+        }
+
+        public const string TraversalLayer = "Traversal";
+
+        /// <summary>
+        /// 오르기·매달리기·낙하 레이어(전신, 기본 레이어 바로 위 — 공격·피격·스킬 레이어가 그 위를 덮는다).
+        /// Mixamo/Traversal_*.fbx 안의 클립(이름 Traversal_X)마다 상태 X 하나. 무게·재생 위치는 CharacterTraversalAnimator가 정한다.
+        /// </summary>
+        private static void AddTraversalLayer(AnimatorController ac)
+        {
+            ac.AddLayer(TraversalLayer);
+            var layers = ac.layers;
+            var layer = layers[layers.Length - 1];
+            layer.defaultWeight = 0f; layer.blendingMode = AnimatorLayerBlendingMode.Override;
+            ac.layers = layers;
+            var sm = ac.layers[ac.layers.Length - 1].stateMachine;
+            sm.defaultState = sm.AddState("Empty");
+            foreach (var guid in AssetDatabase.FindAssets("Traversal_ t:Model", new[] { MixamoMotionPostprocessor.Folder }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!System.IO.Path.GetFileNameWithoutExtension(path).StartsWith("Traversal_")) continue;
+                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+                {
+                    if (o is not AnimationClip clip || clip.name.StartsWith("__preview") || !clip.name.StartsWith("Traversal_")) continue;
+                    string stateName = clip.name.Substring("Traversal_".Length);
+                    if (sm.states.Any(s => s.state.name == stateName)) continue;
+                    sm.AddState(stateName).motion = clip;
+                }
+            }
         }
 
         private static void AddForwardJump(AnimatorStateMachine sm, AnimatorState locomotion, AnimationClip clip, string name, float minMoveZ)

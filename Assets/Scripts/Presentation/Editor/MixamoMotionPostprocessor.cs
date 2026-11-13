@@ -20,6 +20,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
+            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", // 매달린 채 대기, 허우적대며 떨어짐
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
@@ -130,6 +131,52 @@ namespace Project1.Presentation.EditorTools
                 ("Skill_Cowboy_Lasso_Vault", new Vector2(15, 47), Height.Body),
                 ("Skill_Cowboy_Lasso_Land", new Vector2(47, 72), Height.Feet),
             },
+
+            // ── 오르기·매달리기·낙하(CharacterTraversal / CharacterTraversalAnimator, 레이어 Traversal) ──
+            // 매달리기 1(Jump To Freehang, 턱 아래가 비었을 때): 손이 턱에 닿음(25) → 몸이 흔들리다 섬(43) / 매달린 채 대기(43~75). 높이는 모션 그대로(손 ≈ 2.0).
+            ["Traversal_Hang"] = new[]
+            {
+                ("Traversal_Hang_Grab", new Vector2(25, 43), Height.Bake),
+                ("Traversal_Hang", new Vector2(43, 75), Height.Bake),
+            },
+            // 매달리기 2(Idle To Braced Hang, 턱 아래가 벽일 때 — 발로 벽을 짚음): 손이 턱에 닿음(17) → 발이 벽에 붙음(34) / 그 자세 유지(34~39). 손 ≈ 2.17.
+            ["Traversal_HangBraced"] = new[]
+            {
+                ("Traversal_HangBraced_Grab", new Vector2(17, 34), Height.Bake),
+                ("Traversal_HangBraced", new Vector2(34, 39), Height.Bake),
+            },
+            // 매달려 있다가 올라가기(Freehang Climb, 난간 없음): 매달림(1) → 무릎을 턱에 올림(34) → 턱 위에 섬(97) → 허리 폄(115). 발 기준 — 루트 높이는 BE가 발 높이 곡선대로 올린다.
+            ["Traversal_HangClimb"] = new[] { ("Traversal_HangClimb", new Vector2(1, 115), Height.Feet) },
+            // 난간 넘어 올라가기(Climbing의 뒷부분): 두 손으로 난간을 잡고 발로 벽을 짚음(52) → 넘어감(79) → 일어섬(112). 도착 높이는 BE가 난간 뒤 바닥으로 낮춘다.
+            ["Traversal_HangClimbRail"] = new[] { ("Traversal_HangClimbRail", new Vector2(52, 112), Height.Feet) },
+            // 중간 높이로 올라서기(Running Jump): 도약(16) → 높은 바닥에 발이 닿음(25) → 일어섬(40).
+            ["Traversal_ClimbUp"] = new[] { ("Traversal_ClimbUp", new Vector2(14, 40), Height.Feet) },
+            // 걸어서 높은 곳에서 떨어짐(Jumping): 떨어지는 자세(31~43) / 높은 곳 착지 — 깊이 웅크려 한 손 짚기(43~67).
+            ["Traversal_FallHigh"] = new[]
+            {
+                ("Traversal_Fall", new Vector2(31, 43), Height.Body),
+                ("Traversal_LandHigh", new Vector2(43, 67), Height.Feet),
+            },
+            // 낮은 곳 착지(Jumping Down의 착지): 살짝 웅크렸다 일어섬(45~66).
+            ["Traversal_FallLow"] = new[] { ("Traversal_Land", new Vector2(45, 66), Height.Feet) },
+            // 고공 낙하 착지(Hard Landing): 발 닿음(3) → 두 손 짚고 웅크림(10~28) → 일어섬(55).
+            ["Traversal_LandHard"] = new[] { ("Traversal_LandHard", new Vector2(2, 55), Height.Feet) },
+            // 사다리 꼭대기 도착(Climbing To Top) — 사다리 기능이 생기면 쓴다(지금은 상태만 있음).
+            ["Traversal_LadderTop"] = new[] { ("Traversal_LadderTop", new Vector2(1, 121), Height.Bake) },
+            // 사다리 타기 시작(Start Climbing Ladder): 가만히 선 앞부분은 빼고 손을 뻗음(10) → 한 손·한 발씩 올라 두 번째 칸(61). 사다리 기능이 생기면 쓴다.
+            ["Traversal_LadderStart"] = new[] { ("Traversal_LadderStart", new Vector2(10, 61), Height.Bake) },
+            // 점프해서 높은 곳에서 떨어짐 → 앞구르기 착지(Falling To Roll): 발 닿기 직전(13) → 구름(19~43) → 일어섬(58).
+            ["Traversal_LandRoll"] = new[] { ("Traversal_LandRoll", new Vector2(13, 58), Height.Feet) },
+            // 걸어서 창틀 넘기(Entry): 손을 창턱에 짚음(22~46) → 왼다리 넘김(55~67) → 몸이 빠져나감(79~109) → 섬(127). 높이는 모션 그대로(양쪽 바닥 같은 높이).
+            ["Traversal_WindowVault"] = new[] { ("Traversal_WindowVault", new Vector2(22, 127), Height.Bake) },
+            // 창틀 위에서 반대편 낮은 바닥으로 뛰어내림(Jumping Down (2)): 턱 위에 서서 한 손 짚음(16~40) → 앞으로 뛰어내림(43~50). 발 기준 — 떨어지는 동안은 낙하 모션이 이어 받는다.
+            ["Traversal_WindowDrop"] = new[] { ("Traversal_WindowDrop", new Vector2(16, 50), Height.Feet) },
+            // 점프 중 창틀을 넘음 — 한 손으로 창틀을 짚고 다리를 접어 넘김(Jumping (1)): 손 짚음(7~16) → 다리 넘김(16~22) → 착지(28) → 달려 나감(34).
+            ["Traversal_WindowJump"] = new[] { ("Traversal_WindowJump", new Vector2(7, 34), Height.Bake) },
+            // 감시자 창틀 넘기(Jump): 제자리에서 두 발 모아 뛰어(4~13) 넘고 착지(22) → 섬(28). 넘어가는 앞 이동은 BE가 한다.
+            ["Traversal_WindowVaultHunter"] = new[] { ("Traversal_WindowVaultHunter", new Vector2(1, 28), Height.Bake) },
+            // 넉백당하거나 뒤로 걷다가 떨어짐(Falling): 허우적대며 떨어지는 자세 반복.
+            ["Traversal_FallBack"] = new[] { ("Traversal_FallBack", new Vector2(1, 136), Height.Body) },
         };
 
         private ModelImporterClipAnimation Configure(ModelImporterClipAnimation clip, string name, Height height)

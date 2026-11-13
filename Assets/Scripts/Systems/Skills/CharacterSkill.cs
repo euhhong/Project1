@@ -95,6 +95,7 @@ namespace Project1.Systems
                 if (State != SkillState.Ready) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
+                if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) { BlockedReason = null; return false; } // 오르는 중·매달림
                 if (TryGetComponent(out ISkillLock skillLock) && skillLock.SkillLocked) { BlockedReason = skillLock.LockReason; return false; } // 예: 도둑 손전등에 지져짐
                 if (attack != null && attack.AttackState != CharacterAttackState.None) { BlockedReason = "공격 중"; return false; }
                 bool ok = skill.CanStart(gameObject, out var reason);

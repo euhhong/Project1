@@ -26,6 +26,7 @@ namespace Project1.Systems
         private IMoveSpeedLimit[] speedLimits;
         private IMoveOverride[] moveOverrides;
         private IFacingOverride[] facingOverrides;
+        private IVelocityOverride[] velocityOverrides;
         private ICharacterHealth health; // 체력이 0이면(쓰러짐) 움직이지 않는다
 
         public CharacterMoveState MoveState { get; private set; }
@@ -73,6 +74,7 @@ namespace Project1.Systems
             speedLimits = GetComponents<IMoveSpeedLimit>();
             moveOverrides = GetComponents<IMoveOverride>();
             facingOverrides = GetComponents<IFacingOverride>();
+            velocityOverrides = GetComponents<IVelocityOverride>();
             LookYaw = transform.eulerAngles.y;
             IsGrounded = controller.isGrounded;
         }
@@ -83,6 +85,48 @@ namespace Project1.Systems
             speedLimits = GetComponents<IMoveSpeedLimit>();
             moveOverrides = GetComponents<IMoveOverride>();
             facingOverrides = GetComponents<IFacingOverride>();
+            velocityOverrides = GetComponents<IVelocityOverride>();
+        }
+
+        private bool TryGetVelocityOverride(out Vector3 velocity, out bool passThrough)
+        {
+            velocityOverrides ??= GetComponents<IVelocityOverride>();
+            foreach (IVelocityOverride o in velocityOverrides)
+            {
+                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (o.TryGetVelocity(out velocity, out passThrough)) return true;
+            }
+            velocity = Vector3.zero; passThrough = false;
+            return false;
+        }
+
+        /// <summary>
+        /// 다른 컴포넌트가 정한 속도로 그대로 옮긴다(턱 오르기·매달리기 — CharacterTraversal). 입력·중력·점프는 쓰지 않는다.
+        /// passThrough면 충돌 없이 옮긴다(턱·난간을 넘어갈 때).
+        /// </summary>
+        private void MoveDriven(Vector3 velocity, bool passThrough, float dt)
+        {
+            LastObstacle = null;
+            HitObstacle = false;
+            if (passThrough)
+            {
+                controller.enabled = false;
+                transform.position += velocity * dt;
+                controller.enabled = true;
+            }
+            else
+            {
+                CollisionFlags flags = controller.Move(velocity * dt);
+                HitObstacle = (flags & CollisionFlags.Sides) != 0;
+                if (!HitObstacle) LastObstacle = null;
+            }
+            bool wasGrounded = IsGrounded;
+            IsGrounded = !passThrough && controller.isGrounded;
+            VerticalSpeed = velocity.y;
+            Vector3 local = transform.InverseTransformDirection(velocity);
+            LocalPlanarVelocity = new Vector2(local.x, local.z);
+            MoveState = CharacterMoveState.Idle;
+            if (!wasGrounded && IsGrounded) Landed?.Invoke();
         }
 
         private bool TryGetMoveOverride(out Vector2 move, out float speed, out bool allowJump)
@@ -150,6 +194,13 @@ namespace Project1.Systems
 
             // 몸을 시야 좌우 방향으로 돌린다(쓰러져 있으면 돌지 않는다).
             if (!dead) transform.rotation = Quaternion.Euler(0f, TryGetFacingOverride(out float facingYaw) ? facingYaw : LookYaw, 0f); // 스킬이 정하면 그 각도(예: 붉은나비 나비에게 — 시작 각도 유지)
+
+            // 오르기·매달리기 중: 속도를 통째로 받아 옮긴다(CharacterTraversal).
+            if (!dead && TryGetVelocityOverride(out Vector3 driven, out bool passThrough))
+            {
+                MoveDriven(driven, passThrough, dt);
+                return;
+            }
 
             // 시야 기준 수평 이동 (대각선 정규화는 입력 소스에서 Clamp).
             Vector2 move = Vector2.ClampMagnitude(input.Move, 1f);
