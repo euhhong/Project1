@@ -30,6 +30,7 @@ namespace Project1.UI.EditorTools
             ["Hunter_Ripper"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.MistBladeSkill>(); s.id = "Ripper_MistBlade"; s.displayName = "안개 칼날"; s.castTime = 3f; s.cooldown = 0f; /* 안개 1칸을 쓴다(7초마다 1칸, 최대 2칸) */ return s; },
             ["Survivor_Thief"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.FlashlightSkill>(); s.id = "Thief_Flashlight"; s.displayName = "손전등"; s.castTime = 6f; /* 최대 — E를 다시 누르면 넣음 */ s.cooldown = 0f; s.castMoveSpeed = 2.5f; return s; },
             ["Hunter_HellEmber"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.CloneSummonSkill>(); s.id = "HellEmber_Clone"; s.displayName = "분신"; s.castTime = 0.4f; s.cooldown = 0f; /* 분신 10초, 한 번에 하나 */ return s; },
+            ["Survivor_MindsEye"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.CaneThrustSkill>(); s.id = "MindsEye_Thrust"; s.displayName = "지팡이 찌르기"; s.castTime = 2f; s.cooldown = 0f; /* 앞으로 찔러 넉백 */ return s; },
             ["Survivor_Forward"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ChargeSkill>(); s.id = "Forward_Charge"; s.displayName = "럭비공 돌진"; s.castTime = 6f; s.cooldown = 0f /* 테스트 단계 0초, 원래 15 */; s.chargeSpeed = 16f; return s; },
         };
 

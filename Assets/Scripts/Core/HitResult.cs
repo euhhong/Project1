@@ -37,12 +37,18 @@ namespace Project1.Core
         /// </summary>
         public float Power;
 
+        /// <summary>맞은 쪽을 밀어내는 속도(m/s, 월드, 수평). 0이면 밀지 않는다(예: 맹인 지팡이 = 넉백).</summary>
+        public Vector3 Knockback;
+
+        /// <summary>데미지 없이 밀어내기만 하는 공격인지(예: 맹인 지팡이). 데미지 규칙을 만들 때 이걸 보고 건너뛴다.</summary>
+        public bool NoDamage;
+
         /// <summary>세기 배율(0이면 1).</summary>
         public readonly float PowerScale => Power > 0f ? Power : 1f;
 
         public override string ToString()
         {
-            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale}";
+            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale} knockback={Knockback} noDamage={NoDamage}";
         }
     }
 }

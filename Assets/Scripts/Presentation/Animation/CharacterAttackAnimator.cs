@@ -30,6 +30,8 @@ namespace Project1.Presentation
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
             ["Attack_Light_Hastur"] = new Vector2(20f / 36f, 28f / 36f),    // 2H Magic Attack 03(원본 8~44): 내뻗기 28~36
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
+            ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
+            ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34
             ["Attack_RunJump_Survivor"] = new Vector2(8f / 30f, 19f / 30f), // Flying Kick(0~30): 왼발 뻗기 8~19
             ["Attack_RunJump_Hunter"] = new Vector2(11f / 34f, 19f / 34f),  // Run Jump Attack(원본 36~70): 내려치기 47~55
             ["Attack_Light_Joker"] = new Vector2(11f / 34f, 19f / 34f),     // 광대 두 손 내려치기(같은 클립)
@@ -48,6 +50,8 @@ namespace Project1.Presentation
         [SerializeField, Min(0.01f)] private float fadeOut = 0.15f;
 
         private static readonly int LightId = Animator.StringToHash("Light");
+        private static readonly int SwipeLId = Animator.StringToHash("SwipeL");
+        private static readonly int SwipeRId = Animator.StringToHash("SwipeR");
         private static readonly int ChargeId = Animator.StringToHash("HeavyCharge");
         private static readonly int HeavyId = Animator.StringToHash("Heavy");
         private static readonly int StompId = Animator.StringToHash("AirStomp");
@@ -114,7 +118,12 @@ namespace Project1.Presentation
                 switch (state)
                 {
                     case CharacterAttackState.Light:
-                        animator.Play(LightId, groundLayer, Normalized(SlotTiming("Attack_Light")));
+                        // 좌우로 그어 후리기(맹인): 그 방향 모션이 있으면 그걸로
+                        int swipeState = attack.Swipe < 0 ? SwipeLId : attack.Swipe > 0 ? SwipeRId : 0;
+                        if (swipeState != 0 && animator.HasState(groundLayer, swipeState))
+                            animator.Play(swipeState, groundLayer, Normalized(SlotTiming(attack.Swipe < 0 ? "Attack_SwipeL" : "Attack_SwipeR")));
+                        else
+                            animator.Play(LightId, groundLayer, Normalized(SlotTiming("Attack_Light")));
                         break;
                     case CharacterAttackState.Heavy:
                         animator.Play(HeavyId, groundLayer, Normalized(SlotTiming("Attack_Heavy")));

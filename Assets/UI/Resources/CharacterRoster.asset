@@ -61,7 +61,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: ae1b6a18bd11e9a4c949b974c8bdd5aa, type: 2}
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 796837fa47c73744eab5112e29214a06, type: 2}
   - id: Survivor_Thief
     displayName: "\uB3C4\uB451"
     role: 0

@@ -43,6 +43,13 @@ namespace Project1.Systems
         public float ChargeTime { get; private set; }
         public bool IsAirAttack { get; private set; }
         public bool IsRunJumpAttack { get; private set; }
+        public int Swipe { get; private set; }
+
+        [Tooltip("마우스를 좌우로 그어 그 방향으로 후리는 약공격을 받을지(맹인 지팡이). 캐릭터를 고를 때 SetSwipeAttacks로 켠다.")]
+        [SerializeField] private bool swipeAttacks;
+
+        /// <summary>좌우로 그어 후리기를 켜거나 끈다(캐릭터를 고를 때, 예: 맹인).</summary>
+        public void SetSwipeAttacks(bool on) => swipeAttacks = on;
 
         public event Action<CharacterAttackState> AttackStarted;
         public event Action ChargeStarted;
@@ -127,6 +134,12 @@ namespace Project1.Systems
                     {
                         break;
                     }
+                    // 좌우로 그음(맹인): 그은 방향으로 후리는 약공격. 뗄 때 나오는 약공격·강공격 입력은 버린다.
+                    if (swipeAttacks && input.AttackSwipe != 0 && grounded)
+                    {
+                        StartSwipe(input.AttackSwipe);
+                        break;
+                    }
                     // 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 바로 공중 공격(첫 입력만), 키를 뗄 때까지 다른 입력은 무시한다.
                     if (!grounded && input.AttackPressed)
                     {
@@ -163,6 +176,7 @@ namespace Project1.Systems
 
                 case CharacterAttackState.HeavyCharge:
                     ChargeTime += dt;
+                    if (swipeAttacks && input.AttackSwipe != 0 && grounded) { ChargeTime = 0f; StartSwipe(input.AttackSwipe); break; } // 모으다가 그음 → 후리기
                     if (input.HeavyRelease || !input.HeavyCharging)
                     {
                         ChargeTime = 0f;
@@ -189,6 +203,14 @@ namespace Project1.Systems
             Vector2 v = characterState.LocalPlanarVelocity;
             float walk = characterState.WalkSpeed, run = Mathf.Max(characterState.RunSpeed, walk + 0.01f);
             return v.y > Mathf.Abs(v.x) && v.y >= Mathf.Lerp(walk, run, runJumpThreshold);
+        }
+
+        private void StartSwipe(int dir)
+        {
+            IsAirAttack = false;
+            Swipe = dir < 0 ? -1 : 1;
+            waitAirRelease = true; // 누르고 있는 키를 뗄 때까지 새 입력을 받지 않는다
+            StartAttack(CharacterAttackState.Light);
         }
 
         private void StartAttack(CharacterAttackState state)
@@ -258,6 +280,7 @@ namespace Project1.Systems
             phaseTime = 0f;
             IsAirAttack = false;
             IsRunJumpAttack = false;
+            Swipe = 0;
             AttackEnded?.Invoke();
         }
     }

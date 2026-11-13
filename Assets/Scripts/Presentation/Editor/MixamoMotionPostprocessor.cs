@@ -39,6 +39,8 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Light_Geisha"] = new Vector2(7, 61),      // Standing Torch Melee Attack Stab을 Blender로 좌우 뒤집음(Tools/Blender/mirror_motion.py, 프레임 1 밀림): 오른팔로 길게 찌르기
             ["Attack_Light_Hastur"] = new Vector2(8, 44),      // Standing 2H Magic Attack 03: 두 손 들기 → 앞으로 내뻗기(28~36). 뒤의 긴 유지 자세는 뺌
             ["Attack_Light_MindsEye"] = new Vector2(10, 48),   // Standing Melee Combo Attack Ver. 3: 첫 타 가로 베기(24~31) → 한 바퀴 돌아 앞을 봄(48). 두 번째 타는 뺌
+            ["Attack_SwipeL"] = new Vector2(22, 42),          // 맹인 왼쪽 후리기(Melee Combo Attack Ver. 3 첫 타만): 오른쪽 뒤 → 앞(29~32) → 왼쪽
+            ["Attack_SwipeR"] = new Vector2(23, 43),          // 맹인 오른쪽 후리기(위를 Blender로 거꾸로, 프레임 1 밀림): 왼쪽 → 앞(31~34) → 오른쪽
             ["Attack_RunJump_Hunter"] = new Vector2(36, 70),   // 무기를 든 자세 → 내려치기 → 마무리(앞의 달리기·마지막 대기는 뺌)
             // 광대: 무조건 두 손으로 머리 위에서 아래로 내려치기(같은 Run Jump Attack의 내려치기 부분, 상체만)
             ["Attack_Light_Joker"] = new Vector2(36, 70),

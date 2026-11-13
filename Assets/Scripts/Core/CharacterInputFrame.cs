@@ -42,6 +42,9 @@ namespace Project1.Core
         /// <summary>지난 틱 이후 공격 키가 눌렸다(누른 순간, 짧게/길게와 상관없이). 공중 공격처럼 바로 나가야 할 때 쓴다.</summary>
         public bool AttackPressed;
 
+        /// <summary>지난 틱 이후 공격 키(좌클릭)를 누른 채 마우스를 좌우로 휙 그었다(모바일 화면을 밀듯이): -1 = 왼쪽, +1 = 오른쪽, 0 = 없음. 맹인 지팡이 후리기처럼 쓰는 캐릭터만 받는다.</summary>
+        public int AttackSwipe;
+
         /// <summary>겨누는 곳이 있는지(화면 안에서 무언가에 닿음). 보통은 마우스 커서 아래, 우클릭으로 시점을 돌리는 동안·돌린 뒤 커서가 아직 안 움직인 동안은 화면 가운데(AimFromCursor = false).</summary>
         public bool HasAimPoint;
 

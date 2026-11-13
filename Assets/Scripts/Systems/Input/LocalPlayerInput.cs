@@ -24,6 +24,8 @@ namespace Project1.Systems
         [Header("공격")]
         [Tooltip("공격 키를 이 시간(초) 이상 누르면 강공격, 미만이면 약공격.")]
         [SerializeField, Min(0f)] private float heavyAttackHoldTime = 0.3f;
+        [Tooltip("공격 키를 누른 채 마우스를 좌우로 이만큼(픽셀, 1080p 기준) 그으면 그은 방향으로 후리기(맹인 지팡이).")]
+        [SerializeField, Min(5f)] private float swipePixels = 60f;
 
         private InputAction moveAction;
         private InputAction runAction;
@@ -43,10 +45,13 @@ namespace Project1.Systems
         private bool heavyReleaseQueued;
         private bool skillQueued;
         private bool attackPressedQueued;
+        private int swipeQueued;      // -1 왼쪽 / +1 오른쪽 그음
 
         // 공격 키 누름 상태.
         private bool attackHeld;
         private float attackPressTime;
+        private Vector2 attackPressMouse;
+        private bool swipedThisPress;
 
         // 마우스 커서가 가리키는 곳(매 프레임 갱신).
         [Header("커서 겨누기")]
@@ -87,6 +92,7 @@ namespace Project1.Systems
                 Skill = skillQueued,
                 SkillHeld = skillAction != null && skillAction.IsPressed(),
                 AttackPressed = attackPressedQueued,
+                AttackSwipe = swipeQueued,
                 HasAimPoint = hasAim,
                 AimFromCursor = aimFromCursor,
                 AimPoint = aimPoint,
@@ -96,6 +102,7 @@ namespace Project1.Systems
             lightAttackQueued = false;
             heavyReleaseQueued = false;
             attackPressedQueued = false;
+            swipeQueued = 0;
             skillQueued = false;
             return cachedFrame;
         }
@@ -215,6 +222,16 @@ namespace Project1.Systems
                 attackHeld = true;
                 attackPressedQueued = true;
                 attackPressTime = Time.time;
+                swipedThisPress = false;
+                if (Mouse.current != null) attackPressMouse = Mouse.current.position.ReadValue();
+            }
+
+            // 누른 채 좌우로 휙 그음(모바일 화면을 밀듯이) → 한 번만 알린다. 시점을 돌리는 중(우클릭, 커서 잠김)에는 보지 않는다.
+            if (attackHeld && !swipedThisPress && !cursorLocked && Mouse.current != null)
+            {
+                Vector2 d = Mouse.current.position.ReadValue() - attackPressMouse;
+                float need = swipePixels * Screen.height / 1080f;
+                if (Mathf.Abs(d.x) >= need && Mathf.Abs(d.x) > Mathf.Abs(d.y) * 1.2f) { swipeQueued = d.x < 0f ? -1 : 1; swipedThisPress = true; }
             }
 
             if (attackHeld && attackAction.WasReleasedThisFrame())

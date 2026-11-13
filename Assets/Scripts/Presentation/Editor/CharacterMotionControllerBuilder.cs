@@ -38,14 +38,14 @@ namespace Project1.Presentation.EditorTools
 
         // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속) — Mixamo/Skill_<스킬 ID>.fbx가 없을 때만.
         // 사냥터지기 그랩 쏘기는 이제 전용 파일 Skill_Gamekeeper_Grab.fbx(감시자 내려치기 + 머리는 앞을 봄, Blender로 수정)를 쓴다.
-        private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f), ("Ripper_MistBlade", "Attack_Light_Ripper", 1f) /* 리퍼 E: 위에서 아래로 내려치기(기본 공격과 같은 왼손 내려치기) */ };
+        private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f), ("Ripper_MistBlade", "Attack_Light_Ripper", 1f) /* 리퍼 E: 위에서 아래로 내려치기(기본 공격과 같은 왼손 내려치기) */, ("MindsEye_Thrust", "Attack_Light_Geisha", 1f) /* 맹인 E: 오른팔로 앞으로 길게 찌르기(붉은나비 찌르기와 같은 모션) */ };
 
         private static readonly string[] Slots =
         {
             "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
-            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch",
+            "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
             "Hit_Head", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Stun", "Fall_1",
         };
@@ -281,6 +281,9 @@ namespace Project1.Presentation.EditorTools
             var asm = ac.layers[ac.layers.Length - 1].stateMachine;
             asm.defaultState = asm.AddState("Empty");
             asm.AddState("Light").motion = clips["Attack_Light"];
+            // 좌우로 그어 후리기(맹인만 씀): 왼쪽 = 오른손 앞치기(오른쪽 → 앞 → 왼쪽), 오른쪽 = 그 모션을 Blender로 거꾸로(Tools/Blender/reverse_motion.py)
+            if (clips["Attack_SwipeL"] != null) asm.AddState("SwipeL").motion = clips["Attack_SwipeL"];
+            if (clips["Attack_SwipeR"] != null) asm.AddState("SwipeR").motion = clips["Attack_SwipeR"];
             asm.AddState("HeavyCharge").motion = clips["Attack_HeavyCharge"];
             asm.AddState("Heavy").motion = clips["Attack_Heavy"];
 

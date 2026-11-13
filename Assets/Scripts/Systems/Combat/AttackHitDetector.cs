@@ -106,7 +106,7 @@ namespace Project1.Systems
                     float distSq = (point - origin).sqrMagnitude;
                     if (!bestThisTick.TryGetValue(victim.Id, out Candidate best) || distSq < best.DistSq)
                     {
-                        bestThisTick[victim.Id] = new Candidate(hurtbox.Part, hitbox.Slot, point, distSq);
+                        bestThisTick[victim.Id] = new Candidate(hurtbox.Part, hitbox.Slot, point, distSq, victim.gameObject);
                     }
                 }
             }
@@ -125,6 +125,7 @@ namespace Project1.Systems
                     Tick = tick,
                     Point = pair.Value.Point,
                 };
+                HitModifiers.Apply(gameObject, ref hit, pair.Value.Victim); // 예: 맹인 지팡이 = 데미지 없이 넉백
                 Hit?.Invoke(hit);
                 HitEvents.Raise(hit);
             }
@@ -136,9 +137,11 @@ namespace Project1.Systems
             public readonly HitboxSlot Slot;
             public readonly Vector3 Point;
             public readonly float DistSq;
+            public readonly GameObject Victim;
 
-            public Candidate(BodyPart part, HitboxSlot slot, Vector3 point, float distSq)
+            public Candidate(BodyPart part, HitboxSlot slot, Vector3 point, float distSq, GameObject victim)
             {
+                Victim = victim;
                 Part = part;
                 Slot = slot;
                 Point = point;
