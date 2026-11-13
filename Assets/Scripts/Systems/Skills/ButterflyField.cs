@@ -8,7 +8,8 @@ namespace Project1.Systems
     /// 붉은나비(미치코)의 나비 놓기·겨누기(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 마우스가 가리키는 곳에 놓을 자리를 보여 준다(Placing, PreviewPoint — GroundPlacementPreview).
     ///   누르지 않을 때도 놓으면 갈 자리를 계산해 둔다(AimPoint — FE 조준 보조 고리). 최대 100m, 더 먼 곳을 가리키면 그 방향 100m로 당긴다.
-    ///   땅 위만 된다(면이 위를 향함, 공중·벽 불가). 떼면 그 자리에 나비를 놓는다(재사용 대기 placeCooldown, 테스트 0초).
+    ///   땅 위만 된다(면이 위를 향함, 공중·벽 불가). 아래층에서 위층 바닥 끝(옆면·밑면)을 가리키면 그 윗면 모서리에 놓는다(ledgeSnapHeight),
+    ///   캐릭터 발보다 maxRiseHeight(7m)를 넘게 높은 곳은 못 놓는다(1층 → 2층 바닥은 되고 지붕은 안 됨). 떼면 그 자리에 나비를 놓는다(재사용 대기 placeCooldown, 테스트 0초).
     ///   취소: 누른 채 E를 누르거나(뗄 때까지 무시), 몸 근처로 끌어다 놓으면 놓지 않는다 — 취소는 재사용 대기가 생기지 않는다.
     ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다.
     ///   우클릭으로 시점을 돌리는 중에 좌클릭을 꾹 눌러도 꺼낼 수 있다(화면 가운데가 가리키는 땅, 없으면 앞쪽).
@@ -58,6 +59,10 @@ namespace Project1.Systems
 
         [Tooltip("놓을 수 있는 최대 거리(m) / 시점을 돌리는 중 화면 가운데가 땅을 못 가리킬 때 앞쪽 거리(m).")]
         [SerializeField, Min(1f)] private float placeDistance = 100f, turnDefaultDistance = 25f;
+        [Tooltip("위층 바닥 끝 모서리: 가리킨 곳이 바닥 판의 옆면·밑면이면(아래층에서는 윗면이 안 보임) 그 위 이 높이(m) 안의 윗면에 놓는다. 0 = 끔.")]
+        [SerializeField, Min(0f)] private float ledgeSnapHeight = 1f;
+        [Tooltip("놓을 자리가 캐릭터 발보다 이만큼(m) 넘게 높으면 못 놓는다(층고 5.5m — 1층에서 2층 바닥은 되고 그 위 지붕은 안 됨). 0 = 제한 없음.")]
+        [SerializeField, Min(0f)] private float maxRiseHeight = 7f;
 
         // 좌클릭을 누르지 않을 때도 지금 겨누는 대로 놓으면 나비가 갈 자리(조준 보조 고리).
         [SerializeField] private GroundPlacementPreview aim = new();
@@ -69,8 +74,21 @@ namespace Project1.Systems
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
+            ApplyPlacementSettings();
+        }
+
+        private void OnValidate() => ApplyPlacementSettings();
+
+        /// <summary>놓기(placement)와 조준 보조(aim)가 같은 기준으로 판정하게 설정을 맞춘다.</summary>
+        private void ApplyPlacementSettings()
+        {
             // 멀리까지 날린다: 최대 거리를 크게, 더 먼 곳을 가리키면 그 방향 최대 거리로 당긴다.
-            foreach (var p in new[] { placement, aim }) { p.maxPlaceDistance = placeDistance; p.defaultDistance = turnDefaultDistance; p.clampToMax = true; }
+            foreach (var p in new[] { placement, aim })
+            {
+                if (p == null) continue;
+                p.maxPlaceDistance = placeDistance; p.defaultDistance = turnDefaultDistance; p.clampToMax = true;
+                p.ledgeSnapHeight = ledgeSnapHeight; p.maxRiseHeight = maxRiseHeight;
+            }
         }
 
         private void OnDisable()
