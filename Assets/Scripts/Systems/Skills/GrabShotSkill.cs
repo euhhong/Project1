@@ -10,7 +10,8 @@ namespace Project1.Systems
     ///    - 상대보다 먼저 벽(옆을 보는 면)에 닿으면 그랩이 벽을 문 채 사냥터지기가 벽 쪽으로 끌려간다(Towing, towSpeed). 그랩 머리는 벽에 박힌 채 사슬만 줄어든다.
     ///    - 아무것도 못 맞히거나 바닥 같은 면에 닿으면 그냥 되감긴다(retractSpeed).
     ///    끌어오는/끌려가는 동안은 팔을 당기는 마무리 모션 앞부분(pullMotionShare)을 당긴 정도에 맞춰 재생한다. → 3) 팔을 거둬 마무리한다(followThrough).
-    /// 카우보이 올가미(towToWalls 끔 · vaultOverVictim 켬): 던지기·조준·사거리·판정·조준 보정은 똑같고, 벽에 닿으면 끌려가지 않고 그냥 되감는다.
+    /// 카우보이 올가미(towToWalls 끔 · vaultOverVictim 켬): 던지기·조준·사거리는 똑같고, 벽에 닿으면 끌려가지 않고 그냥 되감는다.
+    ///   판정은 높낮이를 무시한다(위에서 내려다본 줄 위에 상대 판정이 닿으면 잡음 — FindVictimFlat). 단 손 → 상대가 벽·천장에 막히지 않고 일직선으로 이어지는 열린 곳에서만(막히면 빗나감).
     ///   상대를 맞히면 끌어오지 않고 카우보이가 상대를 뛰어넘어(Vaulting) 반대편, 잡은 거리(카우보이 → 상대)만큼 떨어진 곳에 착지한다(VaultLanding). 올가미는 뛰어넘을 때까지 상대를 문다.
     /// 쓰는 동안은 이동·점프·공격 불가(끌려갈 때만 스킬이 몸을 옮긴다), 던진 뒤로는 몸이 던진 방향을 지킨다.
     /// 동작 구간은 TryGetMotionPhase로 알린다(FE가 모션을 구간에 맞춰 멈추고 다시 재생한다).
@@ -186,6 +187,21 @@ namespace Project1.Systems
                 {
                     float from = ctx.Reach;
                     float to = Mathf.Min(range, ctx.Reach + extendSpeed * dt);
+                    if (vaultOverVictim)
+                    {
+                        // 카우보이 올가미: 높낮이를 무시하고(위에서 내려다본 줄 위에 판정이 닿으면) 잡는다. 단 손 → 상대가 일직선으로 이어지는(벽·천장에 막히지 않는) 열린 곳만.
+                        if (FindVictimFlat(ctx, from, to, out float flatAt, out Hurtbox flatVictim))
+                        {
+                            ctx.Reach = flatAt;
+                            Vector3 hook = flatVictim.Collider.ClosestPoint(ctx.ReachOrigin);
+                            RaiseHit(ctx, flatVictim, hook);
+                            BeginVault(ctx, flatVictim, hook);
+                            return false;
+                        }
+                        if (FindWall(ctx, from, to, out float stopAt, out _)) { ctx.Reach = stopAt; ctx.SetPhase(Retracting); }
+                        else { ctx.Reach = to; if (ctx.Reach >= range) ctx.SetPhase(Retracting); }
+                        return false;
+                    }
                     bool hitChar = FindVictim(ctx, from, to, out float charAt, out Hurtbox victim);
                     bool hitWall = FindWall(ctx, from, to, out float wallAt, out Vector3 wallNormal);
                     // 조준 보정: 바로 맞히지 못했어도 그랩 머리가 상대 근처(snapTolerance 안)를 지나면 그쪽으로 방향을 꺾어(머리가 옆으로 빡) 문다.
@@ -326,7 +342,8 @@ namespace Project1.Systems
             Vector3 land = victimPos + ctx.Direction * grabbed;
             land.y = ctx.transform.position.y;
             float travel = Flat(land - ctx.transform.position).magnitude;
-            float height = Mathf.Clamp(vaultHeight + vaultHeightPerMeter * travel, vaultHeight, Mathf.Max(vaultHeight, vaultMaxHeight));
+            float above = victim.Owner.GetComponent<CharacterController>() is { } vcc ? victimPos.y + vcc.height - ctx.transform.position.y : 0f; // 상대 머리가 나보다 높은 만큼
+            float height = Mathf.Clamp(Mathf.Max(vaultHeight + vaultHeightPerMeter * travel, above + 1f), vaultHeight, Mathf.Max(vaultHeight, vaultMaxHeight));
             var motor = ctx.GetComponent<CharacterMotor>();
             float g = motor != null ? Mathf.Abs(motor.Gravity) : 20f;
             float vy = Mathf.Sqrt(2f * g * height);
@@ -400,6 +417,61 @@ namespace Project1.Systems
                 ctx.ReachOrigin = oldOrigin;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 카우보이 올가미 판정: from ~ to 사이 줄을 위에서 내려다본(수평) 판정으로 훑는다 — 높낮이와 상관없이 상대 판정 상자가 줄 굵기(hitRadius,
+        /// 조준 보정 snapTolerance 포함) 안에 들면 후보. 가장 가까운 후보부터 손 → 상대가 일직선으로 이어지는지(벽·천장·바닥에 막히지 않는지) 보고,
+        /// 이어지면 잡는다(방향을 그 상대 쪽으로 꺾는 각이 maxSnapAngle을 넘는 보정 후보는 버린다). hitAt = 줄을 따라 그 상대까지의 거리(수평).
+        /// </summary>
+        private bool FindVictimFlat(CharacterSkill ctx, float from, float to, out float hitAt, out Hurtbox victim)
+        {
+            hitAt = to; victim = null;
+            var self = ctx.GetComponent<CharacterIdentity>();
+            Vector3 origin = ctx.ReachOrigin, dir = ctx.Direction;
+            float len = Mathf.Max(to - from, 0.001f), radius = hitRadius + snapTolerance;
+            // 줄 아래위로 높이 무한(±40m)인 상자 안의 판정 상자들
+            Vector3 mid = origin + dir * (from + len * 0.5f);
+            var cols = Physics.OverlapBox(mid, new Vector3(radius + 1f, 40f, len * 0.5f + radius + 1f), Quaternion.LookRotation(dir, Vector3.up), CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
+            var found = new System.Collections.Generic.List<(float along, Hurtbox hurt)>();
+            Vector3 o2 = Flat(origin);
+            foreach (var c in cols)
+            {
+                if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                var owner = hurt.Owner;
+                if (owner == null || (self != null && !self.CanHit(owner))) continue;
+                Bounds b = c.bounds;
+                Vector3 p = Flat(b.center) - o2;
+                float along = Vector3.Dot(p, dir);
+                float side = (p - dir * along).magnitude - Mathf.Max(b.extents.x, b.extents.z); // 판정 상자 가장자리까지
+                if (along < from - radius || along > to + radius) continue;
+                if (side > radius) continue;
+                if (side > hitRadius && Vector3.Angle(dir, p) > maxSnapAngle) continue; // 보정으로 잡기에는 너무 많이 꺾어야 함
+                found.Add((Mathf.Max(0f, along), hurt));
+            }
+            found.Sort((a, b) => a.along.CompareTo(b.along));
+            foreach (var (along, hurt) in found)
+            {
+                if (!ClearLine(origin, hurt.Collider.ClosestPoint(origin))) continue; // 벽·천장에 막혀 일직선으로 이어지지 않음 = 빗나감
+                victim = hurt;
+                hitAt = Mathf.Clamp(along, from, to);
+                Vector3 toVictim = Flat(hurt.Collider.bounds.center - origin);
+                if (toVictim.sqrMagnitude > 0.09f) { ctx.Direction = toVictim.normalized; ctx.ReachOrigin = Origin(ctx); } // 몸·줄이 그 상대 쪽을 본다
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>a → b 일직선 사이에 지형(벽·천장·바닥·물건)이 없는지. 캐릭터·판정·트리거는 무시한다.</summary>
+        private static bool ClearLine(Vector3 a, Vector3 b)
+        {
+            Vector3 d = b - a;
+            float dist = d.magnitude;
+            if (dist < 0.05f) return true;
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            foreach (var h in Physics.RaycastAll(a, d / dist, dist - 0.05f, mask, QueryTriggerInteraction.Ignore))
+                if (h.collider.GetComponentInParent<CharacterIdentity>() == null) return false;
+            return true;
         }
 
         private bool FindVictim(CharacterSkill ctx, float from, float to, out float hitAt, out Hurtbox victim)
