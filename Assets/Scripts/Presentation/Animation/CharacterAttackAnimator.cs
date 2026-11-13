@@ -26,7 +26,7 @@ namespace Project1.Presentation
             ["Attack_Light"] = new Vector2(4f / 28f, 9f / 28f),             // Mutant Punch(원본 2~30): 오른손 훅 6~11
             ["Attack_Light_Hunter"] = new Vector2(14f / 44f, 22f / 44f),    // Melee Attack Downward(원본 6~50): 내려치기 20~28
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
-            ["Attack_Light_Geisha"] = new Vector2(8f / 54f, 19f / 54f),     // Torch Melee Attack Stab(원본 6~60): 찌르기 14~25
+            ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
             ["Attack_Light_Hastur"] = new Vector2(20f / 36f, 28f / 36f),    // 2H Magic Attack 03(원본 8~44): 내뻗기 28~36
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
             ["Attack_RunJump_Survivor"] = new Vector2(8f / 30f, 19f / 30f), // Flying Kick(0~30): 왼발 뻗기 8~19

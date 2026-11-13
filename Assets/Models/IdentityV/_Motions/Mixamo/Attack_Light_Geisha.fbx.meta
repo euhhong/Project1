@@ -32,10 +32,10 @@ ModelImporter:
     clipAnimations:
     - serializedVersion: 16
       name: Attack_Light_Geisha
-      takeName: mixamo.com
-      internalID: -203655887218126122
-      firstFrame: 6
-      lastFrame: 60
+      takeName: Scene
+      internalID: -623603649343465320
+      firstFrame: 7
+      lastFrame: 61
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

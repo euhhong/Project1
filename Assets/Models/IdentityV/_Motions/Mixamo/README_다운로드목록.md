@@ -27,9 +27,9 @@
 | Attack_Light_Hunter | 기본 공격(감시자: 공장장·사냥터지기·안토니오·리퍼) → `HunterLocomotion` | **받음** — 6~50프레임, 오른손 내려치기 20~28 | Standing Melee Attack Downward |
 | Attack_Light_Joker / Attack_Heavy_Joker | 광대 약·강공격(어떤 공격 입력이든) → `SmileyFaceLocomotion` | **받음** — 36~70프레임, 두 손 로켓을 머리 위로 들었다가 아래로 내려치기 47~55(상체 레이어). 강공격 모으기는 Carry_Joker 자세 | Standing Melee Run Jump Attack(내려치기 부분) |
 | Attack_Light_Luchino | 루키노 기본 공격 → `LuchinoLocomotion` | **받음** — 4~60프레임, 오른손 가로 베기 22~29 | Standing Melee Attack Horizontal |
-| Attack_Light_Geisha | 붉은나비 기본 공격 → `GeishaLocomotion` | **받음** — 6~60프레임, 오른손 찌르기 14~25(왼손은 횃불 자세). 붉은나비는 유령처럼 이동(걷기·달리기도 대기 자세로 미끄러짐), 다리 Hurtbox 없음 | Standing Torch Melee Attack Stab |
+| Attack_Light_Geisha | 붉은나비 기본 공격 → `GeishaLocomotion` | **받음(Blender 좌우 뒤집음)** — 7~61프레임, 오른팔(부채)로 길게 찌르기 26~38(원래 왼팔 동작을 `Tools/Blender/mirror_motion.py`로 뒤집음). 붉은나비는 유령처럼 이동(걷기·달리기도 대기 자세로 미끄러짐), 다리 Hurtbox 없음 | Standing Torch Melee Attack Stab → Blender |
 | Attack_Light_Hastur | 하스터 기본 공격 → `HasturLocomotion` | **받음** — 8~44프레임, 두 손 내뻗기 28~36(뒤의 긴 유지 자세는 뺌) | Standing 2H Magic Attack 03 |
-| (스킬) 사냥터지기 그랩 쏘기 | 사냥터지기(노루) E 스킬 | **연결됨** — Skill 레이어 Gamekeeper_Grab = `Attack_Light_Hunter` 1.6배속. 그랩이 앞으로 곧게 뻗고 사슬 고리가 줄기를 이룬다 | Standing Melee Attack Downward |
+| Skill_Gamekeeper_Grab | 사냥터지기(노루) E 스킬 그랩 쏘기 | **받음(Blender 수정)** — 감시자 내려치기(7~51, 원본 6~50) 1.6배속. 허리 숙임·몸 비틀기는 그대로, 목·머리만 돌려 머리가 계속 앞을 봄(`Tools/Blender/head_look_forward.py`, Humanoid 목 한계로 가장 깊이 숙일 때 약 17° 아래). 그랩이 앞으로 곧게 뻗고 사슬 고리가 줄기를 이룬다 | Standing Melee Attack Downward → Blender |
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
@@ -52,7 +52,7 @@
 | SelectIdle_Survivor | 캐릭터 선택 화면 생존자 대기(반복) | **받음** — `_Motions/SurvivorSelect.controller` | Standing Idle |
 | Idle | 가만히 서 있을 때(생존자) | **받음** — 감시자는 Idle_Hunter(예전 임시 대기, 감시자 대기 파일이 오면 교체) | Idle (1) |
 | Idle_Thief | 도둑이 가만히 있을 때 → `ThiefLocomotion` | **받음** | Ninja Idle |
-| Idle_Luchino | 루키노 기본(가만히 있을 때) → `LuchinoLocomotion` | **받음** — 웅크린 자세 | Crouch Idle |
+| Idle_Luchino | (안 씀) 루키노 기본 자세 → 사용자 요청으로 감시자 공통 대기로 되돌림. 파일만 남김 | 받음 — 연결 안 함 | Crouch Idle |
 | Air | 제자리 점프·떨어짐(공통) | **받음** — 0~22프레임(도약~착지), 게임 공중 시간 0.69초에 맞춰 재생 | Jump (1) (전: Standing Jump) |
 | Air_F | 걸어서 점프(공통) — 점프할 때 MoveZ > 0.5 | **받음** — 25~44프레임, 0.69초에 맞춰 재생 | Jumping |
 | Air_Run | 뛰면서 점프(공통) — 점프할 때 MoveZ > 1.75 | **받음** — 0~20프레임, 0.69초에 맞춰 재생 | Running Jump |

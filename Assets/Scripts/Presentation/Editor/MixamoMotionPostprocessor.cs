@@ -35,10 +35,13 @@ namespace Project1.Presentation.EditorTools
             ["Attack_RunJump_Survivor"] = new Vector2(0, 30),
             ["Attack_Light_Hunter"] = new Vector2(6, 50),      // Standing Melee Attack Downward: 오른손 들기 → 내려치기(20~28) → 몸 되돌리기
             ["Attack_Light_Luchino"] = new Vector2(4, 60),     // Standing Melee Attack Horizontal: 오른쪽 뒤로 당김 → 가로 베기(22~29) → 몸 되돌리기
-            ["Attack_Light_Geisha"] = new Vector2(6, 60),      // Standing Torch Melee Attack Stab: 오른손 찌르기(14~25), 왼손은 횃불
+            ["Attack_Light_Geisha"] = new Vector2(7, 61),      // Standing Torch Melee Attack Stab을 Blender로 좌우 뒤집음(Tools/Blender/mirror_motion.py, 프레임 1 밀림): 오른팔로 길게 찌르기
             ["Attack_Light_Hastur"] = new Vector2(8, 44),      // Standing 2H Magic Attack 03: 두 손 들기 → 앞으로 내뻗기(28~36). 뒤의 긴 유지 자세는 뺌
             ["Attack_Light_MindsEye"] = new Vector2(10, 48),   // Standing Melee Combo Attack Ver. 3: 첫 타 가로 베기(24~31) → 한 바퀴 돌아 앞을 봄(48). 두 번째 타는 뺌
             ["Attack_RunJump_Hunter"] = new Vector2(36, 70),   // 무기를 든 자세 → 내려치기 → 마무리(앞의 달리기·마지막 대기는 뺌)
+            // 사냥터지기 그랩 쏘기: Attack_Light_Hunter(6~50)와 같은 구간. Blender로 머리를 앞으로 고쳐 내보내면서 프레임이 1 밀림
+            // (Tools/Blender/head_look_forward.py)
+            ["Skill_Gamekeeper_Grab"] = new Vector2(7, 51),
             // 광대: 무조건 두 손으로 머리 위에서 아래로 내려치기(같은 Run Jump Attack의 내려치기 부분, 상체만)
             ["Attack_Light_Joker"] = new Vector2(36, 70),
             ["Attack_Heavy_Joker"] = new Vector2(36, 70),

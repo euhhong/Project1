@@ -26,14 +26,15 @@ namespace Project1.Presentation.EditorTools
         private const float ForwardJumpMoveZ = 0.5f;
         private const float RunJumpMoveZ = (1f + CharacterAnimatorDriver.RunBlendValue) * 0.5f;
 
-        // 반복하는 스킬 모션의 재생 배속. 전위 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
-        private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f };
+        // 스킬 모션의 재생 배속. 전위 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
+        // 사냥터지기 그랩 쏘기는 그랩이 뻗어 나가는 순간(준비 0.3초)에 내려치기가 오게 1.6배속.
+        private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f, ["Gamekeeper_Grab"] = 1.6f };
 
         // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
         private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1") };
 
-        // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속). 사냥터지기 그랩 던지기 = Standing Melee Attack Downward(사용자 지정),
-        // 그랩이 뻗어 나가는 순간(준비 0.3초)에 맞춰 1.6배속.
+        // 스킬 상태에 다른 자리 모션을 쓴다(스킬 ID, 자리, 배속) — Mixamo/Skill_<스킬 ID>.fbx가 없을 때만.
+        // 사냥터지기 그랩 쏘기는 이제 전용 파일 Skill_Gamekeeper_Grab.fbx(감시자 내려치기 + 머리는 앞을 봄, Blender로 수정)를 쓴다.
         private static readonly (string skillId, string slot, float speed)[] SkillClipAliases = { ("Gamekeeper_Grab", "Attack_Light_Hunter", 1.6f) };
 
         private static readonly string[] Slots =
@@ -68,7 +69,7 @@ namespace Project1.Presentation.EditorTools
             // 감시자 공통: 공장장·사냥터지기·안토니오·리퍼·광대
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
-            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino"), ("Idle", "Idle_Luchino") } }), // 루키노: 가로 베기, 웅크린 대기(Crouch Idle)
+            ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino") } }), // 루키노: 가로 베기. 대기는 감시자 공통(Crouch Idle는 사용자 요청으로 되돌림, 파일만 남김)
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") } }),   // 하스터: 두 손 마법
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
@@ -328,7 +329,7 @@ namespace Project1.Presentation.EditorTools
             }
             // 다른 자리의 모션을 그대로 쓰는 스킬(예: 사냥터지기 그랩 쏘기 = 감시자 기본 공격 내려치기 모션).
             foreach (var (skillId, slot, speed) in SkillClipAliases)
-                if (clips.TryGetValue(slot, out var aliasClip) && aliasClip != null)
+                if (!HasMotionFile("Skill_" + skillId) && clips.TryGetValue(slot, out var aliasClip) && aliasClip != null)
                 {
                     var s = skillSm.AddState(skillId);
                     s.motion = aliasClip;
