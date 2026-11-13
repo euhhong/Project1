@@ -33,6 +33,7 @@ namespace Project1.Systems
         private AttackHitDetector hitDetector;
         private ICharacterSkillState skillState; // 실행 중에 붙을 수 있어 필요할 때 찾는다
         private ICharacterStun stun;
+        private ICharacterHealth health; // 쓰러지면 공격하지 않는다
         private bool waitAirRelease; // 공중에서 누른 공격 키를 뗄 때까지 새 입력을 받지 않는다
 
         private float phaseTime;
@@ -146,7 +147,8 @@ namespace Project1.Systems
                     // 다른 행동을 막는 스킬(예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
                     if (skillState == null) TryGetComponent(out skillState);
                     if (stun == null) TryGetComponent(out stun);
-                    if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned))
+                    if (health == null) TryGetComponent(out health);
+                    if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead))
                     {
                         break;
                     }

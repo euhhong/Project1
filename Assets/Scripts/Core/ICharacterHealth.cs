@@ -11,6 +11,9 @@ namespace Project1.Core
         float Max { get; }
 
         /// <summary>체력이 바뀔 때(현재, 최대).</summary>
+        /// <summary>체력이 0이 되어 쓰러졌는지(이동·공격·스킬 불가, 사망 모션).</summary>
+        bool IsDead => Current <= 0f;
+
         event Action<float, float> Changed;
     }
 }

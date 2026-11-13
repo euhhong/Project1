@@ -254,7 +254,7 @@ namespace Project1.Presentation.EditorTools
             toGround.hasExitTime = false; toGround.duration = 0.12f;
             toGround.AddCondition(AnimatorConditionMode.If, 0, "IsGrounded");
 
-            // 맞아서 쓰러짐: IsDown이 켜지면 어디서든 쓰러지고, 마지막 자세(누운 자세)로 멈춘다. 꺼지면 이동으로 돌아간다.
+            // 쓰러짐(사망): IsDown이 켜지면(체력 0, CharacterDeathAnimator) 어디서든 쓰러지고(Down = Mixamo Zombie Dying), 마지막 자세(누운 자세)로 멈춘다. 꺼지면 이동으로 돌아간다.
             if (clips["Down"] != null)
             {
                 var down = sm.AddState("Down");

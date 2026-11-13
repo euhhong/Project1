@@ -92,6 +92,7 @@ namespace Project1.Systems
                 if (skill == null) { BlockedReason = "스킬 없음"; return false; }
                 if (State != SkillState.Ready) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
+                if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
                 if (TryGetComponent(out ISkillLock skillLock) && skillLock.SkillLocked) { BlockedReason = skillLock.LockReason; return false; } // 예: 도둑 손전등에 지져짐
                 if (attack != null && attack.AttackState != CharacterAttackState.None) { BlockedReason = "공격 중"; return false; }
                 bool ok = skill.CanStart(gameObject, out var reason);
@@ -182,7 +183,8 @@ namespace Project1.Systems
 
                 case SkillState.Casting:
                     bool interruptedByAttack = skill.CancelledByAttack && attack != null && attack.AttackState != CharacterAttackState.None;
-                    if (interruptedByAttack || IsStunned)
+                    bool dead = TryGetComponent(out ICharacterHealth hpNow) && hpNow.IsDead;
+                    if (interruptedByAttack || IsStunned || dead)
                     {
                         EndCast(false);
                         break;

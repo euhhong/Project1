@@ -27,6 +27,7 @@ namespace Project1.UI
 
             Ensure<CharacterSkillAnimator>(player);
             Ensure<CharacterHitReactionAnimator>(player);
+            Ensure<CharacterDeathAnimator>(player); // 체력 0 = 쓰러지는 모션(Zombie Dying)
             Ensure<SkillAreaIndicator>(player);
             Ensure<AfterimageTrail>(player);
 

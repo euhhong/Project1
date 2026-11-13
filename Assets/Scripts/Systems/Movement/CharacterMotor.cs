@@ -26,6 +26,7 @@ namespace Project1.Systems
         private IMoveSpeedLimit[] speedLimits;
         private IMoveOverride[] moveOverrides;
         private IFacingOverride[] facingOverrides;
+        private ICharacterHealth health; // 체력이 0이면(쓰러짐) 움직이지 않는다
 
         public CharacterMoveState MoveState { get; private set; }
         public bool IsGrounded { get; private set; }
@@ -144,9 +145,11 @@ namespace Project1.Systems
             }
 
             float dt = Time.fixedDeltaTime;
+            if (health == null) TryGetComponent(out health);
+            bool dead = health != null && health.IsDead;
 
-            // 몸을 시야 좌우 방향으로 돌린다.
-            transform.rotation = Quaternion.Euler(0f, TryGetFacingOverride(out float facingYaw) ? facingYaw : LookYaw, 0f); // 스킬이 정하면 그 각도(예: 붉은나비 나비에게 — 시작 각도 유지)
+            // 몸을 시야 좌우 방향으로 돌린다(쓰러져 있으면 돌지 않는다).
+            if (!dead) transform.rotation = Quaternion.Euler(0f, TryGetFacingOverride(out float facingYaw) ? facingYaw : LookYaw, 0f); // 스킬이 정하면 그 각도(예: 붉은나비 나비에게 — 시작 각도 유지)
 
             // 시야 기준 수평 이동 (대각선 정규화는 입력 소스에서 Clamp).
             Vector2 move = Vector2.ClampMagnitude(input.Move, 1f);
@@ -154,7 +157,8 @@ namespace Project1.Systems
             bool running = moving && input.Run;
             float speed = running ? runSpeed : walkSpeed;
             bool allowJump = true;
-            if (TryGetMoveOverride(out Vector2 overrideMove, out float overrideSpeed, out allowJump))
+            if (dead) { move = Vector2.zero; moving = false; running = false; allowJump = false; } // 쓰러짐: 제자리
+            else if (TryGetMoveOverride(out Vector2 overrideMove, out float overrideSpeed, out allowJump))
             {
                 // 스킬 등이 이동을 정한다(예: 돌진). 입력 방향·달리기 키·속도 제한은 무시한다.
                 move = Vector2.ClampMagnitude(overrideMove, 1f);

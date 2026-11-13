@@ -18,6 +18,7 @@ namespace Project1.Systems
         public float Max => maxHealth;
         public float Current => current < 0f ? maxHealth : current;
         public bool IsFull => Current >= maxHealth - 0.001f;
+        public bool IsDead => Current <= 0f;
 
         public event Action<float, float> Changed;
 
