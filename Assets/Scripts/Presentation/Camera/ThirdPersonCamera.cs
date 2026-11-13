@@ -58,6 +58,10 @@ namespace Project1.Presentation
         [SerializeField, Min(0.1f)] private float minObstacleDistance = 0.7f;
         [Tooltip("벽이 사라진 뒤 원래 거리로 돌아가는 시간(초). 당길 때는 바로 당긴다.")]
         [SerializeField, Min(0f)] private float obstacleReleaseTime = 0.25f;
+        [Tooltip("뒤가 벽에 막히면 당기기 전에 먼저 카메라를 머리 위로 들어 올리는 최대 각도(도). 0이면 끔. 캐릭터가 화면을 가리지 않게.")]
+        [SerializeField, Range(0f, 60f)] private float maxCraneAngle = 35f;
+        [Tooltip("들어 올리는/내리는 데 걸리는 시간(초).")]
+        [SerializeField, Min(0f)] private float craneUpTime = 0.12f, craneDownTime = 0.35f;
 
         [Header("감쇠 (초, 0이면 즉시)")]
         [SerializeField] private float followSmoothTime = 0.08f;
@@ -71,6 +75,8 @@ namespace Project1.Presentation
         private Vector3 pivotVelocity;
         private float yaw, pitch, yawVelocity, pitchVelocity;
         private float currentDistance, distanceVelocity;
+        private float crane, craneVelocity;
+        private bool snapCrane;
         private bool initialized;
 
         // 이번 프레임 구도(야외·실내를 섞은 값)
@@ -97,6 +103,7 @@ namespace Project1.Presentation
             {
                 yaw = targetYaw; pitch = targetPitch; pivot = targetPivot;
                 currentDistance = wantDistance;
+                snapCrane = true;
                 initialized = true;
             }
             else
@@ -106,7 +113,11 @@ namespace Project1.Presentation
                 pivot = Vector3.SmoothDamp(pivot, targetPivot, ref pivotVelocity, followSmoothTime);
             }
 
-            Quaternion orbit = Quaternion.Euler(pitch, yaw, 0f);
+            float craneGoal = avoidObstacles ? CraneAngle(wantDistance) : 0f;
+            if (snapCrane) { crane = craneGoal; craneVelocity = 0f; snapCrane = false; }
+            else crane = Mathf.SmoothDamp(crane, craneGoal, ref craneVelocity, craneGoal > crane ? craneUpTime : craneDownTime);
+
+            Quaternion orbit = Quaternion.Euler(Mathf.Clamp(pitch + crane, minCameraPitch, maxCameraPitch), yaw, 0f);
             Vector3 back = -(orbit * Vector3.forward);
             // 시선 각도는 벽에 막히지 않았을 때 자리 기준으로 정한다(당겨져도 화면이 갑자기 아래로 꺾이지 않게).
             Vector3 freePosition = pivot + back * wantDistance;
@@ -126,6 +137,22 @@ namespace Project1.Presentation
                 indoorSensor = gameObject.AddComponent<CameraIndoorSensor>();
             indoorSensor.Tick(target, snap);
             return indoorSensor.Indoor01;
+        }
+
+        /// <summary>
+        /// 기본 각도로 뒤가 막혔을 때, 같은 거리로 물러날 수 있게 카메라를 몇 도 더 들어야 하는지.
+        /// (막힌 곳까지 수평 거리 = 원하는 거리 × cos(새 각도)). 기본 각도에서만 재므로 들었다 내렸다 떨지 않는다.
+        /// </summary>
+        private float CraneAngle(float wantDistance)
+        {
+            if (maxCraneAngle <= 0f || wantDistance <= 0.01f) return 0f;
+            float basePitch = Mathf.Clamp(pitch, minCameraPitch, maxCameraPitch);
+            Vector3 baseBack = -(Quaternion.Euler(basePitch, yaw, 0f) * Vector3.forward);
+            float free = ObstacleDistance(baseBack, wantDistance);
+            if (free >= wantDistance * 0.95f) return 0f;
+            float horizontalRoom = free * Mathf.Cos(basePitch * Mathf.Deg2Rad);
+            float needed = Mathf.Acos(Mathf.Clamp01(horizontalRoom / wantDistance)) * Mathf.Rad2Deg;
+            return Mathf.Clamp(needed - basePitch, 0f, Mathf.Min(maxCraneAngle, maxCameraPitch - basePitch));
         }
 
         /// <summary>바라볼 지점에서 카메라 쪽으로 구를 쏘아 처음 닿는 벽·천장까지 거리(여유 뺌). 막힌 게 없으면 maxDistance.</summary>
