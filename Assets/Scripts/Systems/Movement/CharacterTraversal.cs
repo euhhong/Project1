@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 턱은 따로 표시하지 않고 지형 모양으로 찾는다(앞쪽 수직 면 + 그 위 윗면 + 위가 빔). 캐릭터·판정·트리거는 무시한다.
     ///
     /// - 창틀 넘기: 땅에서 창틀(키의 25~75% 높이, 두께 0.8m 이하, 위가 열림) 쪽으로 방향키를 누른 채 점프(감시자는 감시자 모션 Jump)
-    ///   → 반대편 바닥이 같은 높이면 넘어간다(WindowVault — 점프 중 짚고 넘기와 같은 모션 Jumping (1)을 느리게). 반대편이 dropMin보다 낮으면 턱 위로 올라섰다가 뛰어내린다(WindowDrop, Jumping Down (2)).
+    ///   → 반대편 바닥이 같은 높이면 넘어간다(WindowVault — 점프 중 짚고 넘기와 같은 모션 Jumping (1), 빠르게). 반대편이 dropMin보다 낮으면 턱 위로 올라섰다가 뛰어내린다(WindowDrop, Jumping Down (2)).
     /// - 점프 중 날아가는 방향 앞에 창틀이 있으면 반드시 한 손으로 짚고 넘는다(WindowJump, Jumping (1)).
     /// - 올라서기: 땅에서 중간 높이 턱(키의 35~110%, 위에 설 자리) 쪽으로 방향키 + 점프 → 뛰어 올라선다(ClimbUp, Running Jump).
     /// - 매달리기: 공중에서 턱 쪽으로 방향키를 누르고 있고 손이 턱에 닿을 높이면 잡고 매달린다(HangGrab → Hang).
@@ -46,8 +46,8 @@ namespace Project1.Systems
         [SerializeField, Min(0.1f)] private float sillMaxThickness = 0.8f;
         [Tooltip("반대편 바닥이 이만큼(m) 넘게 낮으면 넘지 않고 턱 위에서 뛰어내린다.")]
         [SerializeField, Min(0f)] private float dropMin = 0.8f;
-        [Tooltip("걸어서 창틀 넘기 시간(초) — 점프 중 짚고 넘기(Jumping (1))와 같은 모션을 이 시간에 맞춰 느리게 / 창틀 위에서 뛰어내리기 시간.")]
-        [SerializeField, Min(0.1f)] private float vaultTime = 1.25f, windowDropTime = 0.9f;
+        [Tooltip("걸어서 창틀 넘기 시간(초) — 점프 중 짚고 넘기(Jumping (1), 0.75초)와 같은 모션을 거의 같은 빠르기로 / 창틀 위에서 뛰어내리기 시간.")]
+        [SerializeField, Min(0.1f)] private float vaultTime = 0.8f, windowDropTime = 0.9f;
         [Tooltip("감시자 창틀 넘기(Jump) 시간(초).")]
         [SerializeField, Min(0.1f)] private float hunterVaultTime = 0.85f;
         [Tooltip("점프 중 창틀을 짚고 넘기(Jumping (1)) 시간(초). 넘은 뒤 반대편으로 더 가는 거리(m).")]
