@@ -11,18 +11,21 @@ namespace Project1.Presentation.EditorTools
     ///   왼손 뼈 아래에 있어서, 오른손 쪽에 있어야 할 그랩이 왼손을 따라 엉뚱한 곳에 떠 있었다.
     ///   → 그랩만 떼어 오른손 뼈에 붙이고, 손잡이 끝(가는 쪽)이 손바닥 가운데에 오게 옮긴다. 사슬 팔찌는 왼 손목에 그대로 둔다.
     ///   그랩 이름은 Gamekeeper_Grab_Weapon(무기 판정 Hitbox_Weapon이 그랩에 붙는다), 사슬은 Gamekeeper_Chain.
+    /// - 공장장: 상어 모양 무기(HellEmber_Weapon)가 손에서 조금 떨어져 있어 손바닥 쪽으로 붙인다(FixHellEmber).
     /// 판정 상자(BodyPartColliderPostprocessor)보다 먼저 돈다.
     /// </summary>
     public class ModelPropFixer : AssetPostprocessor
     {
-        public override uint GetVersion() => 2; // 2: 그랩을 몸 앞쪽으로 돌림
+        public override uint GetVersion() => 3; // 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임
         public override int GetPostprocessOrder() => -5;
 
         private void OnPostprocessModel(GameObject root)
         {
-            if (!assetPath.Replace('\\', '/').Contains("/Hunter_Gamekeeper/")) return;
+            string path = assetPath.Replace('\\', '/');
             var importer = assetImporter as ModelImporter;
             if (importer == null) return;
+            if (path.Contains("/Hunter_HellEmber/")) { FixHellEmber(root, importer); return; }
+            if (!path.Contains("/Hunter_Gamekeeper/")) return;
             var weapon = root.GetComponentsInChildren<MeshRenderer>(true).FirstOrDefault(r => r.name == "Gamekeeper_Weapon");
             if (weapon == null) return;
             var rightHand = HumanBone(root, importer, "RightHand");
@@ -63,6 +66,30 @@ namespace Project1.Presentation.EditorTools
             handleEnd = turn * (handleEnd - grab.transform.position) + grab.transform.position;
             grab.transform.position += palm - handleEnd;
             Debug.Log($"[FE] 사냥터지기 그랩을 오른손으로 옮겼습니다(손잡이 끝 → 손바닥, {(palm - handleEnd).magnitude:0.000} 이동).");
+        }
+
+        /// <summary>
+        /// 공장장: 상어 모양 무기(HellEmber_Weapon, 오른손 뼈 아래)가 손에서 조금 떨어져 있었다.
+        /// → 무기의 긴 축이 손바닥 가운데를 지나도록 축에 수직인 방향으로만 옮긴다(쥔 자리·방향은 그대로, 주먹이 몸통을 감싼다).
+        /// </summary>
+        private static void FixHellEmber(GameObject root, ModelImporter importer)
+        {
+            var weapon = root.GetComponentsInChildren<MeshRenderer>(true).FirstOrDefault(r => r.name == "HellEmber_Weapon");
+            var rightHand = HumanBone(root, importer, "RightHand");
+            if (weapon == null || rightHand == null) return;
+            var rightMiddle = HumanBone(root, importer, "RightMiddleProximal");
+            var rightLower = HumanBone(root, importer, "RightLowerArm");
+            Vector3 fingers = rightMiddle != null ? rightMiddle.position - rightHand.position
+                : rightLower != null ? (rightHand.position - rightLower.position) * 0.3f : Vector3.zero;
+            Vector3 palm = rightHand.position + fingers * 0.5f;
+
+            var world = weapon.GetComponent<MeshFilter>().sharedMesh.vertices.Select(p => weapon.transform.TransformPoint(p)).ToArray();
+            Vector3 handleEnd = HandleEnd(world, out Vector3 headEnd);
+            Vector3 axis = (headEnd - handleEnd).normalized;
+            Vector3 onAxis = handleEnd + axis * Vector3.Dot(palm - handleEnd, axis);
+            Vector3 move = palm - onAxis;
+            weapon.transform.position += move;
+            Debug.Log($"[FE] 공장장 상어 무기를 손바닥 쪽으로 {move.magnitude:0.000} 옮겼습니다(긴 축이 손바닥 가운데를 지나게).");
         }
 
         private static Transform HumanBone(GameObject root, ModelImporter importer, string humanName)

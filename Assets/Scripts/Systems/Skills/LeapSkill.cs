@@ -31,6 +31,8 @@ namespace Project1.Systems
         [Min(0f)] public float slamRadius = 3f;
         [Tooltip("내려찍은 뒤 못 움직이는 시간(초). 착지 모션(Hard Landing, 1.43초)을 이 시간에 맞춰 재생한다.")]
         [Min(0f)] public float slamRecovery = 1.2f;
+        [Tooltip("공중에서 E를 한 번 더 눌러 빠르게 떨어진(공격 없음) 뒤 못 움직이는 시간(초). 짧게 — 착지 모션을 빠르게 재생하고 끝낸다.")]
+        [Min(0f)] public float dropRecovery = 0.25f;
         [Tooltip("내려찍기 공격 판정이 나는 자리 표시용(HitResult.Slot).")]
         public HitboxSlot slamSlot = HitboxSlot.Weapon;
 
@@ -97,7 +99,7 @@ namespace Project1.Systems
                 ctx.AreaCenter = ctx.transform.position;
                 HitArea(ctx); // 착지 순간 범위 공격(빠른 낙하는 공격 없음)
             }
-            recovery = slamRecovery;
+            recovery = ctx.Phase == Dropping ? dropRecovery : slamRecovery;
             return true;
         }
 

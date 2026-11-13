@@ -22,4 +22,5 @@ MonoBehaviour:
   slamSpeed: 30
   slamRadius: 3
   slamRecovery: 1.2
+  dropRecovery: 0.25
   slamSlot: 16
