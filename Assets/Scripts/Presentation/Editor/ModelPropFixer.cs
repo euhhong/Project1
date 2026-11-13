@@ -13,12 +13,13 @@ namespace Project1.Presentation.EditorTools
     ///   그랩 이름은 Gamekeeper_Grab_Weapon(무기 판정 Hitbox_Weapon이 그랩에 붙는다), 사슬은 Gamekeeper_Chain.
     /// - 공장장: 상어 모양 무기(HellEmber_Weapon)가 손에서 조금 떨어져 있어 손바닥 쪽으로 붙인다(FixHellEmber).
     /// - 루키노: 무기를 사용자 모델 톱날 마체테로 바꿔 보이게 한다(FixLuchino → PropModelOverride).
+    /// - 카우보이: 손에 든 소품(Cowboy_Prop)을 없앤다(빈손, 무기 판정 상자도 생기지 않음).
     /// - 공군: 신호총(Coordinator_Prop)이 앞뒤가 바뀌어 총구가 뒤(얼굴 쪽)를 보고 있어, 손잡이 축을 중심으로 180도 돌린다(FixCoordinator).
     /// 판정 상자(BodyPartColliderPostprocessor)보다 먼저 돈다.
     /// </summary>
     public class ModelPropFixer : AssetPostprocessor
     {
-        public override uint GetVersion() => 9; // 9: 루키노 무기를 마체테로, 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
+        public override uint GetVersion() => 10; // 10: 카우보이 소품 없앰, 9: 루키노 무기를 마체테로, 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
         public override int GetPostprocessOrder() => -5;
 
         private void OnPostprocessModel(GameObject root)
@@ -28,6 +29,7 @@ namespace Project1.Presentation.EditorTools
             if (importer == null) return;
             if (path.Contains("/Hunter_HellEmber/")) { FixHellEmber(root, importer); return; }
             if (path.Contains("/Survivor_Coordinator/")) { FixCoordinator(root, importer); return; }
+            if (path.Contains("/Survivor_Cowboy/")) { RemoveProp(root, "Cowboy_Prop"); return; }
             if (path.Contains("/Hunter_Luchino/")) { FixLuchino(root, importer); return; }
             if (!path.Contains("/Hunter_Gamekeeper/")) return;
             var weapon = root.GetComponentsInChildren<MeshRenderer>(true).FirstOrDefault(r => r.name == "Gamekeeper_Weapon");
@@ -83,6 +85,18 @@ namespace Project1.Presentation.EditorTools
         /// </summary>
         private const string LuchinoWeaponResource = "SerratedMachete/SerratedMachete";
         private const float MacheteLength = 1.093f; // 마체테 모델 길이(손잡이 끝 ~ 날 끝, m)
+
+        /// <summary>이름이 name인 소품 오브젝트를 모델에서 없앤다(판정 상자 만들기보다 먼저 돌아서 무기 판정도 생기지 않는다).</summary>
+        private static void RemoveProp(GameObject root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name != name) continue;
+                Object.DestroyImmediate(t.gameObject);
+                Debug.Log($"[FE] {root.name}: 소품 {name}을(를) 없앴습니다.");
+                return;
+            }
+        }
 
         private static void FixLuchino(GameObject root, ModelImporter importer)
         {

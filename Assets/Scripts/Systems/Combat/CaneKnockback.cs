@@ -13,9 +13,9 @@ namespace Project1.Systems
     public class CaneKnockback : MonoBehaviour, IHitModifier
     {
         [Tooltip("밀어내는 처음 속도(m/s). 거리 ≈ 속도 × 시간 ÷ 2.")]
-        [SerializeField, Min(0f)] private float speed = 9f;
+        [SerializeField, Min(0f)] private float speed = 16f;
         [Tooltip("밀려나는 시간(초).")]
-        [SerializeField, Min(0.05f)] private float duration = 0.3f;
+        [SerializeField, Min(0.05f)] private float duration = 0.35f;
         [Tooltip("좌우로 후렸을 때 옆으로 미는 비율(0 = 앞으로만, 1 = 옆과 앞 같게).")]
         [SerializeField, Range(0f, 2f)] private float swipeSide = 0.9f;
 
