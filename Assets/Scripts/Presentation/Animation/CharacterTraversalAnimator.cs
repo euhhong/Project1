@@ -7,6 +7,7 @@ namespace Project1.Presentation
     /// 오르기·매달리기·낙하·착지(ICharacterTraversalState, BE)를 Animator "Traversal" 레이어(전신, 기본 레이어 바로 위)로 보여 준다.
     /// - 시간이 정해진 동작(올라서기·창틀 넘기·매달려 올라가기·착지 등)은 재생 위치를 BE 진행도에 맞춘다(BE가 루트를 그 모션의 발 높이대로 옮긴다).
     /// - 매달림·떨어지는 중은 한 번 섞어 시작해 그냥 돈다(반복).
+    /// - 물건 밀기(ICharacterPushState, BE CharacterPush)도 여기서: 두 손 대며 기울임(PushStart) → 밀며 걷기(Push 반복), 막히면 기울인 채 버팀.
     /// 공격·피격·스킬 레이어가 위에 있어 그 모션이 나오면 덮는다. 상태가 없으면(모션 파일이 아직 없으면) 아무것도 하지 않는다.
     /// 모션: `_Motions/Mixamo/Traversal_*.fbx` → CharacterMotionControllerBuilder가 상태를 만든다. 캐릭터 루트에 붙인다(CharacterLoadout).
     /// </summary>
@@ -20,7 +21,11 @@ namespace Project1.Presentation
         [Tooltip("반복 상태로 바뀔 때 섞는 시간(초).")]
         [SerializeField, Min(0f)] private float crossFade = 0.15f;
 
+        // CharacterPush.pushLeanTime(기본 0.4초)과 같게 — 기울이는 모션을 이 시간에 맞춰 재생한다.
+        private const float PushLeanTime = 0.4f;
+
         private ICharacterTraversalState traversal;
+        private ICharacterPushState push;
         private Animator animator;
         private int layer = -1, playing;
         private float weight;
@@ -37,14 +42,20 @@ namespace Project1.Presentation
             if (layer < 0) layer = animator.GetLayerIndex(LayerName);
             if (layer < 0) return;
 
-            string name = StateName(traversal);
+            push ??= GetComponent<ICharacterPushState>();
+            // 물건 밀기: 두 손을 대며 기울임(PushStart, 붙는 시간에 맞춤) → 밀며 걷기(Push 반복). 막히면 기울인 자세로 버틴다.
+            bool pushing = traversal.Action == TraversalAction.None && push != null && push.IsPushing;
+            bool leaning = pushing && (push.PushTime < PushLeanTime || push.PushBlocked);
+            string name = pushing ? (leaning ? "PushStart" : "Push") : StateName(traversal);
             int state = name != null ? Animator.StringToHash(name) : 0;
             bool active = state != 0 && animator.HasState(layer, state);
             weight = Mathf.MoveTowards(weight, active ? 1f : 0f, Time.deltaTime / (active ? fadeIn : fadeOut));
             animator.SetLayerWeight(layer, weight);
             if (!active) { playing = 0; return; }
 
-            if (Synced(traversal.Action))
+            if (leaning)
+                animator.Play(state, layer, push.PushBlocked ? 0.999f : Mathf.Min(push.PushTime / PushLeanTime, 0.999f));
+            else if (!pushing && Synced(traversal.Action))
                 animator.Play(state, layer, Mathf.Min(traversal.ActionProgress, 0.999f));
             else if (playing != state)
                 animator.CrossFadeInFixedTime(state, playing == 0 ? 0f : crossFade, layer);

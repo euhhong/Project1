@@ -20,7 +20,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
-            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", // 매달린 채 대기, 허우적대며 떨어짐
+            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", "Traversal_Push", // 매달린 채 대기, 허우적대며 떨어짐, 물건 밀기
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
@@ -176,6 +176,12 @@ namespace Project1.Presentation.EditorTools
             ["Traversal_WindowJump"] = new[] { ("Traversal_WindowJump", new Vector2(7, 34), Height.Bake) },
             // 감시자 창틀 넘기(Jump): 제자리에서 두 발 모아 뛰어(4~13) 넘고 착지(22) → 섬(28). 넘어가는 앞 이동은 BE가 한다.
             ["Traversal_WindowVaultHunter"] = new[] { ("Traversal_WindowVaultHunter", new Vector2(1, 28), Height.Bake) },
+            // 물건 밀기(Push Start): 가만히 선 앞부분은 빼고 두 손을 대며 몸을 기울임(10~34) / 기울인 채 천천히 밀며 걷기 반복(34~142).
+            ["Traversal_Push"] = new[]
+            {
+                ("Traversal_PushStart", new Vector2(10, 34), Height.Bake),
+                ("Traversal_Push", new Vector2(34, 142), Height.Bake),
+            },
             // 넉백당하거나 뒤로 걷다가 떨어짐(Falling): 허우적대며 떨어지는 자세 반복.
             ["Traversal_FallBack"] = new[] { ("Traversal_FallBack", new Vector2(1, 136), Height.Body) },
         };

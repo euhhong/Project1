@@ -20,6 +20,7 @@ namespace Project1.UI
 
             Ensure<CharacterStun>(player);
             Ensure<CharacterTraversal>(player).SetHunterStyle(entry.role == CharacterRole.Hunter); // 창틀 넘기·올라서기·매달리기·낙하·착지(BE, 감시자는 창틀을 감시자 모션으로) — 이동이 알도록 아래 RefreshSpeedLimits 전에
+            Ensure<CharacterPush>(player);              // 상자 등 밀기(BE) — 모션은 CharacterTraversalAnimator
             Ensure<CharacterTraversalAnimator>(player); // 그 모션(FE, Animator 레이어 Traversal)
             var skill = Ensure<CharacterSkill>(player);
             skill.SetSkill(entry.skill);

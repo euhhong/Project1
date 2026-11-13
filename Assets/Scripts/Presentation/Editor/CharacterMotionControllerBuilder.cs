@@ -432,7 +432,9 @@ namespace Project1.Presentation.EditorTools
                     if (o is not AnimationClip clip || clip.name.StartsWith("__preview") || !clip.name.StartsWith("Traversal_")) continue;
                     string stateName = clip.name.Substring("Traversal_".Length);
                     if (sm.states.Any(s => s.state.name == stateName)) continue;
-                    sm.AddState(stateName).motion = clip;
+                    var st = sm.AddState(stateName);
+                    st.motion = clip;
+                    if (stateName == "Push") st.speed = 2.2f; // 모션은 아주 느리게 밀며 걷는다(약 0.25m/s) → 게임 미는 빠르기(CharacterPush 1m/s)에 맞춰 빠르게
                 }
             }
         }
