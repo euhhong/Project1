@@ -28,7 +28,16 @@ namespace Project1.Presentation
         private ICharacterPushState push;
         private Animator animator;
         private int layer = -1, playing;
-        private float weight;
+        private float weight, blendLeft;
+
+        /// <summary>상태의 모션 길이(초, 배속 반영). 섞어 넘어갈 때 시작 위치를 초로 바꾸는 데 쓴다. 모르면 1.</summary>
+        private float StateLength(int state)
+        {
+            var info = animator.GetNextAnimatorStateInfo(layer);
+            if (info.shortNameHash == state && info.length > 0f) return info.length;
+            info = animator.GetCurrentAnimatorStateInfo(layer);
+            return info.shortNameHash == state && info.length > 0f ? info.length : 1f;
+        }
 
         private void LateUpdate()
         {
@@ -53,12 +62,19 @@ namespace Project1.Presentation
             animator.SetLayerWeight(layer, weight);
             if (!active) { playing = 0; return; }
 
-            if (leaning)
-                animator.Play(state, layer, push.PushBlocked ? 0.999f : Mathf.Min(push.PushTime / PushLeanTime, 0.999f));
-            else if (!pushing && Synced(traversal.Action))
-                animator.Play(state, layer, Mathf.Min(traversal.ActionProgress * (traversal.Action == TraversalAction.HangClimbOver ? Project1.Systems.CharacterTraversal.OverClipShare : 1f), 0.999f));
-            else if (playing != state)
-                animator.CrossFadeInFixedTime(state, playing == 0 ? 0f : crossFade, layer);
+            bool synced = leaning || (!pushing && Synced(traversal.Action));
+            float at = leaning ? (push.PushBlocked ? 0.999f : Mathf.Min(push.PushTime / PushLeanTime, 0.999f))
+                     : Mathf.Min(traversal.ActionProgress * (traversal.Action == TraversalAction.HangClimbOver ? Project1.Systems.CharacterTraversal.OverClipShare : 1f), 0.999f);
+            if (playing != state)
+            {
+                // 동작이 바뀌면 앞 모션에서 섞어 넘어간다(예: 매달림 → 올라가기가 한 프레임에 확 바뀌지 않게). 레이어를 막 켰을 때는 바로.
+                if (playing == 0 || weight < 0.5f) animator.Play(state, layer, synced ? at : 0f);
+                else animator.CrossFadeInFixedTime(state, crossFade, layer, synced ? at * StateLength(state) : 0f);
+                blendLeft = playing == 0 ? 0f : crossFade;
+            }
+            else if (synced && blendLeft <= 0f)
+                animator.Play(state, layer, at); // 재생 위치를 BE 진행도에 맞춘다(섞는 동안은 그대로 재생)
+            blendLeft -= Time.deltaTime;
             playing = state;
         }
 
@@ -72,7 +88,7 @@ namespace Project1.Presentation
             TraversalAction.Hang => t.BracedHang ? "HangBraced" : "Hang",
             TraversalAction.HangClimb => "HangClimb",
             TraversalAction.HangClimbRail => "HangClimbRail",
-            TraversalAction.HangClimbOver => "HangClimbRail", // 같은 모션의 앞부분(올라 넘어가기)만
+            TraversalAction.HangClimbOver => "HangClimb", // 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",

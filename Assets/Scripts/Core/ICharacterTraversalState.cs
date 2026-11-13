@@ -20,7 +20,7 @@ namespace Project1.Core
         HangClimb,
         /// <summary>매달려 있다가 난간을 넘어 그 뒤 바닥으로 올라감(Climbing).</summary>
         HangClimbRail,
-        /// <summary>매달려 있다가 벽 한 장(얇은 꼭대기)을 넘어가 바로 반대편으로 떨어짐(Climbing 앞부분).</summary>
+        /// <summary>매달려 있다가 벽 한 장(얇은 꼭대기)을 잡은 채 끌어 올라 넘어가 바로 반대편으로 떨어짐(Freehang Climb 앞부분).</summary>
         HangClimbOver,
         /// <summary>점프하지 않고 걸어서 높은 곳에서 떨어지는 중(Jumping).</summary>
         Fall,
