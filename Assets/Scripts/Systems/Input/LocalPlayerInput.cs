@@ -53,8 +53,12 @@ namespace Project1.Systems
         [Tooltip("커서 아래를 찾는 최대 거리(m).")]
         [SerializeField, Min(1f)] private float aimMaxDistance = 200f;
         private readonly RaycastHit[] aimHits = new RaycastHit[16];
+        [Tooltip("시점을 돌린 뒤 커서가 이만큼(픽셀) 움직여야 다시 커서로 겨눈다.")]
+        [SerializeField, Min(0f)] private float unfreezePixels = 4f;
         private bool hasAim;
         private Vector3 aimPoint, aimNormal;
+        private bool aimFrozen;          // 시점을 돌리는 중이거나, 돌린 뒤 커서가 아직 안 움직임
+        private Vector2 frozenCursor;    // 잠금이 풀린 뒤 처음 커서 자리(-1 = 아직 모름)
 
         // 같은 틱에 여러 번 불려도 같은 값을 돌려주기 위한 캐시.
         private int cachedTick = int.MinValue;
@@ -162,15 +166,28 @@ namespace Project1.Systems
             UpdateAim();
         }
 
-        /// <summary>마우스 커서(잠근 동안은 화면 가운데) 아래에서 처음 닿는 것(자기 몸·트리거 제외)을 찾는다.</summary>
+        /// <summary>
+        /// 마우스 커서 아래에서 처음 닿는 것(자기 몸·트리거 제외)을 찾는다(게임패드만 있으면 화면 가운데).
+        /// 우클릭으로 시점을 돌리는 동안(커서 잠김)과, 놓은 뒤 커서가 화면 가운데로 돌아와 아직 움직이지 않은 동안은
+        /// 커서가 가리키는 곳이 아니므로 겨누는 곳이 없다고 알린다(HasAimPoint = false) — 나비 미리보기 등이 마지막 자리를 그대로 지킨다.
+        /// </summary>
         private void UpdateAim()
         {
             hasAim = false;
             var cam = Camera.main;
             if (cam == null) return;
-            Vector2 screen = cursorLocked || Mouse.current == null
+            var mouse = Mouse.current;
+            if (cursorLocked) { aimFrozen = true; frozenCursor = new Vector2(-1f, -1f); return; }
+            if (aimFrozen && mouse != null)
+            {
+                Vector2 now = mouse.position.ReadValue();
+                if (frozenCursor.x < 0f) frozenCursor = now;                       // 잠금이 풀린 첫 프레임의 커서 자리
+                if ((now - frozenCursor).sqrMagnitude < unfreezePixels * unfreezePixels) return; // 아직 안 움직임
+                aimFrozen = false;
+            }
+            Vector2 screen = mouse == null
                 ? new Vector2(Screen.width * 0.5f, Screen.height * 0.5f)
-                : Mouse.current.position.ReadValue();
+                : mouse.position.ReadValue();
             if (screen.x < 0f || screen.y < 0f || screen.x > Screen.width || screen.y > Screen.height) return;
             Ray ray = cam.ScreenPointToRay(screen);
             int n = Physics.RaycastNonAlloc(ray, aimHits, aimMaxDistance, ~0, QueryTriggerInteraction.Ignore);

@@ -83,6 +83,7 @@ namespace Project1.Systems
             }
             else if (input.HeavyCharging && !blocked && (Placing || PlaceCooldownRemaining <= 0f))
             {
+                if (!Placing) { PreviewValid = false; PreviewCancels = false; } // 새로 누르기 시작: 지난 자리는 버린다
                 Placing = true;
                 UpdatePreview(input);
                 if (input.Skill)
@@ -108,7 +109,8 @@ namespace Project1.Systems
 
         private void UpdatePreview(in CharacterInputFrame input)
         {
-            if (!input.HasAimPoint) { PreviewValid = false; PreviewCancels = false; return; }
+            // 커서가 가리키는 곳이 없음(우클릭으로 시점을 돌리는 중 등) → 마지막 자리를 그대로 둔다(다시 옮기거나 취소하지 않는다).
+            if (!input.HasAimPoint) return;
             PreviewPoint = input.AimPoint;
             Vector3 flat = input.AimPoint - transform.position; flat.y = 0f;
             PreviewCancels = flat.magnitude <= cancelRadius; // 몸 근처 → 떼면 취소
