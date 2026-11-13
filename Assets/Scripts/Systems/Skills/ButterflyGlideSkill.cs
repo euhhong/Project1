@@ -4,11 +4,12 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 붉은나비(미치코) 나비에게로(E): 지금 겨누는 나비(ButterflyField.TargetIndex) 자리로 곧게 빠르게 미끄러져 간다(glideSpeed).
+    /// 붉은나비(미치코) 나비에게로(E): 지금 겨누는 나비(ButterflyField.TargetIndex) 자리로 곧게 빠르게 날아간다(glideSpeed). 높낮이도 일직선(1층 → 2층, 2층 → 1층 모두).
+    ///   다른 높이로 갈 때 바닥·턱 끝 모서리를 살짝 스치면 뚫고 간다(PassEdges, 모서리에서 edgePassDepth 안). 도착하면 그 바닥에 그대로 선다.
     /// - 겨누는 나비가 없거나 나비를 놓는 중이면(놓기를 E로 취소하고 좌클릭을 아직 안 뗀 동안 포함) 쓰지 않는다.
     /// - 가는 동안 장애물(벽·다른 캐릭터 등)에 부딪히면 거기서 멈추고 툭 떨어진다(잠깐 못 움직임, bumpRecovery).
     ///   단 창틀 아랫부분(창턱)은 뚫고 지나간다(창틀 옆·윗부분은 막힘, PassWindowSills).
-    /// - 이동·공격 불가. 중력은 그대로라 턱에서 벗어나면 떨어진다.
+    /// - 이동·공격 불가. 날아가는 동안은 위아래 속도를 일직선에 맞춰 중력을 상쇄한다(도착하면 다시 중력).
     /// - 날아가는 동안 화면을 돌려도 몸(모델)은 시작할 때 각도를 지킨다(TryGetFacingYaw). 끝나면 다시 시야를 본다.
     /// 목표 자리는 시전 동안 CharacterSkill.AreaCenter에 둔다(ShowArea는 끔).
     /// </summary>
@@ -60,8 +61,57 @@ namespace Project1.Systems
             // 몸(시야) 기준 방향으로 바꾼다(몸은 시야를 따라 돌므로 매 틱 다시 계산).
             Vector3 local = Quaternion.Inverse(ctx.transform.rotation) * (to / dist);
             localMove = new Vector2(local.x, local.z);
-            speed = Mathf.Min(glideSpeed, dist / Time.fixedDeltaTime); // 마지막 틱에 지나치지 않게
+            // 나비까지 일직선(높낮이 포함)을 glideSpeed로 간다 → 수평 빠르기는 그 직선의 수평 몫. 위아래는 Tick이 맞춘다(SteerVertical).
+            float total = (ctx.AreaCenter - ctx.transform.position).magnitude;
+            float flatSpeed = glideSpeed * (total > 1e-4f ? dist / total : 1f);
+            speed = Mathf.Min(flatSpeed, dist / Time.fixedDeltaTime); // 마지막 틱에 지나치지 않게
             return true;
+        }
+
+        /// <summary>나비까지 일직선의 위아래 몫만큼 위아래 속도를 준다(중력을 미리 빼 둔다 — 이동이 이번 틱에 중력을 더한다).</summary>
+        private void SteerVertical(CharacterSkill ctx, Vector3 to)
+        {
+            if (!ctx.TryGetComponent(out CharacterMotor motor)) return;
+            float total = to.magnitude;
+            if (total < 1e-4f) return;
+            float vy = glideSpeed * to.y / total;
+            vy = Mathf.Clamp(vy, -Mathf.Abs(to.y) / Time.fixedDeltaTime, Mathf.Abs(to.y) / Time.fixedDeltaTime); // 마지막 틱에 지나치지 않게
+            motor.Launch(vy - motor.Gravity * Time.fixedDeltaTime);
+        }
+
+        [Header("높낮이 — 모서리 뚫기")]
+        [Tooltip("다른 높이로 일직선으로 갈 때 바닥·턱 끝 모서리를 이 두께(m)까지는 스쳐도 뚫고 간다(윗면·밑면에서 이 안쪽에 닿은 것). 벽 한가운데는 막힌다.")]
+        [Min(0f)] public float edgePassDepth = 0.5f;
+
+        /// <summary>
+        /// 일직선으로 가는 길 앞(이번·다음 틱 거리)에 바닥·턱의 끝 모서리가 걸리면 뚫고 간다(ColliderPassThrough). 몸이 그 물건 안에서 빠져나오면 다시 막힌다(나비 자리 바닥에 그대로 선다).
+        /// 닿은 자리가 그 물건의 윗면이나 밑면에서 edgePassDepth 안쪽일 때만(모서리를 스침) — 벽 가운데에 부딪히면 그대로 멈춘다.
+        /// </summary>
+        private void PassEdges(CharacterSkill ctx, Vector3 to)
+        {
+            if (edgePassDepth <= 0f || !ctx.TryGetComponent(out CharacterController cc)) return;
+            float total = to.magnitude;
+            if (total < 0.05f || Mathf.Abs(to.y) < 0.2f) return; // 같은 높이로 가면 모서리를 뚫을 일이 없다
+            Vector3 dir = to / total;
+            Vector3 p0 = cc.transform.TransformPoint(cc.center) + Vector3.up * (cc.height * 0.5f - cc.radius);
+            Vector3 p1 = cc.transform.TransformPoint(cc.center) - Vector3.up * (cc.height * 0.5f - cc.radius);
+            float look = Mathf.Min(total, glideSpeed * Time.fixedDeltaTime * 3f + cc.radius);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            int n = Physics.CapsuleCastNonAlloc(p0, p1, cc.radius * 0.95f, dir, Hits, look, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var col = Hits[i].collider;
+                if (col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) continue;
+                Bounds b = col.bounds;
+                Vector3 hp = Hits[i].distance > 0f ? Hits[i].point : cc.transform.position;
+                bool nearTop = hp.y >= b.max.y - edgePassDepth, nearBottom = hp.y <= b.min.y + edgePassDepth;
+                if (!nearTop && !nearBottom) continue; // 벽 가운데
+                // 수평으로도 그 물건의 가장자리 가까이여야 모서리다(바닥 한가운데를 밑에서 뚫고 올라가지 않게).
+                float edge = Mathf.Min(Mathf.Min(hp.x - b.min.x, b.max.x - hp.x), Mathf.Min(hp.z - b.min.z, b.max.z - hp.z));
+                if (edge > edgePassDepth) continue;
+                if (!ctx.TryGetComponent(out ColliderPassThrough pass)) pass = ctx.gameObject.AddComponent<ColliderPassThrough>();
+                pass.Allow(col);
+            }
         }
 
         public override bool TryGetFacingYaw(CharacterSkill ctx, out float yaw)
@@ -116,12 +166,21 @@ namespace Project1.Systems
         {
             recovery = 0f;
             Vector3 to = FlatTo(ctx);
-            if (to.magnitude <= arriveDistance) return true; // 도착
-            PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
+            Vector3 to3 = ctx.AreaCenter - ctx.transform.position;
+            if (to.magnitude <= arriveDistance && Mathf.Abs(to3.y) <= 0.6f) // 도착(위아래도 거의 맞음)
+            {
+                if (ctx.TryGetComponent(out CharacterMotor stopMotor) && stopMotor.VerticalSpeed > 0f) stopMotor.Launch(0f); // 위로 치솟던 속도는 멈춘다
+                if (ctx.TryGetComponent(out ColliderPassThrough arrivePass)) arrivePass.RestoreClear(); // 도착한 바닥은 바로 다시 밟는다
+                return true;
+            }
+            if (to.magnitude > 0.05f) PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
+            PassEdges(ctx, to3);     // 다른 높이로 갈 때 바닥 끝 모서리는 뚫고 간다
+            SteerVertical(ctx, to3); // 나비까지 일직선(높낮이 포함)
             var motor = ctx.GetComponent<CharacterMotor>();
             if (motor != null && motor.HitObstacle && elapsed > 0.04f)
             {
                 recovery = bumpRecovery; // 장애물 → 멈추고 툭 떨어짐
+                if (ctx.TryGetComponent(out ColliderPassThrough bumpPass)) bumpPass.RestoreClear();
                 return true;
             }
             return false;
