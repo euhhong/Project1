@@ -19,7 +19,11 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float jumpHeight = 1.45f;
         [SerializeField] private float gravity = -20f;
 
+        [Tooltip("계단·경사·낮은 턱을 내려갈 때 땅에서 떨어져도 이 거리(m) 안의 아래 땅에 바로 붙인다(낙하 모션이 뜨지 않게). 0 = 끔.")]
+        [SerializeField, Min(0f)] private float groundSnapDistance = 0.35f;
+
         private const float GroundStickSpeed = -2f; // 땅에 붙어 있게 살짝 누르는 속도
+        private readonly RaycastHit[] snapHits = new RaycastHit[16];
 
         private CharacterController controller;
         private ICharacterInputSource inputSource;
@@ -263,17 +267,20 @@ namespace Project1.Systems
             CollisionFlags flags = controller.Move((worldPlanar + Vector3.up * vertical) * dt); // 부딪히면 OnControllerColliderHit이 LastObstacle을 채운다
             HitObstacle = (flags & CollisionFlags.Sides) != 0;
             if (!HitObstacle) LastObstacle = null;
+            Vector3 moveVelocity = controller.velocity; // 땅에 붙이는 두 번째 Move가 덮어쓰기 전
 
             // 결과 상태 갱신.
             bool wasGrounded = IsGrounded;
             IsGrounded = controller.isGrounded;
+            // 계단(경사)·낮은 턱을 내려가며 한 틱 땅에서 떨어지면 바로 아래 땅에 붙인다 — 뒤로·앞으로 내려가도 낙하가 되지 않게.
+            if (wasGrounded && !IsGrounded && !jumpedThisTick && vertical <= 0f && TrySnapToGround()) IsGrounded = controller.isGrounded;
             if (IsGrounded && vertical < 0f)
             {
                 vertical = GroundStickSpeed;
             }
             VerticalSpeed = vertical;
 
-            Vector3 actualLocal = transform.InverseTransformDirection(controller.velocity);
+            Vector3 actualLocal = transform.InverseTransformDirection(moveVelocity);
             LocalPlanarVelocity = new Vector2(actualLocal.x, actualLocal.z);
             MoveState = !moving ? CharacterMoveState.Idle
                       : running ? CharacterMoveState.Run
@@ -287,6 +294,29 @@ namespace Project1.Systems
             {
                 Landed?.Invoke();
             }
+        }
+
+        /// <summary>
+        /// 발 아래 groundSnapDistance 안에 걸을 수 있는 땅(경사 slopeLimit 이하)이 있으면 그 땅까지 내린다.
+        /// 없으면(턱 끝에서 걸어 나감 등) 그대로 두어 지금처럼 떨어진다.
+        /// </summary>
+        private bool TrySnapToGround()
+        {
+            if (groundSnapDistance <= 0f) return false;
+            float r = controller.radius * 0.95f; // 옆 벽에 걸리지 않게 살짝 작게
+            Vector3 foot = transform.TransformPoint(controller.center) + Vector3.down * (controller.height * 0.5f - controller.radius);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            int n = Physics.SphereCastNonAlloc(foot, r, Vector3.down, snapHits, groundSnapDistance + controller.skinWidth, mask, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue; Vector3 normal = Vector3.up;
+            for (int i = 0; i < n; i++)
+            {
+                var h = snapHits[i];
+                if (h.distance <= 0f || h.collider.transform.IsChildOf(transform)) continue;
+                if (h.distance < best) { best = h.distance; normal = h.normal; }
+            }
+            if (best == float.MaxValue || Vector3.Angle(normal, Vector3.up) > controller.slopeLimit + 5f) return false;
+            controller.Move(Vector3.down * (best + controller.skinWidth));
+            return controller.isGrounded;
         }
 
         // controller.Move 도중에 불린다. 옆으로 부딪힌 것(바닥·천장 제외)을 기억한다.

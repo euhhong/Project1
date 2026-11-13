@@ -72,6 +72,11 @@ namespace Project1.Systems
             self = GetComponent<CharacterIdentity>();
         }
 
+        private void OnEnable()
+        {
+            Charges = maxCharges; NextProgress = 0f; // 게임 시작(리퍼로 들어옴) = 2칸 다 찬 채로
+        }
+
         private void OnDisable()
         {
             Charges = 0; NextProgress = 0f; sampleCount = 0; lastPhase = AttackPhase.None;
