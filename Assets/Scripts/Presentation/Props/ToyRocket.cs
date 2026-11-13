@@ -21,7 +21,7 @@ namespace Project1.Presentation
         [Tooltip("드릴 머리 색(어두운 적갈색).")]
         [SerializeField] private Color noseColor = new(0.36f, 0.13f, 0.08f);
         [Tooltip("드릴 머리 끝을 둥글게 마감하는 반지름(몸통 반지름 대비).")]
-        [SerializeField, Range(0.05f, 0.6f)] private float tipRoundness = 0.22f;
+        [SerializeField, Range(0.05f, 0.8f)] private float tipRoundness = 0.45f;
         [SerializeField] private Color finColor = new(0.2f, 0.45f, 0.95f);
         [SerializeField] private Color darkColor = new(0.15f, 0.13f, 0.12f);
 
@@ -67,7 +67,7 @@ namespace Project1.Presentation
         private void Build()
         {
             verts.Clear(); foreach (var t in tris) t.Clear();
-            float nozzle = length * 0.08f, noseStart = length * 0.72f;
+            float nozzle = length * 0.08f, noseStart = length * 0.76f; // 머리(원뿔)는 짧고 끝은 둥글게 — 덜 뾰족하게
             // 꼬리 노즐: 살짝 벌어진 짧은 원통(어두운 색)
             Ring(4, 0f, radius * 0.75f, nozzle, radius * 0.6f);
             // 몸통 줄무늬
