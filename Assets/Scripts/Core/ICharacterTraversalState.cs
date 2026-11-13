@@ -6,7 +6,7 @@ namespace Project1.Core
         None,
         /// <summary>중간 높이 바닥으로 뛰어 올라서기(Running Jump).</summary>
         ClimbUp,
-        /// <summary>창틀(낮고 얇은 턱) 넘기 — 반대편 바닥이 같은 높이(Entry).</summary>
+        /// <summary>창틀(낮고 얇은 턱) 넘기 — 반대편 바닥이 같은 높이(생존자: 점프 넘기와 같은 Jumping (1)을 느리게, 감시자: Jump).</summary>
         WindowVault,
         /// <summary>창틀 위로 올라섰다가 반대편 낮은 바닥으로 뛰어내림(Jumping Down (2)). 떨어지는 동안·착지는 낙하 동작이 이어 받는다.</summary>
         WindowDrop,

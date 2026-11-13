@@ -65,7 +65,7 @@ namespace Project1.Presentation
         private static string StateName(ICharacterTraversalState t) => t.Action switch
         {
             TraversalAction.ClimbUp => "ClimbUp",
-            TraversalAction.WindowVault => t.HunterStyle ? "WindowVaultHunter" : "WindowVault",
+            TraversalAction.WindowVault => t.HunterStyle ? "WindowVaultHunter" : "WindowJump", // 걸어서 넘기도 점프 넘기와 같은 모션(BE가 더 길게 = 느리게)
             TraversalAction.WindowJump => t.HunterStyle ? "WindowVaultHunter" : "WindowJump",
             TraversalAction.WindowDrop => "WindowDrop",
             TraversalAction.HangGrab => t.BracedHang ? "HangBraced_Grab" : "Hang_Grab",
