@@ -7,7 +7,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 사냥터지기 그랩 쏘기 연출. 원래 무기는 물고기 모양(꼬리 = 손잡이). E를 누르면 손에 쥔 물고기 전체가 잠시 그랩(사슬) 끝으로 옮겨 가
-    /// 머리가 판정 끝에 오도록 곧게 날아가 문다. 사슬은 손 → 물고기 꼬리. 다 되감기면 다시 손에 쥔다.
+    /// 머리가 판정 끝에 오도록 곧게 날아가 문다. 사슬은 손 → 물고기 꼬리(머리 끝 = BE 판정 끝). 다 되감기면 다시 손에 쥔다.
     /// - 그랩 메시를 실행 중에 나눈다: 꼬리(긴 축 0~40%) / 몸통(40~62%) / 위·아래 턱(62~100%, 좌우로 갈라진 두 쪽).
     /// - 스킬이 그랩을 뻗으면(ICharacterSkillState.Reach &gt; 0) 몸통·턱을 꼬리 끝에서 Direction 쪽으로 Reach만큼 옮기고(머리가 앞을 보게),
     ///   꼬리 끝과 몸통 사이를 사슬 고리로 잇는다. 날아가는 동안 입을 크게 벌리고, 다 뻗으면(되감기 시작) 콱 문다.
@@ -67,8 +67,11 @@ namespace Project1.Presentation
             shooting = true;
             Vector3 dir = skill.Direction.sqrMagnitude > 0.01f ? skill.Direction.normalized : transform.forward;
             // 물고기 전체(꼬리 포함)가 그랩(사슬) 끝으로 옮겨 간다. 손은 잠시 빈다.
-            // 머리 끝이 (손잡이 자리 + dir * reach) = BE 판정 끝에 오게: 물고기 길이만큼은 손에 쥔 채로도 이미 앞에 있다.
+            // 사슬은 손(쥔 손잡이 자리)에서 나가고, 머리 끝이 BE 판정 끝(ReachOrigin + Direction * Reach)에 온다.
+            // 던지는 자세의 손은 BE 시작점 바로 옆이라 방향은 거의 Direction 그대로다.
             Vector3 handle = grab.TransformPoint(fishLocalPos);
+            Vector3 toEnd = skill.ReachOrigin + dir * reach - handle;
+            if (toEnd.sqrMagnitude > 0.0001f) { reach = toEnd.magnitude; dir = toEnd / reach; }
             float fishLength = grab.TransformVector(axisLocal * fishLengthLocal).magnitude;
             float chain = Mathf.Max(0f, reach - fishLength);
             Quaternion inHand = grab.rotation * fishLocalRot;

@@ -51,6 +51,16 @@ namespace Project1.Systems
         /// <summary>스킬 모션을 시전 진행도에 맞출지(true, 예: 주사기 꽂기) / 그냥 재생할지(false, 예: 돌진·도약).</summary>
         public virtual bool SyncAnimationToCast => true;
 
+        /// <summary>
+        /// 스킬 동작 구간(준비 Windup → 판정 Active → 마무리 Recovery)과 그 구간 진행도(0~1)를 알릴지(예: 그랩 = 휘두르기 → 그랩이 나가 있는 동안 → 마무리).
+        /// 알리면 FE가 모션 재생 위치를 구간에 맞춘다(판정 동안은 멈춘 자세). 기본은 알리지 않음.
+        /// </summary>
+        public virtual bool TryGetMotionPhase(CharacterSkill ctx, out AttackPhase phase, out float progress)
+        {
+            phase = AttackPhase.None; progress = 0f;
+            return false;
+        }
+
         /// <summary>시전을 시작할 때(예: 도약 — 위로 띄운다).</summary>
         public virtual void OnStart(CharacterSkill ctx) { }
 

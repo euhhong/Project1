@@ -48,6 +48,8 @@ namespace Project1.Systems
         public Vector3 Direction { get; set; }
         /// <summary>지금 뻗어 나간 길이(m, 예: 사냥터지기 그랩). 0이면 안 나가 있다.</summary>
         public float Reach { get; set; }
+        /// <summary>뻗어 나가는 시작점(월드, 예: 사냥터지기 그랩 = 서 있을 때의 오른쪽 어깨).</summary>
+        public Vector3 ReachOrigin { get; set; }
 
         public bool ShowAfterimage => skill != null && State == SkillState.Casting && skill.Afterimage(this);
         public string StatusText => skill != null && State == SkillState.Casting ? skill.StatusText(this) : null;
@@ -57,6 +59,12 @@ namespace Project1.Systems
 
         // 넘어짐·착지 경직(Recovering)은 모션 길이를 경직 시간에 맞춘다(예: 루키노 Hard Landing, 전위 Fall_1).
         public bool SyncAnimationToProgress => skill != null && (State == SkillState.Recovering || skill.SyncAnimationToCast);
+
+        public AttackPhase MotionPhase =>
+            skill != null && State == SkillState.Casting && skill.TryGetMotionPhase(this, out var phase, out _) ? phase : AttackPhase.None;
+
+        public float MotionPhaseProgress =>
+            skill != null && State == SkillState.Casting && skill.TryGetMotionPhase(this, out _, out var p) ? Mathf.Clamp01(p) : 0f;
 
         /// <summary>단계를 바꾼다(PhaseTime을 0으로).</summary>
         public void SetPhase(int phase)

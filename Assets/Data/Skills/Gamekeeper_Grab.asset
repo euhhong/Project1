@@ -18,9 +18,12 @@ MonoBehaviour:
   cooldown: 0
   castMoveSpeed: 0
   windup: 0.3
+  followThrough: 0.6
   range: 12
   extendSpeed: 45
   retractSpeed: 60
   hitRadius: 0.45
-  heightRatio: 0.55
+  heightRatio: 0.85
+  sideOffset: 0.3
+  forwardOffset: 0.8
   slot: 16

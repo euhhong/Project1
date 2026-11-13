@@ -48,10 +48,22 @@ namespace Project1.Core
         /// <summary>모션 재생 위치를 진행도(CastProgress/RecoveryProgress)에 맞출지. false면 그냥 재생한다.</summary>
         bool SyncAnimationToProgress { get; }
 
+        /// <summary>
+        /// 스킬 동작 구간(준비 Windup → 판정 Active → 마무리 Recovery). 구간이 없는 스킬은 None(그러면 위 규칙대로 재생).
+        /// FE는 구간 진행도(MotionPhaseProgress)에 맞춰 모션 재생 위치를 정한다(예: 그랩이 날아가는 Active 동안은 던진 자세로 멈춤).
+        /// </summary>
+        AttackPhase MotionPhase { get; }
+
+        /// <summary>MotionPhase 구간 진행도 0~1(Active처럼 길이가 정해지지 않은 구간은 0).</summary>
+        float MotionPhaseProgress { get; }
+
         /// <summary>스킬이 뻗어 나간 길이(m, 예: 사냥터지기 그랩)와 방향(월드). 길이 0이면 안 나가 있다.</summary>
         float Reach { get; }
 
         UnityEngine.Vector3 Direction { get; }
+
+        /// <summary>뻗어 나가는 시작점(월드, 예: 사냥터지기 그랩 = 서 있을 때의 오른쪽 어깨). Reach가 0이면 의미 없음.</summary>
+        UnityEngine.Vector3 ReachOrigin { get; }
 
         /// <summary>지금 잔상을 남길지(예: 용병 초고속 도약).</summary>
         bool ShowAfterimage { get; }

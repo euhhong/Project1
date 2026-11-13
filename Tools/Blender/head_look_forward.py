@@ -5,19 +5,23 @@
 보정량은 목이 neck_share만큼, 나머지는 머리가 맡는다(목이 꺾여 보이지 않게).
 
 사용법 (Blender 5.x):
-  blender -b --python Tools/Blender/head_look_forward.py -- <입력.fbx> <출력.fbx> [기준 프레임=첫 프레임] [neck_share=0.3]
+  blender -b --python Tools/Blender/head_look_forward.py -- <입력.fbx> <출력.fbx> [기준 프레임=첫 프레임] [neck_share=0.3] [yaw=0] [pitch=0]
+  yaw / pitch(도): 기준 머리 방향을 더 돌린다(월드 위축 / 좌우축). Unity가 몸 방향 기준으로 모션을 돌려 놓아
+  게임 안에서 머리가 정면에서 벗어나 보이면 그만큼 되돌린다.
 """
-import bpy, sys
+import bpy, sys, math
 from mathutils import Matrix, Quaternion
 
 
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if len(argv) < 2:
-        raise SystemExit("usage: -- <in.fbx> <out.fbx> [ref_frame] [neck_share]")
+        raise SystemExit("usage: -- <in.fbx> <out.fbx> [ref_frame] [neck_share] [yaw] [pitch]")
     src, dst = argv[0], argv[1]
     ref = int(argv[2]) if len(argv) > 2 else None
     neck_share = float(argv[3]) if len(argv) > 3 else 0.3
+    yaw = float(argv[4]) if len(argv) > 4 else 0.0
+    pitch = float(argv[5]) if len(argv) > 5 else 0.0
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=src, automatic_bone_orientation=False, ignore_leaf_bones=False)
@@ -40,6 +44,8 @@ def main():
 
     scene.frame_set(ref)
     target = world_rot(head)
+    # 월드 위축(Z) 둘레로 yaw, 좌우축(X) 둘레로 pitch만큼 더 돌린 방향을 목표로 한다.
+    target = Quaternion((0, 0, 1), math.radians(yaw)) @ Quaternion((1, 0, 0), math.radians(pitch)) @ target
 
     # 프레임마다 먼저 원래 값을 모두 읽고(키를 넣으면 커브가 바뀌므로), 그다음 고친다.
     for f in range(f0, f1 + 1):

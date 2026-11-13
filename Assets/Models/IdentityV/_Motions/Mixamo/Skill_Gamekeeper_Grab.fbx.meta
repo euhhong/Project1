@@ -34,8 +34,8 @@ ModelImporter:
       name: Skill_Gamekeeper_Grab
       takeName: Scene
       internalID: -623603649343465320
-      firstFrame: 7
-      lastFrame: 51
+      firstFrame: 1
+      lastFrame: 31
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
