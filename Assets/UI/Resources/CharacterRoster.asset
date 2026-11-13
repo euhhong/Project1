@@ -109,7 +109,7 @@ MonoBehaviour:
     scale: 4
     gameController: {fileID: 22100000, guid: df64e7ee5bf95104bbf6d01c29bea38f, type: 2}
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
-    skill: {fileID: 0}
+    skill: {fileID: 11400000, guid: 6813f5acffcc3284586ad0e59ee81d26, type: 2}
   - id: Hunter_Luchino
     displayName: "\uB8E8\uD0A4\uB178"
     role: 1

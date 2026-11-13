@@ -39,13 +39,24 @@ namespace Project1.Systems
             Id = id;
         }
 
-        /// <summary>other를 공격할 수 있는지 (자기 자신·같은 팀 제외).</summary>
+        /// <summary>이 캐릭터를 불러낸 캐릭터(예: 공장장 분신 → 공장장). 없으면 null. 불러낸 쪽과 불려 나온 쪽은 서로 맞지 않는다.</summary>
+        public CharacterIdentity Summoner { get; private set; }
+
+        public void SetSummoner(CharacterIdentity summoner)
+        {
+            Summoner = summoner;
+            if (summoner != null) teamId = summoner.teamId;
+        }
+
+        /// <summary>other를 공격할 수 있는지 (자기 자신·같은 팀·불러낸 쪽/불려 나온 쪽 제외).</summary>
         public bool CanHit(CharacterIdentity other)
         {
             if (other == null || other == this)
             {
                 return false;
             }
+            CharacterIdentity mine = Summoner != null ? Summoner : this, theirs = other.Summoner != null ? other.Summoner : other;
+            if (mine == theirs) return false; // 나와 내 분신, 같은 주인의 분신끼리
             return teamId == NoTeam || teamId != other.teamId;
         }
     }

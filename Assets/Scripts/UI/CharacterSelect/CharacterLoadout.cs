@@ -38,6 +38,8 @@ namespace Project1.UI
             SetProp<NoteField>(player, entry.id == "Hunter_Antonio");   // 안토니오: 좌클릭 꾹 / E = 붉은 음표, 두 개를 전류선으로 이음(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
+            SetProp<HellEmberCloneVisual>(player, entry.id == "Hunter_HellEmber"); // 공장장: 분신 모델·용암 겉모습·갈고리 낫(FE)
+            if (player.TryGetComponent(out HellEmberCloneVisual cloneVisual)) cloneVisual.SetModel(entry.model, entry.scale, entry.gameController);
             SetProp<MistCharge>(player, entry.id == "Hunter_Ripper");     // 리퍼: 공격하지 않으면 7초마다 안개 1칸(최대 2칸), 2칸에서 공격 = 안개 칼날, E = 1칸으로 약한 칼날(BE)
             SetProp<MistClawVisual>(player, entry.id == "Hunter_Ripper"); // 리퍼: 손톱에 감기는 안개·날아가는 손톱 모양 안개 칼날(FE)
             SetProp<CharacterCarryPose>(player, entry.id == "Hunter_SmileyFace"); // 광대: 로켓 폭죽을 두 손으로 받쳐 든 자세
