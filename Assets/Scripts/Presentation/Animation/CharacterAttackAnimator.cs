@@ -62,10 +62,12 @@ namespace Project1.Presentation
         private static readonly int KickId = Animator.StringToHash("HeavyKick");
         private static readonly int RunJump2Id = Animator.StringToHash("RunJump2");
 
-        /// <summary>땅에서 강공격을 머리를 노리는 발차기(전신 HeavyKick 상태)로 보여 줄지. 생존자만 켠다(CharacterLoadout).</summary>
+        /// <summary>생존자 격투 동작을 쓸지: 땅에서 강공격 = 머리를 노리는 발차기(전신 HeavyKick), 서서 모으기 = 통통 뛰는 격투 자세(전신 ChargeStance). 생존자만 켠다(CharacterLoadout).</summary>
         public bool HeavyKick { get; set; }
 
         private ICharacterAttackState attack;
+        private ICharacterState body; // 모으는 동안 서 있는지(걸으면 상체만 격투 자세)
+        private static readonly int StanceId = Animator.StringToHash("ChargeStance");
         private Animator animator;
         private int groundLayer = -1, airLayer = -1;
         private float groundWeight, airWeight;
@@ -77,6 +79,7 @@ namespace Project1.Presentation
         private void Awake()
         {
             attack = GetComponent<ICharacterAttackState>();
+            body = GetComponent<ICharacterState>();
             animator = GetComponentInChildren<Animator>();
         }
 
@@ -102,7 +105,10 @@ namespace Project1.Presentation
             bool stomp = !runJump && attack.IsAirAttack && airLayer >= 0 && animator.HasState(airLayer, StompId);
             // 생존자 강공격(땅): 머리를 노리는 발차기 — 다리까지 쓰는 전신 모션이라 공중 공격 레이어(전신)에서 재생한다.
             bool kick = !runJump && !stomp && HeavyKick && state == CharacterAttackState.Heavy && !attack.IsAirAttack && airLayer >= 0 && animator.HasState(airLayer, KickId);
-            bool air = runJump || stomp || kick;
+            // 생존자 강공격 모으기: 서 있으면 전신 격투 자세(통통 뜀), 걸으면 땅 공격 레이어(상체)의 같은 모션 + 다리는 걷기.
+            bool standing = body == null || (body.IsGrounded && body.LocalPlanarVelocity.sqrMagnitude < 0.25f);
+            bool stance = !runJump && !stomp && HeavyKick && state == CharacterAttackState.HeavyCharge && !attack.IsAirAttack && standing && airLayer >= 0 && animator.HasState(airLayer, StanceId);
+            bool air = runJump || stomp || kick || stance;
             groundWeight = Fade(groundWeight, active && !air);
             airWeight = Fade(airWeight, active && air);
             animator.SetLayerWeight(groundLayer, groundWeight);
@@ -120,7 +126,7 @@ namespace Project1.Presentation
                         else animator.Play(StompId, airLayer, Normalized(SlotTiming("Attack_AirStomp")));
                         break;
                     case CharacterAttackState.HeavyCharge:
-                        if (shown != state || !shownAir) animator.CrossFadeInFixedTime(AirChargeId, 0.1f, airLayer);
+                        if (shown != state || !shownAir) animator.CrossFadeInFixedTime(stance ? StanceId : AirChargeId, 0.1f, airLayer);
                         break;
                 }
             }

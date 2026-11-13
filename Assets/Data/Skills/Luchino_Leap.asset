@@ -18,6 +18,7 @@ MonoBehaviour:
   cooldown: 0
   castMoveSpeed: 0
   leapHeight: 12
+  ceilingCheckHeight: 6
   forwardSpeed: 9
   slamSpeed: 30
   slamRadius: 3

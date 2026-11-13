@@ -18,6 +18,11 @@ namespace Project1.Systems
         public Collider Collider { get; private set; }
 
         /// <summary>자동 배치 도구용: 자리를 코드로 정한다.</summary>
+        /// <summary>이 판정이 상대의 머리와 겹치면 다른 부위보다 머리를 맞힌다(예: 생존자 발차기 — 머리를 노림).</summary>
+        public bool PrefersHead { get; private set; }
+
+        public void SetPrefersHead(bool on) => PrefersHead = on;
+
         public void SetSlot(HitboxSlot value)
         {
             slot = value;

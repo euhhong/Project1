@@ -43,7 +43,7 @@ namespace Project1.Presentation.EditorTools
         private static readonly string[] Slots =
         {
             "Idle", "Idle_Hunter", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "Air", "Air_F", "Air_Run", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
-            "Attack_Light", "Attack_HeavyCharge", "Attack_Heavy", "Attack_HeavyKick", "Attack_AirStomp", "Attack_AirCharge", "Down",
+            "Attack_Light", "Attack_HeavyCharge", "Attack_HeavyCharge_Hunter", "Attack_Heavy", "Attack_HeavyKick", "Attack_AirStomp", "Attack_AirCharge", "Down",
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
@@ -59,6 +59,7 @@ namespace Project1.Presentation.EditorTools
             ("Attack_RunJump_Survivor", "Attack_RunJump_Hunter"),
             ("Attack_Light", "Attack_Light_Hunter"),
             ("Idle", "Idle_Hunter"), // 생존자 대기(Idle (1))는 생존자만. 감시자는 감시자 대기
+            ("Attack_HeavyCharge", "Attack_HeavyCharge_Hunter"), // 생존자 강공격 모으기(Bouncing Fight Idle 격투 자세)는 생존자만. 감시자는 예전 모으기
         };
         // 유령처럼 이동: 걷기·달리기에서도 다리를 움직이지 않고 대기 자세 그대로 미끄러진다.
         // (옆·뒤 달리기는 같은 방향 걷기 클립을 빌려 쓰므로 걷기만 바꾸면 같이 바뀐다.)
@@ -117,7 +118,7 @@ namespace Project1.Presentation.EditorTools
                 else
                 {
                     // 감시자 대기(Idle_Hunter)는 파일이 없으면 예전 임시 대기(Procedural/Idle.anim)를 쓴다.
-                    clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{LegacyFolder}/{(slot == "Idle_Hunter" ? "Idle" : slot)}.anim");
+                    clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{LegacyFolder}/{(slot == "Idle_Hunter" ? "Idle" : slot == "Attack_HeavyCharge_Hunter" ? "Attack_HeavyCharge" : slot)}.anim"); // 감시자 강공격 모으기도 예전 임시 모션
                     (clip != null ? legacy : missing).Add(slot);
                 }
                 clips[slot] = clip;
@@ -326,6 +327,8 @@ namespace Project1.Presentation.EditorTools
             if (clips["Attack_RunJump_Survivor"] != null) airSm.AddState("RunJump").motion = clips["Attack_RunJump_Survivor"];
             // 생존자 강공격(땅): 머리를 노리는 왼발 돌려차기(Mixamo Martelo 2). 다리까지 움직이므로 전신 레이어에 둔다. 쓸지는 CharacterAttackAnimator.HeavyKick(생존자만 켬)이 정한다.
             if (clips["Attack_HeavyKick"] != null) airSm.AddState("HeavyKick").motion = clips["Attack_HeavyKick"];
+            // 생존자 강공격 모으기(서 있을 때): 통통 뛰는 격투 자세(Mixamo Bouncing Fight Idle) 전신. 걸으면 땅 공격 레이어(상체)의 같은 모션 + 다리는 걷기.
+            if (clips["Attack_HeavyCharge"] != null) airSm.AddState("ChargeStance").motion = clips["Attack_HeavyCharge"];
             // 생존자 두 번째 점프 공격(달리기 점프 공격 중 한 번 더): 다시 뛰어오르며 머리를 노리는 날아 차기. 쓸지는 BE(CharacterAttack.IsFollowUpKick, 생존자만)가 정한다.
             if (clips["Attack_RunJump2_Survivor"] != null) airSm.AddState("RunJump2").motion = clips["Attack_RunJump2_Survivor"];
 

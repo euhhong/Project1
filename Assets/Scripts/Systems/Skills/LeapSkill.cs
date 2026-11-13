@@ -21,6 +21,8 @@ namespace Project1.Systems
         [Header("도약")]
         [Tooltip("뛰어오르는 높이(m). 보통 점프는 1.2m.")]
         [Min(0f)] public float leapHeight = 12f;
+        [Tooltip("머리 위 이 높이(m) 안에 천장(지형·물건)이 있으면 E를 눌러도 뛰지 않는다(HUD에 '천장이 막혀 못 뜀'). 0이면 검사하지 않음.")]
+        [Min(0f)] public float ceilingCheckHeight = 6f;
         [Tooltip("떠 있는 동안 앞으로 가는 속도(m/s).")]
         [Min(0f)] public float forwardSpeed = 9f;
 
@@ -43,8 +45,26 @@ namespace Project1.Systems
         {
             var state = owner.GetComponent<ICharacterState>();
             if (state != null && !state.IsGrounded) { reason = "공중에서는 못 씀"; return false; }
+            if (HasCeiling(owner)) { reason = "천장이 막혀 못 뜀"; return false; }
             reason = null;
             return true;
+        }
+
+        /// <summary>머리 위 ceilingCheckHeight 안에 천장(지형·물건)이 있는지. 캐릭터·판정·트리거는 무시한다.</summary>
+        private bool HasCeiling(GameObject owner)
+        {
+            if (ceilingCheckHeight <= 0f) return false;
+            var cc = owner.GetComponent<CharacterController>();
+            float radius = cc != null ? cc.radius * 0.9f : 0.3f;
+            Vector3 top = owner.transform.position + Vector3.up * ((cc != null ? cc.center.y + cc.height * 0.5f : 1.8f) - radius);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            foreach (var h in Physics.SphereCastAll(top, radius, Vector3.up, ceilingCheckHeight, mask, QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider.GetComponentInParent<CharacterIdentity>() != null) continue; // 자기 몸·다른 캐릭터
+                if (h.distance <= 0f && h.point == Vector3.zero) continue;                 // 처음부터 겹쳐 있던 것
+                return true;
+            }
+            return false;
         }
 
         public override void OnStart(CharacterSkill ctx)

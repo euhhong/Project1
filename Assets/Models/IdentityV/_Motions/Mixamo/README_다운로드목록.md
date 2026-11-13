@@ -34,6 +34,7 @@
 | Attack_RunJump_Survivor | 앞으로 달리다 점프 중 좌클릭(생존자) | **받음** — 0~30프레임, 왼발 차기 | Flying Kick |
 | Attack_RunJump2_Survivor | 달리기 점프 공격 중 한 번 더 좌클릭(생존자) — 다시 뛰어오르며 머리를 노리는 날아 차기, 착지 후딜레이 | **받음** — 0~30프레임, 왼발 차기(판정 4~16) | Flying Kick (두 번째로 받은 판) |
 | Attack_HeavyKick | 땅에서 강공격(생존자) — 머리를 노리는 발차기 | **받음** — 0~39프레임 전체, 왼발 돌려차기(판정 12~22) | Martelo 2 |
+| Attack_HeavyCharge | 땅에서 강공격 모으기(생존자) — 통통 뛰는 격투 자세(서 있으면 전신, 걸으면 상체만). 감시자는 예전 임시 모으기(Attack_HeavyCharge_Hunter) | **받음** — 전체 반복 | Bouncing Fight Idle |
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |

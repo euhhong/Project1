@@ -124,6 +124,7 @@ namespace Project1.Systems
                     // 같은 틱에 한 대상의 여러 부위가 겹치면 Hitbox에 가장 가까운 부위 하나만.
                     Vector3 point = hurtbox.Collider.ClosestPoint(origin);
                     float distSq = (point - origin).sqrMagnitude;
+                    if (hitbox.PrefersHead && hurtbox.Part == BodyPart.Head) distSq = -1f; // 머리를 노리는 판정(발차기): 머리가 겹치면 머리
                     if (!bestThisTick.TryGetValue(victim.Id, out Candidate best) || distSq < best.DistSq)
                     {
                         bestThisTick[victim.Id] = new Candidate(hurtbox.Part, hitbox.Slot, point, distSq, victim.gameObject);

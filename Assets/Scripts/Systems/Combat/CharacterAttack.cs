@@ -53,6 +53,12 @@ namespace Project1.Systems
         /// <summary>두 번째 점프 공격(달리기 점프 공격 중 한 번 더)을 켜거나 끈다(캐릭터를 고를 때, 생존자만).</summary>
         public void SetRunJumpFollowUp(bool on) => runJumpFollowUp = on;
 
+        [Tooltip("땅 강공격 동안 이동을 멈출지(생존자 돌려차기). 캐릭터를 고를 때 SetHeavyRoots로 켠다.")]
+        [SerializeField] private bool heavyRoots;
+
+        /// <summary>땅 강공격 동안 멈춰 서서 칠지 켜거나 끈다(캐릭터를 고를 때, 생존자만).</summary>
+        public void SetHeavyRoots(bool on) => heavyRoots = on;
+
         private ICharacterInputSource inputSource;
         private ICharacterState characterState;
         private AttackHitDetector hitDetector;
@@ -107,6 +113,11 @@ namespace Project1.Systems
             if (AttackState == CharacterAttackState.HeavyCharge && characterState != null && characterState.IsGrounded)
             {
                 maxSpeed = characterState.WalkSpeed;
+                return true;
+            }
+            if (heavyRoots && AttackState == CharacterAttackState.Heavy && !IsAirAttack)
+            {
+                maxSpeed = 0f; // 땅 강공격(생존자 돌려차기) 동안은 멈춰 서서 찬다
                 return true;
             }
             if (IsFollowUpKick && followUpLanded >= 0f)

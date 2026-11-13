@@ -55,6 +55,7 @@ namespace Project1.UI
             SetProp<RocketWeapon>(player, entry.id == "Hunter_SmileyFace");       // 광대: 로켓 폭죽 무기
             SetProp<WeaponBodyClearance>(player, entry.role == CharacterRole.Hunter); // 감시자: 휘두르는 무기가 자기 몸을 뚫어 보이지 않게(FE)
             SetProp<CaneKnockback>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이에 맞으면 데미지 대신 넉백(BE)
+            SetProp<KickReach>(player, entry.role == CharacterRole.Survivor); // 생존자: 발차기(돌려차기·날아 차기) 판정을 앞으로 아주 길게(BE)
             SetProp<CaneSweepReach>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이 휘두르기 판정을 옆으로 아주 넓게(BE)
             SetProp<CaneThrustPose>(player, entry.id == "Survivor_MindsEye"); // 맹인: E 찌르기 동안 지팡이 끝이 정면을 보게 길게 뻗음(FE)
             // 리퍼: 무기가 없고 왼손(손톱 칼날) 자체가 무기 → 약·강공격 판정을 왼손 + 무기로. 다른 캐릭터는 처음 값.
@@ -69,6 +70,7 @@ namespace Project1.UI
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
                 if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
                 attack.SetRunJumpFollowUp(survivorKick); // 생존자: 달리기 점프 공격 중 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기(착지 후딜레이)
+                attack.SetHeavyRoots(survivorKick);       // 생존자: 모아서 차는 돌려차기 동안은 멈춰 서서 찬다
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기
             }
             // 만화 타격 효과: 생존자 모두(플라잉킥). 주먹 기본 공격(Mutant Punch·훅 펀치)을 쓰면 펀치 효과 + 늘어난 리치도.
