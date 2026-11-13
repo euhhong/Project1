@@ -322,6 +322,9 @@ namespace Project1.Presentation.EditorTools
             if (clips["Attack_SwipeR"] != null) asm.AddState("SwipeR").motion = clips["Attack_SwipeR"];
             asm.AddState("HeavyCharge").motion = clips["Attack_HeavyCharge"];
             asm.AddState("Heavy").motion = clips["Attack_Heavy"];
+            // 생존자 주먹 막기(좌클릭 꾹, BE FistParry): 막는 자세(Mixamo Standing Block Idle). 걸으면 상체만 — 서 있으면 아래 전신 레이어의 같은 상태.
+            var blockClip = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/Block.fbx");
+            if (blockClip != null) asm.AddState("Block").motion = blockClip;
 
             // 공중 공격 레이어(전신, 마스크 없음): 발 내려찍기
             ac.AddLayer(AirAttackLayer);
@@ -340,6 +343,8 @@ namespace Project1.Presentation.EditorTools
             if (clips["Attack_HeavyKick"] != null) airSm.AddState("HeavyKick").motion = clips["Attack_HeavyKick"];
             // 생존자 강공격 모으기(서 있을 때): 통통 뛰는 격투 자세(Mixamo Bouncing Fight Idle) 전신. 걸으면 땅 공격 레이어(상체)의 같은 모션 + 다리는 걷기.
             if (clips["Attack_HeavyCharge"] != null) airSm.AddState("ChargeStance").motion = clips["Attack_HeavyCharge"];
+            // 생존자 주먹 막기(서 있을 때): 막는 자세 전신.
+            if (blockClip != null) airSm.AddState("Block").motion = blockClip;
             // 생존자 두 번째 점프 공격(달리기 점프 공격 중 한 번 더): 다시 뛰어오르며 머리를 노리는 날아 차기. 쓸지는 BE(CharacterAttack.IsFollowUpKick, 생존자만)가 정한다.
             if (clips["Attack_RunJump2_Survivor"] != null) airSm.AddState("RunJump2").motion = clips["Attack_RunJump2_Survivor"];
 

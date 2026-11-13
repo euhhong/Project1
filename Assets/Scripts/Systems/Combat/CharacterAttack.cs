@@ -125,6 +125,13 @@ namespace Project1.Systems
                 maxSpeed = characterState.WalkSpeed;
                 return true;
             }
+            // 꾹 누르기를 막기 자세가 가로챈 동안(생존자 주먹 막기, ICharacterParryState): 모으기처럼 땅에서는 걷기 속도.
+            if (AttackState == CharacterAttackState.None && characterState != null && characterState.IsGrounded
+                && TryGetComponent(out ICharacterParryState parry) && parry.IsParrying)
+            {
+                maxSpeed = characterState.WalkSpeed;
+                return true;
+            }
             if (heavyRoots && AttackState == CharacterAttackState.Heavy && !IsAirAttack)
             {
                 maxSpeed = 0f; // 땅 강공격(생존자 돌려차기) 동안은 멈춰 서서 찬다

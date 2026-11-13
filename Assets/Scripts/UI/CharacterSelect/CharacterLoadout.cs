@@ -65,6 +65,10 @@ namespace Project1.UI
             SetProp<WeaponBodyClearance>(player, entry.role == CharacterRole.Hunter); // 감시자: 휘두르는 무기가 자기 몸을 뚫어 보이지 않게(FE)
             SetProp<CaneKnockback>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이에 맞으면 데미지 대신 넉백(BE)
             SetProp<KickReach>(player, entry.role == CharacterRole.Survivor); // 생존자: 발차기(돌려차기·날아 차기) 판정을 앞으로 아주 길게(BE)
+            SetProp<FistParry>(player, entry.role == CharacterRole.Survivor); // 생존자: 좌클릭 꾹 = 강공격(돌려차기) 대신 주먹 막기 — 정면 150° 안 주먹을 막음(BE)
+            // 맨주먹 캐릭터(주먹 기본 공격을 쓰는 생존자): 손으로 맞힌 히트가 주먹이 되어 주먹 막기에 막힌다. 무기를 손 판정으로 휘두르는 감시자 등은 아님.
+            if (player.TryGetComponent(out AttackHitDetector hitDetector))
+                hitDetector.SetUnarmed(entry.role == CharacterRole.Survivor && UsesDefaultPunch(entry.gameController));
             SetProp<RunJumpReach>(player, entry.role == CharacterRole.Hunter); // 감시자: 달리기 점프 공격(내려치기) 판정을 앞으로 길게(BE)
             SetProp<CaneSweepReach>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이 휘두르기 판정을 옆으로 아주 넓게(BE)
             SetProp<CaneThrustPose>(player, entry.id == "Survivor_MindsEye"); // 맹인: E 찌르기 동안 지팡이 끝이 정면을 보게 길게 뻗음(FE)
@@ -84,7 +88,7 @@ namespace Project1.UI
                 if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
                 attack.SetRunJumpFollowUp(survivorKick); // 생존자: 달리기 점프 공격 중 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기(착지 후딜레이)
                 SetProp<FollowUpKickStun>(player, survivorKick); // 이단으로 뛰어 찬 날아 차기를 맞히면 상대 경직
-                attack.SetHeavyRoots(survivorKick);       // 생존자: 모아서 차는 돌려차기 동안은 멈춰 서서 찬다
+                attack.SetHeavyRoots(survivorKick);       // 생존자: 모아서 차는 돌려차기 동안은 멈춰 서서 찬다(지금은 꾹 누르기를 주먹 막기 FistParry가 가로채 돌려차기가 나가지 않는다)
                 attack.SetSwipeAttacks(entry.id == "Survivor_MindsEye"); // 맹인: 좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 지팡이 후리기
             }
             // 만화 타격 효과: 생존자 모두(플라잉킥). 주먹 기본 공격(Mutant Punch·훅 펀치)을 쓰면 펀치 효과 + 늘어난 리치도.

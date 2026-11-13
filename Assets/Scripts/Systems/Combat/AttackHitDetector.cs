@@ -25,7 +25,13 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float jumpDodgeHeight = 1.15f;
         [Tooltip("앞으로 달리며 하는 일반 공격: 판정을 지금 자리에서 앞으로 (속도 × 이 시간)만큼까지 훑는다 — 달려가며 칠 때 이동한 뒤의 자리까지 맞는 긴 리치.")]
         [SerializeField, Min(0f)] private float moveLeadTime = 0.25f;
+        [Tooltip("맨주먹으로 치는 캐릭터인지(생존자 주먹 기본 공격). 켜면 무기 없는 공격의 손 판정 히트가 주먹(HitResult.Fist)이 되어 주먹 막기(FistParry)에 막힌다. 캐릭터를 고를 때 SetUnarmed로 정한다.")]
+        [SerializeField] private bool unarmed;
         private ICharacterAttackState attackState;
+
+        /// <summary>맨주먹 캐릭터인지 정한다(캐릭터를 고를 때). 감시자처럼 무기를 손 판정으로 휘두르는 캐릭터는 끈다.</summary>
+        public void SetUnarmed(bool on) => unarmed = on;
+        public bool Unarmed => unarmed;
         private readonly Dictionary<int, Candidate> bestThisTick = new();
         private readonly Collider[] overlapBuffer = new Collider[MaxOverlaps];
 
@@ -146,7 +152,11 @@ namespace Project1.Systems
                     AttackId = attackCounter,
                     Tick = tick,
                     Point = pair.Value.Point,
+                    // 주먹: 맨주먹 캐릭터가 무기 없는 공격을 손 판정으로 맞힘
+                    Fist = unarmed && (pair.Value.Slot & (HitboxSlot.LeftHand | HitboxSlot.RightHand)) != 0 && (activeSlots & HitboxSlot.Weapon) == 0,
                 };
+                // 맞는 쪽이 막으면(예: 정면 주먹 막기) 히트를 내지 않는다 — 데미지·경직·넉백·피격 모션 없음, 막기 이펙트만.
+                if (HitBlockers.Blocks(pair.Value.Victim, hit, gameObject)) { HitEvents.RaiseBlocked(hit); continue; }
                 HitModifiers.Apply(gameObject, ref hit, pair.Value.Victim); // 예: 맹인 지팡이 = 데미지 없이 넉백
                 Hit?.Invoke(hit);
                 HitEvents.Raise(hit);

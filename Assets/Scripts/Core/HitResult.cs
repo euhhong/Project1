@@ -46,12 +46,15 @@ namespace Project1.Core
         /// <summary>맞은 쪽이 쓰러지며 나가떨어지는 공격인지(예: 두 번째 날아 차기가 머리에 맞음 — 회오리치며 나가떨어짐 모션). 모션(FE)이 본다.</summary>
         public bool Knockdown;
 
+        /// <summary>맨주먹으로 때린 히트인지(무기 없이 손 판정으로 맞힘, 예: 생존자 주먹 기본 공격). 주먹 막기(FistParry)는 이것만 막는다.</summary>
+        public bool Fist;
+
         /// <summary>세기 배율(0이면 1).</summary>
         public readonly float PowerScale => Power > 0f ? Power : 1f;
 
         public override string ToString()
         {
-            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale} knockback={Knockback} noDamage={NoDamage}";
+            return $"Hit attacker={AttackerId} victim={VictimId} part={Part} slot={Slot} attack={AttackId} tick={Tick} point={Point} power={PowerScale} knockback={Knockback} noDamage={NoDamage} fist={Fist}";
         }
     }
 }

@@ -11,15 +11,24 @@ namespace Project1.Systems
     {
         public static event Action<HitResult> HitOccurred;
 
+        /// <summary>맞는 쪽이 막아 낸 히트(IHitBlocker, 예: 주먹 막기). 이때 HitOccurred는 나가지 않는다. 막기 이펙트(FE)가 구독한다.</summary>
+        public static event Action<HitResult> HitBlocked;
+
         public static void Raise(in HitResult hit)
         {
             HitOccurred?.Invoke(hit);
+        }
+
+        public static void RaiseBlocked(in HitResult hit)
+        {
+            HitBlocked?.Invoke(hit);
         }
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetSubscribers()
         {
             HitOccurred = null;
+            HitBlocked = null;
         }
     }
 }

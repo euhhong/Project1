@@ -69,6 +69,9 @@ namespace Project1.Presentation
         private ICharacterAttackState attack;
         private ICharacterState body; // 모으는 동안 서 있는지(걸으면 상체만 격투 자세)
         private static readonly int StanceId = Animator.StringToHash("ChargeStance");
+        private static readonly int BlockId = Animator.StringToHash("Block");
+        private ICharacterParryState parry; // 실행 중에 붙었다 떨어질 수 있어 필요할 때 찾는다
+        private bool shownGuard;
         private Animator animator;
         private int groundLayer = -1, airLayer = -1;
         private float groundWeight, airWeight;
@@ -99,6 +102,24 @@ namespace Project1.Presentation
             if (groundLayer < 0) return;
 
             var state = attack.AttackState;
+            // 주먹 막기(BE ICharacterParryState, 생존자): 좌클릭을 꾹 누르는 동안 막는 자세(Standing Block Idle).
+            // 서 있으면 전신(AirAttack 레이어), 걸으면 상체(Attack 레이어) + 다리는 걷기. 상태가 없으면(모션 컨트롤러를 아직 안 만듦) 보여 주지 않는다.
+            if (parry == null || (parry is Object po && po == null)) TryGetComponent(out parry);
+            bool guard = state == CharacterAttackState.None && parry != null && parry.IsParrying;
+            bool guardStanding = body == null || (body.IsGrounded && body.LocalPlanarVelocity.sqrMagnitude < 0.25f);
+            bool guardFull = guard && guardStanding && airLayer >= 0 && animator.HasState(airLayer, BlockId);
+            bool guardUpper = guard && !guardFull && animator.HasState(groundLayer, BlockId);
+            if (guardFull || guardUpper)
+            {
+                groundWeight = Fade(groundWeight, guardUpper);
+                airWeight = Fade(airWeight, guardFull);
+                animator.SetLayerWeight(groundLayer, groundWeight);
+                if (airLayer >= 0) animator.SetLayerWeight(airLayer, airWeight);
+                if (!shownGuard || shownAir != guardFull) animator.CrossFadeInFixedTime(BlockId, 0.1f, guardFull ? airLayer : groundLayer);
+                shownGuard = true; shown = state; shownAir = guardFull;
+                return;
+            }
+            shownGuard = false;
             bool active = state != CharacterAttackState.None;
             // 공중 전용 모션(전신 AirAttack 레이어)은 있을 때만 쓴다: 달리기 점프 공격(플라잉킥 등), 또는 제자리 공중 공격 모션 파일이 있을 때.
             // 없으면 공중에서도 땅과 같은 공격 모션(상체 Attack 레이어)을 쓴다.
