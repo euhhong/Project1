@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 입력(LightAttack / HeavyCharging / HeavyRelease)을 받아 공격 상태를 진행한다.
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
-    ///   땅: 약=오른손, 강=오른손+소품. 앞으로 달리다 뛴 공중 공격(IsRunJumpAttack, 플라잉킥 등): 양발. 그 밖의 공중 공격은 땅 공격과 같다.
+    ///   땅: 약=오른손, 강=오른손+소품. 앞으로 달리다 뛴 공중 공격(IsRunJumpAttack, 플라잉킥 등): 양발(감시자는 SetRunJumpSlots로 무기·손 + 앞 긴 판정). 그 밖의 공중 공격은 땅 공격과 같다.
     /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
     /// - 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 공중 공격이 한 번 나가고, 키를 뗄 때까지 새 입력을 받지 않는다.
     /// - 공격이 끝난 뒤에도 잠깐(약 lightReattackDelay / 강 heavyReattackDelay) 새 공격을 받지 않는다. 이동은 되고 안내·쿨다운 표시는 없다.
@@ -156,6 +156,19 @@ namespace Project1.Systems
             if (!slotDefaultsSaved) { defaultLightSlots = lightAttack.Slots; defaultHeavySlots = heavyAttack.Slots; slotDefaultsSaved = true; }
             lightAttack.Slots = light == HitboxSlot.None ? defaultLightSlots : light;
             heavyAttack.Slots = heavy == HitboxSlot.None ? defaultHeavySlots : heavy;
+        }
+
+        private HitboxSlot defaultRunJumpSlots;
+        private bool runJumpDefaultsSaved;
+
+        /// <summary>
+        /// 달리기 점프 공격(앞으로 달리다 뛴 공중 공격) 판정 부위를 바꾼다(캐릭터를 고를 때). None이면 처음 값(양발 — 생존자 플라잉킥)으로 되돌린다.
+        /// 예: 감시자 = 무기를 내려치는 모션이라 약공격 부위(무기·손) + 몸 앞 긴 판정(RunJumpReach).
+        /// </summary>
+        public void SetRunJumpSlots(HitboxSlot slots)
+        {
+            if (!runJumpDefaultsSaved) { defaultRunJumpSlots = airLightAttack.Slots; runJumpDefaultsSaved = true; }
+            airLightAttack.Slots = airHeavyAttack.Slots = slots == HitboxSlot.None ? defaultRunJumpSlots : slots;
         }
 
         private void Awake()

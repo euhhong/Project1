@@ -92,7 +92,7 @@ namespace Project1.Presentation
             foreach (var hb in found)
             {
                 if (hb == null || (hb.Slot & slots) == 0 || hb.Collider == null) continue;
-                if (hb.name == "Hitbox_Reach" || hb.name == "Hitbox_CaneSweep") continue; // 몸 앞에 붙은 넓은 판정 상자(보이지 않는 리치)는 궤적을 그리지 않는다
+                if (hb.name == "Hitbox_Reach" || hb.name == "Hitbox_CaneSweep" || hb.name == "Hitbox_KickReach" || hb.name == "Hitbox_RunJumpReach") continue; // 몸 앞에 붙은 넓은 판정 상자(보이지 않는 리치)는 궤적을 그리지 않는다
                 var tr = tracks.Find(x => x.hitbox == hb);
                 if (tr == null) { tr = new Track { hitbox = hb }; tracks.Add(tr); }
                 Endpoints(hb.Collider, out Vector3 a, out Vector3 b);

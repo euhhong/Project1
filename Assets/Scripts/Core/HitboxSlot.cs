@@ -15,6 +15,7 @@ namespace Project1.Core
         LeftFoot = 1 << 2,
         RightFoot = 1 << 3,
         Weapon = 1 << 4, // 손에 든 소품(주사기 등)
+        RunJumpReach = 1 << 5, // 달리기 점프 공격에만 켜는 몸 앞 긴 판정 상자(감시자 RunJumpReach). All에는 넣지 않는다
         All = LeftHand | RightHand | LeftFoot | RightFoot | Weapon,
     }
 }

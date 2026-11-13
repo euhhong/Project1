@@ -61,6 +61,7 @@ namespace Project1.UI
             SetProp<WeaponBodyClearance>(player, entry.role == CharacterRole.Hunter); // 감시자: 휘두르는 무기가 자기 몸을 뚫어 보이지 않게(FE)
             SetProp<CaneKnockback>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이에 맞으면 데미지 대신 넉백(BE)
             SetProp<KickReach>(player, entry.role == CharacterRole.Survivor); // 생존자: 발차기(돌려차기·날아 차기) 판정을 앞으로 아주 길게(BE)
+            SetProp<RunJumpReach>(player, entry.role == CharacterRole.Hunter); // 감시자: 달리기 점프 공격(내려치기) 판정을 앞으로 길게(BE)
             SetProp<CaneSweepReach>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이 휘두르기 판정을 옆으로 아주 넓게(BE)
             SetProp<CaneThrustPose>(player, entry.id == "Survivor_MindsEye"); // 맹인: E 찌르기 동안 지팡이 끝이 정면을 보게 길게 뻗음(FE)
             // 리퍼: 무기가 없고 왼손(손톱 칼날) 자체가 무기 → 약·강공격 판정을 왼손 + 무기로. 다른 캐릭터는 처음 값.
@@ -73,6 +74,9 @@ namespace Project1.UI
                 // 생존자 강공격 = 머리를 노리는 왼발 돌려차기(모션은 CharacterAttackAnimator.HeavyKick) → 강공격 판정은 왼발.
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
+                // 감시자 달리기 점프 공격 = 무기 내려치기(Run Jump Attack) → 발이 아니라 약공격 부위(무기·손) + 몸 앞 긴 판정(RunJumpReach). 생존자는 처음 값(양발 플라잉킥).
+                bool hunter = entry.role == CharacterRole.Hunter;
+                attack.SetRunJumpSlots(hunter ? attack.LightAttack.Slots | Project1.Core.HitboxSlot.RunJumpReach : Project1.Core.HitboxSlot.None);
                 if (player.TryGetComponent(out CharacterAttackAnimator attackAnimator)) attackAnimator.HeavyKick = survivorKick;
                 attack.SetRunJumpFollowUp(survivorKick); // 생존자: 달리기 점프 공격 중 한 번 더 누르면 다시 뛰어오르며 머리를 노리는 날아 차기(착지 후딜레이)
                 SetProp<FollowUpKickStun>(player, survivorKick); // 이단으로 뛰어 찬 날아 차기를 맞히면 상대 경직
