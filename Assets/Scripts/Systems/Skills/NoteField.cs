@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// <summary>
     /// 안토니오의 붉은 음표(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 붉은나비 나비처럼 마우스가 가리키는 땅에 놓을 자리를 고르고, 떼면 음표를 놓는다(GroundPlacementPreview).
-    /// - E를 누르면 바로 앞(instantDistance)에 즉시 음표를 놓는다(좌클릭을 누르고 있었으면 그 고르기는 끝내고 뗄 때까지 무시).
+    /// - E를 누르면 바로 앞(instantDistance)에 즉시 음표를 놓는다. 좌클릭을 꾹 눌러 놓을 자리를 고르는 중이면 E = 고르기 취소(음표를 놓지 않고, 좌클릭을 뗄 때까지 무시).
     /// - 음표는 두 개가 한 쌍이다: 첫 음표를 놓고 linkWindow(5초) 안에 둘째를 놓아야 한다. 못 놓으면 끊기고 첫 음표는 사라진다.
     ///   둘째를 놓으면 두 음표가 붉은 전류선으로 이어진다. 다시 음표를 놓으면 지난 쌍은 사라지고 새 첫 음표가 된다.
     /// - 이어진 동안 전류선(두 음표 사이, 음표까지 포함 — 후한 굵기 wireRadius)에 닿은 상대는 맞는다(HitEvents).
@@ -80,9 +80,10 @@ namespace Project1.Systems
 
             if (input.Skill && !blocked)
             {
-                // E → 바로 앞에 즉시. 좌클릭으로 고르던 중이면 그 고르기는 끝낸다(뗄 때까지 무시).
+                // 좌클릭을 꾹 눌러 놓을 자리를 고르는 중(차징)이면 E = 고르기 취소(음표를 놓지 않는다, 뗄 때까지 무시).
+                // 고르는 중이 아니면 E = 바로 앞에 즉시.
                 if (Placing) { Placing = false; placement.Clear(); waitRelease = true; }
-                PlaceInFront();
+                else PlaceInFront();
             }
             else if (waitRelease)
             {
