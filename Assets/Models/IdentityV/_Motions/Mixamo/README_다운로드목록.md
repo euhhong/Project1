@@ -41,6 +41,7 @@
 | Skill_Luchino_Leap_Land | 루키노 내려찍기 착지(경직 1.2초에 맞춰 재생) | **받음** — 2~45프레임(발 닿음 → 손 짚고 웅크림 → 일어서기), 발 기준 높이 | Hard Landing |
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
+| Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |
 | Stairs_Up | 계단 오르기(공통, 반복) | **받음, 연결 대기** — 맵에 계단이 생기면 연결 | Running Up Stairs |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |
 | Vault_Run | 뛰면서 점프로 창틀·판자 넘기 | **받음, 연결 대기** — 넘기 판정이 생기면 연결 | Jumping (1) |
