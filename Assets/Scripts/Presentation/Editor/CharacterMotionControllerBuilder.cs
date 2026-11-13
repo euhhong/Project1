@@ -86,7 +86,8 @@ namespace Project1.Presentation.EditorTools
             ("Antonio", new[] { HunterOverrides, new[] { ("Idle", "Idle_Antonio") } }),
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
             // 하스터: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다. 공격 = 두 손 내려찍기(Zombie Attack)
-            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl }),
+            // 하스터: 광대와 같은 두 손 머리 위 → 아래로 내려치기(Attack_Light_Joker / Attack_Heavy_Joker, 상체만 — 다리는 기어가기 그대로)
+            ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker") }, HasturCrawl }),
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
             ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
             // 리퍼: 무기가 없고 왼손 자체가 무기 → 모든 공격을 왼손으로(감시자 공격을 Blender로 좌우 뒤집은 모션)

@@ -44,6 +44,7 @@ namespace Project1.UI
             SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 하스터: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
             SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 하스터: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
             SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 하스터: 다리 촉수 다섯 가닥 꿈틀거림(FE)
+            SetProp<ClawHitboxes>(player, entry.id == "Hunter_Hastur");       // 하스터: 손 뼈보다 길게 뻗은 손톱에도 때리는 판정(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
             SetProp<AntonioViolin>(player, entry.id == "Hunter_Antonio"); // 안토니오: 바이올린·활(VARCO) — 대기 땐 켜는 자세, 움직일 땐 들고 다님(FE)
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
