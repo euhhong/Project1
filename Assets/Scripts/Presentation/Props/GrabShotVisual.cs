@@ -6,7 +6,8 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 사냥터지기 그랩 쏘기 연출. 그랩은 물고기 모양: 꼬리(손잡이)는 손에 남고 물고기 몸통·머리가 사슬에 이어져 곧게 날아가 문다.
+    /// 사냥터지기 그랩 쏘기 연출. 원래 무기는 물고기 모양(꼬리 = 손잡이). E를 누르면 손에 쥔 물고기 전체가 잠시 그랩(사슬) 끝으로 옮겨 가
+    /// 머리가 판정 끝에 오도록 곧게 날아가 문다. 사슬은 손 → 물고기 꼬리. 다 되감기면 다시 손에 쥔다.
     /// - 그랩 메시를 실행 중에 나눈다: 꼬리(긴 축 0~40%) / 몸통(40~62%) / 위·아래 턱(62~100%, 좌우로 갈라진 두 쪽).
     /// - 스킬이 그랩을 뻗으면(ICharacterSkillState.Reach &gt; 0) 몸통·턱을 꼬리 끝에서 Direction 쪽으로 Reach만큼 옮기고(머리가 앞을 보게),
     ///   꼬리 끝과 몸통 사이를 사슬 고리로 잇는다. 날아가는 동안 입을 크게 벌리고, 다 뻗으면(되감기 시작) 콱 문다.
@@ -35,6 +36,7 @@ namespace Project1.Presentation
         private Transform fish, jawA, jawB;           // 날아가는 몸통 기준점(자르는 곳), 두 턱의 경첩
         private Vector3 fishLocalPos; private Quaternion fishLocalRot;
         private Vector3 axisLocal, hingeAxisLocal;    // 꼬리 → 머리 방향, 턱 경첩 축(그랩 로컬)
+        private float fishLengthLocal;                 // 꼬리 끝 → 머리 끝 길이(그랩 로컬)
         private float jaw;                            // 지금 턱 각도(+ = 벌림, - = 닫힘)
         private float lastReach;
         private bool shooting;
@@ -64,12 +66,17 @@ namespace Project1.Presentation
 
             shooting = true;
             Vector3 dir = skill.Direction.sqrMagnitude > 0.01f ? skill.Direction.normalized : transform.forward;
-            // 몸통: 자르는 곳이 (꼬리 끝 + dir * reach)에, 머리가 dir을 보게.
-            Vector3 tailEnd = grab.TransformPoint(fishLocalPos);
+            // 물고기 전체(꼬리 포함)가 그랩(사슬) 끝으로 옮겨 간다. 손은 잠시 빈다.
+            // 머리 끝이 (손잡이 자리 + dir * reach) = BE 판정 끝에 오게: 물고기 길이만큼은 손에 쥔 채로도 이미 앞에 있다.
+            Vector3 handle = grab.TransformPoint(fishLocalPos);
+            float fishLength = grab.TransformVector(axisLocal * fishLengthLocal).magnitude;
+            float chain = Mathf.Max(0f, reach - fishLength);
             Quaternion inHand = grab.rotation * fishLocalRot;
             Vector3 headNow = grab.TransformDirection(axisLocal);
             fish.rotation = Quaternion.FromToRotation(headNow, dir) * inHand;
-            fish.position = tailEnd + dir * reach;
+            fish.position = handle + dir * chain;
+            Vector3 tailEnd = handle;
+            reach = chain; // 사슬은 손 → 물고기 꼬리까지
 
             // 턱: 뻗는 중엔 크게 벌리고, 되감기 시작(길이가 줄기 시작)하면 문다.
             float target = reach >= lastReach - 0.0001f ? jawOpenAngle : -jawBiteAngle;
@@ -144,7 +151,8 @@ namespace Project1.Presentation
 
             axisLocal = axis;
             hingeAxisLocal = Vector3.Cross(axis, side).normalized;
-            Vector3 cut = mean + axis * (min + TailEnd * len);       // 꼬리/몸통 자르는 곳
+            Vector3 cut = mean + axis * min;                         // 물고기 기준점 = 꼬리(손잡이) 끝. 물고기 전체가 이 점을 기준으로 날아간다
+            fishLengthLocal = len;
             Vector3 hingePt = mean + axis * (min + JawStart * len);  // 턱 경첩
 
             int Part(int a, int b, int cc)
@@ -161,10 +169,10 @@ namespace Project1.Presentation
             // 꼬리는 그랩 자리에 그대로, 몸통 기준점(fish)은 자르는 곳. 턱 두 쪽은 경첩 기준.
             var mats = g.sharedMaterials;
             g.enabled = false;
-            var tail = Piece("Grab_Tail", grab, meshes[0], mats, Vector3.zero);
             fish = new GameObject("Grab_Fish").transform;
             fish.SetParent(grab, false); fish.localPosition = cut;
             fishLocalPos = cut; fishLocalRot = Quaternion.identity;
+            Piece("Grab_Tail", fish, meshes[0], mats, -cut);
             Piece("Grab_Body", fish, meshes[1], mats, -cut);
             jawA = new GameObject("Grab_JawA").transform; jawA.SetParent(fish, false); jawA.localPosition = hingePt - cut;
             jawB = new GameObject("Grab_JawB").transform; jawB.SetParent(fish, false); jawB.localPosition = hingePt - cut;
