@@ -33,6 +33,9 @@ namespace Project1.Core
         /// <summary>공격 키를 기준 시간 이상 누르고 있는 중 → 강공격 모으기.</summary>
         public bool HeavyCharging;
 
+        /// <summary>공격 키를 지금 누르고 있는 중(누른 시간과 상관없이). 주먹 막기처럼 누르는 순간부터 반응해야 할 때 쓴다.</summary>
+        public bool AttackHeld;
+
         /// <summary>지난 틱 이후 기준 시간 이상 누르던 공격 키를 뗐다 → 강공격 발동.</summary>
         public bool HeavyRelease;
 

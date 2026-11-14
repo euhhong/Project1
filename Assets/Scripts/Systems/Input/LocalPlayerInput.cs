@@ -91,6 +91,7 @@ namespace Project1.Systems
                 LookDelta = lookDeltaQueued,
                 LightAttack = lightAttackQueued,
                 HeavyCharging = attackHeld && Time.time - attackPressTime >= heavyAttackHoldTime,
+                AttackHeld = attackHeld,
                 HeavyRelease = heavyReleaseQueued,
                 Skill = skillQueued,
                 SkillHeld = skillAction != null && skillAction.IsPressed(),

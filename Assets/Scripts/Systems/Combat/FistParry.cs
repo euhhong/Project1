@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 주먹 막기(생존자): 공격 키(좌클릭)를 꾹 누르는 동안(CharacterInputFrame.HeavyCharging, CharacterAttack은 강공격 모으기 상태) 막는 자세를 한다.
+    /// 주먹 막기(생존자): 공격 키(좌클릭)를 꾹 누르는 동안 막는 자세를 한다 — 누르고 guardStartDelay(0.1초) 뒤부터(강공격 모으기 0.3초를 기다리지 않음).
     /// - 막는 동안 몸 정면 guardAngle(기본 150°, 좌우 75°씩) 안에서 온 주먹 히트(HitResult.Fist)와 감시자의 평타(약·강·달리기 점프 공격)는
     ///   맞지 않는다(IHitBlocker) — 데미지·경직·넉백 없음. 막은 히트는 HitEvents.HitBlocked로 나가 막기 이펙트(FE)가 뜬다.
     /// - 정면 밖(옆·뒤)에서 온 공격, 생존자의 주먹이 아닌 공격(발차기 등), 스킬·투사체는 그대로 맞는다.
@@ -17,6 +17,12 @@ namespace Project1.Systems
     {
         [Tooltip("막는 앞쪽 각도(도, 몸 정면 기준 전체). 150 = 좌우 75°씩.")]
         [SerializeField, Range(0f, 360f)] private float guardAngle = 150f;
+        [Tooltip("공격 키를 누르고 이 시간(초)이 지나면 막기 시작. 강공격 기준(0.3초)보다 일찍 막아 늦게 막히는 일이 없게 하고, 짧게 톡 치는 약공격 때 막는 자세가 깜빡이지 않을 만큼만 둔다.")]
+        [SerializeField, Min(0f)] private float guardStartDelay = 0.1f;
+
+        private float heldTime;
+        private int evaluatedTick = int.MinValue;
+        private bool parrying;
 
         private ICharacterInputSource input;
         private ICharacterAttackState attack;
@@ -25,7 +31,8 @@ namespace Project1.Systems
         private ICharacterTraversalState traversal;
         private ICharacterSkillState skill; // 실행 중에 붙을 수 있어 필요할 때 찾는다
 
-        public bool IsParrying { get; private set; }
+        /// <summary>지금 막는 중인지. 이번 틱 값을 바로 계산한다(때린 쪽 판정이 이 컴포넌트의 FixedUpdate보다 먼저 돌아도 한 틱 늦지 않게).</summary>
+        public bool IsParrying { get { Evaluate(); return parrying; } }
         public int BlockCount { get; private set; }
         public float GuardAngle => guardAngle;
 
@@ -35,13 +42,22 @@ namespace Project1.Systems
             attack = GetComponent<ICharacterAttackState>();
         }
 
-        private void OnDisable() => IsParrying = false;
+        private void OnDisable() { parrying = false; heldTime = 0f; evaluatedTick = int.MinValue; }
 
-        private void FixedUpdate()
+        private void FixedUpdate() => Evaluate();
+
+        /// <summary>틱마다 한 번: 누른 시간을 세고 막는지 정한다.</summary>
+        private void Evaluate()
         {
+            int tick = SimulationTick.Current;
+            if (tick == evaluatedTick) return;
+            evaluatedTick = tick;
             if (input == null) Awake(); // Play 중 재컴파일로 참조가 비었을 때 복구
-            bool held = input != null && input.ReadInput().HeavyCharging;
-            IsParrying = held && CanParry();
+            if (!isActiveAndEnabled || input == null) { parrying = false; heldTime = 0f; return; }
+            CharacterInputFrame frame = input.ReadInput();
+            bool held = frame.AttackHeld || frame.HeavyCharging; // AttackHeld를 안 채우는 입력(봇 등)은 강공격 모으기로
+            heldTime = held ? heldTime + Time.fixedDeltaTime : 0f;
+            parrying = held && (frame.HeavyCharging || heldTime >= guardStartDelay) && CanParry();
         }
 
         private bool CanParry()
