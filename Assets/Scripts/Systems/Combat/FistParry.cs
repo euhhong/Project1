@@ -5,9 +5,9 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 주먹 막기(생존자): 공격 키(좌클릭)를 꾹 누르는 동안(CharacterInputFrame.HeavyCharging, CharacterAttack은 강공격 모으기 상태) 막는 자세를 한다.
-    /// - 막는 동안 몸 정면 guardAngle(기본 150°, 좌우 75°씩) 안에서 온 주먹 히트(HitResult.Fist)는 맞지 않는다(IHitBlocker) — 데미지·경직·넉백 없음.
-    ///   막은 히트는 HitEvents.HitBlocked로 나가 막기 이펙트(FE)가 뜬다.
-    /// - 정면 밖(옆·뒤)에서 온 주먹, 주먹이 아닌 공격(무기·발·스킬·투사체)은 그대로 맞는다.
+    /// - 막는 동안 몸 정면 guardAngle(기본 150°, 좌우 75°씩) 안에서 온 주먹 히트(HitResult.Fist)와 감시자의 평타(약·강·달리기 점프 공격)는
+    ///   맞지 않는다(IHitBlocker) — 데미지·경직·넉백 없음. 막은 히트는 HitEvents.HitBlocked로 나가 막기 이펙트(FE)가 뜬다.
+    /// - 정면 밖(옆·뒤)에서 온 공격, 생존자의 주먹이 아닌 공격(발차기 등), 스킬·투사체는 그대로 맞는다.
     /// - 키를 떼면 막기가 끝나고 강공격(머리를 노리는 돌려차기)이 나간다(CharacterAttack). 짧게 누르는 약공격은 그대로.
     /// - 공격 중·기절·쓰러짐·오르기/매달리기·행동을 막는 스킬 중에는 막지 않는다. 땅에서 막는 동안은 걷기 속도(CharacterAttack이 제한).
     /// 캐릭터를 고를 때 CharacterLoadout이 생존자에게 붙인다.
@@ -60,10 +60,14 @@ namespace Project1.Systems
 
         public bool BlocksHit(in HitResult hit, GameObject attacker)
         {
-            if (!IsParrying || !hit.Fist || !InFront(attacker != null ? attacker.transform.position : hit.Point)) return false;
+            if (!IsParrying || !Blockable(hit, attacker) || !InFront(attacker != null ? attacker.transform.position : hit.Point)) return false;
             BlockCount++;
             return true;
         }
+
+        /// <summary>막을 수 있는 히트: 주먹(생존자 주먹 평타), 또는 감시자의 평타 전부(약·강·달리기 점프 공격). 스킬·투사체는 못 막는다.</summary>
+        private static bool Blockable(in HitResult hit, GameObject attacker) =>
+            hit.Fist || (hit.Kind != AttackKind.Skill && DamageRules.IsHunter(attacker));
 
         /// <summary>from(때린 쪽)이 몸 정면 guardAngle 안에 있는지(수평으로 본다).</summary>
         public bool InFront(Vector3 from)
