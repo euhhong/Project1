@@ -93,15 +93,17 @@ namespace Project1.Systems
             new Keyframe(0f, 0f), new Keyframe(0.2f, 0f), new Keyframe(0.27f, 0.08f), new Keyframe(0.33f, 0.24f), new Keyframe(0.4f, 0.41f),
             new Keyframe(0.47f, 0.59f), new Keyframe(0.53f, 0.83f), new Keyframe(0.6f, 1f), new Keyframe(1f, 1f));
 
-        [Header("매달린 채 옆으로 건너 잡기 (A/D)")]
-        [Tooltip("한 번에 옆으로 건너가는 거리(m).")]
-        [SerializeField, Min(0.2f)] private float hopDistance = 0.9f;
-        [Tooltip("건너 잡기 시간(초, Braced Hang Hop Left 1.5초 모션을 이 시간에 맞춰 재생).")]
-        [SerializeField, Min(0.2f)] private float hopTime = 1.2f;
+        [Header("매달린 채 옆으로 한 보폭씩 (A/D)")]
+        [Tooltip("한 보폭 = 손을 크게 한 번 옮겨 옆으로 가는 거리(Humanoid 단위 — 키가 다른 캐릭터도 같은 보폭). 모션(Braced Hang Hop Left) 한 사이클에 이만큼 간다.")]
+        [SerializeField, Min(0.2f)] private float hopStride = 1.3f;
+        [Tooltip("턱이 끊기거나 막혀 한 보폭을 다 못 가면 갈 수 있는 만큼만 간다 — 이보다 짧으면(Humanoid 단위) 가지 않는다.")]
+        [SerializeField, Min(0.1f)] private float hopMinStride = 0.35f;
+        [Tooltip("한 보폭 시간(초, 1.5초 모션 한 사이클을 이 시간에 맞춰 재생). 짧게 가는 보폭은 조금 짧아진다.")]
+        [SerializeField, Min(0.2f)] private float hopTime = 1.05f;
         [Tooltip("옆 턱 높이가 지금 턱과 이만큼(m)까지 달라도 같은 높이로 본다.")]
         [SerializeField, Min(0f)] private float hopHeightTolerance = 0.12f;
-        [Tooltip("이 진행도부터 루트를 옆 턱으로 옮긴다(모션 앞부분은 몸이 옆으로 쏠리기만 한다).")]
-        [SerializeField, Range(0f, 0.9f)] private float hopMoveFrom = 0.45f;
+        [Tooltip("몸이 옆으로 옮겨 가는 진행도 구간 — 모션에서 몸이 뛰어올라 손을 옮기는 동안(도약 ~ 다시 매달림).")]
+        [SerializeField] private Vector2 hopMoveRange = new(0.12f, 0.72f);
         private bool hopRight;
         public bool HopRight => hopRight;
 
@@ -524,13 +526,14 @@ namespace Project1.Systems
             // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
             if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
             if (input.Move.y < -0.5f && !TryReturnToLadder() && !TryStartHangFlip()) { Release(); return; } // 사다리로 올라온 턱이면 다시 사다리로 // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
-            // 옆(A/D) = 옆에 같은 높이로 매달릴 턱이 있으면 건너 잡는다(꾹 누르면 계속).
+            // 옆(A/D) = 턱을 따라 옆으로 크게 한 보폭(모션 한 사이클). 보폭이 끝날 때까지 다음 입력은 받지 않고, 꾹 누르면 보폭을 이어 간다.
             if (Mathf.Abs(input.Move.x) > 0.5f && Mathf.Abs(input.Move.y) <= 0.5f) TryStartHangHop(input.Move.x > 0f);
         }
 
         /// <summary>
-        /// 매달린 채 옆으로 건너 잡기: 벽을 따라 옆으로 hopDistance 간 자리에 지금 턱과 같은 높이(hopHeightTolerance 안)·같은 방향의 매달릴 턱이 있고,
-        /// 가는 길(매달린 몸 높이)이 막히지 않았으면 그리로 건너간다. 사이에 턱이 끊겨 있어도 건너편이 잡히면 건넌다.
+        /// 매달린 채 옆으로 한 보폭(hopStride, 모션 한 사이클): 벽을 따라 옆으로 간 자리에 지금 턱과 같은 높이(hopHeightTolerance 안)·같은 방향의 매달릴 턱이 있으면 그리로 간다.
+        /// 한 보폭 끝이 안 잡히면(턱 끝·모서리) 잡히는 가장 먼 자리까지만, 가는 길(매달린 몸 높이)이 막히면 막히기 전까지만 간다 — hopMinStride보다 짧으면 가지 않는다.
+        /// 사이에 턱이 끊겨 있어도 건너편이 한 보폭 안에서 잡히면 건넌다.
         /// </summary>
         private bool TryStartHangHop(bool right)
         {
@@ -539,20 +542,29 @@ namespace Project1.Systems
             face.Normalize();
             Vector3 side = Vector3.Cross(Vector3.up, face) * (right ? 1f : -1f);
             float hu = HumanUnit();
+            float stride = hopStride * hu, minStride = Mathf.Min(hopMinStride * hu, stride);
             Vector3 pos = transform.position;
-            // 가는 길: 매달린 몸(벽을 짚은 발 ~ 어깨) 높이로 옆을 훑어 막히면 못 간다.
+            // 가는 길: 매달린 몸(벽을 짚은 발 ~ 어깨) 높이로 옆을 훑어 막히면 그 앞까지만.
+            float reach = stride;
             foreach (float h in new[] { BracedFeet * hu, 1.6f * hu })
-                if (Cast(pos + Vector3.up * h, side, hopDistance + cc.radius, out _)) return false;
-            if (!FindHang(pos + side * hopDistance, face, out var l, out bool wall, out var hp)) return false;
-            if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Angle(l.Normal, ledge.Normal) > 25f) return false;
-            pathStart = pos;
-            pathEnd = hp;
-            ledge = l;
-            braced = wall;
-            faceYaw = YawOf(-l.Normal);
-            hopRight = right;
-            StartAction(TraversalAction.HangHop, hopTime);
-            return true;
+                if (Cast(pos + Vector3.up * h, side, stride + cc.radius, out var hit)) reach = Mathf.Min(reach, hit.distance - cc.radius - Skin);
+            // 가장 먼 자리부터 잡히는지 본다.
+            for (float d = reach; d >= minStride - 1e-4f; d -= 0.1f)
+            {
+                if (!FindHang(pos + side * d, face, out var l, out bool wall, out var hp)) continue;
+                if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Angle(l.Normal, ledge.Normal) > 25f) continue;
+                float go = Vector3.Dot(hp - pos, side);
+                if (go < minStride) continue; // 찾은 매달릴 자리가 거의 제자리
+                pathStart = pos;
+                pathEnd = hp;
+                ledge = l;
+                braced = wall;
+                faceYaw = YawOf(-l.Normal);
+                hopRight = right;
+                StartAction(TraversalAction.HangHop, hopTime * Mathf.Lerp(0.75f, 1f, Mathf.Clamp01(go / stride)));
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -752,8 +764,9 @@ namespace Project1.Systems
             }
             if (action == TraversalAction.HangHop)
             {
-                // 모션(제자리)은 앞부분에서 몸이 옆으로 쏠렸다가 뒷부분에서 제자리로 돌아온다 → 루트는 그 뒷부분 동안 옆 턱으로 옮겨 몸이 한쪽으로만 가게.
-                Vector3 to = Vector3.Lerp(pathStart, pathEnd, Smooth(hopMoveFrom, 1f, ActionProgress));
+                // 모션은 제자리(골반이 루트 위에 그대로 — 수평 이동은 루트로 빼서 버림)로 몸이 뛰어올랐다(0.05~0.4) 다시 매달린다(~0.7)
+                // → 그 도약 동안 루트를 한 보폭 옆 자리로 옮겨, 손을 크게 한 번 옮기며 한 번에 건너가 보이게.
+                Vector3 to = Vector3.Lerp(pathStart, pathEnd, Smooth(hopMoveRange.x, hopMoveRange.y, ActionProgress));
                 worldVelocity = Vector3.ClampMagnitude((to - pos) / dt, 25f);
                 return true;
             }

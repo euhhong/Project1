@@ -57,6 +57,7 @@ namespace Project1.Presentation
             var a = traversal != null ? traversal.Action : TraversalAction.None;
             if ((a == TraversalAction.HangGrab || a == TraversalAction.Hang) && a != lastAction) FindLedge(); // 잡을 때 + 몸이 자리 잡은 뒤 다시
             else if (IsHang(a) && !IsHang(lastAction)) FindLedge();
+            else if (a == TraversalAction.HangHop) FindLedge(); // 옆으로 한 보폭 가는 동안 잡는 자리도 몸을 따라 옮긴다(팔이 처음 자리에 남아 늘어나지 않게)
             lastAction = a;
 
             float target = 0f;
