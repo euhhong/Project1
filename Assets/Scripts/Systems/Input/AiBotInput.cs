@@ -4,77 +4,61 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 간단한 AI 봇 입력(게임 시작 모드의 상대). 목표(target)를 바라보고 다가가서 가까우면 때리고, 가끔 고유 스킬(E)을 쓴다.
-    /// - 멀면 달려가고, 중간 거리에서는 가끔 옆으로 돌며 다가가고, 공격 거리 안이면 멈춰서 짧게 누르는 약공격을 틈틈이 넣는다.
-    /// - 스킬은 스킬 거리 안에서 skillInterval마다 한 번쯤(무작위). 마우스로 겨누는 스킬(나비·음표)은 목표 자리를 겨눈다.
-    /// - 목표가 없거나 기절 중이면 가만히 있는다. 행동이 단순한 임시 AI — 나중에 바꿔 끼우면 된다(ICharacterInputSource).
+    /// AI 봇 입력(게임 시작 모드의 상대). 키보드·마우스를 흉내 낸 입력(CharacterInputFrame)을 틱마다 한 번 만든다.
+    /// 실제 판단은 나눠 맡긴다: 눈 = AiOpponentView(상대 상태, 반응 지연), 머리 = AiMeleeTactics(동작 고르기 — 여러 공격 커맨드·반응·전위 유도 박치기),
+    /// 손 = AiKeyPresser(꾹 누르기·짧게 누르기). 여기는 목표를 받아 이어 주기만 한다.
+    /// 조절 값은 인스펙터의 Settings(AiMeleeSettings). 목표가 없거나 꺼져 있으면 가만히 있는다.
     /// </summary>
     public class AiBotInput : MonoBehaviour, ICharacterInputSource
     {
         [SerializeField] private Transform target;
-        [Tooltip("이 거리(m) 안이면 멈춰서 때린다.")]
-        [SerializeField, Min(0.3f)] private float attackRange = 1.7f;
-        [Tooltip("이보다 멀면 달린다(m).")]
-        [SerializeField, Min(0f)] private float runDistance = 6f;
-        [Tooltip("약공격 사이 시간(초, 이 값 ~ 1.6배 사이 무작위).")]
-        [SerializeField, Min(0.1f)] private float attackInterval = 0.8f;
-        [Tooltip("스킬을 쓸 거리(m)와 대략의 간격(초).")]
-        [SerializeField, Min(0f)] private float skillRange = 9f;
-        [SerializeField, Min(0.5f)] private float skillInterval = 4f;
+        [SerializeField] private AiMeleeSettings settings = new();
+        [Tooltip("화면 왼쪽 위에 지금 동작·고른 동작 수를 보여 준다(조절할 때).")]
+        [SerializeField] private bool debugOverlay;
 
-        private float nextAttack, nextSkill, strafeUntil, strafeDir;
+        private readonly AiOpponentView view = new();
+        private AiMeleeTactics tactics;
         private int cachedTick = int.MinValue;
+        private float lastThink = -1f;
         private CharacterInputFrame cachedFrame;
 
-        public void SetTarget(Transform t) => target = t;
+        public AiMeleeTactics Tactics => tactics ??= new AiMeleeTactics(gameObject, settings, view);
+        public AiMeleeSettings Settings => settings;
 
-        private void Start()
+        public void SetTarget(Transform t)
         {
-            nextAttack = Time.time + 1f;
-            nextSkill = Time.time + Random.Range(2f, skillInterval);
+            target = t;
+            view.SetTarget(t);
         }
+
+        public void SetDebugOverlay(bool on) => debugOverlay = on;
 
         public CharacterInputFrame ReadInput()
         {
             int tick = SimulationTick.Current;
             if (tick == cachedTick) return cachedFrame;
             cachedTick = tick;
-            cachedFrame = Think();
+            float now = Time.time;
+            float dt = lastThink < 0f ? Time.fixedDeltaTime : Mathf.Max(now - lastThink, 0f);
+            lastThink = now;
+
+            if (!isActiveAndEnabled || target == null || !target.gameObject.activeInHierarchy)
+            {
+                cachedFrame = new CharacterInputFrame { LookYaw = transform.eulerAngles.y };
+                return cachedFrame;
+            }
+            view.SetTarget(target); // 인스펙터에서 바꿨을 때
+            cachedFrame = Tactics.Tick(now, dt);
             return cachedFrame;
         }
 
-        private CharacterInputFrame Think()
+        private void OnGUI()
         {
-            var f = new CharacterInputFrame { LookYaw = transform.eulerAngles.y };
-            if (target == null || !target.gameObject.activeInHierarchy) return f;
-            Vector3 to = target.position - transform.position;
-            Vector3 flat = new(to.x, 0f, to.z);
-            float dist = flat.magnitude;
-            if (dist > 0.01f) f.LookYaw = Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg;
-            f.LookPitch = 5f;
-            // 마우스로 겨누는 스킬용: 목표 발밑을 가리킨다.
-            f.HasAimPoint = true; f.AimFromCursor = true; f.AimPoint = target.position; f.AimNormal = Vector3.up;
-
-            float now = Time.time;
-            if (dist > attackRange)
-            {
-                // 다가간다. 중간 거리에서는 가끔 옆으로 돌며.
-                if (now > strafeUntil && dist < runDistance && Random.value < 0.01f) { strafeUntil = now + Random.Range(0.6f, 1.4f); strafeDir = Random.value < 0.5f ? -1f : 1f; }
-                f.Move = now < strafeUntil ? new Vector2(strafeDir * 0.8f, 0.6f).normalized : Vector2.up;
-                f.Run = dist > runDistance;
-            }
-            else if (now >= nextAttack)
-            {
-                f.LightAttack = true; f.AttackPressed = true; // 짧게 눌렀다 뗀 약공격
-                nextAttack = now + Random.Range(attackInterval, attackInterval * 1.6f);
-            }
-
-            if (dist <= skillRange && now >= nextSkill)
-            {
-                f.Skill = true;
-                nextSkill = now + Random.Range(skillInterval * 0.7f, skillInterval * 1.4f);
-            }
-            return f;
+            if (!debugOverlay || tactics == null) return;
+            var sb = new System.Text.StringBuilder();
+            sb.Append(name).Append(" : ").Append(tactics.Current).Append("   돌진 ").Append(tactics.ChargesFired).Append('\n');
+            for (int i = 1; i < tactics.Counts.Length; i++) sb.Append(AiMeleeTactics.NameOf(i)).Append(' ').Append(tactics.Counts[i]).Append("  ");
+            GUI.Label(new Rect(10, 10, 900, 60), sb.ToString());
         }
     }
 }
