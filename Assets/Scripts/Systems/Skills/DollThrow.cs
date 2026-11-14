@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// <summary>
     /// 공장장(지옥불) 인형 던지기와 자리 바꾸기(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신 — IAttackHoldOverride, 짧게 누르는 약공격은 그대로) 인형을 겨눈다(던지기 자세 + 포물선·흰 조준원).
-    ///   목표(흰 조준원)는 늘 1층(공장장 발 높이) 바닥 — 몸 정면 aimDistance m(위층·지붕 윗면에 붙지 않음). 발밑(cancelRadius 안)까지 끌어 내리고 떼면 던지지 않는다(취소).
+    ///   목표(흰 조준원)는 늘 1층(공장장 발 높이) 바닥 — 몸 정면 aimDistance m(위층·지붕 윗면에 붙지 않음). 몸 쪽으로 끌어당겨도 취소하지 않는다(취소는 E만).
     /// - 포물선 꼭대기 = 발에서 apexBase + 거리 × apexPerMeter(멀수록 조금씩 높아짐) + 위를 본 시야 각도 × apexPerDegree + 각도² × apexPerDegreeSq(우클릭으로 시야를 올릴수록 점점 더 높아짐 — 높이 조절).
     /// - 떼면 인형이 그 포물선을 실제로 날아간다: 처음 닿는 윗면(1층 바닥·위층 바닥·지붕)에 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다 —
     ///   높이 띄우면 위층·지붕에도 올라간다. 보조선(AimArc)은 실제로 멈출 곳(ActualLanding)까지. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
@@ -30,7 +30,7 @@ namespace Project1.Systems
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         [Tooltip("자리를 바꾼 직후 경직(초) — 땅이든 공중(낙하)이든 같다. 이동·공격·스킬 불가, 보이는 표시 없음(IActionLock).")]
-        [SerializeField, Min(0f)] private float postSwapLock = 1.5f;
+        [SerializeField, Min(0f)] private float postSwapLock = 1.2f;
         [Tooltip("공중의 인형과 바꿨으면(낙하) 경직이 풀린 순간부터 이 시간(초) 동안 이동 속도 배율.")]
         [SerializeField, Min(0f)] private float landBoostTime = 2f;
         [SerializeField, Min(1f)] private float landBoostMultiplier = 1.5f;
@@ -83,8 +83,6 @@ namespace Project1.Systems
         [SerializeField, Min(0.5f)] private float maxAirTime = 8f;
         [Tooltip("자리를 바꿀 때 몸이 들어갈 곳을 위로 찾는 높이(m).")]
         [SerializeField, Min(0f)] private float swapClearSearch = 1.5f;
-        [Tooltip("조준점이 몸에서 이 거리(m) 안(발밑)이면 떼도 던지지 않는다(취소).")]
-        [SerializeField, Min(0f)] private float cancelRadius = 1.5f;
         private Vector3 aimTarget;
         private bool aimCancels;
 
@@ -218,7 +216,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 겨누는 동안: 좌클릭을 누른 채 마우스를 위로 끌면 멀리, 아래로 끌면 가까이(시야 상하 변화량 LookDelta.y — 시점이 위아래 한계에 닿아도 계속 끌린다), 방향은 몸 정면(시야 좌우).
-        /// 목표 = 그 거리의 땅(위에서 아래로 찾은 첫 윗면 — 지붕 위도), 땅이 없으면 발 높이. maxAimDistance(맵 끝)까지. 발밑까지 끌어 내리면(cancelRadius 안) 취소.
+        /// 목표 = 그 거리의 땅(위에서 아래로 찾은 첫 윗면 — 지붕 위도), 땅이 없으면 발 높이. maxAimDistance(맵 끝)까지. 몸 쪽으로 끌어당겨도 취소하지 않는다.
         /// </summary>
         private void UpdateDragTarget(in CharacterInputFrame input)
         {
@@ -229,7 +227,7 @@ namespace Project1.Systems
             aimLookPitch = input.LookPitch;
             // 목표는 늘 1층(공장장 발 높이) 기준 바닥 — 위층·지붕 윗면에 붙지 않는다(발 높이 2m 위에서 아래로 찾음).
             aimTarget = RayCast(new Vector3(p.x, transform.position.y + 2f, p.z), Vector3.down, 30f, out var ground) ? ground.point : new Vector3(p.x, transform.position.y, p.z);
-            aimCancels = aimDistance < cancelRadius;
+            aimCancels = false; // 몸 쪽으로 끌어당겨도 취소하지 않는다(취소는 E만)
         }
 
         /// <summary>
@@ -265,7 +263,7 @@ namespace Project1.Systems
                 aimTarget = RayCast(moved + Vector3.up * 0.5f, Vector3.down, 1.5f, out var snap) ? snap.point : moved;
             }
             Vector3 flat = aimTarget - transform.position; flat.y = 0f;
-            aimCancels = flat.magnitude < cancelRadius && Mathf.Abs(aimTarget.y - transform.position.y) < 1.5f; // 발밑을 보면 취소
+            aimCancels = false; // 몸 쪽(발밑)을 가리켜도 취소하지 않는다(취소는 E만)
         }
 
         /// <summary>
