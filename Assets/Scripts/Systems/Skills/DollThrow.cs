@@ -6,8 +6,12 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 공장장(지옥불) 인형 던지기와 자리 바꾸기(BE).
-    /// - 좌클릭을 꾹 누르면(강공격 모으기 대신 — IAttackHoldOverride, 짧게 누르는 약공격은 그대로) 시야·커서가 가리키는 땅을 겨눈다(GroundPlacementPreview, 최대 maxRange).
-    ///   겨누는 동안 던지면 인형이 날아갈 포물선(AimArc)과 멈출 자리(AimLanding)를 계산해 둔다 — 벽에 막히면 거기서 떨어지는 것까지.
+    /// - 좌클릭을 꾹 누르면(강공격 모으기 대신 — IAttackHoldOverride, 짧게 누르는 약공격은 그대로) 화면 가운데(조준점)가 가리키는 곳을 겨눈다 —
+    ///   사냥터지기 그랩처럼 커서를 따라가지 않고 시야(카메라 좌우·상하 각도)로만 정한다: 위/아래를 보면 멀리/가까이·높이/낮게, 몸을 돌리면 방향.
+    ///   조준점이 창문 틈 너머 바닥을 가리키면 그 바닥, 높은 곳 윗면을 가리키면 그 윗면이 목표다(최대 maxRange).
+    ///   목표까지 닿는 포물선을 여러 높이(낮고 빠르게 ~ 높이 띄워)로 날려 보고, 막히지 않고 목표 가까이(landTolerance) 떨어지는 첫 길을 쓴다 —
+    ///   창문 틈으로는 낮은 길, 낮은 벽 너머·높은 곳으로는 높은 길. 그런 길이 없으면 기본 길(막히면 거기서 떨어짐).
+    ///   겨누는 동안 그 포물선(AimArc)과 멈출 자리(AimLanding)를 보여 준다. 발밑(cancelRadius 안)을 가리키고 떼면 던지지 않는다(취소).
     /// - 떼면 인형을 그 포물선으로 던진다(실제로 날아가는 투사체: 비행 시간 = 수평 거리 ÷ throwSpeed, 중력 gravity).
     ///   바닥(윗면)에 닿으면 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다. 몸 근처를 가리키거나 못 가는 곳이면 던지지 않는다. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
     /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 날아가는 중이든 떨어져 있든 인형 자리와 공장장 자리를 맞바꾼다.
@@ -33,7 +37,12 @@ namespace Project1.Systems
         [SerializeField, Min(0.5f)] private float maxAirTime = 6f;
         [Tooltip("자리를 바꿀 때 몸이 들어갈 곳을 위로 찾는 높이(m).")]
         [SerializeField, Min(0f)] private float swapClearSearch = 1.5f;
-        [SerializeField] private GroundPlacementPreview placement = new();
+        [Tooltip("목표에서 이 거리(m) 안에 떨어지는 길만 \"닿는 길\"로 본다.")]
+        [SerializeField, Min(0.1f)] private float landTolerance = 0.7f;
+        [Tooltip("조준점이 몸에서 이 거리(m) 안(발밑)이면 떼도 던지지 않는다(취소).")]
+        [SerializeField, Min(0f)] private float cancelRadius = 1.5f;
+        private Vector3 aimTarget;
+        private bool aimCancels;
 
         private ICharacterInputSource inputSource;
         private ICharacterSkillState skillState;
@@ -61,20 +70,17 @@ namespace Project1.Systems
         public int SwapCount { get; private set; }
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
-        public string ChargeCancelHint => !Aiming ? null : placement.Cancels ? "떼면 취소" : "취소: 몸 쪽으로 끌고 떼기";
+        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 발밑을 보고 떼기";
 
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
             TryGetComponent(out cc);
-            placement.maxPlaceDistance = maxRange; placement.clampToMax = true;
-            placement.ledgeSnapHeight = 1f; placement.maxRiseHeight = 7f;
-            placement.requireStandSpace = false; placement.seeThroughWalls = false;
         }
 
         private void OnDisable()
         {
-            Aiming = false; placement.Clear(); arc.Clear();
+            Aiming = false; arc.Clear();
             DollActive = false; DollFlying = false; safeFall = false;
         }
 
@@ -91,15 +97,14 @@ namespace Project1.Systems
 
             if (input.HeavyCharging && !blocked)
             {
-                if (!Aiming) placement.Begin();
                 Aiming = true;
-                placement.Update(transform, input);
+                UpdateAimTarget(input);
                 UpdateAimArc();
             }
             else if (Aiming)
             {
                 if (AimValid && !blocked) Throw();
-                Aiming = false; placement.Clear(); arc.Clear();
+                Aiming = false; arc.Clear();
             }
 
             if (DollActive && DollFlying) StepDoll(Time.fixedDeltaTime);
@@ -110,27 +115,88 @@ namespace Project1.Systems
 
         private Vector3 Hand => transform.position + Vector3.up * handUp + transform.right * handRight + transform.forward * handForward;
 
-        /// <summary>겨누는 곳까지 갈 처음 속도를 정하고, 그대로 날려 보며 길과 멈출 자리를 미리 계산한다(벽에 막히면 거기서 떨어짐까지).</summary>
+        /// <summary>
+        /// 화면 가운데(조준점)가 가리키는 곳을 목표로 잡는다 — 커서는 쓰지 않는다(사냥터지기 그랩처럼). 광선 = 카메라 자리(AimRayOrigin)에서 시야 각도(LookYaw·LookPitch) 쪽.
+        /// 캐릭터·판정은 지나간다. 아무것도 안 닿으면 maxRange 끝 아래 땅, 그것도 없으면 그 허공.
+        /// </summary>
+        private void UpdateAimTarget(in CharacterInputFrame input)
+        {
+            Vector3 dir = Quaternion.Euler(input.LookPitch, input.LookYaw, 0f) * Vector3.forward;
+            Vector3 eye = input.HasAimRay ? input.AimRayOrigin : transform.position + Vector3.up * handUp;
+            // 카메라는 캐릭터 뒤에 있으니 그만큼 더 멀리까지 본다(몸에서 maxRange).
+            float camBack = Mathf.Max(0f, Vector3.Dot(transform.position - eye, dir));
+            float reach = maxRange + camBack;
+            if (RayCast(eye, dir, reach, out var hit))
+                aimTarget = hit.point + hit.normal * 0.02f;
+            else
+            {
+                Vector3 end = eye + dir * reach;
+                aimTarget = RayCast(end + Vector3.up * 0.5f, Vector3.down, 60f, out var down) ? down.point : end;
+            }
+            Vector3 flat = aimTarget - transform.position; flat.y = 0f;
+            aimCancels = flat.magnitude < cancelRadius && Mathf.Abs(aimTarget.y - transform.position.y) < 1.5f; // 발밑을 보면 취소
+        }
+
+        /// <summary>
+        /// 목표까지 닿는 포물선을 여러 비행 시간(낮고 빠르게 ~ 높이 띄워)으로 날려 보고, 막히지 않고 목표 가까이 떨어지는 첫 길을 쓴다.
+        /// 창문 틈은 낮은 길로, 낮은 벽 너머·높은 곳은 높은 길로 넘어간다. 그런 길이 없으면 기본 길(막히면 거기서 떨어짐)을 보여 준다.
+        /// </summary>
         private void UpdateAimArc()
         {
-            arc.Clear();
-            Vector3 from = Hand, to = placement.Point + Vector3.up * dollRadius;
+            Vector3 from = Hand, to = aimTarget + Vector3.up * dollRadius;
             Vector3 flat = to - from; flat.y = 0f;
-            float t = Mathf.Clamp(flat.magnitude / throwSpeed, minFlight, maxFlight);
-            aimVelocity = flat / t;
-            aimVelocity.y = (to.y - from.y + 0.5f * gravity * t * t) / t;
+            float t0 = Mathf.Clamp(flat.magnitude / throwSpeed, minFlight, maxFlight);
+            float[] tries = { t0, t0 * 0.75f, t0 * 0.55f, t0 * 0.4f, t0 * 1.3f, t0 * 1.6f, t0 * 2f };
+            bool found = false;
+            foreach (float k in tries)
+            {
+                float t = Mathf.Max(0.2f, k);
+                Vector3 v0 = flat / t;
+                v0.y = (to.y - from.y + 0.5f * gravity * t * t) / t;
+                if (Simulate(from, v0, out Vector3 land) && (land - to).sqrMagnitude <= landTolerance * landTolerance)
+                {
+                    aimVelocity = v0; found = true; break;
+                }
+            }
+            if (!found)
+            {
+                aimVelocity = flat / t0;
+                aimVelocity.y = (to.y - from.y + 0.5f * gravity * t0 * t0) / t0;
+            }
 
-            Vector3 p = from, v = aimVelocity;
-            arc.Add(p);
+            arc.Clear();
+            bool landed = Simulate(from, aimVelocity, out Vector3 end, arc);
+            AimLanding = end;
+            AimValid = !aimCancels && landed;
+        }
+
+        /// <summary>처음 자리·속도로 날려 본다(멈출 때까지 또는 maxAirTime). 멈췄으면 true. path가 있으면 지나간 자리를 담는다.</summary>
+        private bool Simulate(Vector3 p, Vector3 v, out Vector3 end, List<Vector3> path = null)
+        {
             const float dt = 0.02f;
+            path?.Add(p);
             bool landed = false;
             for (float air = 0f; air < maxAirTime && !landed; air += dt)
             {
                 landed = Step(ref p, ref v, dt);
-                if (arc.Count < 400) arc.Add(p);
+                if (path != null && path.Count < 400) path.Add(p);
             }
-            AimLanding = p;
-            AimValid = placement.Valid && !placement.Cancels && landed;
+            end = p;
+            return landed;
+        }
+
+        private bool RayCast(Vector3 origin, Vector3 dir, float dist, out RaycastHit best)
+        {
+            best = default;
+            int n = Physics.RaycastNonAlloc(origin, dir, Hits, dist, Mask, QueryTriggerInteraction.Ignore);
+            float bestD = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var h = Hits[i];
+                if (Ignored(h.collider) || h.distance >= bestD) continue;
+                best = h; bestD = h.distance;
+            }
+            return bestD < float.MaxValue;
         }
 
         private void Throw()
