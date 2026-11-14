@@ -52,6 +52,7 @@ namespace Project1.Presentation
             {
                 animator = GetComponentInChildren<Animator>();
                 layer = -1; weight = 0f; playing = 0;
+                if (!TryGetComponent(out HangHandGrip _)) gameObject.AddComponent<HangHandGrip>(); // 매달릴 때 손을 턱 윗면에 얹는 작은 팔·손목 보정(생존자)
             }
             if (traversal == null || animator == null || animator.runtimeAnimatorController == null) return;
             if (layer < 0) layer = animator.GetLayerIndex(LayerName);

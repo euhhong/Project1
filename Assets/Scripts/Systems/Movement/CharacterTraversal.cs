@@ -173,6 +173,12 @@ namespace Project1.Systems
         public bool FallBackward => fallBackward;
         public bool HunterStyle => hunterStyle;
 
+        public bool TryGetHangLedge(out float top, out Vector3 face, out Vector3 normal)
+        {
+            top = ledge.Top; face = ledge.Face; normal = ledge.Normal;
+            return action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop;
+        }
+
         [Tooltip("감시자: 창틀을 감시자 모션(Jump)으로 뛰어넘는다. 캐릭터를 고를 때 SetHunterStyle로 정한다.")]
         [SerializeField] private bool hunterStyle;
 

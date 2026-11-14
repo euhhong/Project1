@@ -65,6 +65,12 @@ namespace Project1.Core
         /// <summary>창틀을 넘는 모션 없이 창틀을 뚫고 곧게 지나가는지(붉은나비 — 하스터처럼). 창틀 넘기 동안 Traversal 모션을 띄우지 않는다.</summary>
         bool PassesThroughWindows { get; }
 
+        /// <summary>
+        /// 매달려 있으면(잡기·매달림·옆 이동) 잡은 턱: top = 윗면 높이, face = 앞면 위의 한 점(윗면 높이), normal = 벽 바깥 방향(수평). 아니면 거짓.
+        /// 연출(손을 턱 위에 얹기 등)에 쓴다.
+        /// </summary>
+        bool TryGetHangLedge(out float top, out UnityEngine.Vector3 face, out UnityEngine.Vector3 normal);
+
         /// <summary>공격·스킬을 막는지(오르는 중·매달림·크게 착지하는 중).</summary>
         bool LocksActions { get; }
 
