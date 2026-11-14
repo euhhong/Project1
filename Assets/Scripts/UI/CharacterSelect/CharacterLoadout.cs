@@ -13,7 +13,8 @@ namespace Project1.UI
         /// <param name="isPlayer">false = AI 봇 등(HUD·디버그 키를 붙이지 않는다).</param>
         public static void Apply(GameObject player, CharacterRoster.Entry entry, bool isPlayer = true)
         {
-            CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
+            var swappedModel = CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
+            GenericHurtboxes.EnsureFor(swappedModel); // Generic 리그(하스터 등)는 임포트 때 맞는 판정이 안 생겨 실행 중에 만든다(그랩·평타 등에 맞도록)
 
             var health = Ensure<CharacterHealth>(player);
             health.SetMax(DamageRules.MaxHealth(entry.role == CharacterRole.Hunter)); // 최대 체력: 감시자 150, 생존자 100(가득 채움)
