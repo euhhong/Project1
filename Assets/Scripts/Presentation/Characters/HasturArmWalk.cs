@@ -12,7 +12,7 @@ namespace Project1.Presentation
     /// - 촉수 팔은 뒤로 끌리며 들리고(끝으로 갈수록 크게), 밑동에서 끝으로 흐르는 물결로 굽는다(끝으로 갈수록 크게, 늦게 따라옴 + 살짝 좌우).
     /// - 어깨는 걸음마다 두 어깨가 같이 들썩이고(조금 번갈아), 공격(두 손 모아 머리 위 → 내려치기)을 시작하면 이 자세는 빠르게 꺼진다.
     /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때는 아주 조금 숨 쉬듯). 공격 중에는 공격 모션을 그대로 둔다(부드럽게 꺼짐).
-    /// - 촉수 겨누기(ITentacleField: 좌클릭 꾹 = 세울 자리 고르기 Placing, E 꾹 = 내려찍을 촉수 고르기 Selecting) 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고 촉수 팔(손)은 위로 세운다(STOP 하듯, 겨눈 곳은 따라가지 않음).
+    /// - 촉수 겨누기(ITentacleField: 좌클릭 꾹 = 세울 자리 고르기 Placing, E 꾹 = 내려찍을 촉수 고르기 Selecting) 동안 오른팔(위팔·아래팔·촉수 팔)을 몸 정면으로 뻗고 끝 마디(손목)만 위로 꺾어 세운다(STOP 하듯, 겨눈 곳은 따라가지 않음).
     /// 모션이 쓰는 뼈는 모션 자세 위에 더하고, 쓰지 않는 뼈(촉수 마디)는 쉬는 자세에서 더한다(매 프레임 쌓이지 않음).
     /// HasturLegWriggle이 붙인다(하스터만) — 하스터가 아니게 되면(HasturLegWriggle이 없어지면) 스스로 원래대로 되돌리고 없어진다.
     /// </summary>
@@ -43,12 +43,14 @@ namespace Project1.Presentation
         [Tooltip("이 빠르기(m/s)에서 가장 크게 움직인다.")]
         [SerializeField, Min(0.1f)] private float fullSpeed = 5f;
         [Header("촉수 겨누기 (좌클릭 꾹 = 세울 자리 / E 꾹 = 내려찍을 촉수)")]
-        [Tooltip("겨누는 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고(겨눈 곳을 따라가지 않음) 촉수 팔(손)은 위로 세운다(STOP). 뻗는 방향을 수평보다 이만큼(도) 위로.")]
+        [Tooltip("겨누는 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고(겨눈 곳을 따라가지 않음) 촉수 팔도 앞으로 뻗되 끝 마디(손목)만 위로 꺾는다(STOP). 뻗는 방향을 수평보다 이만큼(도) 위로.")]
         [SerializeField, Range(-30f, 60f)] private float aimLift = 12f;
-        [Tooltip("촉수 팔 마디를 위로 세워 펴는 비율(1 = 곧게).")]
+        [Tooltip("촉수 팔 마디를 앞으로 펴는 비율(1 = 곧게).")]
         [SerializeField, Range(0f, 1f)] private float aimStraighten = 0.8f;
         [Tooltip("STOP 하듯 세운 촉수 팔(손)을 몸 쪽으로 젖히는 정도(0 = 똑바로 위).")]
         [SerializeField, Range(0f, 1f)] private float stopBackTilt = 0.15f;
+        [Tooltip("촉수 팔 끝에서 위로 꺾어 세우는 마디 수(손목) — 나머지 마디는 팔과 같이 앞으로 뻗는다.")]
+        [SerializeField, Range(1, 3)] private int stopWristBones = 1;
         [Tooltip("팔을 뻗고 내리는 빠르기(초당 비율).")]
         [SerializeField, Min(0.1f)] private float aimBlend = 6f;
 
@@ -112,7 +114,7 @@ namespace Project1.Presentation
             aim = Mathf.MoveTowards(aim, on ? 1f : 0f, Time.deltaTime * aimBlend);
         }
 
-        /// <summary>오른팔을 몸 정면으로 뻗어 들고(위팔·아래팔) 촉수 팔(손)을 위로 세운다 — STOP 하듯(aim만큼).</summary>
+        /// <summary>오른팔(위팔·아래팔·촉수 팔)을 몸 정면으로 뻗고 끝 마디(손목)만 위로 꺾어 세운다 — STOP 하듯(aim만큼).</summary>
         private void AimArm(Arm a)
         {
             if (aim <= 0f || a.UpperArm == null || a.Forearm == null) return;
@@ -124,13 +126,14 @@ namespace Project1.Presentation
             Point(a.UpperArm.T, a.Forearm.T.position, dir, aim);
             if (a.Hand != null) Point(a.Forearm.T, a.Hand.position, dir, aim);
             else if (a.Chain.Length > 0) Point(a.Forearm.T, a.Chain[0].T.position, dir, aim);
-            // 손목을 위로 세워 STOP 하듯: 아래팔 끝의 촉수 팔(손)을 위로(살짝 몸 쪽으로 젖혀) 곧게 세운다.
+            // 촉수 팔도 앞으로 곧게 뻗고, 끝 마디(손목)만 위로 꺾어 세운다 — STOP 하듯(살짝 몸 쪽으로 젖힘).
             Vector3 palmUp = (Vector3.up - flat * stopBackTilt).normalized;
             int n = a.Chain.Length;
             for (int i = 0; i < n; i++)
             {
-                Vector3 next = i + 1 < n ? a.Chain[i + 1].T.position : a.Chain[i].T.position + (a.Chain[i].T.position - a.Chain[i - 1].T.position);
-                Point(a.Chain[i].T, next, palmUp, aim * aimStraighten);
+                Vector3 next = i + 1 < n ? a.Chain[i + 1].T.position : a.Chain[i].T.position + (a.Chain[i].T.position - a.Chain[Mathf.Max(i - 1, 0)].T.position);
+                bool wrist = i >= n - stopWristBones;
+                Point(a.Chain[i].T, next, wrist ? palmUp : dir, aim * (wrist ? 1f : aimStraighten));
             }
         }
 
