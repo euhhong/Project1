@@ -14,7 +14,7 @@ namespace Project1.Core
         [SerializeField, Min(0.2f)] private float width = 0.8f;
         [Tooltip("벽 면에서 사다리 발판까지(m).")]
         [SerializeField, Min(0f)] private float depth = 0.15f;
-        [Tooltip("가로대 간격(m). 사다리 오르기 모션 한 사이클(두 손 한 번씩)에 두 칸 오른다 — 손은 한 번에 두 칸 위를 잡는다.")]
+        [Tooltip("가로대 간격(m). 사다리 오르기 모션 한 사이클(두 손 한 번씩)에 두 칸 오른다(모션은 원본 그대로 — 몸이 오르는 거리만 큼).")]
         [SerializeField, Min(0.2f)] private float rungStep = 0.8f;
 
         private static readonly List<Ladder> all = new();

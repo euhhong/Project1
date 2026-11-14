@@ -757,7 +757,7 @@ namespace Project1.Map.EditorTools
         /// </summary>
         private static void Ladder(Transform p, string name, Vector3 bottom, Vector3 outward, float height)
         {
-            const float width = 0.8f, depth = 0.15f, rail = 0.08f, rungStep = 0.8f, firstRung = Project1.Core.Ladder.FirstRung; // 두 칸 = 오르기 모션 한 사이클(두 손이 한 번씩 두 칸 위를 잡음 — LadderLimbIK)
+            const float width = 0.8f, depth = 0.15f, rail = 0.08f, rungStep = 0.8f, firstRung = Project1.Core.Ladder.FirstRung; // 두 칸 = 오르기 모션 한 사이클(손 한 번에 한 칸 — 모션은 원본 그대로, 몸이 오르는 거리만 크게)
             var g = Group(p, name, bottom);
             g.localRotation = Quaternion.LookRotation(outward, Vector3.up);
             g.gameObject.AddComponent<Project1.Core.Ladder>().Set(height, width, depth, rungStep);
