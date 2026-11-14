@@ -485,6 +485,7 @@ namespace Project1.Presentation.EditorTools
             var layers = ac.layers;
             var layer = layers[layers.Length - 1];
             layer.defaultWeight = 0f; layer.blendingMode = AnimatorLayerBlendingMode.Override;
+            layer.iKPass = true; // 사다리 손발을 가로대에 붙인다(LadderLimbIK.OnAnimatorIK)
             ac.layers = layers;
             var sm = ac.layers[ac.layers.Length - 1].stateMachine;
             sm.defaultState = sm.AddState("Empty");

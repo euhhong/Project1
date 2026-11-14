@@ -51,6 +51,7 @@ namespace Project1.Presentation
             if (animator == null || !animator.isActiveAndEnabled)
             {
                 animator = GetComponentInChildren<Animator>();
+                if (animator != null && !animator.TryGetComponent(out LadderLimbIK _)) animator.gameObject.AddComponent<LadderLimbIK>(); // 사다리 손발을 가로대에
                 layer = -1; weight = 0f; playing = 0;
             }
             if (traversal == null || animator == null || animator.runtimeAnimatorController == null) return;

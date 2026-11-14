@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 잡기: 땅에서는 사다리(Ladder 표시) 앞에서 사다리 쪽으로 방향키. 공중(점프·낙하 중)에서는 사다리 판정에 닿기만 하면 잡는다(사다리 반대쪽으로 누를 때만 안 잡음) — 잡은 높이에서 시작, 낙하 데미지 없음.
     ///   위층에서는 사다리 꼭대기 쪽 턱 끝으로 걸어 나가면 내려가는 사다리를 잡는다.
     ///   지쳐 있으면(스태미나 IsExhausted) 잡지 못한다.
-    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 벽 반대쪽으로 돌아 뛰어내림(보통 점프 모션·착지, 높으면 구르며 착지 — 점프 낙하와 같은 데미지 규칙). 가로대 한 칸(Ladder.RungStep, 1.6m)에 모션 한 사이클 — 칸 ÷ 사이클 시간이 속도(ActionProgress = 칸 안의 위치).
+    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 벽 반대쪽으로 돌아 제자리에서 뛰어내림(뒤로 튕기지 않음, 보통 점프 모션·착지, 높으면 구르며 착지 — 점프 낙하와 같은 데미지 규칙). 모션 한 사이클 = 가로대 두 칸(Ladder.RungStep 0.8m × 2 — 두 손이 한 번씩 두 칸 위를 잡음), 한 사이클 ÷ 사이클 시간이 속도(ActionProgress = 사이클 안의 위치). 손발은 FE(LadderLimbIK)가 가로대에 붙인다.
     ///   스태미나를 초당 ladderStaminaDrain씩 쓰고(회복 없음 — IStaminaDrain), 다 쓰면 손이 풀려 떨어진다(보통 낙하 모션·데미지).
     ///   맞았을 때(넉백·기절)·쓰러짐만 뒤로(등으로) 떨어진다.
     /// - 꼭대기: 위 끝에 닿으면 그 턱에 매달린 상태(Hang)로 넘어가고, 앞을 누르고 있으면 그대로 턱 위로 올라간다(HangClimb). 거기서 뒤(S) = 다시 사다리로.
@@ -17,8 +17,8 @@ namespace Project1.Systems
     public partial class CharacterTraversal : IStaminaDrain
     {
         [Header("사다리")]
-        [Tooltip("사다리 오르기 모션 한 사이클(= 가로대 한 칸, Ladder.RungStep) 시간(초) — 생존자 Climbing Ladder(원래 0.77초) / 감시자 Climbing(원래 1.57초).\n" +
-                 "오르는 속도 = 칸 간격 ÷ 이 시간. 칸을 크게 해 한 동작에 많이 오르고, 모션은 원래 빠르기에서 크게 벗어나지 않게(가로대 1.6m — 생존자 3.6m/s·모션 약 1.7배, 감시자 3.2m/s·약 3배).")]
+        [Tooltip("사다리 오르기 모션 한 사이클(= 가로대 두 칸, Ladder.CycleRise) 시간(초) — 생존자 Climbing Ladder(원래 0.77초) / 감시자 Climbing(원래 1.57초).\n" +
+                 "오르는 속도 = 사이클 높이 ÷ 이 시간. 칸을 크게 해 한 동작에 많이 오르고, 모션은 원래 빠르기에서 크게 벗어나지 않게(사이클 1.6m — 생존자 3.6m/s·모션 약 1.7배, 감시자 3.2m/s·약 3배).")]
         [SerializeField, Min(0.1f)] private float ladderCycleTime = 0.45f, hunterLadderCycleTime = 0.5f;
         [Tooltip("내려갈 때 사이클 시간 배율(1보다 작으면 내려가기가 더 빠름).")]
         [SerializeField, Range(0.3f, 1.5f)] private float ladderDownTimeScale = 0.75f;
@@ -31,8 +31,8 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float ladderFallPush = 2.5f;
         [Tooltip("사다리에 붙는 시간(초).")]
         [SerializeField, Min(0.01f)] private float ladderSnapTime = 0.12f;
-        [Tooltip("사다리에서 점프로 뛰어내릴 때 위로 뜨는 속도 / 벽 바깥으로 나가는 속도(m/s).")]
-        [SerializeField, Min(0f)] private float ladderJumpUp = 4.5f, ladderJumpOut = 5f;
+        [Tooltip("사다리에서 점프로 뛰어내릴 때 위로 뜨는 속도 / 벽 바깥으로 나가는 속도(m/s). 바깥 속도 0 = 제자리 점프(뒤로 튕기지 않음).")]
+        [SerializeField, Min(0f)] private float ladderJumpUp = 4.5f, ladderJumpOut = 0f;
 
         private bool ladderJumpFacing; // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽을 본다
 
@@ -48,12 +48,12 @@ namespace Project1.Systems
         private float LadderPhase()
         {
             if (ladder == null) return 0f;
-            return Mathf.Repeat((ladderRoot - LadderBottomRoot(ladder, HumanUnit())) / ladder.RungStep, 1f);
+            return Mathf.Repeat((ladderRoot - LadderBottomRoot(ladder, HumanUnit())) / ladder.CycleRise, 1f);
         }
 
         /// <summary>오르는(down이면 내려가는) 속도(m/s) = 칸 간격 ÷ 한 사이클 시간.</summary>
         private float LadderSpeed(bool down) =>
-            ladder.RungStep / ((hunterStyle ? hunterLadderCycleTime : ladderCycleTime) * (down ? ladderDownTimeScale : 1f));
+            ladder.CycleRise / ((hunterStyle ? hunterLadderCycleTime : ladderCycleTime) * (down ? ladderDownTimeScale : 1f));
 
         private float LadderBottomRoot(Ladder l, float hu) => l.BottomY + LadderFirstRung - BracedFeet * hu;
         private float LadderTopRoot(Ladder l, float hu) => Mathf.Max(LadderBottomRoot(l, hu), l.TopY - BracedHangTop * hu);
