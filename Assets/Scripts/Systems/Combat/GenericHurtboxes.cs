@@ -11,7 +11,8 @@ namespace Project1.Systems
     ///   정점이 적은 뼈는 위로 올라가 처음 만나는 상자 뼈에 합친다(촉수 끝 마디 등).
     /// - 부위: 뼈 이름에 head → 머리, arm·hand → 팔, leg·foot·thigh·calf → 다리, 그 밖 → 몸. 머리 이름 뼈가 없으면 가장 높은 상자를 머리로.
     /// - 손 Hitbox도 없으면 좌우 팔 끝 상자를 조금 키워 손 판정으로 만든다(AddHandHitboxes).
-    /// 캐릭터를 고를 때 모델을 바꾼 뒤 CharacterLoadout이 부른다. 이미 Hurtbox가 있으면 아무것도 하지 않는다.
+    /// 모델을 바꿀 때마다 CharacterModelSwapper.Swap이 부른다(캐릭터 선택·AI 봇·연습 허수아비 모두). 이미 Hurtbox가 있으면 아무것도 하지 않는다.
+    /// 메시 정점을 읽지 못하면(빌드에서 Read/Write 꺼짐) 렌더러 경계로 몸·머리 상자를 대신 만든다(FallbackBodyBox).
     /// </summary>
     public static class GenericHurtboxes
     {
@@ -48,7 +49,7 @@ namespace Project1.Systems
                     total++;
                 }
             }
-            if (total == 0) return;
+            if (total == 0) { FallbackBodyBox(model); return; } // 메시 정점을 못 읽음(빌드에서 Read/Write 꺼진 메시 등)
 
             // 상자 뼈 고르기 + 적은 뼈는 위 상자 뼈에 합치기
             var owners = new HashSet<Transform>();
@@ -144,6 +145,40 @@ namespace Project1.Systems
         }
 
         private const float HitboxScale = 1.2f;
+
+        /// <summary>
+        /// 메시 정점을 읽지 못할 때(빌드에서 Read/Write가 꺼진 메시 등): 렌더러 경계로 몸 전체 상자 하나(몸통) + 위쪽 1/5을 머리 상자로.
+        /// 뼈를 따라 움직이지는 않지만(모델 루트 아래) 그랩·평타 등에 맞기는 한다.
+        /// </summary>
+        private static void FallbackBodyBox(GameObject model)
+        {
+            var renderers = model.GetComponentsInChildren<Renderer>(true);
+            bool any = false; Bounds b = default;
+            foreach (var r in renderers)
+            {
+                if (IsWeapon(r.name)) continue;
+                if (any) b.Encapsulate(r.bounds); else { b = r.bounds; any = true; }
+            }
+            if (!any) return;
+            Transform t = model.transform;
+            Vector3 lossy = t.lossyScale;
+            Vector3 Local(Vector3 w) => t.InverseTransformPoint(w);
+            Vector3 Size(Vector3 s) => new(s.x / Mathf.Max(lossy.x, 1e-6f), s.y / Mathf.Max(lossy.y, 1e-6f), s.z / Mathf.Max(lossy.z, 1e-6f));
+            float headH = b.size.y * 0.2f;
+            var bodyB = new Bounds(new Vector3(b.center.x, b.min.y + (b.size.y - headH) * 0.5f, b.center.z), new Vector3(b.size.x * 0.8f, b.size.y - headH, b.size.z * 0.8f));
+            var headB = new Bounds(new Vector3(b.center.x, b.max.y - headH * 0.5f, b.center.z), new Vector3(b.size.x * 0.5f, headH, b.size.z * 0.5f));
+            foreach (var (name, bb, part) in new[] { ("Hurtbox_FallbackBody", bodyB, BodyPart.Body), ("Hurtbox_FallbackHead", headB, BodyPart.Head) })
+            {
+                var go = new GameObject(name);
+                go.transform.SetParent(t, false);
+                var box = go.AddComponent<BoxCollider>();
+                box.center = Local(bb.center);
+                box.size = Size(bb.size);
+                box.isTrigger = true;
+                go.AddComponent<Hurtbox>().SetPart(part);
+            }
+            Debug.LogWarning($"[BE] {model.name}: 메시 정점을 읽지 못해 맞는 판정을 렌더러 경계 상자로 대신 만들었습니다(뼈를 따라 움직이지 않음).");
+        }
 
         /// <summary>뼈 이름의 좌우: -1 = 왼쪽, +1 = 오른쪽, 0 = 모름. "biped L Forearm", "LeftHand", "hand_l", "Hand.R" 등.</summary>
         private static int SideOf(string boneName)

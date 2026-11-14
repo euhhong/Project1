@@ -34,6 +34,7 @@ namespace Project1.Presentation
                 animator.applyRootMotion = false;
             }
             FitController(root, model, animator);
+            Project1.Systems.GenericHurtboxes.EnsureFor(model); // Generic 리그(하스터 등)는 맞는 판정이 없어 여기서 만든다 — 캐릭터 선택·AI 봇·연습 허수아비 등 모든 교체에서(이미 있으면 그대로)
             return model;
         }
 
