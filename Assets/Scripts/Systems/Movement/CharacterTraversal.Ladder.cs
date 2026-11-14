@@ -34,7 +34,11 @@ namespace Project1.Systems
         [Tooltip("사다리에서 점프로 뛰어내릴 때 위로 뜨는 속도 / 벽 바깥으로 나가는 속도(m/s). 바깥 속도 0 = 제자리 점프(뒤로 튕기지 않음).")]
         [SerializeField, Min(0f)] private float ladderJumpUp = 4.5f, ladderJumpOut = 0f;
 
-        private bool ladderJumpFacing; // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽을 본다
+        [Tooltip("사다리에서 점프로 놓은 뒤 다시 잡을 수 있을 때까지(초). 놓고 떨어지는 중에는 사다리 쪽 방향키를 눌러야 다시 잡는다(저절로 다시 붙지 않게).")]
+        [SerializeField, Min(0f)] private float ladderJumpRegrab = 0.3f;
+
+        private bool ladderJumpFacing; // (예전) 뛰어내려 착지할 때까지 벽 반대쪽을 봄 — 이제 돌지 않는다
+        private bool ladderJumpManual;  // 사다리에서 점프로 놓은 뒤 땅에 닿기 전: 공중 사다리 잡기는 사다리 쪽 방향키를 눌렀을 때만
 
         private const float LadderFirstRung = 0.3f; // 아래 끝에서 첫 발판 높이(m)
 
@@ -117,6 +121,7 @@ namespace Project1.Systems
                 if (outward < -0.05f || outward > l.Depth + cc.radius + 0.45f) continue;
                 if (pos.y < l.BottomY - 0.3f || pos.y > l.TopY - 0.1f) continue;
                 if (dir != Vector3.zero && Vector3.Dot(dir, n) > 0.5f) continue; // 사다리에서 멀어지려는 중
+                if (ladderJumpManual && Vector3.Dot(dir, -n) < 0.5f) continue; // 점프로 놓은 뒤에는 사다리 쪽을 눌러야 다시 잡는다
                 float lo = LadderBottomRoot(l, hu), hi = LadderTopRoot(l, hu);
                 StartLadder(l, Mathf.Clamp(pos.y + LadderFirstRung - BracedFeet * hu, lo, hi));
                 hangDrop = false;
@@ -128,6 +133,7 @@ namespace Project1.Systems
         private void StartLadder(Ladder l, float root)
         {
             StartAction(TraversalAction.Ladder, 0f);
+            ladderJumpManual = false;
             ladder = l;
             ladderRoot = root;
             braced = true;
@@ -141,7 +147,7 @@ namespace Project1.Systems
             if (ladder == null || !ladder.isActiveAndEnabled) { FallOffLadder(false); return; }
             if (dead || stunned) { FallOffLadder(true); return; } // 맞아서 기절·쓰러짐: 뒤로(등으로) 떨어진다
             if (stamina != null && stamina.Current <= 0f) { FallOffLadder(false); return; } // 스태미나를 다 씀: 손이 풀려 떨어진다(보통 낙하)
-            if (input.Jump) { JumpOffLadder(); return; } // 벽 반대쪽으로 뛰어내림(보통 점프)
+            if (input.Jump) { JumpOffLadder(); return; } // 손을 놓고 뛰어 떨어짐(돌지 않고 뒤로 튕기지 않음)
 
             float hu = HumanUnit(), dt = Time.fixedDeltaTime;
             float lo = LadderBottomRoot(ladder, hu), hi = LadderTopRoot(ladder, hu);
@@ -225,8 +231,9 @@ namespace Project1.Systems
         }
 
         /// <summary>
-        /// 점프: 벽 반대쪽으로 돌아서 보통 점프처럼 뛰어내린다(Jumped → 점프 모션). 떨어진 높이는 여기부터,
-        /// 점프해서 떨어진 것으로 쳐서 높으면 구르며 착지하고 고공(hardFall) 미만은 다치지 않는다(IsSafeFall). 착지할 때까지 벽 반대쪽을 본다.
+        /// 점프: 손을 놓고 그 자리에서 살짝 뛰어 떨어진다(Jumped → 점프 모션). 몸은 돌지 않고(사다리를 본 채) 벽 바깥으로 밀리지도 않는다.
+        /// ladderJumpRegrab 뒤부터 떨어지는 중에 사다리 쪽 방향키를 누르면 바로 다시 잡는다(누르지 않으면 저절로 다시 붙지 않음 — 땅에 닿으면 풀림).
+        /// 떨어진 높이는 여기부터, 점프해서 떨어진 것으로 쳐서 높으면 구르며 착지하고 고공(hardFall) 미만은 다치지 않는다(IsSafeFall).
         /// </summary>
         private void JumpOffLadder()
         {
@@ -241,12 +248,9 @@ namespace Project1.Systems
             backAtStart = false;
             safeJump = true;
             hangDrop = false;
-            regrab = knockOffRegrab;
-            faceYaw = YawOf(n);
-            ladderJumpFacing = true;
-            cc.enabled = false; // 몸을 벽 반대쪽으로 바로 돌린다(점프 모션이 앞을 보고 나가게)
-            transform.rotation = Quaternion.Euler(0f, faceYaw, 0f);
-            cc.enabled = true;
+            regrab = ladderJumpRegrab;
+            ladderJumpManual = true;
+            ladderJumpFacing = false; // 돌지 않는다(사다리를 본 채 떨어짐)
             if (TryGetComponent(out CharacterMotor motor)) motor.LaunchJump(ladderJumpUp);
             if (ladderJumpOut > 0f) Knockback.Push(gameObject, n * ladderJumpOut, 0.45f, 0f, stun: false, impactDamage: false);
         }

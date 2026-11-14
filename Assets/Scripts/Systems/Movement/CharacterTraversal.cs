@@ -239,6 +239,7 @@ namespace Project1.Systems
             bool dead = health != null && health.IsDead;
             bool stunned = stun != null && stun.IsStunned;
             bool grounded = state == null || state.IsGrounded;
+            if (grounded) ladderJumpManual = false; // 사다리에서 점프로 놓은 뒤 땅에 닿으면 공중 사다리 잡기를 원래대로
 
             if ((IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop) && (dead || stunned))
             {
