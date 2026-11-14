@@ -14,8 +14,10 @@ namespace Project1.Core
         [SerializeField, Min(0.2f)] private float width = 0.8f;
         [Tooltip("벽 면에서 사다리 발판까지(m).")]
         [SerializeField, Min(0f)] private float depth = 0.15f;
-        [Tooltip("가로대 간격(m). 사다리 오르기 모션 한 사이클(두 손 한 번씩)에 두 칸 오른다(모션은 원본 그대로 — 몸이 오르는 거리만 큼).")]
+        [Tooltip("가로대 간격(m, 보이는 모양). 오르는 거리는 cycleRise가 정한다.")]
         [SerializeField, Min(0.2f)] private float rungStep = 0.8f;
+        [Tooltip("오르기 모션 한 사이클에 오르는 높이(m) — 맵 한 층 높이(MapBlockoutBuilder Story 6m).")]
+        [SerializeField, Min(0.2f)] private float cycleRise = 6f;
 
         private static readonly List<Ladder> all = new();
         public static IReadOnlyList<Ladder> All => all;
@@ -24,8 +26,8 @@ namespace Project1.Core
         public float Width => width;
         public float Depth => depth;
         public float RungStep => rungStep;
-        /// <summary>오르기 모션 한 사이클에 오르는 높이(가로대 두 칸).</summary>
-        public float CycleRise => rungStep * 2f;
+        /// <summary>오르기 모션 한 사이클에 오르는 높이(m) — 맵 한 층 높이(6m). 가로대 간격과 따로 둔다(손발이 가로대에 맞지는 않음).</summary>
+        public float CycleRise => cycleRise;
         /// <summary>첫 가로대 높이(아래 끝에서, m).</summary>
         public const float FirstRung = 0.3f;
         /// <summary>i번째 가로대 높이(월드 y).</summary>
@@ -38,7 +40,7 @@ namespace Project1.Core
         /// <summary>벽 바깥쪽(수평).</summary>
         public Vector3 Normal { get { Vector3 f = transform.forward; f.y = 0f; return f.normalized; } }
 
-        public void Set(float height, float width, float depth, float rungStep) { this.height = height; this.width = width; this.depth = depth; this.rungStep = rungStep; }
+        public void Set(float height, float width, float depth, float rungStep, float cycleRise) { this.height = height; this.width = width; this.depth = depth; this.rungStep = rungStep; this.cycleRise = cycleRise; }
 
         private void OnEnable() { if (!all.Contains(this)) all.Add(this); }
         private void OnDisable() => all.Remove(this);

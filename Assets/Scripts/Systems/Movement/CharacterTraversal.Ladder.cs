@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 잡기: 땅에서는 사다리(Ladder 표시) 앞에서 사다리 쪽으로 방향키. 공중(점프·낙하 중)에서는 사다리 판정에 닿기만 하면 잡는다(사다리 반대쪽으로 누를 때만 안 잡음) — 잡은 높이에서 시작, 낙하 데미지 없음.
     ///   위층에서는 사다리 꼭대기 쪽 턱 끝으로 걸어 나가면 내려가는 사다리를 잡는다.
     ///   지쳐 있으면(스태미나 IsExhausted) 잡지 못한다.
-    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 벽 반대쪽으로 돌아 제자리에서 뛰어내림(뒤로 튕기지 않음, 보통 점프 모션·착지, 높으면 구르며 착지 — 점프 낙하와 같은 데미지 규칙). 모션 한 사이클 = 가로대 두 칸(Ladder.RungStep 0.8m × 2 = 1.6m). 모션 자세(팔다리)는 원본 그대로 두고 한 사이클에 몸이 오르는 거리만 크게 — 모션을 세로로 늘린 것처럼 보인다. 한 사이클 ÷ 사이클 시간이 속도(ActionProgress = 사이클 안의 위치). 손발이 가로대에 정확히 맞지는 않는다.
+    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 벽 반대쪽으로 돌아 제자리에서 뛰어내림(뒤로 튕기지 않음, 보통 점프 모션·착지, 높으면 구르며 착지 — 점프 낙하와 같은 데미지 규칙). 모션 한 사이클 = 맵 한 층 높이(Ladder.CycleRise 6m, 원본 모션 Climbing (1) 한 번). 모션 자세(팔다리)는 원본 그대로 두고 한 사이클에 몸이 오르는 거리만 크게 — 모션을 세로로 늘린 것처럼 보인다. 한 사이클 ÷ 사이클 시간이 속도(ActionProgress = 사이클 안의 위치). 손발이 가로대에 정확히 맞지는 않는다.
     ///   스태미나를 초당 ladderStaminaDrain씩 쓰고(회복 없음 — IStaminaDrain), 다 쓰면 손이 풀려 떨어진다(보통 낙하 모션·데미지).
     ///   맞았을 때(넉백·기절)·쓰러짐만 뒤로(등으로) 떨어진다.
     /// - 꼭대기: 위 끝에 닿으면 그 턱에 매달린 상태(Hang)로 넘어가고, 앞을 누르고 있으면 그대로 턱 위로 올라간다(HangClimb). 거기서 뒤(S) = 다시 사다리로.
@@ -17,9 +17,9 @@ namespace Project1.Systems
     public partial class CharacterTraversal : IStaminaDrain
     {
         [Header("사다리")]
-        [Tooltip("사다리 오르기 모션 한 사이클(= 가로대 두 칸, Ladder.CycleRise) 시간(초) — 생존자·감시자 모두 Climbing(원래 1.57초).\n" +
-                 "오르는 속도 = 사이클 높이 ÷ 이 시간. 칸을 크게 해 한 동작에 많이 오르고, 모션은 원래 빠르기에서 크게 벗어나지 않게(사이클 1.6m — 생존자 3.6m/s·모션 약 1.7배, 감시자 3.2m/s·약 3배).")]
-        [SerializeField, Min(0.1f)] private float ladderCycleTime = 0.45f, hunterLadderCycleTime = 0.5f;
+        [Tooltip("사다리 오르기 모션 한 사이클(= 한 층 6m, Ladder.CycleRise) 시간(초) — 생존자·감시자 모두 Climbing(원래 1.57초).\n" +
+                 "오르는 속도 = 사이클 높이 ÷ 이 시간. 모션은 원래 길이 근처로(1.5초 — 오르기 4m/s, 내리기 ×0.75 → 5.3m/s).")]
+        [SerializeField, Min(0.1f)] private float ladderCycleTime = 1.5f, hunterLadderCycleTime = 1.5f;
         [Tooltip("내려갈 때 사이클 시간 배율(1보다 작으면 내려가기가 더 빠름).")]
         [SerializeField, Range(0.3f, 1.5f)] private float ladderDownTimeScale = 0.75f;
         [Tooltip("사다리 꼭대기에서 턱 위로 올라서는 동작(매달려 올라가기) 시간 배율 — 모션도 그만큼 빨리, 묶이는 시간도 그만큼 짧게. / 앞에서 건너뛰는 진행도(매달린 자세를 고르는 앞부분).")]
