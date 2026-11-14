@@ -27,6 +27,9 @@ namespace Project1.Presentation
         // CharacterPush.pushLeanTime(기본 0.4초)과 같게 — 기울이는 모션을 이 시간에 맞춰 재생한다.
         private const float PushLeanTime = 0.4f;
 
+        // 앞구르기 착지(Falling To Roll, 13~58프레임): 앞 0.12(발 닿기 직전 13~18프레임)는 건너뛰고 구르기부터 보여 준다.
+        private const float RollSkip = 0.12f;
+
         private ICharacterTraversalState traversal;
         private ICharacterPushState push;
         private Animator animator;
@@ -71,9 +74,13 @@ namespace Project1.Presentation
             bool synced = leaning || (!pushing && Synced(traversal.Action));
             float at = leaning ? (push.PushBlocked ? 0.999f : Mathf.Min(push.PushTime / PushLeanTime, 0.999f))
                      : Mathf.Min(traversal.ActionProgress * (traversal.Action == TraversalAction.HangClimbOver ? Project1.Systems.CharacterTraversal.OverClipShare : 1f), 0.999f);
+            bool roll = !pushing && traversal.Action == TraversalAction.LandRoll;
+            if (roll) at = Mathf.Min(RollSkip + at * (1f - RollSkip), 0.999f); // 발 닿기 직전 부분은 건너뛰고 바로 구른다
             if (playing != state)
             {
                 // 동작이 바뀌면 앞 모션에서 섞어 넘어간다(예: 매달림 → 올라가기가 한 프레임에 확 바뀌지 않게). 레이어를 막 켰을 때는 바로.
+                // 앞구르기 착지는 섞지 않고 바로(낙하 자세에서 섞이면 구르기가 늦게 나와 보인다).
+                if (roll) { animator.Play(state, layer, at); playing = state; blendLeft = 0f; return; }
                 if (playing == 0 || weight < 0.5f) animator.Play(state, layer, synced ? at : 0f);
                 else animator.CrossFadeInFixedTime(state, cross, layer, synced ? at * StateLength(state) : 0f);
                 blendLeft = playing == 0 ? 0f : cross;

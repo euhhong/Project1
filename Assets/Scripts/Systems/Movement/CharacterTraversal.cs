@@ -123,7 +123,7 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float backwardSpeed = 0.5f;
         [Tooltip("걸어서 떨어진 낮은 착지 / 점프 포함 낮은 착지 / 걸어서 높은 착지 / 점프해서 구르기 / 고공 착지.")]
         [SerializeField, Min(0f)] private float lowFall = 0.8f, landAny = 1.9f, highFall = 2.5f, rollFall = 2.6f, hardFall = 6f;
-        [SerializeField, Min(0.1f)] private float landTime = 0.45f, landHighTime = 0.65f, landRollTime = 1f, landHardTime = 1.1f;
+        [SerializeField, Min(0.1f)] private float landTime = 0.45f, landHighTime = 0.65f, landRollTime = 0.6f, landHardTime = 1.1f;
         [Tooltip("높은·고공 착지 뒤 못 움직이는 시간(초).")]
         [SerializeField, Min(0f)] private float landHighStop = 0.3f, landHardStop = 0.65f;
         [Tooltip("턱에 매달렸다가 놓아(뒤 S) 떨어지면 매달린 높이부터 이 높이(m) 미만은 다치지 않는다 — 낙하 데미지·크게 착지(경직) 없이 가볍게 착지. 이 이상이면 보통 낙하 규칙.")]
@@ -919,7 +919,8 @@ namespace Project1.Systems
         public bool TryGetFacingYaw(out float yaw)
         {
             yaw = action == TraversalAction.HangHop ? Mathf.LerpAngle(hopYawFrom, faceYaw, Smooth(hopMoveRange.x, hopMoveRange.y, ActionProgress)) : faceYaw; // 옆 변으로 건너가며 몸을 돌린다
-            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
+                   || LadderJumpFacing(state != null && state.IsGrounded); // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)
