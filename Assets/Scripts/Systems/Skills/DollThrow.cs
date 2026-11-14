@@ -64,6 +64,8 @@ namespace Project1.Systems
         [Tooltip("던진 인형의 수평 속도(m/s) — 비행 시간 = 수평 거리 ÷ 이 값(minFlight~maxFlight초로 자름). 느릴수록 높이 날아 오래 걸린다.")]
         [SerializeField, Min(1f)] private float throwSpeed = 16.5f; // 14 → 16.5: 비행 시간 ×0.85 → 꼭대기 높이 약 72%(완만하게)
         [SerializeField, Min(0.05f)] private float minFlight = 0.85f, maxFlight = 3.4f; // 꼭대기 높이 ≈ 중력 × 비행시간² ÷ 8(평지) — 가까이 던져도 최소 비행 0.85초 → 약 1.8m 솟음
+        [Tooltip("포물선 꼭대기 최소 높이(m, 공장장 발 기준) — 2층 천장(3층 바닥 12.15 − 판 두께 0.3). 가까이 던져도 여기까지는 솟고, 멀리 던지면 지금처럼 더 높아진다.")]
+        [SerializeField, Min(0f)] private float minApexHeight = 11.85f;
         [Tooltip("겨누는 거리 끌기: 좌클릭을 꾹 누른 채 마우스를 위로 끌면 멀리, 아래로 끌면 가까이 — 시야 상하 1도당 이 거리(m, 안토니오 음표 놓기와 같은 0.25). 맵 끝(maxAimDistance)까지.")]
         [SerializeField, Min(0.001f)] private float dragPerDegree = 0.25f;
         [SerializeField, Min(1f)] private float maxAimDistance = 300f;
@@ -271,12 +273,14 @@ namespace Project1.Systems
             Vector3 from = Hand, to = aimTarget + Vector3.up * dollRadius;
             Vector3 flat = to - from; flat.y = 0f;
             float t0 = Mathf.Clamp(flat.magnitude / throwSpeed, minFlight, maxFlight);
+            float tApex = MinApexFlightTime(from, to);           // 꼭대기가 최소 2층 천장 높이(minApexHeight)까지는 솟게 — 먼 거리는 원래대로 더 높이
+            t0 = Mathf.Max(t0, tApex);
             // 막히지 않는 높이가 있으면 그 높이로(창문 틈 = 낮게, 벽 너머 = 높게), 없으면 기본 높이 — 그래도 선·인형은 벽을 지나 그 지점까지 간다.
             float[] tries = { t0, t0 * 0.75f, t0 * 0.55f, t0 * 1.3f, t0 * 1.6f, t0 * 2f };
             aimFlightTime = t0;
             foreach (float k in tries)
             {
-                float t = Mathf.Max(0.2f, k);
+                float t = Mathf.Max(tApex, Mathf.Max(0.2f, k)); // 막혀서 다른 높이를 찾을 때도 최소 높이 아래로는 안 내려감
                 if (Simulate(from, LaunchVelocity(from, to, t), out Vector3 land) && (land - to).sqrMagnitude <= landTolerance * landTolerance) { aimFlightTime = t; break; }
             }
             aimVelocity = LaunchVelocity(from, to, aimFlightTime);
@@ -286,6 +290,14 @@ namespace Project1.Systems
             for (int i = 0; i <= samples; i++) arc.Add(ArcPoint(from, aimVelocity, aimFlightTime * i / samples));
             AimLanding = aimTarget;
             AimValid = !aimCancels;
+        }
+
+        /// <summary>꼭대기가 공장장 발에서 minApexHeight(목표·손이 더 높으면 그보다 0.5m 위)까지 솟는 비행 시간: 올라가는 시간 + 내려가는 시간.</summary>
+        private float MinApexFlightTime(Vector3 from, Vector3 to)
+        {
+            if (minApexHeight <= 0f) return 0f;
+            float apexY = Mathf.Max(transform.position.y + minApexHeight, Mathf.Max(from.y, to.y) + 0.5f);
+            return Mathf.Sqrt(2f * (apexY - from.y) / gravity) + Mathf.Sqrt(2f * (apexY - to.y) / gravity);
         }
 
         private Vector3 LaunchVelocity(Vector3 from, Vector3 to, float t)
