@@ -12,7 +12,7 @@ namespace Project1.Presentation
     /// - 촉수 팔은 뒤로 끌리며 들리고(끝으로 갈수록 크게), 밑동에서 끝으로 흐르는 물결로 굽는다(끝으로 갈수록 크게, 늦게 따라옴 + 살짝 좌우).
     /// - 어깨는 걸음마다 두 어깨가 같이 들썩이고(조금 번갈아), 공격(두 손 모아 머리 위 → 내려치기)을 시작하면 이 자세는 빠르게 꺼진다.
     /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때는 아주 조금 숨 쉬듯). 공격 중에는 공격 모션을 그대로 둔다(부드럽게 꺼짐).
-    /// - 촉수 겨누기(ITentacleField: 좌클릭 꾹 = 세울 자리 고르기 Placing, E 꾹 = 내려찍을 촉수 고르기 Selecting) 동안 오른팔(위팔·아래팔·촉수 팔)을 겨눈 곳 쪽 앞으로 곧게 뻗어 든다.
+    /// - 촉수 겨누기(ITentacleField: 좌클릭 꾹 = 세울 자리 고르기 Placing, E 꾹 = 내려찍을 촉수 고르기 Selecting) 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고 촉수 팔(손)은 위로 세운다(STOP 하듯, 겨눈 곳은 따라가지 않음).
     /// 모션이 쓰는 뼈는 모션 자세 위에 더하고, 쓰지 않는 뼈(촉수 마디)는 쉬는 자세에서 더한다(매 프레임 쌓이지 않음).
     /// HasturLegWriggle이 붙인다(하스터만) — 하스터가 아니게 되면(HasturLegWriggle이 없어지면) 스스로 원래대로 되돌리고 없어진다.
     /// </summary>
@@ -43,10 +43,12 @@ namespace Project1.Presentation
         [Tooltip("이 빠르기(m/s)에서 가장 크게 움직인다.")]
         [SerializeField, Min(0.1f)] private float fullSpeed = 5f;
         [Header("촉수 겨누기 (좌클릭 꾹 = 세울 자리 / E 꾹 = 내려찍을 촉수)")]
-        [Tooltip("겨누는 동안 오른팔(위팔·아래팔·촉수 팔)을 겨눈 곳 쪽 앞으로 뻗어 든다. 뻗는 방향을 수평보다 이만큼(도) 위로.")]
+        [Tooltip("겨누는 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고(겨눈 곳을 따라가지 않음) 촉수 팔(손)은 위로 세운다(STOP). 뻗는 방향을 수평보다 이만큼(도) 위로.")]
         [SerializeField, Range(-30f, 60f)] private float aimLift = 12f;
-        [Tooltip("촉수 팔 마디를 뻗은 방향으로 펴는 비율(1 = 곧게).")]
+        [Tooltip("촉수 팔 마디를 위로 세워 펴는 비율(1 = 곧게).")]
         [SerializeField, Range(0f, 1f)] private float aimStraighten = 0.8f;
+        [Tooltip("STOP 하듯 세운 촉수 팔(손)을 몸 쪽으로 젖히는 정도(0 = 똑바로 위).")]
+        [SerializeField, Range(0f, 1f)] private float stopBackTilt = 0.15f;
         [Tooltip("팔을 뻗고 내리는 빠르기(초당 비율).")]
         [SerializeField, Min(0.1f)] private float aimBlend = 6f;
 
@@ -75,7 +77,6 @@ namespace Project1.Presentation
         private float phase, amount, dash; // dash: 뒤로 젖히는 자세 크기(멈추면 0, 가장 빠를 때 1)
         private ITentacleField tentacles;
         private float aim;          // 오른팔을 앞으로 뻗어 든 정도(0~1)
-        private Vector3 aimPoint;   // 겨눈 곳(월드) — 없으면 몸 앞
 
         /// <summary>걸음 위상(라디안). 한 바퀴(2π) = 걸음 한 쌍. HasturBodyBob이 몸 들썩임 박자를 맞춘다.</summary>
         public float StepPhase => phase;
@@ -103,36 +104,33 @@ namespace Project1.Presentation
             Pose(right);
         }
 
-        /// <summary>촉수를 세울 자리를 고르거나(좌클릭 꾹) 내려찍을 촉수를 고르는 동안(E 꾹) 오른팔을 뻗는다. 겨눈 곳: 세울 자리 / 고른 촉수 / 몸 앞.</summary>
+        /// <summary>촉수를 세울 자리를 고르거나(좌클릭 꾹) 내려찍을 촉수를 고르는 동안(E 꾹) 오른팔을 정면으로 든다.</summary>
         private void UpdateAim(bool attacking)
         {
             tentacles ??= GetComponent<ITentacleField>();
             bool on = !attacking && tentacles != null && (tentacles.Placing || tentacles.Selecting);
             aim = Mathf.MoveTowards(aim, on ? 1f : 0f, Time.deltaTime * aimBlend);
-            if (!on) return;
-            aimPoint = transform.position + transform.forward * 5f;
-            if (tentacles.Placing && tentacles.PreviewValid) aimPoint = tentacles.PreviewPoint;
-            else if (tentacles.Selecting && tentacles.TargetIndex >= 0 && tentacles.TargetIndex < tentacles.Tentacles.Count)
-                aimPoint = tentacles.Tentacles[tentacles.TargetIndex].Position;
         }
 
-        /// <summary>오른팔을 겨눈 곳 쪽 앞으로 뻗어 든다(위팔 → 아래팔 → 촉수 팔 순서로 그 방향에 맞춤, aim만큼).</summary>
+        /// <summary>오른팔을 몸 정면으로 뻗어 들고(위팔·아래팔) 촉수 팔(손)을 위로 세운다 — STOP 하듯(aim만큼).</summary>
         private void AimArm(Arm a)
         {
             if (aim <= 0f || a.UpperArm == null || a.Forearm == null) return;
-            Vector3 shoulder = a.UpperArm.T.position;
-            Vector3 flat = aimPoint - shoulder; flat.y = 0f;
-            // 몸 앞쪽(좌우 70도 안)으로만 — 뒤를 겨누면 앞으로
-            if (flat.sqrMagnitude < 0.01f || Vector3.Angle(flat, transform.forward) > 70f) flat = transform.forward;
-            Vector3 dir = Quaternion.AngleAxis(-aimLift, Vector3.Cross(Vector3.up, flat.normalized)) * flat.normalized;
+            // 겨눈 곳(세울 자리·고른 촉수)을 따라가지 않고 언제나 몸 정면으로 든다.
+            Vector3 flat = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            if (flat.sqrMagnitude < 1e-4f) return;
+            flat.Normalize();
+            Vector3 dir = Quaternion.AngleAxis(-aimLift, Vector3.Cross(Vector3.up, flat)) * flat;
             Point(a.UpperArm.T, a.Forearm.T.position, dir, aim);
-            Transform end = a.Chain.Length > 0 ? a.Chain[^1].T : a.Hand;
-            if (end != null) Point(a.Forearm.T, end.position, dir, aim);
+            if (a.Hand != null) Point(a.Forearm.T, a.Hand.position, dir, aim);
+            else if (a.Chain.Length > 0) Point(a.Forearm.T, a.Chain[0].T.position, dir, aim);
+            // 손목을 위로 세워 STOP 하듯: 아래팔 끝의 촉수 팔(손)을 위로(살짝 몸 쪽으로 젖혀) 곧게 세운다.
+            Vector3 palmUp = (Vector3.up - flat * stopBackTilt).normalized;
             int n = a.Chain.Length;
             for (int i = 0; i < n; i++)
             {
                 Vector3 next = i + 1 < n ? a.Chain[i + 1].T.position : a.Chain[i].T.position + (a.Chain[i].T.position - a.Chain[i - 1].T.position);
-                Point(a.Chain[i].T, next, dir, aim * aimStraighten);
+                Point(a.Chain[i].T, next, palmUp, aim * aimStraighten);
             }
         }
 
