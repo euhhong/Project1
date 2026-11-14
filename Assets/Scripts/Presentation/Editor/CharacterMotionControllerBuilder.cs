@@ -498,7 +498,8 @@ namespace Project1.Presentation.EditorTools
                     string stateName = clip.name.Substring("Traversal_".Length);
                     if (sm.states.Any(s => s.state.name == stateName)) continue;
                     var st = sm.AddState(stateName);
-                    st.motion = clip;
+                    var adjustedClip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{MotionPoseAdjuster.Folder}/{clip.name}.anim"); // 자세를 고친 모션(예: 사다리 보폭 넓힘)이 있으면 그것
+                    st.motion = adjustedClip != null ? adjustedClip : clip;
                     if (stateName == "Push") st.speed = 2.2f; // 모션은 아주 느리게 밀며 걷는다(약 0.25m/s) → 게임 미는 빠르기(CharacterPush 1m/s)에 맞춰 빠르게
                     if (stateName == "HangHop" && !sm.states.Any(s => s.state.name == "ClimbUpRun"))
                     {

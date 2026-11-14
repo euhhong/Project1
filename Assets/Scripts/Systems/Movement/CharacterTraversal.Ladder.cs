@@ -8,9 +8,9 @@ namespace Project1.Systems
     /// - 잡기: 땅에서는 사다리(Ladder 표시) 앞에서 사다리 쪽으로 방향키. 공중(점프·낙하 중)에서는 사다리 판정에 닿기만 하면 잡는다(사다리 반대쪽으로 누를 때만 안 잡음) — 잡은 높이에서 시작, 낙하 데미지 없음.
     ///   위층에서는 사다리 꼭대기 쪽 턱 끝으로 걸어 나가면 내려가는 사다리를 잡는다.
     ///   지쳐 있으면(스태미나 IsExhausted) 잡지 못한다.
-    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 손을 놓고 뒤로 떨어짐. 가로대 한 칸(Ladder.RungStep, 1.2m)에 모션 한 사이클 — 칸 ÷ 사이클 시간이 속도(ActionProgress = 칸 안의 위치).
-    ///   스태미나를 초당 ladderStaminaDrain씩 쓰고(회복 없음 — IStaminaDrain), 다 쓰면 손이 풀려 뒤로(등으로) 떨어진다(보통 낙하 데미지).
-    ///   기절·쓰러짐·넉백도 손이 풀려 떨어진다.
+    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 벽 반대쪽으로 돌아 뛰어내림(보통 점프 모션·착지, 높으면 구르며 착지 — 점프 낙하와 같은 데미지 규칙). 가로대 한 칸(Ladder.RungStep, 1.2m)에 모션 한 사이클 — 칸 ÷ 사이클 시간이 속도(ActionProgress = 칸 안의 위치).
+    ///   스태미나를 초당 ladderStaminaDrain씩 쓰고(회복 없음 — IStaminaDrain), 다 쓰면 손이 풀려 떨어진다(보통 낙하 모션·데미지).
+    ///   맞았을 때(넉백·기절)·쓰러짐만 뒤로(등으로) 떨어진다.
     /// - 꼭대기: 위 끝에 닿으면 그 턱에 매달린 상태(Hang)로 넘어가고, 앞을 누르고 있으면 그대로 턱 위로 올라간다(HangClimb). 거기서 뒤(S) = 다시 사다리로.
     /// - 아래 끝에서 뒤(S) = 바닥에 내려선다.
     /// </summary>
@@ -28,6 +28,10 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float ladderFallPush = 2.5f;
         [Tooltip("사다리에 붙는 시간(초).")]
         [SerializeField, Min(0.01f)] private float ladderSnapTime = 0.12f;
+        [Tooltip("사다리에서 점프로 뛰어내릴 때 위로 뜨는 속도 / 벽 바깥으로 나가는 속도(m/s).")]
+        [SerializeField, Min(0f)] private float ladderJumpUp = 4.5f, ladderJumpOut = 5f;
+
+        private bool ladderJumpFacing; // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽을 본다
 
         private const float LadderFirstRung = 0.3f; // 아래 끝에서 첫 발판 높이(m)
 
@@ -132,8 +136,9 @@ namespace Project1.Systems
         private void HandleLadder(in CharacterInputFrame input, bool dead, bool stunned)
         {
             if (ladder == null || !ladder.isActiveAndEnabled) { FallOffLadder(false); return; }
-            if (dead || stunned || (stamina != null && stamina.Current <= 0f)) { FallOffLadder(true); return; } // 스태미나를 다 씀: 손이 풀려 뒤로
-            if (input.Jump) { FallOffLadder(true); hangDrop = true; return; } // 스스로 놓음: 놓은 낙하(아주 높지 않으면 다치지 않음)
+            if (dead || stunned) { FallOffLadder(true); return; } // 맞아서 기절·쓰러짐: 뒤로(등으로) 떨어진다
+            if (stamina != null && stamina.Current <= 0f) { FallOffLadder(false); return; } // 스태미나를 다 씀: 손이 풀려 떨어진다(보통 낙하)
+            if (input.Jump) { JumpOffLadder(); return; } // 벽 반대쪽으로 뛰어내림(보통 점프)
 
             float hu = HumanUnit(), dt = Time.fixedDeltaTime;
             float lo = LadderBottomRoot(ladder, hu), hi = LadderTopRoot(ladder, hu);
@@ -209,6 +214,40 @@ namespace Project1.Systems
             safeJump = false;
             regrab = knockOffRegrab;
             if (ladderFallPush > 0f) Knockback.Push(gameObject, n * ladderFallPush, 0.35f, 0f, stun: false, impactDamage: false);
+        }
+
+        /// <summary>
+        /// 점프: 벽 반대쪽으로 돌아서 보통 점프처럼 뛰어내린다(Jumped → 점프 모션). 떨어진 높이는 여기부터,
+        /// 점프해서 떨어진 것으로 쳐서 높으면 구르며 착지하고 고공(hardFall) 미만은 다치지 않는다(IsSafeFall). 착지할 때까지 벽 반대쪽을 본다.
+        /// </summary>
+        private void JumpOffLadder()
+        {
+            Vector3 n = ladder.Normal;
+            ladder = null;
+            action = TraversalAction.None;
+            actionTime = actionDuration = 0f;
+            fallBackward = false;
+            airborne = true;
+            airStartY = peakY = transform.position.y;
+            jumped = true; jumpedFlag = false;
+            backAtStart = false;
+            safeJump = true;
+            hangDrop = false;
+            regrab = knockOffRegrab;
+            faceYaw = YawOf(n);
+            ladderJumpFacing = true;
+            cc.enabled = false; // 몸을 벽 반대쪽으로 바로 돌린다(점프 모션이 앞을 보고 나가게)
+            transform.rotation = Quaternion.Euler(0f, faceYaw, 0f);
+            cc.enabled = true;
+            if (TryGetComponent(out CharacterMotor motor)) motor.LaunchJump(ladderJumpUp);
+            if (ladderJumpOut > 0f) Knockback.Push(gameObject, n * ladderJumpOut, 0.45f, 0f, stun: false, impactDamage: false);
+        }
+
+        /// <summary>뛰어내린 뒤 땅에 닿거나 다른 동작(매달리기 등)이 시작되면 벽 반대쪽 보기를 끝낸다.</summary>
+        private bool LadderJumpFacing(bool grounded)
+        {
+            if (ladderJumpFacing && (grounded || action != TraversalAction.None)) ladderJumpFacing = false;
+            return ladderJumpFacing;
         }
 
         /// <summary>사다리에서 넉백되면 손이 풀려 벽 바깥으로 떨어진다(미는 방향은 벽 바깥쪽으로).</summary>

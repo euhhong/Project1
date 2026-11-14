@@ -65,6 +65,13 @@ namespace Project1.Systems
             if (verticalSpeed > 0f) IsGrounded = false;
         }
 
+        /// <summary>점프처럼 띄운다(Jumped 이벤트 — 점프 모션이 나온다). 예: 사다리에서 뛰어내리기. 땅이 아니어도 된다.</summary>
+        public void LaunchJump(float verticalSpeed)
+        {
+            Launch(verticalSpeed);
+            Jumped?.Invoke();
+        }
+
         public event Action Jumped;
         public event Action Landed;
 

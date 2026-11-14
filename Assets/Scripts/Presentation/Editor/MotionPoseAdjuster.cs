@@ -22,11 +22,16 @@ namespace Project1.Presentation.EditorTools
             public float rootPitch;
             public Dictionary<string, float> add = new();
             public Dictionary<string, float> set = new();
+            /// <summary>그 근육의 흔들림(곡선 평균에서 벗어난 만큼)을 이 배율로 키운다(-1~1로 자름). 예: 사다리 오르기 보폭을 넓힘.</summary>
+            public Dictionary<string, float> amplify = new();
         }
 
         // 전위 럭비공 돌진: 무게중심을 낮추고(무릎을 더 굽히고 상체를 앞으로 숙임), 두 손으로 가슴 앞에 공을 안는다.
+        // 사다리 오르기(생존자 Climbing Ladder / 감시자 Climbing): 팔·다리를 더 크게 뻗고 당겨 한 사이클에 큰 칸(1.2m)을 오르는 것처럼 보이게.
         public static readonly Adjustment[] Adjustments =
         {
+            new Adjustment { slot = "Traversal_Ladder", amplify = LadderStride.Amplify },
+            new Adjustment { slot = "Traversal_LadderHunter", amplify = LadderStride.Amplify },
             new Adjustment
             {
                 slot = "Skill_Forward_Charge",
@@ -36,6 +41,22 @@ namespace Project1.Presentation.EditorTools
                 set = ForwardCharge.Set,
             },
         };
+
+        /// <summary>사다리 보폭: 손을 더 높이 뻗고 더 아래까지 당기고, 무릎을 더 높이 올렸다가 더 쭉 편다. 배율을 올리면 보폭이 더 커진다.</summary>
+        public static class LadderStride
+        {
+            public const float Arm = 1.6f, Leg = 1.6f;
+            public static Dictionary<string, float> Amplify = new()
+            {
+                ["Left Shoulder Down-Up"] = Arm, ["Right Shoulder Down-Up"] = Arm,
+                ["Left Arm Down-Up"] = Arm, ["Right Arm Down-Up"] = Arm,
+                ["Left Arm Front-Back"] = Arm, ["Right Arm Front-Back"] = Arm,
+                ["Left Forearm Stretch"] = Arm, ["Right Forearm Stretch"] = Arm,
+                ["Left Upper Leg Front-Back"] = Leg, ["Right Upper Leg Front-Back"] = Leg,
+                ["Left Lower Leg Stretch"] = Leg, ["Right Lower Leg Stretch"] = Leg,
+                ["Left Foot Up-Down"] = Leg, ["Right Foot Up-Down"] = Leg,
+            };
+        }
 
         // 값은 의사 모델이 아니라 전위 모델로 재서 맞췄다(2026-11-12): 골반 0.213 → 0.170(약 20% 낮게), 발은 땅 높이 유지,
         // 몸 앞으로 약 15도, 두 손은 가슴 앞으로 모은다. 이 아바타의 팔 Front-Back은 - 가 앞쪽이다.
@@ -83,6 +104,19 @@ namespace Project1.Presentation.EditorTools
                 if (a.set.TryGetValue(p, out float value))
                 {
                     curve = AnimationCurve.Constant(0f, source.length, value);
+                }
+                else if (a.amplify.TryGetValue(p, out float gain))
+                {
+                    var keys = curve.keys;
+                    float mean = 0f;
+                    foreach (var k in keys) mean += k.value;
+                    mean /= Mathf.Max(1, keys.Length);
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        keys[i].value = Mathf.Clamp(mean + (keys[i].value - mean) * gain, -1f, 1f);
+                        keys[i].inTangent *= gain; keys[i].outTangent *= gain;
+                    }
+                    curve.keys = keys;
                 }
                 else
                 {
