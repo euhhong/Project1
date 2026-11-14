@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 공장장(지옥불) 인형 던지기와 자리 바꾸기(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신 — IAttackHoldOverride, 짧게 누르는 약공격은 그대로) 인형을 겨눈다(던지기 자세 + 포물선·흰 조준원).
     ///   목표(흰 조준원)는 늘 1층(공장장 발 높이) 바닥 — 몸 정면 aimDistance m(위층·지붕 윗면에 붙지 않음). 발밑(cancelRadius 안)까지 끌어 내리고 떼면 던지지 않는다(취소).
-    /// - 포물선 꼭대기 = 발에서 apexBase + 거리 × apexPerMeter(멀수록 조금씩 높아짐) + 위를 본 시야 각도 × apexPerDegree(우클릭으로 시야를 올리면 높아짐 — 높이 조절).
+    /// - 포물선 꼭대기 = 발에서 apexBase + 거리 × apexPerMeter(멀수록 조금씩 높아짐) + 위를 본 시야 각도 × apexPerDegree + 각도² × apexPerDegreeSq(우클릭으로 시야를 올릴수록 점점 더 높아짐 — 높이 조절).
     /// - 떼면 인형이 그 포물선을 실제로 날아간다: 처음 닿는 윗면(1층 바닥·위층 바닥·지붕)에 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다 —
     ///   높이 띄우면 위층·지붕에도 올라간다. 보조선(AimArc)은 실제로 멈출 곳(ActualLanding)까지. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
     /// - 좌클릭 차징 = 인형 던지기 자세 + 포물선·원. 좌클릭을 누른 채 마우스 = 떨어질 자리 조절(좌우 = 방향, 상하 = 거리 aimLookScale배). 우클릭을 누른 채 마우스 = 시야 높이(위쪽 한계 열림).
@@ -58,9 +58,11 @@ namespace Project1.Systems
         private bool aimBySky;
         private Vector3 skyVelocity;
         [Tooltip("포물선 꼭대기 기본 높이(m, 공장장 발 기준) — 여기에 거리·시야 각도만큼 더해진다.")]
-        [SerializeField, Min(0f)] private float apexBase = 3f;
+        [SerializeField, Min(0f)] private float apexBase = 2f;
         [Tooltip("포물선 꼭대기가 거리 1m마다 더 높아지는 양(m) / 시야를 위로 1도 볼 때마다 더 높아지는 양(m — 우클릭으로 시야를 올려 높이 조절).")]
-        [SerializeField, Min(0f)] private float apexPerMeter = 0.1f, apexPerDegree = 0.2f;
+        [SerializeField, Min(0f)] private float apexPerMeter = 0.06f, apexPerDegree = 0.1f;
+        [Tooltip("시야를 올릴수록 높이가 점점 더 빨리 늘도록 더하는 양(m / 도²) — 10도 약 +1.4m, 30도 약 +6.6m, 45도 약 +12.6m.")]
+        [SerializeField, Min(0f)] private float apexPerDegreeSq = 0.004f;
         private float aimLookPitch;
         /// <summary>겨누는 동안 인형이 실제로 멈출 곳(위층·지붕에 걸리면 그곳).</summary>
         public Vector3 ActualLanding { get; private set; }
@@ -272,7 +274,7 @@ namespace Project1.Systems
             Vector3 from = Hand, to = aimTarget + Vector3.up * dollRadius;
             Vector3 flat = to - from; flat.y = 0f;
             float lookUp = Mathf.Max(0f, -aimLookPitch);                     // 위를 본 각도(도)
-            float apexY = transform.position.y + apexBase + flat.magnitude * apexPerMeter + lookUp * apexPerDegree;
+            float apexY = transform.position.y + apexBase + flat.magnitude * apexPerMeter + lookUp * apexPerDegree + lookUp * lookUp * apexPerDegreeSq; // 시야를 올릴수록 조금씩 더 높게
             apexY = Mathf.Max(apexY, Mathf.Max(from.y, to.y) + 0.5f);
             aimFlightTime = Mathf.Sqrt(2f * (apexY - from.y) / gravity) + Mathf.Sqrt(2f * (apexY - to.y) / gravity);
             aimVelocity = LaunchVelocity(from, to, aimFlightTime);
@@ -396,14 +398,32 @@ namespace Project1.Systems
             return true;
         }
 
-        /// <summary>feet에서 위로 swapClearSearch까지 몸이 들어갈 첫 자리.</summary>
+        /// <summary>
+        /// 인형 자리(feet) 근처에서 몸(캡슐)이 들어갈 첫 자리: 바로 위(swapClearSearch까지) → 둘레(0.35·0.7·1.0m, 8방향, 같은 높이·조금 위) → 바로 아래 바닥.
+        /// 좁은 곳(창틀·턱·좁은 틈)에 인형이 올라가 있어도 바꿀 수 있게 — 그래도 없으면 인형 자리 그대로(몸이 겹치면 CharacterController가 밀어낸다). 늘 true.
+        /// </summary>
         private bool FindRoom(Vector3 feet, out Vector3 room)
         {
             for (float up = 0f; up <= swapClearSearch + 1e-3f; up += 0.25f)
                 if (Clear(feet + Vector3.up * up)) { room = feet + Vector3.up * up; return true; }
-            room = feet;
-            return false;
+            foreach (float r in new[] { 0.35f, 0.7f, 1f })
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 side = Quaternion.Euler(0f, i * 45f, 0f) * Vector3.forward * r;
+                    foreach (float up in new[] { 0f, 0.3f, 0.7f })
+                    {
+                        Vector3 p = feet + side + Vector3.up * up;
+                        if (!Clear(p)) continue;
+                        // 그 자리 바로 아래 바닥(1m 안)이 있으면 바닥에 세운다
+                        room = RayCast(p + Vector3.up * 0.1f, Vector3.down, 1.1f, out var g) && g.normal.y > 0.6f && Clear(g.point) ? g.point : p;
+                        return true;
+                    }
+                }
+            if (RayCast(feet + Vector3.up * 0.05f, Vector3.down, 3f, out var below) && below.normal.y > 0.6f && Clear(below.point)) { room = below.point; return true; }
+            room = feet; // 마지막: 인형 자리 그대로
+            return true;
         }
+
 
         /// <summary>기다린 뒤 실제로 자리를 바꾼다: 누른 순간의 인형 자리(swapFeet)로 가고, 인형은 지금 서 있던 자리에 놓는다. 그 사이 막혔으면 위로 다시 찾고, 없으면 바꾸지 않는다.</summary>
         private void DoSwap()
