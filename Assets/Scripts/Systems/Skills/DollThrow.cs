@@ -28,7 +28,7 @@ namespace Project1.Systems
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
         [Tooltip("좌클릭 차징(겨누는) 동안 시야를 이 각도(도, - = 위)로 고정 — 카메라가 늘 하늘 쪽을 올려다보고(크게 그려지는 포물선이 보이게), 마우스 위아래는 거리만 바꾼다.")]
-        [SerializeField] private float aimViewPitch = -50f;
+        [SerializeField] private float aimViewPitch = -85f;
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         private float swapLeft;
@@ -93,8 +93,14 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
-        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 아래로 끌어 발밑에서 떼기";
-        public bool LookWhileCharging => isActiveAndEnabled; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput)
+        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: E";
+        private bool waitRelease;
+        /// <summary>차징을 E로 취소한 틱 / 취소한 뒤 좌클릭을 아직 떼지 않음. 이 동안 E 스킬(분신·자리 바꾸기)은 나가지 않는다.</summary>
+        public int CancelTick { get; private set; } = int.MinValue;
+        public bool WaitingRelease => waitRelease;
+        /// <summary>차징 중이거나 방금 취소함 — E 스킬을 막는다(CloneSummonSkill).</summary>
+        public bool BlocksSkill => isActiveAndEnabled && (Aiming || waitRelease || CancelTick == SimulationTick.Current);
+        public bool LookWhileCharging => isActiveAndEnabled && !waitRelease; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput), E로 취소하면 끝
         public float ChargeLookScale => aimLookScale;
         public float ChargeViewPitch => aimViewPitch;
         public bool SwapPending => swapLeft > 0f;
@@ -113,7 +119,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Aiming = false; arc.Clear();
-            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f;
+            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false;
         }
 
         private void FixedUpdate()
@@ -127,12 +133,22 @@ namespace Project1.Systems
             state ??= GetComponent<ICharacterState>();
             bool blocked = (skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead);
 
-            if (input.HeavyCharging && !blocked)
+            if (waitRelease)
+            {
+                if (!input.HeavyCharging) waitRelease = false; // E로 취소한 뒤 좌클릭을 뗄 때까지 다시 겨누지 않는다
+            }
+            else if (input.HeavyCharging && !blocked)
             {
                 if (!Aiming) StartAimDistance(input); // 누르기 시작: 지금 화면 가운데가 가리키는 곳까지의 거리에서 시작
                 Aiming = true;
                 UpdateDragTarget(input);
                 UpdateAimArc();
+                if (input.Skill)
+                {
+                    // 차징 중 E = 취소(던지지 않음, 분신·자리 바꾸기도 안 나감 — CloneSummonSkill.CanStart가 본다)
+                    Aiming = false; arc.Clear(); waitRelease = true;
+                    CancelTick = SimulationTick.Current;
+                }
             }
             else if (Aiming)
             {

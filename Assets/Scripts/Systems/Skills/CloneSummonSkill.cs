@@ -31,6 +31,14 @@ namespace Project1.Systems
         public override bool SyncAnimationToCast => false;
         public override bool LimitsMoveSpeed => false; // E를 누르고 있는 동안에도 움직인다
 
+        /// <summary>인형을 겨누는(좌클릭 차징) 중이거나 방금 E로 그 차징을 취소했으면 쓰지 않는다 — 차징 중 E = 취소(분신·자리 바꾸기 안 나감).</summary>
+        public override bool CanStart(GameObject owner, out string reason)
+        {
+            if (owner.TryGetComponent(out DollThrow doll) && doll.BlocksSkill) { reason = "차징 중"; return false; }
+            reason = null;
+            return true;
+        }
+
         /// <summary>E를 짧게 누르는 동안은 분신 모션을 띄우지 않는다(바꾸기는 바로 끝난다).</summary>
         public override string AnimationState(CharacterSkill ctx) => string.Empty;
 

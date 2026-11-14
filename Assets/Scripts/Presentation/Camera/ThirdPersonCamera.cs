@@ -29,6 +29,7 @@ namespace Project1.Presentation
         [Tooltip("시야가 평소 범위보다 더 위를 볼 때(좌클릭 꾹 겨누기 — 예: 공장장 인형을 하늘로 던지기) 카메라가 올려다볼 수 있는 한계(도). 평소엔 minCameraPitch 그대로.")]
         [SerializeField] private float lookUpMinCameraPitch = -75f; // 공장장 인형 겨누기(좌클릭 꾹) 때만 닿는 범위 — 멀리 고르면 크게 그려지는 포물선을 올려다본다
         private float curMinPitch = -10f;
+        private float skyBlend; // 하늘 보기 정도(0~1)
         [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 시야 상하 각도(도).")]
         [SerializeField] private float fallbackPitch = 0f;
 
@@ -127,7 +128,10 @@ namespace Project1.Presentation
                 pivot = Vector3.SmoothDamp(pivot, targetPivot, ref pivotVelocity, followSmoothTime);
             }
 
-            float craneGoal = avoidObstacles ? CraneAngle(wantDistance) : 0f;
+            // 하늘 보기(평소보다 더 위를 봄 — 공장장 좌클릭 차징): 발 맞추기·카메라 들기를 끄고 시야 각도 그대로 하늘을 올려다본다.
+            bool skyAim = lookPitch + wantPitchOffset < minCameraPitch - 0.01f;
+            skyBlend = Mathf.MoveTowards(skyBlend, skyAim ? 1f : 0f, Time.deltaTime * 4f);
+            float craneGoal = avoidObstacles && !skyAim ? CraneAngle(wantDistance) : 0f;
             if (snapCrane) { crane = craneGoal; craneVelocity = 0f; snapCrane = false; }
             else crane = Mathf.SmoothDamp(crane, craneGoal, ref craneVelocity, craneGoal > crane ? craneUpTime : craneDownTime);
 
@@ -135,7 +139,7 @@ namespace Project1.Presentation
             Vector3 back = -(orbit * Vector3.forward);
             // 시선 각도는 벽에 막히지 않았을 때 자리 기준으로 정한다(당겨져도 화면이 갑자기 아래로 꺾이지 않게).
             Vector3 freePosition = pivot + back * wantDistance;
-            Quaternion rotation = frameFeet ? FrameFeet(freePosition) : orbit;
+            Quaternion rotation = frameFeet ? Quaternion.Slerp(FrameFeet(freePosition), orbit, skyBlend) : orbit;
 
             float allowed = avoidObstacles ? ObstacleDistance(back, wantDistance) : wantDistance;
             if (allowed < currentDistance) { currentDistance = allowed; distanceVelocity = 0f; } // 막히면 바로 당긴다
