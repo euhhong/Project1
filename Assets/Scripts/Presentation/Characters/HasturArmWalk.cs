@@ -44,7 +44,7 @@ namespace Project1.Presentation
         [SerializeField, Min(0.1f)] private float fullSpeed = 5f;
         [Header("촉수 겨누기 (좌클릭 꾹 = 세울 자리 / E 꾹 = 내려찍을 촉수)")]
         [Tooltip("겨누는 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고(겨눈 곳을 따라가지 않음) 촉수 팔도 앞으로 뻗되 끝 마디(손목)만 위로 꺾는다(STOP). 뻗는 방향을 수평보다 이만큼(도) 위로.")]
-        [SerializeField, Range(-30f, 60f)] private float aimLift = 12f;
+        [SerializeField, Range(-30f, 60f)] private float aimLift = 0f;
         [Tooltip("촉수 팔 마디를 앞으로 펴는 비율(1 = 곧게).")]
         [SerializeField, Range(0f, 1f)] private float aimStraighten = 0.8f;
         [Tooltip("STOP 하듯 세운 촉수 팔(손)을 몸 쪽으로 젖히는 정도(0 = 똑바로 위).")]
@@ -79,6 +79,7 @@ namespace Project1.Presentation
         private float phase, amount, dash; // dash: 뒤로 젖히는 자세 크기(멈추면 0, 가장 빠를 때 1)
         private ITentacleField tentacles;
         private float aim;          // 오른팔을 앞으로 뻗어 든 정도(0~1)
+        private Vector3 bodyForward; // 모델 몸의 앞(두 어깨를 잇는 선에 수직, 수평)
 
         /// <summary>걸음 위상(라디안). 한 바퀴(2π) = 걸음 한 쌍. HasturBodyBob이 몸 들썩임 박자를 맞춘다.</summary>
         public float StepPhase => phase;
@@ -101,6 +102,7 @@ namespace Project1.Presentation
             dash = Mathf.MoveTowards(dash, attacking ? 0f : Mathf.SmoothStep(0f, 1f, move), Time.deltaTime * (attacking ? 6f : dashBlend));
             phase += Time.deltaTime * Mathf.Lerp(idleFrequency, moveFrequency, move) * Mathf.PI * 2f;
             UpdateAim(attacking);
+            bodyForward = BodyForward(); // 팔을 움직이기 전 모델 몸의 앞(두 어깨 기준)
 
             Pose(left);
             Pose(right);
@@ -118,8 +120,8 @@ namespace Project1.Presentation
         private void AimArm(Arm a)
         {
             if (aim <= 0f || a.UpperArm == null || a.Forearm == null) return;
-            // 겨눈 곳(세울 자리·고른 촉수)을 따라가지 않고 언제나 몸 정면으로 든다.
-            Vector3 flat = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            // 겨눈 곳(세울 자리·고른 촉수)도, 화면(시야) 방향도 아닌 모델 몸의 앞(두 어깨 기준)으로 똑바로 든다.
+            Vector3 flat = Vector3.ProjectOnPlane(bodyForward, Vector3.up);
             if (flat.sqrMagnitude < 1e-4f) return;
             flat.Normalize();
             Vector3 dir = Quaternion.AngleAxis(-aimLift, Vector3.Cross(Vector3.up, flat)) * flat;
@@ -135,6 +137,18 @@ namespace Project1.Presentation
                 bool wrist = i >= n - stopWristBones;
                 Point(a.Chain[i].T, next, wrist ? palmUp : dir, aim * (wrist ? 1f : aimStraighten));
             }
+        }
+
+        /// <summary>모델 몸의 앞: 왼쪽 → 오른쪽 어깨(쇄골) 선에 수직인 수평 방향(모델이 실제로 보는 쪽 — 캐릭터 루트·화면 방향이 아니라). 어깨를 못 찾으면 모델의 앞.</summary>
+        private Vector3 BodyForward()
+        {
+            Transform l = left?.Clavicle?.T ?? left?.UpperArm?.T, r = right?.Clavicle?.T ?? right?.UpperArm?.T;
+            Vector3 fallback = animator != null ? animator.transform.forward : transform.forward;
+            if (l == null || r == null) return fallback;
+            Vector3 across = r.position - l.position; across.y = 0f;
+            if (across.sqrMagnitude < 1e-6f) return fallback;
+            Vector3 f = Vector3.Cross(across.normalized, Vector3.up);
+            return Vector3.Dot(f, fallback) < 0f ? -f : f; // 뒤집힌 모델 축에도 앞을 향하게
         }
 
         /// <summary>뼈 t를 돌려 t → childPos 방향이 dir 쪽으로 weight만큼 가게 한다.</summary>
