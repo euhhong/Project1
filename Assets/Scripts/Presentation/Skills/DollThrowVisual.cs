@@ -7,7 +7,7 @@ namespace Project1.Presentation
     /// 공장장 인형 던지기 연출(IDollThrow, BE DollThrow를 읽어 그린다).
     /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 이중 원과 위로 솟는 빛기둥. 원·빛기둥은 벽·바닥에 가려도 맵을 뚫고 또렷하게 보이고(ZTest Always),
     ///   포물선은 가려진 구간이 흐리게 비쳐 보인다. 못 던지는 곳 = 붉게. 떨어져 있는 인형의 바닥 원도 맵 너머에서 보인다.
-    /// - 인형이 날아가는 동안: 지금 E로 바꾸면 떨어져 내릴 바닥(인형 바로 아래)에 작은 하늘색 원이 인형을 따라 움직인다(맵 너머에서도 보임, 아래가 바닥이 아니면 없음).
+    /// - 인형이 날아가는 동안: 지금 E로 바꾸면 떨어져 내릴 바닥(인형 바로 아래)에 작은 흰 원이 지면을 따라 인형을 따라간다(맵 너머에서도 보임, 아래가 바닥이 아니면 없음).
     /// - 던진 인형: 날아가는 동안은 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·번지는 꼬리로 또렷한 공처럼 안 보이게(flyAsPuppet을 켜면 예전처럼 꼭두각시 실루엣), 땅에 닿아 멈춰 있으면 감시자보다 큰(키 ×1.25) 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
     /// - E로 자리 바꾸기를 기다리는 동안(SwapPending) 몸(모델)을 경련하듯 떤다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그린 것은 캐릭터를 따라 움직이지 않게 따로 둔다.
@@ -29,7 +29,7 @@ namespace Project1.Presentation
         [SerializeField, Min(0f)] private float beaconHeight = 3f;
         [Tooltip("날아가는 동안 지금 바꾸면 떨어져 내릴 바닥 표시: 원 반지름(m) / 색(떨어질 자리 원과 구분).")]
         [SerializeField, Min(0.05f)] private float dropRingRadius = 0.4f;
-        [SerializeField] private Color dropColor = new(0.35f, 0.9f, 1f, 0.9f);
+        [SerializeField] private Color dropColor = new(1f, 1f, 1f, 0.9f);
         [Tooltip("멈춰 있는 인형 모델(꼭두각시)의 키(m) / 팔을 내리는 정도(0 = T자세, 1 = 몸에 붙임).")]
         [SerializeField, Min(0.1f)] private float puppetHeight = 1f;
         [Tooltip("멈춰 있는 인형은 공장장(감시자) 키의 이 배율 — 감시자보다 크게. puppetHeight보다 작으면 puppetHeight.")]
@@ -187,7 +187,7 @@ namespace Project1.Presentation
             restRing.positionCount = RingSegments;
             restRing.widthMultiplier = 0.08f;
             SeeThrough(restRing);                               // 떨어져 있는 인형 자리도 맵 너머에서 보이게
-            dropRing = Line("DropRing", dropColor, true);         // 날아가는 동안: 지금 바꾸면 떨어져 내릴 바닥(인형 바로 아래) — 작은 하늘색 원
+            dropRing = Line("DropRing", dropColor, true);         // 날아가는 동안: 지금 바꾸면 떨어져 내릴 바닥(인형 바로 아래) — 작은 흰 원
             dropRing.positionCount = RingSegments;
             dropRing.widthMultiplier = 0.06f;
             SeeThrough(dropRing);
@@ -340,7 +340,7 @@ namespace Project1.Presentation
         }
 
         /// <summary>
-        /// 인형이 날아가는 동안: 지금 E로 자리를 바꾸면 공장장이 떨어져 내릴 바닥(인형 바로 아래로 쏴서 처음 닿는 걸을 수 있는 면)에 작은 하늘색 원 + 인형에서 내려오는 가는 선.
+        /// 인형이 날아가는 동안: 지금 E로 자리를 바꾸면 공장장이 떨어져 내릴 바닥(인형 바로 아래로 쏴서 처음 닿는 걸을 수 있는 면)에 작은 흰 원(세로 선 없이 원만 지면을 따라감).
         /// 매 프레임 인형을 따라가고 맵 너머에서도 보인다. 아래가 바닥이 아니면(허공·맵 밖) 띄우지 않는다. 인형이 멈추면 사라진다(멈춘 인형 원이 대신).
         /// </summary>
         private void UpdateDropMarker(bool flying)
@@ -361,13 +361,9 @@ namespace Project1.Presentation
                 }
             }
             dropRing.gameObject.SetActive(show);
-            dropLine.gameObject.SetActive(show);
+            dropLine.gameObject.SetActive(false); // 세로 선은 쓰지 않는다 — 원만
             if (!show) return;
             SetRing(dropRing, ground, dropRingRadius * (1f + Mathf.Sin(Time.time * 9f) * 0.08f), Time.time * 120f);
-            dropLine.SetPosition(0, doll.DollPosition);
-            dropLine.SetPosition(1, ground + Vector3.up * 0.04f);
-            dropLine.startColor = new Color(dropColor.r, dropColor.g, dropColor.b, 0.05f);
-            dropLine.endColor = new Color(dropColor.r, dropColor.g, dropColor.b, 0.6f);
         }
 
         /// <summary>벽·바닥·지형에 가려도 맵을 뚫고 보이게(깊이 검사 없이 맨 위에 그림 — 히트박스 디버그 선과 같은 Hidden/Internal-Colored, ZTest Always).</summary>
