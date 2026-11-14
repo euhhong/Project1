@@ -48,7 +48,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_HasturSlam", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
-            "Hit_Head", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
+            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -68,12 +68,14 @@ namespace Project1.Presentation.EditorTools
         {
             ("Walk_F", "Idle_Hunter"), ("Walk_B", "Idle_Hunter"), ("Walk_L", "Idle_Hunter"), ("Walk_R", "Idle_Hunter"),
             ("Run_F", "Idle_Hunter"), ("Run_B", "Idle_Hunter"), ("Run_L", "Idle_Hunter"), ("Run_R", "Idle_Hunter"),
+            ("Stairs_Up", "Idle_Hunter"), // 계단도 미끄러져 오른다
         };
         // 하스터: 발이 없어 걷기·달리기 모두 꾸물대며 미끄러지는 모션 하나로
         private static readonly (string from, string to)[] HasturCrawl =
         {
             ("Walk_F", "Move_Hastur"), ("Walk_B", "Move_Hastur"), ("Walk_L", "Move_Hastur"), ("Walk_R", "Move_Hastur"),
             ("Run_F", "Move_Hastur"), ("Run_B", "Move_Hastur"), ("Run_L", "Move_Hastur"), ("Run_R", "Move_Hastur"),
+            ("Stairs_Up", "Move_Hastur"),
         };
         // 하스터 공격: 하스터 모델은 Humanoid가 아닌 Generic 리그라 Mixamo 모션이 재생되지 않는다 → 모델 뼈에 직접 키를 넣은 모션
         // (HasturSlamMotionBuilder → _Motions/Generic/Attack_Light_HasturSlam.anim). 약·강·달리기 점프 공격 모두 이것으로.
@@ -277,6 +279,26 @@ namespace Project1.Presentation.EditorTools
                 getUp.AddCondition(AnimatorConditionMode.IfNot, 0, "IsDown");
             }
 
+            // 계단 오르기 레이어(전신, 이동 바로 위 — 다른 레이어가 모두 덮는다): 앞으로 계단을 오를 때 CharacterStairsAnimator가 무게를 켠다.
+            // 빠르기는 StairsSpeed(앞 속도에 맞춤).
+            if (clips["Stairs_Up"] != null)
+            {
+                ac.AddParameter("StairsSpeed", AnimatorControllerParameterType.Float);
+                var sp = ac.parameters;
+                for (int i = 0; i < sp.Length; i++) if (sp[i].name == "StairsSpeed") sp[i].defaultFloat = 1f;
+                ac.parameters = sp;
+                ac.AddLayer("Stairs");
+                var stl = ac.layers;
+                var stairs = stl[stl.Length - 1];
+                stairs.defaultWeight = 0f; stairs.blendingMode = AnimatorLayerBlendingMode.Override;
+                ac.layers = stl;
+                var stsm = ac.layers[ac.layers.Length - 1].stateMachine;
+                stsm.defaultState = stsm.AddState("Stairs_Up");
+                stsm.defaultState.motion = clips["Stairs_Up"];
+                stsm.defaultState.speedParameterActive = true;
+                stsm.defaultState.speedParameter = "StairsSpeed";
+            }
+
             AddTraversalLayer(ac);
 
             // 들고 다니기 레이어(두 팔만, 공격보다 아래): 무기를 두 손으로 받쳐 든 자세(광대 = Walk With Rifle의 팔).
@@ -356,7 +378,7 @@ namespace Project1.Presentation.EditorTools
             ac.layers = layers4;
             var hitSm = ac.layers[ac.layers.Length - 1].stateMachine;
             hitSm.defaultState = hitSm.AddState("Empty");
-            foreach (var slot in new[] { "Hit_Head", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun" })
+            foreach (var slot in new[] { "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun" })
                 if (clips[slot] != null) hitSm.AddState(slot).motion = clips[slot];
 
             // 전신 피격 레이어: 쓰러지며 나가떨어지는 피격(헤드샷 킥 = Corkscrew Evade). CharacterHitReactionAnimator가 무게를 켠다.

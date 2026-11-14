@@ -46,6 +46,10 @@ namespace Project1.Systems
         [Min(0.1f)] public float dragSpeed = 20f;
         [Tooltip("끌려온 상대가 놓인 뒤 더 기절해 있는 시간(초).")]
         [Min(0f)] public float dragReleaseStun = 0.4f;
+        [Tooltip("끌려온 상대가 기절이 풀린 뒤 강하게 느려지는 시간(초).")]
+        [Min(0f)] public float dragSlowTime = 2f;
+        [Tooltip("느려지는 동안 최대 속도(상대 달리기 속도 대비). 0.35 = 걷기보다도 느림.")]
+        [Range(0.05f, 1f)] public float dragSlowRatio = 0.35f;
 
         [Header("끌려가기 (벽을 맞힘)")]
         [Tooltip("벽을 문 그랩을 따라 사냥터지기가 끌려가는 속도(m/s).")]

@@ -1,3 +1,4 @@
+using Project1.Core;
 using UnityEngine;
 
 namespace Project1.Systems
@@ -7,18 +8,21 @@ namespace Project1.Systems
     /// 그랩을 쏜 쪽(CharacterSkill + GrabShotSkill)이 되감는 동안 그랩 머리를 따라 쏜 쪽 앞까지 끌려온다.
     /// - 맞는 순간 기절(CharacterStun)을 끌려오는 시간 + 잠깐만큼 한 번 건다 → 끌려가는 동안·놓인 뒤 잠깐 이동·점프·공격·스킬을 못 한다.
     /// - 쏜 쪽 몸에 겹치지 않게 minGap 앞에서 멈춘다. 벽 등에 걸려 그랩 머리에서 1.5m 넘게 처지면 놓인다.
+    /// - 끌려온 뒤에는 강한 감속(IMoveSpeedLimit): 기절이 풀린 뒤 slowTime초 동안 달리기 속도의 slowRatio배까지만 움직인다(끝 무렵 원래 속도로 돌아옴).
     /// 캐릭터 루트에 붙는다(직접 붙일 필요 없음).
     /// </summary>
     [DisallowMultipleComponent]
-    public class GrabPull : MonoBehaviour
+    public class GrabPull : MonoBehaviour, IMoveSpeedLimit
     {
         private const float LoseDistance = 1.5f;
+        private const float SlowRecover = 0.4f; // 감속 끝 무렵 원래 속도로 돌아오는 시간(초)
 
         private CharacterSkill puller;
         private GrabShotSkill grab;
         private int useCount;
         private float alongOffset;   // 그랩 머리 기준 몸 가운데가 앞(+)/뒤(-)로 떨어진 거리(m)
         private float minGap;        // 쏜 쪽 몸 가운데에서 이만큼 앞까지만 끌려온다(m)
+        private float slowUntil = -1f, slowRatio = 1f;
 
         private CharacterController controller;
         private CharacterStun stun;
@@ -26,11 +30,18 @@ namespace Project1.Systems
         /// <summary>지금 그랩에 끌려가는 중인지.</summary>
         public bool IsPulled => puller != null;
 
+        /// <summary>그랩에 끌려온 뒤 감속 중인지.</summary>
+        public bool IsSlowed => Time.time < slowUntil;
+
         /// <summary>target 캐릭터를 끌어오기 시작한다(GrabShotSkill이 맞힌 순간 부른다). stunTime = 기절 시간(끌려오는 시간 + 놓인 뒤).</summary>
         public static void Begin(GameObject target, CharacterSkill puller, GrabShotSkill grab, Vector3 hookPoint, float stunTime)
         {
             if (target == null || puller == null) return;
-            if (!target.TryGetComponent(out GrabPull pull)) pull = target.AddComponent<GrabPull>();
+            if (!target.TryGetComponent(out GrabPull pull))
+            {
+                pull = target.AddComponent<GrabPull>();
+                if (target.TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits(); // 감속(IMoveSpeedLimit)을 이동에 알린다
+            }
             pull.Attach(puller, grab, hookPoint, stunTime);
         }
 
@@ -51,6 +62,20 @@ namespace Project1.Systems
             float selfRadius = controller != null ? controller.radius : 0.4f;
             minGap = pullerRadius + selfRadius + 0.25f;
             stun.Stun(stunTime); // 끌려오는 시간 + 놓인 뒤 잠깐. 한 번만 건다(다시 걸면 피격 모션이 처음부터 다시 나온다)
+            // 감속: 기절이 풀린 뒤부터 slowTime초(기절 시간 전체를 덮게 넉넉히 잡는다).
+            slowRatio = def != null ? def.dragSlowRatio : 0.35f;
+            slowUntil = Time.time + stunTime + (def != null ? def.dragSlowTime : 2f);
+        }
+
+        public bool TryGetSpeedLimit(out float maxSpeed)
+        {
+            maxSpeed = float.MaxValue;
+            float left = slowUntil - Time.time;
+            if (left <= 0f) return false;
+            float run = TryGetComponent(out ICharacterState st) ? st.RunSpeed : 6.5f;
+            float ratio = Mathf.Lerp(1f, slowRatio, Mathf.Clamp01(left / SlowRecover)); // 끝 무렵 부드럽게 원래 속도로
+            maxSpeed = run * ratio;
+            return true;
         }
 
         private void FixedUpdate()
@@ -79,9 +104,14 @@ namespace Project1.Systems
 
         }
 
-        private void Release() => puller = null;
+        private void Release()
+        {
+            if (puller != null && stun != null)
+                slowUntil = Time.time + stun.StunRemaining + (grab != null ? grab.dragSlowTime : 2f); // 일찍 놓여도 기절이 풀린 뒤부터 감속
+            puller = null;
+        }
 
-        private void OnDisable() => Release();
+        private void OnDisable() => puller = null;
 
         private static Vector3 Flat(Vector3 v) => new(v.x, 0f, v.z);
     }

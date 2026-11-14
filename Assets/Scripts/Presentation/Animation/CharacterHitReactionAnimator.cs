@@ -6,7 +6,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 이 캐릭터가 맞으면(HitEvents, BE) Animator "HitReact" 레이어(상체)에 피격 모션을 한 번 재생한다.
-    /// - 머리: Hit_Head
+    /// - 머리: 세기별 — 작은 데미지 Hit_Head_Light(Light Hit To Head), 약공격 Hit_Head_Medium(Medium Hit To Head), 강공격·점프 공격·스킬 Hit_Head / Hit_Head2(Head Hit 두 판, 번갈아)
     /// - 몸통: 맞은 위치가 몸 앞(약 ±60°)이면 Hit_Body_Front(Standing React Large From Front), 옆이면 Hit_Body_Side(Big Side Hit)
     /// - 팔·다리: Hit_Limb(Side Hit). 몸통·팔·다리를 등 쪽에서 맞으면 Hit_Body_Back(Standing React Large From Left)
     /// - 작은 데미지(세기 0.75 미만, 예: 리퍼 E): 부위·방향과 상관없이 Hit_Small(Standing React Small From Headshot)
@@ -21,6 +21,10 @@ namespace Project1.Presentation
     {
         private const string LayerName = "HitReact";
         private static readonly int HeadId = Animator.StringToHash("Hit_Head");
+        private static readonly int Head2Id = Animator.StringToHash("Hit_Head2");
+        private static readonly int HeadLightId = Animator.StringToHash("Hit_Head_Light");
+        private static readonly int HeadMediumId = Animator.StringToHash("Hit_Head_Medium");
+        private bool headAlt;
         private static readonly int BodyFrontId = Animator.StringToHash("Hit_Body_Front");
         private const float FrontDot = 0.5f; // 몸 앞쪽 약 ±60° 안에서 맞으면 앞에서 맞은 것
         private static readonly int SmallId = Animator.StringToHash("Hit_Small");
@@ -109,8 +113,8 @@ namespace Project1.Presentation
             Vector3 toHit = hit.Point - transform.position; toHit.y = 0f;
             float front = toHit.sqrMagnitude > 1e-4f ? Vector3.Dot(transform.forward, toHit.normalized) : 1f;
             int state;
-            if (hit.PowerScale < SmallPower && animator.HasState(layer, SmallId)) state = SmallId; // 작은 데미지: 살짝 움찔
-            else if (hit.Part == BodyPart.Head) state = HeadId;
+            if (hit.Part == BodyPart.Head) state = HeadState(hit);
+            else if (hit.PowerScale < SmallPower && animator.HasState(layer, SmallId)) state = SmallId; // 작은 데미지: 살짝 움찔
             else if (front < 0f) state = BodyBackId;                                                   // 등 쪽(몸통·팔·다리): 크게 휘청(Large From Left)
             else if (hit.Part == BodyPart.Body) state = front >= FrontDot && animator.HasState(layer, BodyFrontId) ? BodyFrontId : BodySideId; // 앞(약 ±60°) = 크게 뒤로 젖힘, 옆 = Side
             else state = LimbId;
@@ -118,6 +122,19 @@ namespace Project1.Presentation
             animator.Play(state, layer, 0f);
             weight = 1f;
             playing = true;
+        }
+
+        /// <summary>
+        /// 머리 피격 세기별 모션: 작은 데미지 = Hit_Head_Light(Light Hit To Head), 약공격 = Hit_Head_Medium(Medium Hit To Head),
+        /// 강공격·점프 공격·스킬 = 크게 젖힘(Hit_Head / Hit_Head2 — Head Hit 두 판 중 하나를 번갈아). 없는 모션은 다음 후보로.
+        /// </summary>
+        private int HeadState(HitResult hit)
+        {
+            if (hit.PowerScale < SmallPower)
+                return animator.HasState(layer, HeadLightId) ? HeadLightId : animator.HasState(layer, SmallId) ? SmallId : HeadId;
+            if (hit.Kind == AttackKind.Light && animator.HasState(layer, HeadMediumId)) return HeadMediumId;
+            headAlt = !headAlt;
+            return headAlt && animator.HasState(layer, Head2Id) ? Head2Id : HeadId;
         }
 
         private void LateUpdate()
@@ -169,7 +186,7 @@ namespace Project1.Presentation
 
             if (!playing) return;
             var info = animator.GetCurrentAnimatorStateInfo(layer);
-            bool hold = stun != null && stun.IsStunned && info.shortNameHash == HeadId; // 기절 중엔 머리 숙인 자세를 오래 둔다
+            bool hold = stun != null && stun.IsStunned && (info.shortNameHash == HeadId || info.shortNameHash == Head2Id || info.shortNameHash == HeadMediumId); // 기절 중엔 머리 숙인 자세를 오래 둔다
             if (info.normalizedTime >= fadeOutStart && !hold) weight = Mathf.MoveTowards(weight, 0f, Time.deltaTime / fadeOut);
             if (weight <= 0f) playing = false;
             animator.SetLayerWeight(layer, weight);
