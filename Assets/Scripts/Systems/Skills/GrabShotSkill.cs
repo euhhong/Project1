@@ -411,13 +411,14 @@ namespace Project1.Systems
         /// <summary>
         /// 조준 보조선용 명중 예측: owner가 origin에서 dir로 지금 던지면 무언가에 걸리는지 — 사거리 안에서 벽보다 먼저 상대 판정(hitRadius)에 닿거나,
         /// 끌려갈 수 있는 벽(towToWalls일 때 서 있는 면)을 문다. 카우보이 올가미는 위에서 내려다본 줄로 상대를 본다(높낮이 무시, 손 → 상대 일직선이 열려 있어야).
-        /// 조준 보정(snapTolerance)은 넣지 않는다 — 표시가 뜨면 확실히 맞는다.
+        /// hitAt = 손에서 맞는 곳까지 거리(m, 던진 방향 — 보조선을 그 자리에 긋는다). 조준 보정(snapTolerance)은 넣지 않는다 — 표시가 뜨면 확실히 맞는다.
         /// </summary>
-        public bool PredictsHit(Transform owner, Vector3 origin, Vector3 dir)
+        public bool PredictsHit(Transform owner, Vector3 origin, Vector3 dir, out float hitAt)
         {
             bool wall = FindWall(origin, dir, 0f, range, out float wallAt, out Vector3 normal);
             float reach = wall ? wallAt : range;
             var self = owner.GetComponent<CharacterIdentity>();
+            hitAt = float.MaxValue;
             if (vaultOverVictim)
             {
                 Vector3 mid = origin + dir * (reach * 0.5f);
@@ -433,17 +434,24 @@ namespace Project1.Systems
                     float along = Vector3.Dot(p, dir);
                     float side = (p - dir * along).magnitude - Mathf.Max(b.extents.x, b.extents.z);
                     if (along < -hitRadius || along > range + hitRadius || side > hitRadius) continue;
-                    if (ClearLine(origin, c.ClosestPoint(origin))) return true;
+                    float at = Mathf.Clamp(along - Mathf.Max(b.extents.x, b.extents.z), 0f, range); // 상대 판정 앞면
+                    if (at < hitAt && ClearLine(origin, c.ClosestPoint(origin))) hitAt = at;
                 }
+                if (hitAt < float.MaxValue) return true;
+                hitAt = 0f;
                 return false; // 올가미는 벽에 걸려도 그냥 되감는다
             }
             foreach (var h in Physics.SphereCastAll(origin, hitRadius, dir, reach, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
             {
                 if (!h.collider.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
                 var other = hurt.Owner;
-                if (other != null && (self == null || self.CanHit(other))) return true;
+                if (other == null || (self != null && !self.CanHit(other))) continue;
+                hitAt = Mathf.Min(hitAt, Mathf.Max(0f, h.distance));
             }
-            return wall && towToWalls && normal.y <= wallMaxNormalY && wallAt > towStopReach;
+            if (hitAt < float.MaxValue) return true;
+            if (wall && towToWalls && normal.y <= wallMaxNormalY && wallAt > towStopReach) { hitAt = wallAt; return true; }
+            hitAt = 0f;
+            return false;
         }
 
         /// <summary>

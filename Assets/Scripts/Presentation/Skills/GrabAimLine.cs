@@ -8,7 +8,8 @@ namespace Project1.Presentation
     /// 사냥터지기 그랩 조준선. 내가 조종하는 사냥터지기(LocalPlayerInput)에만 보인다.
     /// - 던질 방향(몸 = 시야)으로 확실히 잡히는 거리(최대 사거리 - endBarInset, 벽이 더 가까우면 벽 앞)에
     ///   조준 방향과 수직인 흰 일자선을 긋되, 가운데에 구멍을 뚫어(— —) 조준선처럼 보이게 한다. 높이는 그랩이 나가는 손 높이.
-    /// - 지금 던지면 맞을 때(상대 판정 또는 끌려갈 벽 — GrabShotSkill.PredictsHit)는 구멍 가운데에 세로 가늠쇠 선을 하나 더 세운다. 없으면 빗나간다.
+    /// - 지금 던지면 맞을 때(상대 판정 또는 끌려갈 벽 — GrabShotSkill.PredictsHit)는 흰 선이 맞는 자리(그랩 타격 지점)로 따라가고,
+    ///   구멍 바로 위에 세로 가늠쇠 선을 하나 더 세운다. 가늠쇠가 없으면 빗나간다.
     /// - 쓸 수 있을 때는 옅게, E를 눌러 조준하는 동안(준비·꾹 누르기)은 진하게. 그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
     /// 연출 전용(판정은 BE GrabShotSkill). GrabShotVisual이 붙을 때 같이 붙는다(RequireComponent).
     /// </summary>
@@ -23,8 +24,12 @@ namespace Project1.Presentation
         [SerializeField, Min(0f)] private float endBarInset = 5f;
         [Tooltip("선 굵기(m).")]
         [SerializeField, Min(0.005f)] private float barWidth = 0.05f;
-        [Tooltip("맞을 때 구멍 가운데에 세우는 가늠쇠 선 높이(m).")]
+        [Tooltip("맞을 때 구멍 위에 세우는 가늠쇠 선 높이(m).")]
         [SerializeField, Min(0.01f)] private float sightHeight = 0.22f;
+        [Tooltip("가늠쇠 선을 흰 선보다 이만큼(m) 위에서 시작한다.")]
+        [SerializeField, Min(0f)] private float sightLift = 0.08f;
+        [Tooltip("맞을 때 흰 선을 맞는 자리보다 이만큼(m) 앞에 긋는다(벽·몸에 묻히지 않게).")]
+        [SerializeField, Min(0f)] private float hitBarPullBack = 0.1f;
         [SerializeField] private Color idleColor = new(1f, 1f, 1f, 0.45f);
         [SerializeField] private Color aimColor = new(1f, 1f, 1f, 0.95f);
 
@@ -65,7 +70,10 @@ namespace Project1.Presentation
             Vector3 dir = aiming ? skill.Direction : Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             if (dir.sqrMagnitude < 0.0001f) { Hide(); return; }
             Vector3 origin = grab.Origin(transform, dir);
-            float length = Mathf.Min(grab.AimLength(origin, dir), Mathf.Max(0.5f, grab.range - endBarInset));
+            // 지금 던지면 맞는다(상대 판정 또는 끌려갈 벽) → 흰 선을 맞는 자리로 옮기고 그 위에 가늠쇠 선. 아니면 확실히 닿는 거리(벽이 가까우면 벽 앞).
+            bool hit = grab.PredictsHit(transform, origin, dir, out float hitAt);
+            float length = hit ? Mathf.Max(0.3f, hitAt - hitBarPullBack)
+                               : Mathf.Min(grab.AimLength(origin, dir), Mathf.Max(0.5f, grab.range - endBarInset));
             Vector3 at = origin + dir * length;
 
             if (left == null) { left = NewLine("GrabAimBar_L"); right = NewLine("GrabAimBar_R"); }
@@ -75,12 +83,10 @@ namespace Project1.Presentation
             Set(left, at - side * half, at - side * inner, c);
             Set(right, at + side * inner, at + side * half, c);
 
-            // 지금 던지면 맞는다(상대 판정 또는 끌려갈 벽) → 구멍 가운데에 세로 가늠쇠 선을 하나 더. 없으면 빗나간다.
-            if (grab.PredictsHit(transform, origin, dir))
+            if (hit)
             {
                 if (sight == null) sight = NewLine("GrabAimSight");
-                float h = sightHeight * 0.5f;
-                Set(sight, at - Vector3.up * h, at + Vector3.up * h, c);
+                Set(sight, at + Vector3.up * sightLift, at + Vector3.up * (sightLift + sightHeight), c); // 구멍 바로 위에 세운다
             }
             else if (sight != null) sight.enabled = false;
         }
