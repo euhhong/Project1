@@ -189,6 +189,9 @@ namespace Project1.Systems
 
         [Tooltip("창틀 뚫고 지나가기(붉은나비): 창틀 넘기 모션 없이 감시자 넘기 길(곧은 길, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼). 캐릭터를 고를 때 SetWindowPassThrough로 정한다.")]
         [SerializeField] private bool windowPassThrough;
+        [Tooltip("창틀 뚫고 지나가기: 창틀을 찾는 각도(마주 보는 정도, 0.26 = 약 75도까지 비스듬히) / 더 멀리서 찾는 거리(m).")]
+        [SerializeField, Range(0f, 0.64f)] private float passThroughFacing = 0.26f;
+        [SerializeField, Min(0f)] private float passThroughExtraReach = 0.5f;
 
         /// <summary>창틀을 모션 없이 뚫고 지나갈지 정한다(캐릭터를 고를 때).</summary>
         public void SetWindowPassThrough(bool pass) => windowPassThrough = pass;
@@ -388,7 +391,9 @@ namespace Project1.Systems
             w = default;
             float h = cc.height;
             Vector3 up = Vector3.up;
-            if (!FindLedge(dir, groundY, sillMin * h, sillMax * h, reach, out var l)) return false;
+            // 창틀 뚫고 지나가기(붉은나비): 비스듬히(약 75도까지) 다가가도, 조금 멀어도 창틀을 찾는다 — 창틀 아랫부분에 막히지 않고 뚫고 가게.
+            bool pass = windowPassThrough;
+            if (!FindLedge(dir, groundY, sillMin * h, sillMax * h, reach + (pass ? passThroughExtraReach : 0f), out var l, pass ? passThroughFacing : DefaultFacing)) return false;
             // 두께: 반대편에서 거꾸로 쏴서 뒷면을 찾는다(너무 두꺼우면 시작점이 벽 안이라 안 맞는다).
             float probe = sillMaxThickness + 0.05f;
             Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
@@ -396,7 +401,8 @@ namespace Project1.Systems
             float thick = probe - back.distance;
             Vector3 mid = l.Face - l.Normal * (thick * 0.5f); mid.y = l.Top;
             // 위가 열린 틈이어야 한다(창문).
-            if (OverlapSphere(mid + up * 0.6f, 0.25f) || OverlapSphere(mid + up * Mathf.Min(1.4f, h * 0.6f), 0.25f)) return false;
+            float gap = pass ? 0.12f : 0.25f; // 뚫고 지나가기는 창문 옆 기둥 가까이(비스듬히)도 틈으로 본다
+            if (OverlapSphere(mid + up * 0.6f, gap) || OverlapSphere(mid + up * Mathf.Min(1.4f, h * 0.6f), gap)) return false;
             // 반대편 바닥
             Vector3 o = l.Face - l.Normal * (thick + cc.radius + 0.2f); o.y = l.Top + 0.3f;
             if (OverlapSphere(o, 0.1f) || !Cast(o, Vector3.down, o.y - groundY + 8f, out var floor) || floor.normal.y < 0.7f) return false;
@@ -1062,13 +1068,16 @@ namespace Project1.Systems
         /// <summary>
         /// dir 쪽 앞(몸 둘레 + reach 안)의 턱: 마주 본 수직 면, 그 위 윗면(feetY 기준 minAbove~maxAbove 높이), 윗면 바로 위는 빔.
         /// </summary>
-        private bool FindLedge(Vector3 dir, float feetY, float minAbove, float maxAbove, float reach, out Ledge result)
+        private bool FindLedge(Vector3 dir, float feetY, float minAbove, float maxAbove, float reach, out Ledge result, float minFacing = DefaultFacing)
         {
             Vector3 feet = transform.position; feet.y = feetY; // 높이 기준(땅에서는 발, 공중 창틀 짚기는 아래 바닥)
-            return FindLedge(feet, dir, minAbove, maxAbove, reach, out result);
+            return FindLedge(feet, dir, minAbove, maxAbove, reach, out result, minFacing);
         }
 
-        private bool FindLedge(Vector3 feet, Vector3 dir, float minAbove, float maxAbove, float reach, out Ledge result)
+        private const float DefaultFacing = 0.64f; // 마주 본 면만(약 50도 안)
+
+        /// <summary>minFacing이 기본보다 작으면(창틀 뚫고 지나가기 — 비스듬히 다가감) 마주 보지 않는 면(창문 옆 기둥의 안쪽 면 등)은 건너뛰고 마주 본 면 중 가장 높은 것을 쓴다.</summary>
+        private bool FindLedge(Vector3 feet, Vector3 dir, float minAbove, float maxAbove, float reach, out Ledge result, float minFacing = DefaultFacing)
         {
             result = default;
             Vector3 up = Vector3.up;
@@ -1077,12 +1086,13 @@ namespace Project1.Systems
             RaycastHit wall = default;
             // 낮은 곳부터 높은 곳까지 앞으로 쏴서, 맞은 것 중 가장 높은 수직 면(창문이면 창턱 바로 아래)을 쓴다.
             for (float h = Mathf.Max(0.15f, minAbove - 0.3f); h <= maxAbove - 0.02f; h += 0.12f)
-                if (Cast(feet + up * h, dir, dist, out var hit) && Mathf.Abs(hit.normal.y) < 0.3f) { wall = hit; found = true; }
+                if (Cast(feet + up * h, dir, dist, out var hit) && Mathf.Abs(hit.normal.y) < 0.3f
+                    && (minFacing >= DefaultFacing || Vector3.Dot(Vector3.ProjectOnPlane(hit.normal, up).normalized, -dir) >= minFacing)) { wall = hit; found = true; }
             if (!found) return false;
             Vector3 n = Vector3.ProjectOnPlane(wall.normal, up);
             if (n.sqrMagnitude < 0.25f) return false;
             n.Normalize();
-            if (Vector3.Dot(n, -dir) < 0.64f) return false; // 마주 본 면만(약 50도 안)
+            if (Vector3.Dot(n, -dir) < minFacing) return false; // 마주 본 면만(기본 약 50도 안)
             Vector3 inside = wall.point - n * LedgeInset;
             Vector3 start = new(inside.x, feet.y + maxAbove + 0.35f, inside.z);
             if (OverlapSphere(start, 0.08f)) return false; // 위가 막힘(벽이 더 높거나 천장)
