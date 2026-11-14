@@ -42,7 +42,7 @@ namespace Project1.Systems
                 if (!airborne) { airborne = true; peakY = y; bySkill = false; }
                 peakY = Mathf.Max(peakY, y);
                 bySkill |= skillBusy;
-                if (traversal != null && traversal.Action is TraversalAction.Hang or TraversalAction.HangGrab) peakY = y; // 매달려 있던 높이부터 잰다
+                if (traversal != null && traversal.Action is TraversalAction.Hang or TraversalAction.HangGrab or TraversalAction.Ladder) peakY = y; // 매달려 있던(사다리 포함) 높이부터 잰다
                 return;
             }
             if (!airborne) return;

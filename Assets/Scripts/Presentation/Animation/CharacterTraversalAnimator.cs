@@ -98,6 +98,7 @@ namespace Project1.Presentation
             TraversalAction.HangClimbRail => "HangClimbRail",
             TraversalAction.HangFlip => "HangFlip", // 생존자: 벽을 박차고 뒤로 공중제비(Backflip) → 아래 바닥에 내려섬
             TraversalAction.HangClimbOver => "HangClimb",// 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
+            TraversalAction.Ladder => "HangBraced", // 사다리: 벽을 짚고 매달린 자세로 오르내린다(사다리 전용 반복 모션이 생기면 바꾼다)
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",
@@ -106,6 +107,6 @@ namespace Project1.Presentation
             _ => null,
         };
 
-        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall;
+        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall && a != TraversalAction.Ladder;
     }
 }

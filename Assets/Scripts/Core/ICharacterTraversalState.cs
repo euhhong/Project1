@@ -34,6 +34,8 @@ namespace Project1.Core
         LandHard,
         /// <summary>생존자: 매달렸다가 놓을 때 다치지 않을 높이면 벽을 박차고 뒤로 공중제비를 돌아 아래 바닥에 내려선다(Backflip).</summary>
         HangFlip,
+        /// <summary>사다리에 매달려 오르내리는 중(Ladder 표시). 스태미나를 조금씩 쓰고, 다 쓰면 뒤로 떨어진다. 꼭대기에 닿으면 턱에 매달림(Hang)으로 넘어간다.</summary>
+        Ladder,
     }
 
     /// <summary>캐릭터의 오르기·매달리기·낙하 상태. 캐릭터 루트에서 GetComponent로 얻는다.</summary>

@@ -31,7 +31,7 @@ namespace Project1.Systems
     [DefaultExecutionOrder(-50)] // 이동(CharacterMotor)보다 먼저: 점프 입력을 창틀 넘기·올라서기로 가로챈다
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
-    public class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit, IKnockbackReceiver
+    public partial class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit, IKnockbackReceiver
     {
         // 모션 기준 높이(Humanoid 단위, 루트 = 모션의 바닥). 의사·루키노 모델에 모션을 입혀 잼 — 모델이 달라도 같다.
         private const float FreeHangTop = 2.05f;   // Jump To Freehang: 매달린 자세의 턱 윗면(손목 1.93 + 손가락)
@@ -157,7 +157,7 @@ namespace Project1.Systems
 
         /// <summary>창틀 넘기를 감시자 길(곧게 Jump 시간)로 하는지 — 감시자 또는 창틀 뚫고 지나가기.</summary>
         private bool HunterPath => hunterStyle || windowPassThrough;
-        public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll
+        public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
         private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
@@ -184,6 +184,7 @@ namespace Project1.Systems
         {
             if (state != null) state.Jumped -= OnJumped;
             action = TraversalAction.None;
+            ladder = null;
         }
 
         private void OnJumped() => jumpedFlag = true;
@@ -221,7 +222,11 @@ namespace Project1.Systems
                 case TraversalAction.Hang:
                     HandleHang(input);
                     return;
+                case TraversalAction.Ladder:
+                    HandleLadder(input, dead, stunned);
+                    return;
             }
+            ladder = null; // 사다리·꼭대기 턱을 떠남
             if (IsLanding(action))
             {
                 actionTime += dt;
@@ -235,6 +240,7 @@ namespace Project1.Systems
             // 점프 중 창틀을 넘어가려 하면(날아가는 방향 앞에 창틀) 반드시 짚고 넘는다 — 방향키를 놓아도 날아가던 방향으로.
             if (!grounded && airborne && jumped && action == TraversalAction.None && TryStartWindowJump(FlightDirection(dir))) return;
             if (dir == Vector3.zero) return;
+            if ((action == TraversalAction.None || action == TraversalAction.Fall || IsLanding(action)) && TryStartLadder(dir, grounded)) return;
             if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))
             {
                 if (TryStartWindow(dir) || TryStartClimbUp(dir)) return;
@@ -465,7 +471,7 @@ namespace Project1.Systems
         {
             // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
             if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
-            if (input.Move.y < -0.5f && !TryStartHangFlip()) Release(); // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
+            if (input.Move.y < -0.5f && !TryReturnToLadder() && !TryStartHangFlip()) Release(); // 사다리로 올라온 턱이면 다시 사다리로 // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
         }
 
         /// <summary>
@@ -577,6 +583,7 @@ namespace Project1.Systems
         /// </summary>
         public void OnKnockback(ref Vector3 velocity)
         {
+            if (LadderKnockback(ref velocity)) return;
             if (!IsHanging(action)) return;
             Vector3 n = Vector3.ProjectOnPlane(ledge.Normal, Vector3.up); // 벽 → 캐릭터(바깥)
             if (n.sqrMagnitude > 1e-4f)
@@ -656,6 +663,7 @@ namespace Project1.Systems
             worldVelocity = Vector3.zero;
             float dt = Time.fixedDeltaTime;
             Vector3 pos = transform.position;
+            if (LadderVelocity(out worldVelocity)) return true;
             if (action == TraversalAction.HangGrab || action == TraversalAction.Hang)
             {
                 worldVelocity = Vector3.ClampMagnitude((hangPos - pos) / (hunterStyle ? snapTime * 1.6f : snapTime), 25f); // 감시자는 조금 천천히 붙는다
@@ -750,7 +758,7 @@ namespace Project1.Systems
         public bool TryGetFacingYaw(out float yaw)
         {
             yaw = faceYaw;
-            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll;
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)

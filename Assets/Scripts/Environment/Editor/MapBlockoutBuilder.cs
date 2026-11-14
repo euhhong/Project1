@@ -444,7 +444,7 @@ namespace Project1.Map.EditorTools
                 // 옥상 테라스: 둘레 난간(남쪽 안뜰 쪽 x 15..18 = 연결동 옥상 길), 굴뚝 2, 낮은 벽
                 HX(fu, "Terrace_Rail_S", -0.25f, w + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(14f, 18.25f));
                 HX(fu, "Terrace_Rail_N", -0.25f, w + 0.25f, d + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
-                HZ(fu, "Terrace_Rail_Out", -0.25f, d + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(6f, 8f));
+                HZ(fu, "Terrace_Rail_Out", -0.25f, d + 0.25f, -0.25f + RailT / 2f, F3, RailH, RailT, accentMat, Gap(6f, 8f), Gap(LadderZ - 0.7f, LadderZ + 0.7f));
                 HZ(fu, "Terrace_Rail_Court", -0.25f, d + 0.25f, w + 0.25f - RailT / 2f, F3, RailH, RailT, accentMat);
                 HB(fu, "Chimney_A", new Vector3(1f, F3, 3f), new Vector3(3f, F3 + 3.5f, 5f), wallMat);
                 HB(fu, "Chimney_B", new Vector3(10f, F3, d - 4f), new Vector3(12f, F3 + 3.5f, d - 2f), wallMat);
@@ -455,6 +455,8 @@ namespace Project1.Map.EditorTools
             HB(fu, "LowTerrace", new Vector3(-4.8f, -0.3f, 10f), new Vector3(-0.2f, LowTerraceH, 20f), accentMat);
             HZ(fu, "LowTerrace_Rail", 15f, 20f, -4.8f + RailT / 2f, LowTerraceH, RailH, RailT, accentMat);
             HB(fu, "LowTerrace_Crate", new Vector3(-3.6f, -0.3f, 8.8f), new Vector3(-2.4f, 1.2f, 10f), accentMat);
+            // 동관: 낮은 테라스 → 옥상 테라스 사다리(바깥벽, 2F 창 사이). 옥상 난간은 사다리 위만 트였다.
+            if (!tall) Ladder(fu, "Ladder_Roof", new Vector3(X(-WallT / 2f), LowTerraceH, LadderZ), east ? Vector3.right : Vector3.left, F3 - LowTerraceH);
 
             var g = Group(h, "Gothic", Vector3.zero);
             if (tall) GableRoof(g, "Roof", -0.25f, w + 0.25f, -0.25f, d + 0.25f, RoofTop, 8f, gapSide: east ? 1 : -1, gapZ0: -0.5f, gapZ1: 6.5f);
@@ -747,6 +749,27 @@ namespace Project1.Map.EditorTools
         }
 
         /// <summary>x 방향 벽(z 위치 고정). 개구부의 from/to는 x 값, bottom/top은 y0 기준 높이.</summary>
+        private const float LadderZ = 12f; // 별관 사다리 자리(별관 z — 바깥벽 2F 창 z 4.5·15 사이)
+
+        /// <summary>
+        /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 0.3m 간격 발판(보이기만 — 충돌 없음),
+        /// 타기는 Ladder 표시로 CharacterTraversal이 한다. 기둥은 위 끝(위층 바닥)보다 1m 더 올라가 손잡이가 된다.
+        /// </summary>
+        private static void Ladder(Transform p, string name, Vector3 bottom, Vector3 outward, float height)
+        {
+            const float width = 0.8f, depth = 0.15f, rail = 0.07f, rungStep = 0.3f;
+            var g = Group(p, name, bottom);
+            g.localRotation = Quaternion.LookRotation(outward, Vector3.up);
+            g.gameObject.AddComponent<Project1.Core.Ladder>().Set(height, width, depth);
+            g.gameObject.AddComponent<Project1.Core.NoLedgeGrab>();
+            var r = Quaternion.identity;
+            foreach (float s in new[] { -1f, 1f })
+                BoxR(g, s < 0 ? "Rail_L" : "Rail_R", new Vector3(s * width / 2f, (height + 1f) / 2f, depth), new Vector3(rail, height + 1f, rail), r, accentMat, false);
+            int i = 0;
+            for (float y = rungStep; y < height + 0.9f; y += rungStep, i++)
+                BoxR(g, $"Rung_{i:00}", new Vector3(0f, y, depth), new Vector3(width, 0.04f, 0.05f), r, accentMat, false);
+        }
+
         private static void WallX(Transform p, string name, float xa, float xb, float z, float y0, float h, float t, Material m, params Opening[] ops)
             => Wall(p, name, true, xa, xb, z, y0, h, t, m, ops);
 

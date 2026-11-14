@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// 달리지 않을 때는(멈춤·걷기·공중·점프 포함) 초당 regenPerSecond씩 계속 회복한다.
     /// 0이 되면 지쳐서 recoverThreshold까지 회복할 때까지 걷기 속도로 제한한다(IMoveSpeedLimit).
     /// 스킬이 이동을 정하는 동안(돌진 등)은 달리기 키를 눌러도 줄지 않는다(달리기 키 입력이 아니므로).
+    /// 달리기 말고도 스태미나를 쓰는 동작(IStaminaDrain — 사다리 타기)이 있으면 그동안 회복하지 않고 그만큼 줄어든다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout).
     /// </summary>
     [DisallowMultipleComponent]
@@ -26,6 +27,7 @@ namespace Project1.Systems
         private ICharacterInputSource input;
         private ICharacterHealth health;
         private ICharacterSkillState skill;
+        private IStaminaDrain[] drains;
         private float current = -1f;
 
         public float Current => current < 0f ? maxStamina : current;
@@ -74,11 +76,16 @@ namespace Project1.Systems
             bool running = !dead && !skillMoving && frame.Run && frame.Move.sqrMagnitude > 0.0001f
                            && state.MoveState == CharacterMoveState.Run;
 
+            // 달리기 말고 스태미나를 쓰는 동작(사다리 타기 등 — IStaminaDrain): 그동안 회복하지 않는다.
+            drains ??= GetComponents<IStaminaDrain>();
+            float extra = 0f;
+            foreach (var d in drains) if (!(d is Behaviour { isActiveAndEnabled: false })) extra += Mathf.Max(0f, d.StaminaDrainPerSecond);
+
             float before = current;
             float dt = Time.fixedDeltaTime;
-            if (running)
+            if (running || extra > 0f)
             {
-                current = Mathf.Max(0f, current - drainPerSecond * dt);
+                current = Mathf.Max(0f, current - ((running ? drainPerSecond : 0f) + extra) * dt);
                 if (current <= 0f) IsExhausted = true;
             }
             else
