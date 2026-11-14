@@ -32,6 +32,7 @@ namespace Project1.Presentation
         private Animator animator;
         private readonly List<Chain> chains = new();
         private ICharacterState state;
+        private HasturHangPose hang;
         private float phase, amount;
 
         private void OnDisable() => Restore();
@@ -41,6 +42,7 @@ namespace Project1.Presentation
             if (!TryGetComponent(out HasturArmWalk _)) gameObject.AddComponent<HasturArmWalk>(); // 걸을 때 두 촉수 팔·어깨도 움직인다
             if (!TryGetComponent(out HasturBodyBob _)) gameObject.AddComponent<HasturBodyBob>(); // 걸을 때 몸 전체가 위아래로 들썩인다
             if (!TryGetComponent(out HasturClawHitboxes _)) gameObject.AddComponent<HasturClawHitboxes>(); // 두 촉수 팔 끝(손톱)에 때리는 판정
+            if (hang == null && !TryGetComponent(out hang)) hang = gameObject.AddComponent<HasturHangPose>(); // 턱에 매달릴 때 자세(팔은 HasturArmWalk, 다리 촉수는 여기서 적용)
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
@@ -66,6 +68,12 @@ namespace Project1.Presentation
                     Quaternion q = Quaternion.AngleAxis(liftAngle * amount * weight * Mathf.Sin(w), side)
                                  * Quaternion.AngleAxis(swayAngle * amount * weight * Mathf.Sin(w * 0.7f + 1.3f), up);
                     b.rotation = q * b.rotation;
+                }
+                // 턱에 매달림: 가닥을 벽 쪽 아래로 눕혀 벽에 붙인다(벽이 없으면 아래로 늘어짐). 매 프레임 쉬는 자세에서 다시 잡으므로 쌓이지 않는다.
+                if (hang != null && hang.Weight > 0f)
+                {
+                    var last = c.Bones[n - 1];
+                    hang.ApplyLeg(c.Bones[0], last.childCount > 0 ? last.GetChild(0) : last);
                 }
             }
         }

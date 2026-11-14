@@ -56,7 +56,9 @@ namespace Project1.Presentation
             public void Restore() { if (T != null && Has) T.localRotation = Base; Has = false; }
         }
 
-        private class Arm { public Bone Clavicle, UpperArm, Forearm; public Bone[] Chain; public float Offset, Side; } // Side: 왼쪽 -1 / 오른쪽 +1
+        private class Arm { public Bone Clavicle, UpperArm, Forearm; public Transform Hand; public Bone[] Chain; public float Offset, Side; } // Side: 왼쪽 -1 / 오른쪽 +1
+        private HasturHangPose hang;
+        private Transform[] chainTs;
 
         private Animator animator;
         private Arm left, right;
@@ -77,7 +79,9 @@ namespace Project1.Presentation
             attack ??= GetComponent<ICharacterAttackState>();
             float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
             float move = Mathf.Clamp01(speed / fullSpeed);
-            bool attacking = attack != null && attack.AttackState != CharacterAttackState.None;
+            if (hang == null) TryGetComponent(out hang);
+            // 공격 중·턱에 매달린 동안은 걷기 팔 움직임을 끈다(공격 모션 / 매달리기 자세가 대신).
+            bool attacking = (attack != null && attack.AttackState != CharacterAttackState.None) || (hang != null && hang.Weight > 0f);
             float target = attacking ? 0f : Mathf.Lerp(idleRatio, 1f, move);
             amount = Mathf.MoveTowards(amount, target, Time.deltaTime * (attacking ? 6f : 3f));
             dash = Mathf.MoveTowards(dash, attacking ? 0f : Mathf.SmoothStep(0f, 1f, move), Time.deltaTime * (attacking ? 6f : dashBlend));
@@ -113,7 +117,6 @@ namespace Project1.Presentation
                 Vector3 along = a.UpperArm.T.position - a.Clavicle.T.position;
                 float lift = (shoulderLift * s + shoulderHeave * Mathf.Abs(Mathf.Sin(phase))) * amount;
                 Rotate(a.Clavicle.T, Raise(along, up), lift);
-                a.Clavicle.End();
             }
             // 위팔 → 아래팔: 두 팔을 함께 뒤로 젖히고(대시 자세), 걸음마다 같이 살짝 들썩(두 팔 같은 박자, 걸음 한 쌍에 두 번).
             float flap = Mathf.Sin(phase * 2f);
@@ -123,14 +126,12 @@ namespace Project1.Presentation
                 Vector3 upperAlong = a.Forearm.T.position - a.UpperArm.T.position;
                 Rotate(a.UpperArm.T, Raise(upperAlong, -fwd), dashBack * dash + upperArmSwing * flap * amount);
                 Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, transform.right * -a.Side), dashTuck * dash); // 몸 쪽으로
-                a.UpperArm.End();
             }
             if (a.Forearm != null && a.Chain.Length > 0)
             {
                 a.Forearm.Begin();
                 Vector3 along = a.Chain[^1].T.position - a.Forearm.T.position;
                 Rotate(a.Forearm.T, Raise(along, -fwd), dashForearm * dash + forearmSwing * Mathf.Sin(phase * 2f - 0.6f) * amount);
-                a.Forearm.End();
             }
             // 촉수 팔: 뒤로 끌리며 들리고(끝으로 갈수록 크게), 밑동에서 끝으로 흐르는 물결(끝으로 갈수록 크게, 늦게) + 살짝 좌우.
             int n = a.Chain.Length;
@@ -143,8 +144,17 @@ namespace Project1.Presentation
                 float w = p - 0.9f - i * phasePerBone;
                 Rotate(b.T, Raise(along, fwd), tentacleCurl * weight * Mathf.Sin(w) * amount - dashTrail * weight * dash);
                 b.T.rotation = Quaternion.AngleAxis(tentacleSway * weight * Mathf.Sin(w * 0.8f + 1.1f) * amount, up) * b.T.rotation;
-                b.End();
             }
+
+            // 턱에 매달림: 소매를 턱 쪽으로 뻗고 촉수 팔로 턱을 넘어 감아 쥔다(HasturHangPose). 이 뼈들은 여기서만 쓴다.
+            if (hang != null && hang.Weight > 0f)
+            {
+                if (chainTs == null || chainTs.Length != n) chainTs = new Transform[n];
+                for (int i = 0; i < n; i++) chainTs[i] = a.Chain[i].T;
+                hang.ApplyArm(a.Clavicle?.T, a.UpperArm?.T, a.Forearm?.T, a.Hand, chainTs, a.Side);
+            }
+            a.Clavicle?.End(); a.UpperArm?.End(); a.Forearm?.End();
+            for (int i = 0; i < n; i++) a.Chain[i].End();
         }
 
         /// <summary>뼈 방향 along의 끝이 toward 쪽으로 가는 회전축(이 축으로 + 각도만큼 돌리면 끝이 toward로 움직인다).</summary>
@@ -185,6 +195,7 @@ namespace Project1.Presentation
                 Clavicle = Wrap(Find(all, $"biped {side} Clavicle")),
                 UpperArm = Wrap(Find(all, $"biped {side} UpperArm")),
                 Forearm = Wrap(Find(all, $"biped {side} Forearm")),
+                Hand = Find(all, $"biped {side} Hand"),
                 Chain = bones,
                 Offset = offset,
                 Side = side == "L" ? -1f : 1f,
