@@ -48,8 +48,8 @@ namespace Project1.Systems
         private bool aimBySky;
         private Vector3 skyVelocity;
         [Tooltip("던진 인형의 수평 속도(m/s) — 비행 시간 = 수평 거리 ÷ 이 값(minFlight~maxFlight초로 자름). 느릴수록 높이 날아 오래 걸린다.")]
-        [SerializeField, Min(1f)] private float throwSpeed = 14f;
-        [SerializeField, Min(0.05f)] private float minFlight = 0.4f, maxFlight = 4f;
+        [SerializeField, Min(1f)] private float throwSpeed = 16.5f; // 14 → 16.5: 비행 시간 ×0.85 → 꼭대기 높이 약 72%(완만하게)
+        [SerializeField, Min(0.05f)] private float minFlight = 0.4f, maxFlight = 3.4f; // 꼭대기 높이 ≈ 중력 × 비행시간² ÷ 8(평지)
         [Tooltip("겨누는 거리 끌기: 좌클릭을 꾹 누른 채 마우스를 위로 끌면 멀리, 아래로 끌면 가까이 — 시야 상하 1도당 이 거리(m, 안토니오 음표 놓기와 같은 0.25). 맵 끝(maxAimDistance)까지.")]
         [SerializeField, Min(0.001f)] private float dragPerDegree = 0.25f;
         [SerializeField, Min(1f)] private float maxAimDistance = 300f;
