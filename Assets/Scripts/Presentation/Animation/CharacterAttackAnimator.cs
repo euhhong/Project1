@@ -105,7 +105,7 @@ namespace Project1.Presentation
             // 주먹 막기(BE ICharacterParryState, 생존자): 좌클릭을 꾹 누르는 동안 막는 자세(Standing Block Idle).
             // 서 있으면 전신(AirAttack 레이어), 걸으면 상체(Attack 레이어) + 다리는 걷기. 상태가 없으면(모션 컨트롤러를 아직 안 만듦) 보여 주지 않는다.
             if (parry == null || (parry is Object po && po == null)) TryGetComponent(out parry);
-            bool guard = state == CharacterAttackState.None && parry != null && parry.IsParrying;
+            bool guard = (state is CharacterAttackState.None or CharacterAttackState.HeavyCharge) && parry != null && parry.IsParrying; // 꾹 누르는 동안(강공격 모으기) = 막는 자세, 떼면 돌려차기
             bool guardStanding = body == null || (body.IsGrounded && body.LocalPlanarVelocity.sqrMagnitude < 0.25f);
             bool guardFull = guard && guardStanding && airLayer >= 0 && animator.HasState(airLayer, BlockId);
             bool guardUpper = guard && !guardFull && animator.HasState(groundLayer, BlockId);
