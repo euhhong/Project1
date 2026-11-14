@@ -34,7 +34,7 @@ namespace Project1.Systems
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         [Tooltip("자리를 바꾼 직후 경직(초) — 땅이든 공중(낙하)이든 같다. 이동·공격·스킬 불가, 보이는 표시 없음(IActionLock).")]
-        [SerializeField, Min(0f)] private float postSwapLock = 0.8f;
+        [SerializeField, Min(0f)] private float postSwapLock = 1.5f;
         [Tooltip("공중의 인형과 바꿨으면(낙하) 경직이 풀린 순간부터 이 시간(초) 동안 이동 속도 배율.")]
         [SerializeField, Min(0f)] private float landBoostTime = 2f;
         [SerializeField, Min(1f)] private float landBoostMultiplier = 1.5f;
