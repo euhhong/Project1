@@ -6,7 +6,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 공장장 인형 던지기 연출(IDollThrow, BE DollThrow를 읽어 그린다).
     /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 원(나비 놓기 미리보기처럼). 못 던지는 곳 = 붉게, 몸 근처(떼면 취소) = 흐리게.
-    /// - 던진 인형: 날아가는 동안은 작은 검은 구체, 땅에 닿아 멈춰 있으면 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
+    /// - 던진 인형: 날아가는 동안은 칙칙하고 어두운 꼭두각시 실루엣(무늬 없는 한 색, 그림자 없음, 데굴데굴 구름 — 잘 안 보이게), 땅에 닿아 멈춰 있으면 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그린 것은 캐릭터를 따라 움직이지 않게 따로 둔다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -25,12 +25,18 @@ namespace Project1.Presentation
         [Tooltip("멈춰 있는 인형 모델(꼭두각시)의 키(m) / 팔을 내리는 정도(0 = T자세, 1 = 몸에 붙임).")]
         [SerializeField, Min(0.1f)] private float puppetHeight = 1f;
         [SerializeField, Range(0f, 1f)] private float puppetArmsDown = 0.85f;
+        [Tooltip("날아가는 인형: 꼭두각시를 칙칙하고 어두운 실루엣으로(잘 안 보이게) — 키(m) / 색 / 구르는 빠르기(도/초).")]
+        [SerializeField, Min(0.1f)] private float flyerHeight = 0.7f;
+        [SerializeField] private Color flyerColor = new(0.07f, 0.065f, 0.06f, 1f);
+        [SerializeField] private float flyerTumble = 420f;
         private const string PuppetResource = "EvilPuppet/EvilPuppet";
 
         private IDollThrow doll;
         private Transform root;
         private LineRenderer arc, ring, restRing;
-        private GameObject ball, puppet;
+        private GameObject ball, puppet, flyer;
+        private Vector3 tumbleAxis = Vector3.right;
+        private float tumble;
         private bool wasResting;
         private const int RingSegments = 40;
 
@@ -70,10 +76,27 @@ namespace Project1.Presentation
                 SetRing(ring, doll.AimLanding, ringRadius * (1f + Mathf.Sin(Time.time * 6f) * 0.06f), Time.time * 60f);
             }
 
-            // 인형: 날아가는 동안 작은 검은 구체, 멈춰 있으면 꼭두각시 모델 + 바닥 원
-            bool resting = doll.DollActive && !doll.DollFlying;
-            ball.SetActive(doll.DollActive && (!resting || puppet == null));
+            // 인형: 날아가는 동안 칙칙한 실루엣(꼭두각시를 어둡게, 데굴데굴 구름), 멈춰 있으면 꼭두각시 모델 + 바닥 원. 모델이 없으면 구체.
+            bool resting = doll.DollActive && !doll.DollFlying, flying = doll.DollActive && doll.DollFlying;
+            ball.SetActive((flying && flyer == null) || (resting && puppet == null));
             if (ball.activeSelf) ball.transform.position = doll.DollPosition;
+            if (flyer != null)
+            {
+                if (flying && !flyer.activeSelf)
+                {
+                    // 던진 순간: 던지는 쪽을 보고, 몸 옆축으로 앞으로 구른다
+                    tumble = 0f;
+                    tumbleAxis = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+                    if (tumbleAxis.sqrMagnitude < 1e-4f) tumbleAxis = Vector3.right;
+                }
+                flyer.SetActive(flying);
+                if (flying)
+                {
+                    tumble += flyerTumble * Time.deltaTime;
+                    Quaternion rot = Quaternion.AngleAxis(tumble, tumbleAxis) * Quaternion.LookRotation(Vector3.Cross(tumbleAxis, Vector3.up), Vector3.up);
+                    flyer.transform.SetPositionAndRotation(doll.DollPosition - rot * (Vector3.up * flyerHeight * 0.5f), rot); // 몸 가운데가 인형 자리
+                }
+            }
             if (puppet != null)
             {
                 puppet.SetActive(resting);
@@ -114,20 +137,32 @@ namespace Project1.Presentation
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.2f);
             ball.GetComponent<MeshRenderer>().sharedMaterial = mat;
             ball.SetActive(false);
-            puppet = BuildPuppet();
+            puppet = BuildPuppet("DollPuppet", puppetHeight, null);
+            var dull = new Material(shader != null ? shader : Shader.Find("Standard")) { name = "DollSilhouette", color = flyerColor };
+            if (dull.HasProperty("_Smoothness")) dull.SetFloat("_Smoothness", 0f);
+            if (dull.HasProperty("_Metallic")) dull.SetFloat("_Metallic", 0f);
+            flyer = BuildPuppet("DollFlyer", flyerHeight, dull);
         }
 
-        /// <summary>멈춰 있는 인형 모델: 꼭두각시(Resources EvilPuppet, 키 puppetHeight, 원점 = 발 사이 바닥). 팔을 T자세에서 내린다. 없으면 null(구체로 대신).</summary>
-        private GameObject BuildPuppet()
+        /// <summary>인형 모델: 꼭두각시(Resources EvilPuppet, 키 height, 원점 = 발 사이 바닥), 팔을 T자세에서 내린다. silhouette이 있으면 그 한 색으로(날아가는 실루엣). 없으면 null(구체로 대신).</summary>
+        private GameObject BuildPuppet(string name, float height, Material silhouette)
         {
             var prefab = Resources.Load<GameObject>(PuppetResource);
             if (prefab == null) return null;
             var go = Instantiate(prefab, root);
-            go.name = "DollPuppet";
+            go.name = name;
+            if (silhouette != null) // 날아가는 인형: 무늬 없이 칙칙한 한 색(실루엣), 그림자도 흐리게
+                foreach (var r in go.GetComponentsInChildren<Renderer>())
+                {
+                    var mats = new Material[r.sharedMaterials.Length];
+                    for (int i = 0; i < mats.Length; i++) mats[i] = silhouette;
+                    r.sharedMaterials = mats;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
             foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c); // 보이기만(판정은 BE)
             float h = 0f;
             foreach (var r in go.GetComponentsInChildren<Renderer>()) h = Mathf.Max(h, r.bounds.max.y - go.transform.position.y);
-            if (h > 1e-3f) go.transform.localScale = Vector3.one * (puppetHeight / h);
+            if (h > 1e-3f) go.transform.localScale = Vector3.one * (height / h);
             var animator = go.GetComponentInChildren<Animator>();
             if (animator != null && animator.isHuman)
             {

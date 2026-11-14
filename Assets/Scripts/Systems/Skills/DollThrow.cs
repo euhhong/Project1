@@ -134,6 +134,15 @@ namespace Project1.Systems
                 Vector3 end = eye + dir * reach;
                 aimTarget = RayCast(end + Vector3.up * 0.5f, Vector3.down, 60f, out var down) ? down.point : end;
             }
+            // 좌우는 고정: 던지는 손에서 몸 정면(시야 좌우 각도)으로 곧게 — 목표를 손을 지나는 앞뒤·위아래 평면 위로 옮긴다(카메라가 어깨 옆에 있어 생기는 비스듬함도 없앰).
+            // 앞뒤(거리)·위아래(높이)는 조준점이 가리키는 대로. 옮긴 자리가 바닥 위가 아니면 바로 아래 바닥으로(1m 안).
+            Vector3 fwd = Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward, right = Vector3.Cross(Vector3.up, fwd);
+            float sideOff = Vector3.Dot(aimTarget - Hand, right);
+            if (Mathf.Abs(sideOff) > 1e-3f)
+            {
+                Vector3 moved = aimTarget - right * sideOff;
+                aimTarget = RayCast(moved + Vector3.up * 0.5f, Vector3.down, 1.5f, out var snap) ? snap.point : moved;
+            }
             Vector3 flat = aimTarget - transform.position; flat.y = 0f;
             aimCancels = flat.magnitude < cancelRadius && Mathf.Abs(aimTarget.y - transform.position.y) < 1.5f; // 발밑을 보면 취소
         }
