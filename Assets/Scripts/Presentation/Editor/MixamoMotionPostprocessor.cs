@@ -85,7 +85,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
-            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", "Traversal_Push", "Traversal_Ladder", "Traversal_LadderHunter", // 매달린 채 대기, 허우적대며 떨어짐, 물건 밀기, 사다리 오르기(생존자·감시자)
+            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", "Traversal_Push", "Traversal_Ladder", "Traversal_LadderHunter", "Traversal_DollDrop", // 매달린 채 대기, 허우적대며 떨어짐, 물건 밀기, 사다리 오르기(생존자·감시자), 인형과 자리 바꾼 뒤 서 있는 자세로 툭 떨어짐(Unarmed Idle 01)
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 

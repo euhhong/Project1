@@ -110,6 +110,7 @@ namespace Project1.Presentation
             TraversalAction.HangClimbOver => "HangClimb",// 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
             TraversalAction.Ladder => t.HunterStyle ? "LadderHunter" : "Ladder", // 사다리 오르기(생존자·감시자 모두 Climbing 원본) — 재생 위치 = 오른 높이(내리면 거꾸로, 멈추면 멈춤)
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
+            TraversalAction.DollDrop => "DollDrop", // 인형과 자리 바꾼 뒤 서 있는 자세로 툭 떨어짐(Unarmed Idle 01, 반복)
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",
             TraversalAction.LandRoll => "LandRoll",
@@ -117,6 +118,6 @@ namespace Project1.Presentation
             _ => null,
         };
 
-        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall && a != TraversalAction.ClimbUpRun; // 달리며 올라서기는 달리기 모션을 제 빠르기로
+        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall && a != TraversalAction.ClimbUpRun && a != TraversalAction.DollDrop; // 달리며 올라서기는 달리기 모션을 제 빠르기로
     }
 }

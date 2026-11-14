@@ -207,6 +207,14 @@ namespace Project1.Systems
 
         private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.ClimbUpRun || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
                                                              || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver || a == TraversalAction.HangFlip;
+        private IGentleDropSource gentleDrop;
+        /// <summary>지금 그냥 놓듯이 툭 떨어지는 중이어야 하는지(IGentleDropSource — 공장장 인형과 자리 바꿈 뒤).</summary>
+        private bool GentleDrop()
+        {
+            gentleDrop ??= GetComponent<IGentleDropSource>();
+            return gentleDrop != null && gentleDrop.GentleDrop;
+        }
+
         private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
 
         private void Awake() => Init();
@@ -348,6 +356,9 @@ namespace Project1.Systems
                 jumpedFlag = false;
                 peakY = Mathf.Max(peakY, pos.y);
                 if (IsLanding(action)) action = TraversalAction.None; // 착지하다 다시 떨어짐(구르다 턱 끝에서 등)
+                // 그냥 놓듯이 툭(공장장 인형과 자리를 바꿔 공중에 나타남): 서 있는 자세로 보통 중력 그대로 떨어진다(높은 낙하 자세 대신).
+                if ((action == TraversalAction.None || action == TraversalAction.Fall) && GentleDrop()) { StartAction(TraversalAction.DollDrop, 0f); return; }
+                if (action == TraversalAction.DollDrop) return;
                 if (action == TraversalAction.None && !jumped && airStartY - pos.y > fallStartDrop && !SkillBusy())
                 {
                     bool back = backAtStart || (TryGetComponent(out Knockback k) && k.Active);
@@ -358,6 +369,7 @@ namespace Project1.Systems
             }
             if (!airborne) { jumpedFlag = false; hangDrop = false; safeJump = false; return; } // 다치지 않는 낙하 표시는 착지한 다음 틱에 끝(FallDamage가 착지 틱에 묻는다)
             airborne = false;
+            if (action == TraversalAction.DollDrop) { action = TraversalAction.None; jumped = false; return; } // 툭 떨어짐: 착지 동작·경직 없이 바로 움직인다
             bool walkedOff = action == TraversalAction.Fall;
             if (walkedOff) action = TraversalAction.None;
             float drop = peakY - pos.y;
@@ -1063,7 +1075,8 @@ namespace Project1.Systems
         public bool TryGetFacingYaw(out float yaw)
         {
             yaw = action == TraversalAction.HangHop ? Mathf.LerpAngle(hopYawFrom, faceYaw, HopTurnBlend()) : faceYaw; // 모서리를 돌며 몸을 새 벽 쪽으로 부드럽게 돌린다
-            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
+                   || LadderJumpFacing(state != null && state.IsGrounded); // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)

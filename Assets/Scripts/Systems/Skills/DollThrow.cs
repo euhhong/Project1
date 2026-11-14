@@ -16,11 +16,11 @@ namespace Project1.Systems
     ///   바닥(윗면)에 닿으면 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다. 몸 근처를 가리키거나 못 가는 곳이면 던지지 않는다. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
     /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 날아가는 중이든 떨어져 있든 인형 자리와 공장장 자리를 맞바꾼다.
     ///   공장장은 인형이 있던 자리(공중이면 그 공중)로 가서 떨어지고, 인형은 공장장이 있던 자리에 놓인다(멈춤 — 다시 바꾸면 돌아온다).
-    ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않는다(ISafeFallSource → FallDamage). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
+    ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않고(ISafeFallSource → FallDamage), 서 있는 자세로 그냥 툭 떨어져 착지 동작 없이 바로 움직인다(IGentleDropSource → CharacterTraversal DollDrop). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint
+    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource
     {
         [Tooltip("겨눌 수 있는 최대 거리(m).")]
         [SerializeField, Min(1f)] private float maxRange = 30f;
@@ -70,6 +70,7 @@ namespace Project1.Systems
         public int SwapCount { get; private set; }
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
+        public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
         public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 발밑을 보고 떼기";
 
         private void Awake()

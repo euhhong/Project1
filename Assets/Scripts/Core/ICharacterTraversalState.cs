@@ -40,6 +40,8 @@ namespace Project1.Core
         HangHop,
         /// <summary>달리다(방향키 + 점프) 낮은 턱(책상 등) 위로 뛰어 올라 그대로 달려 나감 — 위에 달려 나갈 자리가 있을 때. 다리는 달리기 모션 그대로.</summary>
         ClimbUpRun,
+        /// <summary>그냥 놓듯이 툭 떨어짐(공장장 인형과 자리를 바꿔 공중에 나타남 — IGentleDropSource): 서 있는 자세(Unarmed Idle) 그대로 보통 중력으로 떨어지고, 착지 동작·경직 없이 바로 움직인다.</summary>
+        DollDrop,
     }
 
     /// <summary>캐릭터의 오르기·매달리기·낙하 상태. 캐릭터 루트에서 GetComponent로 얻는다.</summary>
