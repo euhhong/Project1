@@ -27,6 +27,9 @@ namespace Project1.Core
         /// <summary>던진 횟수 / 자리를 바꾼 횟수(바뀔 때마다 1씩 — FE가 던지는 순간·바꾸는 순간을 알아챈다).</summary>
         int ThrowCount { get; }
         int SwapCount { get; }
+        /// <summary>E를 눌러 자리를 바꾸려고 기다리는 중(잠깐 뒤 누른 순간의 인형 자리로 옮긴다 — 그동안 몸을 떤다) / 그 진행도(0~1).</summary>
+        bool SwapPending { get; }
+        float SwapProgress { get; }
     }
 
     /// <summary>이번 낙하는 다치지 않는 낙하인지(예: 공장장 인형과 자리 바꿈 — 다음 착지까지). FallDamage가 착지할 때 캐릭터에 붙은 것을 모두 본다.</summary>

@@ -6,7 +6,8 @@ namespace Project1.Presentation
     /// <summary>
     /// 공장장 인형 던지기 연출(IDollThrow, BE DollThrow를 읽어 그린다).
     /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 원(나비 놓기 미리보기처럼). 못 던지는 곳 = 붉게, 몸 근처(떼면 취소) = 흐리게.
-    /// - 던진 인형: 날아가는 동안은 칙칙하고 어두운 꼭두각시 실루엣(무늬 없는 한 색, 그림자 없음, 데굴데굴 구름 — 잘 안 보이게), 땅에 닿아 멈춰 있으면 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
+    /// - 던진 인형: 날아가는 동안은 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·번지는 꼬리로 또렷한 공처럼 안 보이게(flyAsPuppet을 켜면 예전처럼 꼭두각시 실루엣), 땅에 닿아 멈춰 있으면 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
+    /// - E로 자리 바꾸기를 기다리는 동안(SwapPending) 몸(모델)을 경련하듯 떤다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그린 것은 캐릭터를 따라 움직이지 않게 따로 둔다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,12 +30,29 @@ namespace Project1.Presentation
         [SerializeField, Min(0.1f)] private float flyerHeight = 0.7f;
         [SerializeField] private Color flyerColor = new(0.07f, 0.065f, 0.06f, 1f);
         [SerializeField] private float flyerTumble = 420f;
+        [Tooltip("날아가는 인형을 꼭두각시 실루엣으로 할지(끄면 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·꼬리로 번져 보이게).")]
+        [SerializeField] private bool flyAsPuppet = false;
+        [Tooltip("날아가는 구체: 연기 막 크기(구체 대비) / 진하기, 속도에 따라 늘어나는 정도(m/s당), 꼬리 길이(초).")]
+        [SerializeField, Min(1f)] private float hazeScale = 1.9f;
+        [SerializeField, Range(0f, 1f)] private float hazeAlpha = 0.35f;
+        [SerializeField, Min(0f)] private float stretchPerSpeed = 0.05f;
+        [SerializeField, Min(0f)] private float trailTime = 0.22f;
+        [Tooltip("자리 바꾸기를 기다리는 동안 몸을 떠는 세기(m) / 기울기(도) / 빠르기.")]
+        [SerializeField, Min(0f)] private float shakeOffset = 0.05f, shakeAngle = 7f;
+        [SerializeField, Min(1f)] private float shakeRate = 38f;
         private const string PuppetResource = "EvilPuppet/EvilPuppet";
 
         private IDollThrow doll;
         private Transform root;
         private LineRenderer arc, ring, restRing;
         private GameObject ball, puppet, flyer;
+        private TrailRenderer trail;
+        private Transform haze;
+        private Vector3 lastBallPos;
+        private bool wasFlying;
+        private Transform shakeT;
+        private Vector3 shakeBasePos;
+        private Quaternion shakeBaseRot;
         private Vector3 tumbleAxis = Vector3.right;
         private float tumble;
         private bool wasResting;
@@ -79,6 +97,7 @@ namespace Project1.Presentation
             // 인형: 날아가는 동안 칙칙한 실루엣(꼭두각시를 어둡게, 데굴데굴 구름), 멈춰 있으면 꼭두각시 모델 + 바닥 원. 모델이 없으면 구체.
             bool resting = doll.DollActive && !doll.DollFlying, flying = doll.DollActive && doll.DollFlying;
             ball.SetActive((flying && flyer == null) || (resting && puppet == null));
+            UpdateBlur(flying && flyer == null);
             if (ball.activeSelf) ball.transform.position = doll.DollPosition;
             if (flyer != null)
             {
@@ -115,6 +134,7 @@ namespace Project1.Presentation
             wasResting = resting;
             restRing.gameObject.SetActive(resting);
             if (resting) SetRing(restRing, doll.DollPosition - Vector3.up * (dollSize * 0.5f), ringRadius * 0.6f, Time.time * -40f);
+            Shake();
         }
 
         private void Build()
@@ -141,7 +161,8 @@ namespace Project1.Presentation
             var dull = new Material(shader != null ? shader : Shader.Find("Standard")) { name = "DollSilhouette", color = flyerColor };
             if (dull.HasProperty("_Smoothness")) dull.SetFloat("_Smoothness", 0f);
             if (dull.HasProperty("_Metallic")) dull.SetFloat("_Metallic", 0f);
-            flyer = BuildPuppet("DollFlyer", flyerHeight, dull);
+            if (flyAsPuppet) flyer = BuildPuppet("DollFlyer", flyerHeight, dull);
+            BuildBlur();
         }
 
         /// <summary>인형 모델: 꼭두각시(Resources EvilPuppet, 키 height, 원점 = 발 사이 바닥), 팔을 T자세에서 내린다. silhouette이 있으면 그 한 색으로(날아가는 실루엣). 없으면 null(구체로 대신).</summary>
@@ -187,6 +208,85 @@ namespace Project1.Presentation
             Vector3 side = Vector3.ProjectOnPlane(along, Vector3.up).normalized;
             Vector3 want = Vector3.Slerp(side, (Vector3.down + side * 0.15f).normalized, puppetArmsDown);
             u.rotation = Quaternion.FromToRotation(along, want) * u.rotation;
+        }
+
+        /// <summary>날아가는 구체를 흐릿하게: 둘레에 반투명 연기 막(두 겹), 뒤로 번지는 꼬리.</summary>
+        private void BuildBlur()
+        {
+            var smoke = new Material(Shader.Find("Sprites/Default"));
+            haze = new GameObject("Haze").transform;
+            haze.SetParent(ball.transform, false);
+            foreach (var (scale, alpha) in new[] { (hazeScale, hazeAlpha), (hazeScale * 1.45f, hazeAlpha * 0.4f) })
+            {
+                var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                Destroy(s.GetComponent<Collider>());
+                s.transform.SetParent(haze, false);
+                s.transform.localScale = Vector3.one * scale;
+                var r = s.GetComponent<MeshRenderer>();
+                r.sharedMaterial = smoke;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_Color", new Color(dollColor.r + 0.03f, dollColor.g + 0.025f, dollColor.b + 0.02f, alpha));
+                r.SetPropertyBlock(block);
+            }
+            trail = ball.AddComponent<TrailRenderer>();
+            trail.time = trailTime;
+            trail.minVertexDistance = 0.05f;
+            trail.widthMultiplier = dollSize * 1.3f;
+            trail.widthCurve = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f));
+            trail.material = smoke;
+            trail.startColor = new Color(dollColor.r, dollColor.g, dollColor.b, 0.55f);
+            trail.endColor = new Color(dollColor.r, dollColor.g, dollColor.b, 0f);
+            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            trail.emitting = false;
+        }
+
+        /// <summary>날아가는 동안: 구체를 속도 방향으로 늘이고(번져 보임) 연기 막이 일렁이며, 꼬리를 남긴다. 던진 순간엔 지난 꼬리를 지운다.</summary>
+        private void UpdateBlur(bool flyingBall)
+        {
+            if (trail == null) return;
+            if (flyingBall && !wasFlying) { lastBallPos = doll.DollPosition; trail.Clear(); }
+            trail.emitting = flyingBall;
+            haze.gameObject.SetActive(flyingBall);
+            if (flyingBall)
+            {
+                ball.transform.position = doll.DollPosition;
+                Vector3 vel = Time.deltaTime > 1e-5f ? (doll.DollPosition - lastBallPos) / Time.deltaTime : Vector3.zero;
+                float speed = vel.magnitude;
+                ball.transform.rotation = speed > 0.1f ? Quaternion.LookRotation(vel / speed) : Quaternion.identity;
+                ball.transform.localScale = new Vector3(dollSize, dollSize, dollSize * (1f + speed * stretchPerSpeed));
+                float wobble = 1f + Mathf.Sin(Time.time * 23f) * 0.08f;
+                haze.localScale = new Vector3(wobble, 1f / wobble, 1f);
+            }
+            else ball.transform.SetPositionAndRotation(ball.transform.position, Quaternion.identity);
+            if (!flyingBall) ball.transform.localScale = Vector3.one * dollSize;
+            lastBallPos = doll.DollPosition;
+            wasFlying = flyingBall;
+        }
+
+        /// <summary>E를 눌러 자리 바꾸기를 기다리는 동안(SwapPending) 몸(모델)을 경련하듯 떤다 — 점점 세게. 끝나면 원래 자리로.</summary>
+        private void Shake()
+        {
+            bool on = doll.SwapPending;
+            if (on && shakeT == null)
+            {
+                var anim = GetComponentInChildren<Animator>();
+                if (anim == null) return;
+                shakeT = anim.transform;
+                shakeBasePos = shakeT.localPosition; shakeBaseRot = shakeT.localRotation;
+            }
+            if (shakeT == null) return;
+            if (!on)
+            {
+                shakeT.SetLocalPositionAndRotation(shakeBasePos, shakeBaseRot);
+                shakeT = null;
+                return;
+            }
+            float amp = Mathf.Lerp(0.5f, 1f, doll.SwapProgress);
+            float t = Time.time * shakeRate;
+            Vector3 off = new Vector3(Mathf.PerlinNoise(t, 0.1f) - 0.5f, (Mathf.PerlinNoise(0.3f, t) - 0.5f) * 0.6f, Mathf.PerlinNoise(t, 7.7f) - 0.5f) * (2f * shakeOffset * amp);
+            Vector3 ang = new Vector3(Mathf.PerlinNoise(t, 3.3f) - 0.5f, Mathf.PerlinNoise(5.1f, t) - 0.5f, Mathf.PerlinNoise(t, 9.9f) - 0.5f) * (2f * shakeAngle * amp);
+            shakeT.SetLocalPositionAndRotation(shakeBasePos + off, shakeBaseRot * Quaternion.Euler(ang));
         }
 
         private LineRenderer Line(string name, Color color, bool loop)

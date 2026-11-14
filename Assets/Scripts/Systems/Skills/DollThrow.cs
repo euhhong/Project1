@@ -14,14 +14,21 @@ namespace Project1.Systems
     ///   겨누는 동안 그 포물선(AimArc)과 멈출 자리(AimLanding)를 보여 준다. 발밑(cancelRadius 안)을 가리키고 떼면 던지지 않는다(취소).
     /// - 떼면 인형을 그 포물선으로 던진다(실제로 날아가는 투사체: 비행 시간 = 수평 거리 ÷ throwSpeed, 중력 gravity).
     ///   바닥(윗면)에 닿으면 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다. 몸 근처를 가리키거나 못 가는 곳이면 던지지 않는다. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
-    /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 날아가는 중이든 떨어져 있든 인형 자리와 공장장 자리를 맞바꾼다.
+    /// - 좌클릭을 꾹 누르는 동안은 우클릭 없이 마우스로 시점(= 포물선)을 돌린다(IChargeLook, 감도 aimLookScale배).
+    /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 누른 순간의 인형 자리를 도착점으로 정하고, swapDelay초 동안 제자리에서 몸을 떤 뒤(FE) 인형 자리와 공장장 자리를 맞바꾼다.
     ///   공장장은 인형이 있던 자리(공중이면 그 공중)로 가서 떨어지고, 인형은 공장장이 있던 자리에 놓인다(멈춤 — 다시 바꾸면 돌아온다).
     ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않고(ISafeFallSource → FallDamage), 서 있는 자세로 그냥 툭 떨어져 착지 동작 없이 바로 움직인다(IGentleDropSource → CharacterTraversal DollDrop). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource
+    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit
     {
+        [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
+        [SerializeField, Min(0.1f)] private float aimLookScale = 1.8f;
+        [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
+        [SerializeField, Min(0f)] private float swapDelay = 0.35f;
+        private float swapLeft;
+        private Vector3 swapFeet;
         [Tooltip("겨눌 수 있는 최대 거리(m).")]
         [SerializeField, Min(1f)] private float maxRange = 30f;
         [Tooltip("던진 인형의 수평 속도(m/s) — 비행 시간 = 수평 거리 ÷ 이 값(minFlight~maxFlight초로 자름). 느릴수록 높이 날아 오래 걸린다.")]
@@ -72,17 +79,25 @@ namespace Project1.Systems
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
         public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 발밑을 보고 떼기";
+        public bool LookWhileCharging => isActiveAndEnabled; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput)
+        public float ChargeLookScale => aimLookScale;
+        public bool SwapPending => swapLeft > 0f;
+        public float SwapProgress => swapDelay > 0f && SwapPending ? 1f - swapLeft / swapDelay : 0f;
+
+        /// <summary>자리를 바꾸려고 기다리는 동안은 제자리(움직이지 않음).</summary>
+        public bool TryGetSpeedLimit(out float maxSpeed) { maxSpeed = 0f; return SwapPending; }
 
         private void Awake()
         {
             inputSource = GetComponent<ICharacterInputSource>();
             TryGetComponent(out cc);
+            if (TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits(); // 기다리는 동안 멈추게(IMoveSpeedLimit)
         }
 
         private void OnDisable()
         {
             Aiming = false; arc.Clear();
-            DollActive = false; DollFlying = false; safeFall = false;
+            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f;
         }
 
         private void FixedUpdate()
@@ -108,6 +123,14 @@ namespace Project1.Systems
                 Aiming = false; arc.Clear();
             }
 
+            if (SwapPending)
+            {
+                bool cut = (stun != null && stun.IsStunned) || (health != null && health.IsDead)
+                           || (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions);
+                swapLeft -= Time.fixedDeltaTime;
+                if (cut) swapLeft = 0f;                    // 기절·쓰러짐·오르기: 바꾸지 않음
+                else if (swapLeft <= 0f) { swapLeft = 0f; DoSwap(); }
+            }
             if (DollActive && DollFlying) StepDoll(Time.fixedDeltaTime);
             TrackSafeFall();
         }
@@ -269,12 +292,28 @@ namespace Project1.Systems
             if (!DollActive || cc == null) return false;
             if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) return false; // 오르는 중·매달림
             if ((stun != null && stun.IsStunned) || (health != null && health.IsDead)) return false;
-            Vector3 feet = dollPos - Vector3.up * dollRadius;
-            bool found = false;
-            for (float up = 0f; up <= swapClearSearch + 1e-3f; up += 0.25f)
-                if (Clear(feet + Vector3.up * up)) { feet += Vector3.up * up; found = true; break; }
-            if (!found) return false;
+            if (SwapPending) return false; // 이미 바꾸는 중
+            if (!FindRoom(dollPos - Vector3.up * dollRadius, out swapFeet)) return false;
+            // 도착 자리는 지금(누른 순간) 정하고, swapDelay초 뒤에 옮긴다 — 그동안 제자리에서 몸을 떤다(FE).
+            swapLeft = swapDelay;
+            if (swapDelay <= 0f) DoSwap();
+            return true;
+        }
 
+        /// <summary>feet에서 위로 swapClearSearch까지 몸이 들어갈 첫 자리.</summary>
+        private bool FindRoom(Vector3 feet, out Vector3 room)
+        {
+            for (float up = 0f; up <= swapClearSearch + 1e-3f; up += 0.25f)
+                if (Clear(feet + Vector3.up * up)) { room = feet + Vector3.up * up; return true; }
+            room = feet;
+            return false;
+        }
+
+        /// <summary>기다린 뒤 실제로 자리를 바꾼다: 누른 순간의 인형 자리(swapFeet)로 가고, 인형은 지금 서 있던 자리에 놓는다. 그 사이 막혔으면 위로 다시 찾고, 없으면 바꾸지 않는다.</summary>
+        private void DoSwap()
+        {
+            if (!Clear(swapFeet) && !FindRoom(swapFeet, out swapFeet)) return;
+            Vector3 feet = swapFeet;
             Vector3 old = transform.position;
             cc.enabled = false;
             transform.position = feet;
@@ -286,7 +325,6 @@ namespace Project1.Systems
             DollFlying = false;
             safeFall = true; groundedTicks = 0; // 다음 착지까지 다치지 않는다
             SwapCount++;
-            return true;
         }
 
         /// <summary>바꾼 뒤 땅에 두 틱 이상 서 있으면 다치지 않는 낙하 표시를 끈다(FallDamage가 착지 틱에 묻는다).</summary>

@@ -259,6 +259,10 @@ namespace Project1.Systems
         private void UpdateLook()
         {
             bool holding = lookHoldAction.IsPressed();
+            // 좌클릭 꾹(강공격 모으기 시간이 지남) + 캐릭터가 허락하면(IChargeLook, 예: 공장장 인형 겨누기) 우클릭 없이도 마우스로 시점을 돌린다(감도 배율).
+            float chargeScale = ChargeLookScale();
+            bool chargeLook = !holding && chargeScale > 0f;
+            holding |= chargeLook;
             SetCursorLocked(holding);
 
             Vector2 look = lookAction.ReadValue<Vector2>();
@@ -266,7 +270,7 @@ namespace Project1.Systems
             Vector2 deltaDegrees;
             if (device is Pointer)
             {
-                deltaDegrees = holding ? look * mouseSensitivity : Vector2.zero;
+                deltaDegrees = holding ? look * (mouseSensitivity * (chargeLook ? chargeScale : 1f)) : Vector2.zero;
             }
             else
             {
@@ -280,6 +284,17 @@ namespace Project1.Systems
             GetComponents(lookScales);
             foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
             lookPitch = Mathf.Clamp(lookPitch + pitchDelta, minPitch, maxPitch);
+        }
+
+        private readonly System.Collections.Generic.List<IChargeLook> chargeLooks = new();
+
+        /// <summary>좌클릭을 꾹 누르는 중(강공격 모으기 시간이 지남)이고 캐릭터가 그동안 시점 돌리기를 허락하면 그 감도 배율, 아니면 0.</summary>
+        private float ChargeLookScale()
+        {
+            if (!attackHeld || Time.time - attackPressTime < heavyAttackHoldTime) return 0f;
+            GetComponents(chargeLooks);
+            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.LookWhileCharging) return c.ChargeLookScale;
+            return 0f;
         }
 
         private void SetCursorLocked(bool locked)
