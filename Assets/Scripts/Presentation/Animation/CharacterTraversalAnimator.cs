@@ -107,7 +107,7 @@ namespace Project1.Presentation
             TraversalAction.HangClimbRail => "HangClimbRail",
             TraversalAction.HangFlip => "HangFlip", // 생존자: 벽을 박차고 뒤로 공중제비(Backflip) → 아래 바닥에 내려섬
             TraversalAction.HangClimbOver => "HangClimb",// 매달려 올라가기(Freehang Climb)의 앞부분(꼭대기에 올라섬까지)만
-            TraversalAction.Ladder => t.HunterStyle ? "LadderHunter" : "Ladder", // 사다리 오르기(생존자 Climbing Ladder / 감시자 Climbing) — 재생 위치 = 오른 높이(내리면 거꾸로, 멈추면 멈춤)
+            TraversalAction.Ladder => t.HunterStyle ? "LadderHunter" : "Ladder", // 사다리 오르기(생존자·감시자 모두 Climbing 원본) — 재생 위치 = 오른 높이(내리면 거꾸로, 멈추면 멈춤)
             TraversalAction.Fall => t.FallBackward ? "FallBack" : "Fall",
             TraversalAction.Land => "Land",
             TraversalAction.LandHigh => "LandHigh",

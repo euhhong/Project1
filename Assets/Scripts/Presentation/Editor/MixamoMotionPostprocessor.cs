@@ -126,7 +126,7 @@ namespace Project1.Presentation.EditorTools
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
         private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper", "Traversal_Ladder", "Traversal_LadderHunter" };
-        // 몸 높이를 AirHeightOffset 말고 다른 높이로 고정하는 모션. 사다리 오르기(Climbing Ladder 생존자 / Climbing 감시자)는 오르는 높이를 빼 제자리 반복으로 만들고
+        // 몸 높이를 AirHeightOffset 말고 다른 높이로 고정하는 모션. 사다리 오르기(생존자·감시자 모두 사용자가 처음 준 Climbing — 두 파일이 같은 원본)는 오르는 높이를 빼 제자리 반복으로 만들고
         // 골반을 루트 위 1.76(Humanoid 단위)에 둔다 — 발 ≈ 루트 + 0.8, 손 ≈ 루트 + 2.1~2.2로 벽을 짚고 매달린 자세(BE 사다리 루트 기준)와 같다.
         private static readonly Dictionary<string, float> BodyHeightOffset = new() { ["Traversal_Ladder"] = -1.76f, ["Traversal_LadderHunter"] = -1.76f };
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.

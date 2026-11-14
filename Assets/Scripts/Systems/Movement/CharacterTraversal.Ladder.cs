@@ -17,7 +17,7 @@ namespace Project1.Systems
     public partial class CharacterTraversal : IStaminaDrain
     {
         [Header("사다리")]
-        [Tooltip("사다리 오르기 모션 한 사이클(= 가로대 두 칸, Ladder.CycleRise) 시간(초) — 생존자 Climbing Ladder(원래 0.77초) / 감시자 Climbing(원래 1.57초).\n" +
+        [Tooltip("사다리 오르기 모션 한 사이클(= 가로대 두 칸, Ladder.CycleRise) 시간(초) — 생존자·감시자 모두 Climbing(원래 1.57초).\n" +
                  "오르는 속도 = 사이클 높이 ÷ 이 시간. 칸을 크게 해 한 동작에 많이 오르고, 모션은 원래 빠르기에서 크게 벗어나지 않게(사이클 1.6m — 생존자 3.6m/s·모션 약 1.7배, 감시자 3.2m/s·약 3배).")]
         [SerializeField, Min(0.1f)] private float ladderCycleTime = 0.45f, hunterLadderCycleTime = 0.5f;
         [Tooltip("내려갈 때 사이클 시간 배율(1보다 작으면 내려가기가 더 빠름).")]
