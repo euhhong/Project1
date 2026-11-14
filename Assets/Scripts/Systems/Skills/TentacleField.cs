@@ -16,7 +16,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity
+    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint
     {
         [Tooltip("촉수를 세울 자리 고르기(땅 위만, 몸 근처 = 취소).")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false, maxPlaceDistance = 25f, defaultDistance = 8f, clampToMax = true };
@@ -63,6 +63,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
+        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기";
         public bool Selecting { get; private set; }
         public int TargetIndex { get; private set; } = -1;
         public IReadOnlyList<TentacleInfo> Tentacles => tentacles;

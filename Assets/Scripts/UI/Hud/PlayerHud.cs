@@ -12,6 +12,8 @@ namespace Project1.UI
         private ICharacterHealth health;
         private ICharacterSkillState skill;
         private ICharacterStamina stamina;
+        private GameObject target;
+        private readonly System.Collections.Generic.List<IChargeCancelHint> cancelHints = new();
         private string characterName;
         private GUIStyle label, small;
         private float blockedMessageUntil;
@@ -23,6 +25,7 @@ namespace Project1.UI
             health = player.GetComponent<ICharacterHealth>();
             skill = player.GetComponent<ICharacterSkillState>();
             stamina = player.GetComponent<ICharacterStamina>();
+            target = player;
             characterName = displayName;
         }
 
@@ -81,9 +84,11 @@ namespace Project1.UI
                     _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
                 };
                 if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 = 재사용 대기 남은 초만)
+                string cancelHint = CancelHint(); // 꾹 눌러 자리를 고르는 중이면 이 줄에 취소 방법(따로 창을 띄우지 않는다)
+                if (cancelHint != null) status = cancelHint;
                 small.normal.textColor = skill.State == SkillState.Ready && skill.CanUse ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
                 GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {skill.SkillName}", small);
-                small.normal.textColor = Color.white;
+                small.normal.textColor = cancelHint != null ? new Color(1f, 0.6f, 0.5f) : Color.white;
                 GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), status, small);
 
                 var bar = new Rect(box.x, box.yMax - 6 * u, w, 6 * u);
@@ -101,6 +106,20 @@ namespace Project1.UI
                     GUI.Label(new Rect(box.x, box.y - 40 * u, w, 36 * u), blockedMessage, small);
                 }
             }
+        }
+
+        /// <summary>캐릭터의 차징(자리 고르기) 기능 중 지금 고르는 중인 것의 취소 안내. 캐릭터를 바꾸면 붙는 기능이 바뀌어 매번 찾는다.</summary>
+        private string CancelHint()
+        {
+            if (target == null) return null;
+            target.GetComponents(cancelHints);
+            foreach (var h in cancelHints)
+            {
+                if (h is Behaviour { isActiveAndEnabled: false }) continue;
+                string s = h.ChargeCancelHint;
+                if (!string.IsNullOrEmpty(s)) return s;
+            }
+            return null;
         }
 
         private static void Bar(Rect r, float fill, Color color)

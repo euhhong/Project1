@@ -20,7 +20,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class ButterflyField : MonoBehaviour, IButterflyField, IAttackHoldOverride
+    public class ButterflyField : MonoBehaviour, IButterflyField, IAttackHoldOverride, IChargeCancelHint
     {
         [Tooltip("놓아 둘 수 있는 나비 수. 넘으면 가장 오래된 나비가 사라진다.")]
         [SerializeField, Min(1)] private int maxButterflies = 3;
@@ -48,6 +48,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
+        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기";
         public float PlaceCooldownRemaining { get; private set; }
         public float PlaceCooldownDuration => placeCooldown;
         public int TargetIndex { get; private set; } = -1;

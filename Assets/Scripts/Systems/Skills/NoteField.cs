@@ -17,7 +17,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 그리기는 FE(NoteVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride, ILookSensitivity
+    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint
     {
         [Tooltip("놓을 자리 고르기(땅 위만, 몸 근처 = 취소). 시점을 돌리는 동안에도 붉은나비처럼 거리를 지키지 않고 화면 가운데가 가리키는 땅을 자유롭게 따라간다.")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false };
@@ -48,6 +48,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
+        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기";
         public IReadOnlyList<Vector3> Notes => notes;
         public bool Linked { get; private set; }
         public float PendingTimeLeft { get; private set; }

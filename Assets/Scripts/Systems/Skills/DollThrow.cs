@@ -16,7 +16,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource
+    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint
     {
         [Tooltip("겨눌 수 있는 최대 거리(m).")]
         [SerializeField, Min(1f)] private float maxRange = 30f;
@@ -61,6 +61,7 @@ namespace Project1.Systems
         public int SwapCount { get; private set; }
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
+        public string ChargeCancelHint => !Aiming ? null : placement.Cancels ? "떼면 취소" : "취소: 몸 쪽으로 끌고 떼기";
 
         private void Awake()
         {
