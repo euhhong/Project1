@@ -31,6 +31,12 @@ namespace Project1.Systems
         }
 
         /// <summary>
+        /// 공중에서 공격 키를 누르면 이 스킬을 시작하는지(예: 루키노 도약 — 높이 떨어지는 중 공격 = 내려찍기). CanStart가 통과할 때만.
+        /// 이렇게 시작하면 CharacterSkill.StartedByAttack이 true다.
+        /// </summary>
+        public virtual bool StartsOnAirAttack => false;
+
+        /// <summary>
         /// 시전 중 다른 행동(공격)을 막는지. false면 시전 중 공격하면 시전이 끊긴다(효과 없음).
         /// true면 공격 입력은 스킬이 받는다(Tick의 input).
         /// </summary>

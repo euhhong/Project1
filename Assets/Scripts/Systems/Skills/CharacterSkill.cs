@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride, IAirAttackOverride
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -45,6 +45,13 @@ namespace Project1.Systems
         public int UseCount { get; private set; }
         /// <summary>이번 시전이 공격의 후딜레이를 끊고 이어 쓴 것인지(받아 둔 E 선입력, 예: 맹인 휘두르기 → 찌르기). 스킬이 오토에임 등을 할 때 본다.</summary>
         public bool StartedFromCombo { get; private set; }
+        /// <summary>이번 시전이 E가 아니라 공중 공격 키로 시작됐는지(SkillDefinition.StartsOnAirAttack, 예: 루키노 공중 내려찍기).</summary>
+        public bool StartedByAttack { get; private set; }
+
+        /// <summary>지금 공중에서 공격 키를 누르면 일반 공중 공격 대신 이 스킬이 시작되는지(CharacterAttack이 본다).</summary>
+        public bool OverridesAirAttack =>
+            skill != null && skill.StartsOnAirAttack && State == SkillState.Ready
+            && TryGetComponent(out ICharacterState st) && !st.IsGrounded && CanUse;
         public bool ShowArea { get; set; }
         public Vector3 AreaCenter { get; set; }
         public float AreaRadius { get; set; }
@@ -179,13 +186,18 @@ namespace Project1.Systems
                 case SkillState.Ready:
                     if (input.Skill)
                     {
-                        if (CanUse) { StartedFromCombo = false; StartCast(); }
+                        if (CanUse) { StartedFromCombo = false; StartedByAttack = false; StartCast(); }
                         else if (attack is IAttackCancel c && c.CanCancelForSkill) skillBuffer = SkillBufferTime; // 공격의 후딜레이가 시작되면 끊고 이어 쓴다
+                    }
+                    else if (input.AttackPressed && OverridesAirAttack)
+                    {
+                        // 공중 공격 키로 시작하는 스킬(루키노 공중 내려찍기). CharacterAttack은 이때 공중 공격을 내지 않는다.
+                        StartedFromCombo = false; StartedByAttack = true; StartCast();
                     }
                     else if (skillBuffer > 0f)
                     {
                         skillBuffer -= dt;
-                        if (attack is IAttackCancel c && c.TryCancelForSkill() && CanUse) { skillBuffer = 0f; StartedFromCombo = true; StartCast(); }
+                        if (attack is IAttackCancel c && c.TryCancelForSkill() && CanUse) { skillBuffer = 0f; StartedFromCombo = true; StartedByAttack = false; StartCast(); }
                     }
                     break;
 

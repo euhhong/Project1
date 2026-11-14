@@ -234,6 +234,12 @@ namespace Project1.Systems
                         StartSwipe(input.AttackSwipe);
                         break;
                     }
+                    // 공중 공격 키를 다른 기능이 대신 쓴다(예: 루키노 — 높이 떨어지는 중 공격 = 도약 스킬의 내려찍기). 누른 키는 뗄 때까지 무시.
+                    if (!grounded && input.AttackPressed && TryGetComponent(out IAirAttackOverride airOverride) && airOverride.OverridesAirAttack)
+                    {
+                        waitAirRelease = !(input.LightAttack || input.HeavyRelease);
+                        break;
+                    }
                     // 달리기 점프 공격을 한 그 점프가 끝나기 전에 한 번 더 누름 → 다시 뛰어오르며 두 번째 날아 차기.
                     if (followUp) { StartFollowUpKick(input); break; }
                     // 공격이 끝난 직후 다시 공격 대기: 이동은 되지만 공격은 안 나간다. 이때 누른 키는 뗄 때까지 무시한다

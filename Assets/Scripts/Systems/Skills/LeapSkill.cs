@@ -11,7 +11,9 @@ namespace Project1.Systems
     ///   땅에 닿는 순간 범위 안의 다른 캐릭터를 모두 맞힌다(HitEvents, 부위는 몸통). 맞은 상대는 slamStun초 경직(CharacterStun). 그 뒤 slamRecovery 동안 못 움직인다.
     /// - 공중에서 E를 한 번 더 누르면 공격 없이 그 자리에서 바로 빠르게 떨어진다(모션은 내려찍기와 같음).
     /// - 아무것도 안 누르면 그냥 착지하고 끝난다.
-    /// 땅에서만 쓴다. 시전 중 일반 공격·점프는 못 한다(공격 키는 내려찍기에 쓴다).
+    /// - 높이 떨어지는 중(발밑 땅까지 minAirHeight 이상 — 스페이스바 낮은 점프는 해당 없음)에도 쓸 수 있다:
+    ///   E = 위의 '빠르게 떨어지기', 공격 키 = 위의 '내려찍기'(같은 범위·판정·피해·경직·모션)가 그 자리에서 바로 시작된다(StartsOnAirAttack).
+    /// 땅에서는 도약, 낮은 공중에서는 못 쓴다. 시전 중 일반 공격·점프는 못 한다(공격 키는 내려찍기에 쓴다).
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Leap")]
     public class LeapSkill : SkillDefinition
@@ -40,17 +42,31 @@ namespace Project1.Systems
         [Tooltip("내려찍기에 맞은 상대가 경직(기절, CharacterStun)되는 시간(초). 0이면 경직 없음.")]
         [Min(0f)] public float slamStun = 1f;
 
+        [Header("공중에서 바로 (높이 떨어지는 중)")]
+        [Tooltip("공중에서 E(빠르게 떨어지기)·공격(내려찍기)을 쓰려면 발밑 땅까지 이만큼(m) 이상 떠 있어야 한다. 보통 점프는 1.45m라 스페이스바 낮은 점프에서는 쓰이지 않는다.")]
+        [Min(0f)] public float minAirHeight = 2.5f;
+
         public override bool LocksActions => true;
         public override bool SyncAnimationToCast => false;
+        public override bool StartsOnAirAttack => true;
 
         public override bool CanStart(GameObject owner, out string reason)
         {
             var state = owner.GetComponent<ICharacterState>();
-            if (state != null && !state.IsGrounded) { reason = "공중에서는 못 씀"; return false; }
+            if (state != null && !state.IsGrounded)
+            {
+                // 높이 떨어지는 중: 바로 내리꽂기(E = 빠르게 떨어지기, 공격 = 내려찍기). 낮은 점프에서는 못 쓴다.
+                if (HeightAboveGround(owner.transform.position) < minAirHeight) { reason = "공중에서는 못 씀"; return false; }
+                reason = null;
+                return true;
+            }
             if (HasCeiling(owner)) { reason = "천장이 막혀 못 뜀"; return false; }
             reason = null;
             return true;
         }
+
+        /// <summary>발밑 땅까지 높이(m). 땅을 못 찾으면 0.</summary>
+        private static float HeightAboveGround(Vector3 pos) => pos.y - FindGround(pos).y;
 
         /// <summary>머리 위 ceilingCheckHeight 안에 천장(지형·물건)이 있는지. 캐릭터·판정·트리거는 무시한다.</summary>
         private bool HasCeiling(GameObject owner)
@@ -72,7 +88,22 @@ namespace Project1.Systems
         public override void OnStart(CharacterSkill ctx)
         {
             var motor = ctx.GetComponent<CharacterMotor>();
-            if (motor != null) motor.Launch(Mathf.Sqrt(2f * leapHeight * Mathf.Abs(motor.Gravity)));
+            if (motor == null) return;
+            if (!motor.IsGrounded)
+            {
+                // 높이 떨어지는 중에 시작: 떠오르기 없이 바로 내리꽂는다(공격 키 = 내려찍기, E = 빠르게 떨어지기).
+                if (ctx.StartedByAttack)
+                {
+                    ctx.SetPhase(Slamming);
+                    ctx.AreaCenter = FindGround(ctx.transform.position);
+                    ctx.AreaRadius = slamRadius;
+                    ctx.ShowArea = true;
+                }
+                else ctx.SetPhase(Dropping);
+                motor.Launch(-slamSpeed);
+                return;
+            }
+            motor.Launch(Mathf.Sqrt(2f * leapHeight * Mathf.Abs(motor.Gravity)));
         }
 
         public override bool TryGetMoveOverride(CharacterSkill ctx, out Vector2 localMove, out float speed, out bool allowJump)
