@@ -48,7 +48,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_HasturSlam", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
-            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_EdgeSlip", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
+            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_Head_Big", "Hit_EdgeSlip", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -380,6 +380,8 @@ namespace Project1.Presentation.EditorTools
             hitSm.defaultState = hitSm.AddState("Empty");
             foreach (var slot in new[] { "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun" })
                 if (clips[slot] != null) hitSm.AddState(slot).motion = clips[slot];
+            // 큰 데미지(CharacterHitReactionAnimator.BigDamage 이상 — 감시자 강공격·창틀 넘기 중 2배 등): 크게 꺾였다 젖혀짐(Big Hit To Head). 1.63초 → 약 1.3초
+            if (clips["Hit_Head_Big"] != null) { var big = hitSm.AddState("Hit_Head_Big"); big.motion = clips["Hit_Head_Big"]; big.speed = 1.25f; }
 
             // 전신 피격 레이어: 쓰러지며 나가떨어지는 피격(헤드샷 킥 = Corkscrew Evade). CharacterHitReactionAnimator가 무게를 켠다.
             ac.AddLayer("HitReactFull");
