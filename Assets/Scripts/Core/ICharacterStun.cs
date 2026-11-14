@@ -13,6 +13,9 @@ namespace Project1.Core
         /// <summary>남은 기절 시간(초).</summary>
         float StunRemaining { get; }
 
+        /// <summary>이번 기절 전체 시간(초). 기절이 길어지면 그 새 시간. 남은 비율 = StunRemaining / StunDuration.</summary>
+        float StunDuration { get; }
+
         /// <summary>이번 기절이 등 뒤에서 맞아 생겼는지(예: 뒤에서 돌진·신호탄에 맞음 — 휘청이며 쓰러지는 모션). 방향 없이 기절시키면 거짓.</summary>
         bool StunnedFromBehind { get; }
 

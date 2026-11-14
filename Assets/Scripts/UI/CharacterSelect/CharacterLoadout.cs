@@ -45,6 +45,7 @@ namespace Project1.UI
             Ensure<CharacterDeathAnimator>(player); // 체력 0 = 쓰러지는 모션(Zombie Dying)
             Ensure<SwingTrail>(player); // 휘두르는 궤적(반투명 블렌드 띠)
             Ensure<HitFlash>(player);   // 맞으면 몸이 빨갛게 달궈졌다 식음
+            Ensure<StunDizzyIndicator>(player); // 기절하면 머리 위 병아리 + 남은 시간 게이지
             Ensure<SkillAreaIndicator>(player);
             Ensure<AfterimageTrail>(player);
 

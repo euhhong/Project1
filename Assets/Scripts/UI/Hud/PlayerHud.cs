@@ -11,7 +11,6 @@ namespace Project1.UI
     {
         private ICharacterHealth health;
         private ICharacterSkillState skill;
-        private ICharacterStun stun;
         private ICharacterStamina stamina;
         private string characterName;
         private GUIStyle label, small;
@@ -23,7 +22,6 @@ namespace Project1.UI
         {
             health = player.GetComponent<ICharacterHealth>();
             skill = player.GetComponent<ICharacterSkillState>();
-            stun = player.GetComponent<ICharacterStun>();
             stamina = player.GetComponent<ICharacterStamina>();
             characterName = displayName;
         }
@@ -65,13 +63,6 @@ namespace Project1.UI
                 var r = new Rect(40 * u, Screen.height - 52 * u, 420 * u, 12 * u);
                 Bar(r, stamina.Current / Mathf.Max(stamina.Max, 1f),
                     stamina.IsExhausted ? new Color(0.95f, 0.55f, 0.15f) : new Color(0.95f, 0.85f, 0.3f));
-            }
-
-            // 기절
-            if (stun != null && stun.IsStunned)
-            {
-                small.normal.textColor = new Color(1f, 0.85f, 0.3f);
-                GUI.Label(new Rect(0, Screen.height * 0.35f, Screen.width, 40 * u), $"기절  {stun.StunRemaining:0.0}초", small);
             }
 
             // 고유 스킬

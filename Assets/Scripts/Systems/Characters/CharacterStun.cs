@@ -14,6 +14,7 @@ namespace Project1.Systems
     {
         public bool IsStunned => StunRemaining > 0f;
         public float StunRemaining { get; private set; }
+        public float StunDuration { get; private set; }
 
         public bool StunnedFromBehind { get; private set; }
 
@@ -40,6 +41,7 @@ namespace Project1.Systems
             if (seconds <= StunRemaining) return;
             bool fresh = !IsStunned;
             StunRemaining = seconds;
+            StunDuration = seconds;
             hitDirection.y = 0f;
             bool behind = hitDirection.sqrMagnitude > 1e-4f && Vector3.Dot(transform.forward, hitDirection.normalized) > 0.3f;
             if (fresh) StunnedFromBehind = behind; // 기절이 길어질 때는 처음 쓰러진 방향 그대로
