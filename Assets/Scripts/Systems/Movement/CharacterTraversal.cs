@@ -559,11 +559,12 @@ namespace Project1.Systems
             Vector3 pos = transform.position;
             float look = Mathf.Max(hopMinLedgeSpan, stride);
 
-            // 가는 쪽: 매달린 몸(벽을 짚은 발 ~ 어깨) 높이에서 옆을 막는 벽까지 거리.
+            // 가는 쪽: 손 높이(턱 바로 아래)와 매달린 몸(벽을 짚은 발 ~ 어깨) 높이에서 옆을 막는 벽까지 거리.
+            // 손 높이도 본다: 바닥판 구멍(두께 0.3m, 아래는 빈 곳)에 늘어져 매달리면 옆 변은 손 높이의 판 끝면뿐이다.
             float wallAt = float.MaxValue;
             Vector3 wallNormal = Vector3.zero;
-            foreach (float h in new[] { BracedFeet * hu, 1.6f * hu })
-                if (Cast(pos + Vector3.up * h, side, look + cc.radius, out var hit) && hit.distance - cc.radius - Skin < wallAt)
+            foreach (float y in new[] { ledge.Top - 0.12f, pos.y + BracedFeet * hu, pos.y + 1.6f * hu })
+                if (y < ledge.Top - 0.05f && Cast(new Vector3(pos.x, y, pos.z), side, look + cc.radius, out var hit) && hit.distance - cc.radius - Skin < wallAt)
                 {
                     wallAt = Mathf.Max(0f, hit.distance - cc.radius - Skin);
                     wallNormal = Vector3.ProjectOnPlane(hit.normal, Vector3.up).normalized;
@@ -692,7 +693,8 @@ namespace Project1.Systems
             // 두께: 턱 안쪽 1.25m에서 앞면 쪽으로 쏴 뒷면을 맞으면 얇은 턱.
             const float probe = 1.25f;
             Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
-            if (Cast(far, l.Normal, probe, out var back) && probe - back.distance < hopRailThickness) return true;
+            // 뒷면 바로 뒤가 비어 있어야 진짜 뒷면이다(바닥판을 여러 조각으로 나눈 이음매는 뒤가 다른 조각 안이라 난간이 아니다).
+            if (Cast(far, l.Normal, probe, out var back) && probe - back.distance < hopRailThickness && !OverlapSphere(back.point - l.Normal * 0.06f, 0.03f)) return true;
             return FindFloorBehindRail(l, out _);
         }
 
