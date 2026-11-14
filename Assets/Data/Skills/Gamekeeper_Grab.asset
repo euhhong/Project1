@@ -29,11 +29,23 @@ MonoBehaviour:
   slot: 16
   dragSpeed: 20
   dragReleaseStun: 0.4
+  dragSlowTime: 2
+  dragSlowRatio: 0.35
   towSpeed: 20
   wallProbeRadius: 0.12
   wallMaxNormalY: 0.6
   towStopReach: 0.1
-  pullMotionShare: 0.6
+  wallShockRadius: 2.4
+  wallShockSlowTime: 1.5
+  wallShockSlowRatio: 0.4
+  towToWalls: 1
+  vaultOverVictim: 0
+  vaultHeight: 2.6
+  vaultHeightPerMeter: 0.1
+  vaultMaxHeight: 5
+  vaultLandTime: 0.45
+  vaultSpeedScale: 1
   aimMoveSpeedRatio: 1
   snapTolerance: 1
   maxSnapAngle: 20
+  pullMotionShare: 0.6
