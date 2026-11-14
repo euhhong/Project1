@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride, IAirAttackOverride
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -156,6 +156,13 @@ namespace Project1.Systems
             }
             localMove = Vector2.zero; speed = 0f; allowJump = true;
             return false;
+        }
+
+        /// <summary>시전 중 스킬이 속도를 통째로 정하면(중력 없이 날아가기, 예: 그랩에 끌려가기) CharacterMotor가 그대로 옮긴다.</summary>
+        public bool TryGetVelocity(out Vector3 worldVelocity, out bool passThrough)
+        {
+            worldVelocity = Vector3.zero; passThrough = false;
+            return State == SkillState.Casting && skill != null && skill.TryGetVelocityOverride(this, out worldVelocity, out passThrough);
         }
 
         public bool TryGetFacingYaw(out float yaw)

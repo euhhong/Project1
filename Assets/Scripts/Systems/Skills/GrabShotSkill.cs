@@ -134,15 +134,6 @@ namespace Project1.Systems
                 speed = Mathf.Min(vault.Speed, left / Time.fixedDeltaTime);
                 return true;
             }
-            if (ctx.Phase == Towing)
-            {
-                // 그랩이 문 벽 쪽으로(던진 방향) 끌려간다. 손이 벽에 닿는 곳을 넘지 않게 마지막 틱은 남은 거리만큼만.
-                float left = Mathf.Max(0f, ctx.Reach - towStopReach);
-                Vector3 local = Quaternion.Inverse(ctx.transform.rotation) * ctx.Direction;
-                localMove = new Vector2(local.x, local.z);
-                speed = Mathf.Min(towSpeed, left / Time.fixedDeltaTime);
-                return true;
-            }
             if (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f)
             {
                 // E를 꾹 눌러 조준하는 동안은 걷는다(달리기·점프 불가).
@@ -152,6 +143,42 @@ namespace Project1.Systems
             }
             localMove = Vector2.zero; speed = 0f; // 제자리
             return true;
+        }
+
+        /// <summary>
+        /// 끌려가는 동안(Towing)은 중력 없이 그랩이 문 벽 쪽(던진 방향, 수평)으로 날아간다 — 가는 길 아래에 구멍·낭떠러지·층 사이 틈이 있어도
+        /// 떨어지지 않고 건너가 벽에 닿는다. 발밑에 바로 땅이 있을 때만 살짝 눌러 땅에 붙여 둔다(평지에서 공중 상태로 바뀌지 않게).
+        /// 손이 벽에 닿는 곳을 넘지 않게 마지막 틱은 남은 거리만큼만.
+        /// </summary>
+        public override bool TryGetVelocityOverride(CharacterSkill ctx, out Vector3 worldVelocity, out bool passThrough)
+        {
+            passThrough = false;
+            worldVelocity = Vector3.zero;
+            if (ctx.Phase != Towing) return false;
+            float left = Mathf.Max(0f, ctx.Reach - towStopReach);
+            worldVelocity = ctx.Direction * Mathf.Min(towSpeed, left / Time.fixedDeltaTime);
+            if (GroundRightBelow(ctx.transform)) worldVelocity.y = TowGroundStick;
+            return true;
+        }
+
+        private const float TowGroundStick = -2f; // CharacterMotor가 땅에 붙여 두는 속도와 같게
+        private static readonly RaycastHit[] groundHits = new RaycastHit[8];
+
+        /// <summary>발 바로 밑(0.2m 안)에 땅이 있는지. 구멍 위면 false → 높이를 그대로 지키며 날아간다.</summary>
+        private static bool GroundRightBelow(Transform owner)
+        {
+            if (!owner.TryGetComponent(out CharacterController cc)) return false;
+            float r = cc.radius * 0.9f;
+            Vector3 foot = owner.TransformPoint(cc.center) + Vector3.down * (cc.height * 0.5f - cc.radius);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            int n = Physics.SphereCastNonAlloc(foot, r, Vector3.down, groundHits, 0.2f + cc.skinWidth, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var h = groundHits[i];
+                if (h.distance <= 0f || h.collider.transform.IsChildOf(owner)) continue;
+                if (h.normal.y > 0.5f) return true;
+            }
+            return false;
         }
 
         public override bool TryGetFacingYaw(CharacterSkill ctx, out float yaw)
@@ -381,7 +408,44 @@ namespace Project1.Systems
         /// <summary>origin에서 dir로 던지면 그랩이 갈 수 있는 길이(m): 벽·물건에 먼저 닿으면 그 거리, 아니면 range. 조준 보조선용.</summary>
         public float AimLength(Vector3 origin, Vector3 dir) => FindWall(origin, dir, 0f, range, out float at, out _) ? at : range;
 
-        /// <summary>from ~ to 사이를 굵기 hitRadius로 훑어 처음 닿는 다른 캐릭터를 찾는다(맞히지는 않는다).</summary>
+        /// <summary>
+        /// 조준 보조선용 명중 예측: owner가 origin에서 dir로 지금 던지면 무언가에 걸리는지 — 사거리 안에서 벽보다 먼저 상대 판정(hitRadius)에 닿거나,
+        /// 끌려갈 수 있는 벽(towToWalls일 때 서 있는 면)을 문다. 카우보이 올가미는 위에서 내려다본 줄로 상대를 본다(높낮이 무시, 손 → 상대 일직선이 열려 있어야).
+        /// 조준 보정(snapTolerance)은 넣지 않는다 — 표시가 뜨면 확실히 맞는다.
+        /// </summary>
+        public bool PredictsHit(Transform owner, Vector3 origin, Vector3 dir)
+        {
+            bool wall = FindWall(origin, dir, 0f, range, out float wallAt, out Vector3 normal);
+            float reach = wall ? wallAt : range;
+            var self = owner.GetComponent<CharacterIdentity>();
+            if (vaultOverVictim)
+            {
+                Vector3 mid = origin + dir * (reach * 0.5f);
+                var cols = Physics.OverlapBox(mid, new Vector3(hitRadius + 1f, 40f, reach * 0.5f + hitRadius + 1f), Quaternion.LookRotation(dir, Vector3.up), CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
+                Vector3 o2 = Flat(origin);
+                foreach (var c in cols)
+                {
+                    if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                    var other = hurt.Owner;
+                    if (other == null || (self != null && !self.CanHit(other))) continue;
+                    Bounds b = c.bounds;
+                    Vector3 p = Flat(b.center) - o2;
+                    float along = Vector3.Dot(p, dir);
+                    float side = (p - dir * along).magnitude - Mathf.Max(b.extents.x, b.extents.z);
+                    if (along < -hitRadius || along > range + hitRadius || side > hitRadius) continue;
+                    if (ClearLine(origin, c.ClosestPoint(origin))) return true;
+                }
+                return false; // 올가미는 벽에 걸려도 그냥 되감는다
+            }
+            foreach (var h in Physics.SphereCastAll(origin, hitRadius, dir, reach, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
+            {
+                if (!h.collider.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                var other = hurt.Owner;
+                if (other != null && (self == null || self.CanHit(other))) return true;
+            }
+            return wall && towToWalls && normal.y <= wallMaxNormalY && wallAt > towStopReach;
+        }
+
         /// <summary>
         /// 조준 보정. from ~ to 사이를 굵게(hitRadius + snapTolerance) 훑어 근처를 지나는 상대를 찾고, 가까운 순서로
         /// 그 상대 쪽(수평)으로 방향을 꺾어 본다 — 꺾는 각이 maxSnapAngle 이하이고, 꺾은 방향으로 실제 판정에 닿고, 사이에 벽이 없으면 그 방향으로 확정.

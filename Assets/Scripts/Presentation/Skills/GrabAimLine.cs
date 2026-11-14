@@ -8,6 +8,7 @@ namespace Project1.Presentation
     /// 사냥터지기 그랩 조준선. 내가 조종하는 사냥터지기(LocalPlayerInput)에만 보인다.
     /// - 던질 방향(몸 = 시야)으로 확실히 잡히는 거리(최대 사거리 - endBarInset, 벽이 더 가까우면 벽 앞)에
     ///   조준 방향과 수직인 흰 일자선을 긋되, 가운데에 구멍을 뚫어(— —) 조준선처럼 보이게 한다. 높이는 그랩이 나가는 손 높이.
+    /// - 지금 던지면 맞을 때(상대 판정 또는 끌려갈 벽 — GrabShotSkill.PredictsHit)는 구멍 가운데에 세로 가늠쇠 선을 하나 더 세운다. 없으면 빗나간다.
     /// - 쓸 수 있을 때는 옅게, E를 눌러 조준하는 동안(준비·꾹 누르기)은 진하게. 그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
     /// 연출 전용(판정은 BE GrabShotSkill). GrabShotVisual이 붙을 때 같이 붙는다(RequireComponent).
     /// </summary>
@@ -22,12 +23,14 @@ namespace Project1.Presentation
         [SerializeField, Min(0f)] private float endBarInset = 5f;
         [Tooltip("선 굵기(m).")]
         [SerializeField, Min(0.005f)] private float barWidth = 0.05f;
+        [Tooltip("맞을 때 구멍 가운데에 세우는 가늠쇠 선 높이(m).")]
+        [SerializeField, Min(0.01f)] private float sightHeight = 0.22f;
         [SerializeField] private Color idleColor = new(1f, 1f, 1f, 0.45f);
         [SerializeField] private Color aimColor = new(1f, 1f, 1f, 0.95f);
 
         private CharacterSkill skill;
         private bool isLocal;
-        private LineRenderer left, right;
+        private LineRenderer left, right, sight;
 
         private void Awake()
         {
@@ -39,6 +42,7 @@ namespace Project1.Presentation
         {
             Destroy(ref left);
             Destroy(ref right);
+            Destroy(ref sight);
         }
 
         private void OnDisable() => Hide();
@@ -47,6 +51,7 @@ namespace Project1.Presentation
         {
             if (left != null) left.enabled = false;
             if (right != null) right.enabled = false;
+            if (sight != null) sight.enabled = false;
         }
 
         private void LateUpdate()
@@ -69,6 +74,15 @@ namespace Project1.Presentation
             Color c = aiming ? aimColor : idleColor;
             Set(left, at - side * half, at - side * inner, c);
             Set(right, at + side * inner, at + side * half, c);
+
+            // 지금 던지면 맞는다(상대 판정 또는 끌려갈 벽) → 구멍 가운데에 세로 가늠쇠 선을 하나 더. 없으면 빗나간다.
+            if (grab.PredictsHit(transform, origin, dir))
+            {
+                if (sight == null) sight = NewLine("GrabAimSight");
+                float h = sightHeight * 0.5f;
+                Set(sight, at - Vector3.up * h, at + Vector3.up * h, c);
+            }
+            else if (sight != null) sight.enabled = false;
         }
 
         private static void Set(LineRenderer lr, Vector3 a, Vector3 b, Color c)

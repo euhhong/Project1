@@ -98,6 +98,16 @@ namespace Project1.Systems
             TryGetMoveOverride(ctx.gameObject, out localMove, out speed, out allowJump);
 
         /// <summary>
+        /// 시전 중 속도를 통째로 정할지(중력 없이 — 예: 사냥터지기 그랩에 끌려가기는 구멍 위도 날아 건넌다). 정하면 TryGetMoveOverride보다 먼저 쓴다.
+        /// 기본은 정하지 않음.
+        /// </summary>
+        public virtual bool TryGetVelocityOverride(CharacterSkill ctx, out Vector3 worldVelocity, out bool passThrough)
+        {
+            worldVelocity = Vector3.zero; passThrough = false;
+            return false;
+        }
+
+        /// <summary>
         /// 시간이 다 되기 전에 끝낼지(예: 돌진 중 장애물에 닿음). true면 Complete를 부르고 끝낸다.
         /// recovery = 끝난 뒤 못 움직이는 시간(초, 예: 벽에 부딪혀 넘어짐). 0이면 바로 재사용 대기.
         /// </summary>
