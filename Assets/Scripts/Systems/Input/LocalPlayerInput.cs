@@ -261,10 +261,10 @@ namespace Project1.Systems
         private void UpdateLook()
         {
             bool holding = lookHoldAction.IsPressed();
-            // 좌클릭 꾹(강공격 모으기 시간이 지남) + 캐릭터가 허락하면(IChargeLook, 예: 공장장 인형 겨누기) 우클릭 없이도 마우스로 시점을 돌린다(감도 배율).
+            // 좌클릭 차징(강공격 모으기 시간이 지남) + 캐릭터가 허락하면(IChargeLook, 예: 공장장 인형 겨누기): 시야 상하를 고정(ChargeViewPitch)하고,
+            // 세부 위치는 우클릭을 누른 채 마우스로 조정한다(위아래 = LookDelta.y로만 — 시점은 움직이지 않음, 좌우 = 평소처럼 방향). 좌클릭만으로는 시점·위치가 움직이지 않는다.
             float chargeScale = ChargeLookScale();
-            bool chargeLook = !holding && chargeScale > 0f;
-            holding |= chargeLook;
+            bool chargeLook = chargeScale > 0f;
             SetCursorLocked(holding);
 
             Vector2 look = lookAction.ReadValue<Vector2>();
@@ -273,7 +273,7 @@ namespace Project1.Systems
             if (device is Pointer)
             {
                 deltaDegrees = holding ? look * mouseSensitivity : Vector2.zero;
-                if (chargeLook) deltaDegrees.y *= chargeScale; // 좌클릭 꾹: 좌우 감도는 그대로, 상하만 배율(공장장 인형 — 끌어 올리면 멀리)
+                if (chargeLook) deltaDegrees.y *= chargeScale; // 차징 중 우클릭 끌기: 좌우 감도는 그대로, 상하만 배율(공장장 인형 — 끌어 올리면 멀리)
             }
             else
             {

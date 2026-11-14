@@ -15,8 +15,8 @@ namespace Project1.Systems
     /// - 먼저 앞의 한 지점(목표)을 정하고 던지는 손에서 그 지점까지 포물선으로 잇는다 — 이 선이 보조선(AimArc)이고 떨어질 자리(AimLanding)는 그 지점.
     /// - 떼면 인형이 그 포물선을 그대로 따라가(벽은 지나감) 그 지점에 떨어진다(비행 시간 = 수평 거리 ÷ throwSpeed, minFlight~maxFlight초, 중력 gravity).
     ///   바닥(윗면)에 닿으면 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다. 몸 근처를 가리키거나 못 가는 곳이면 던지지 않는다. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
-    /// - 좌클릭을 꾹 누르는 동안은 우클릭 없이 마우스로 시점을 돌린다(IChargeLook — 좌우 감도 그대로, 상하 aimLookScale배).
-    ///   거리는 마우스를 위로 끌면 멀리 / 아래로 끌면 가까이(시야 상하 1도당 dragPerDegree m — 안토니오 음표 놓기 감도, 맵 끝 maxAimDistance까지 — 시점이 위아래 한계에 닿아도 계속 끌림), 방향은 몸 정면. 처음 거리 = 누르기 시작할 때 조준점까지.
+    /// - 좌클릭 차징 = 인형 던지기 자세 + 포물선·원, 시야는 위로 고정(aimViewPitch). 세부 위치는 우클릭을 누른 채 마우스로 조정한다(IChargeLook — 좌우 = 방향, 상하 = 거리 aimLookScale배).
+    ///   거리는 우클릭을 누른 채 마우스를 위로 끌면 멀리 / 아래로 끌면 가까이(시야 상하 1도당 dragPerDegree m — 안토니오 음표 놓기 감도, 맵 끝 maxAimDistance까지 — 시점이 위아래 한계에 닿아도 계속 끌림), 방향은 몸 정면. 처음 거리 = 누르기 시작할 때 조준점까지.
     /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 누른 순간의 인형 자리를 도착점으로 정하고, swapDelay초 동안 제자리에서 몸을 떤 뒤(FE) 인형 자리와 공장장 자리를 맞바꾼다.
     ///   공장장은 인형이 있던 자리(공중이면 그 공중)로 가서 떨어지고, 인형은 공장장이 있던 자리에 놓인다(멈춤 — 다시 바꾸면 돌아온다).
     ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않고(ISafeFallSource → FallDamage), 서 있는 자세로 그냥 툭 떨어져 착지 동작 없이 바로 움직인다(IGentleDropSource → CharacterTraversal DollDrop). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
@@ -28,7 +28,7 @@ namespace Project1.Systems
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
         [Tooltip("좌클릭 차징(겨누는) 동안 시야를 이 각도(도, - = 위)로 고정 — 카메라가 늘 하늘 쪽을 올려다보고(크게 그려지는 포물선이 보이게), 마우스 위아래는 거리만 바꾼다.")]
-        [SerializeField] private float aimViewPitch = -85f;
+        [SerializeField] private float aimViewPitch = -55f;
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         private float swapLeft;
@@ -93,14 +93,14 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
-        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: E";
+        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: E 또는 몸 쪽으로 끌고 떼기 · 우클릭 끌기 = 위치";
         private bool waitRelease;
         /// <summary>차징을 E로 취소한 틱 / 취소한 뒤 좌클릭을 아직 떼지 않음. 이 동안 E 스킬(분신·자리 바꾸기)은 나가지 않는다.</summary>
         public int CancelTick { get; private set; } = int.MinValue;
         public bool WaitingRelease => waitRelease;
         /// <summary>차징 중이거나 방금 취소함 — E 스킬을 막는다(CloneSummonSkill).</summary>
         public bool BlocksSkill => isActiveAndEnabled && (Aiming || waitRelease || CancelTick == SimulationTick.Current);
-        public bool LookWhileCharging => isActiveAndEnabled && !waitRelease; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput), E로 취소하면 끝
+        public bool LookWhileCharging => isActiveAndEnabled && !waitRelease; // 좌클릭 차징 = 시야 위로 고정 + 우클릭 끌기로 위치 조정(LocalPlayerInput), E로 취소하면 끝
         public float ChargeLookScale => aimLookScale;
         public float ChargeViewPitch => aimViewPitch;
         public bool SwapPending => swapLeft > 0f;
@@ -181,7 +181,7 @@ namespace Project1.Systems
         }
 
         /// <summary>
-        /// 겨누는 동안: 마우스를 위로 끌면 멀리, 아래로 끌면 가까이(시야 상하 변화량 LookDelta.y — 시점이 위아래 한계에 닿아도 계속 끌린다), 방향은 몸 정면(시야 좌우).
+        /// 겨누는 동안: 우클릭을 누른 채 마우스를 위로 끌면 멀리, 아래로 끌면 가까이(시야 상하 변화량 LookDelta.y — 시점이 위아래 한계에 닿아도 계속 끌린다), 방향은 몸 정면(시야 좌우).
         /// 목표 = 그 거리의 땅(위에서 아래로 찾은 첫 윗면 — 지붕 위도), 땅이 없으면 발 높이. maxAimDistance(맵 끝)까지. 발밑까지 끌어 내리면(cancelRadius 안) 취소.
         /// </summary>
         private void UpdateDragTarget(in CharacterInputFrame input)
