@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 공장장(지옥불) 인형 던지기와 자리 바꾸기(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신 — IAttackHoldOverride, 짧게 누르는 약공격은 그대로) 화면 가운데(조준점)가 가리키는 곳을 겨눈다 —
     ///   사냥터지기 그랩처럼 커서를 따라가지 않고 시야(카메라 좌우·상하 각도)로만 정한다: 위/아래를 보면 멀리/가까이·높이/낮게, 몸을 돌리면 방향.
-    ///   조준점이 창문 틈 너머 바닥을 가리키면 그 바닥, 높은 곳 윗면을 가리키면 그 윗면이 목표다(최대 maxRange).
+    ///   조준점이 창문 틈 너머 바닥을 가리키면 그 바닥, 높은 곳 윗면을 가리키면 그 윗면이 목표다(광선 maxRange — 사실상 제한 없음). 하늘을 가리키면 시야 방향 그대로 skyThrowSpeed로 던진다(높이 볼수록 멀리).
     ///   목표까지 닿는 포물선을 여러 높이(낮고 빠르게 ~ 높이 띄워)로 날려 보고, 막히지 않고 목표 가까이(landTolerance) 떨어지는 첫 길을 쓴다 —
     ///   창문 틈으로는 낮은 길, 낮은 벽 너머·높은 곳으로는 높은 길. 그런 길이 없으면 기본 길(막히면 거기서 떨어짐).
     ///   겨누는 동안 그 포물선(AimArc)과 멈출 자리(AimLanding)를 보여 준다. 발밑(cancelRadius 안)을 가리키고 떼면 던지지 않는다(취소).
@@ -30,7 +30,11 @@ namespace Project1.Systems
         private float swapLeft;
         private Vector3 swapFeet;
         [Tooltip("겨눌 수 있는 최대 거리(m).")]
-        [SerializeField, Min(1f)] private float maxRange = 30f;
+        [SerializeField, Min(1f)] private float maxRange = 400f;
+        [Tooltip("조준점이 하늘(아무것도 안 닿음)이면 시야 방향 그대로 이 속도(m/s)로 던진다 — 거리 제한 없음, 45도로 올려 보면 가장 멀리(속도² ÷ 중력 ≈ 100m).")]
+        [SerializeField, Min(1f)] private float skyThrowSpeed = 45f;
+        private bool aimBySky;
+        private Vector3 skyVelocity;
         [Tooltip("던진 인형의 수평 속도(m/s) — 비행 시간 = 수평 거리 ÷ 이 값(minFlight~maxFlight초로 자름). 느릴수록 높이 날아 오래 걸린다.")]
         [SerializeField, Min(1f)] private float throwSpeed = 14f;
         [SerializeField, Min(0.05f)] private float minFlight = 0.4f, maxFlight = 1.8f;
@@ -41,7 +45,7 @@ namespace Project1.Systems
         [Tooltip("던지는 손 자리(캐릭터 기준 위 m / 오른쪽 m / 앞 m).")]
         [SerializeField] private float handUp = 1.7f, handRight = 0.45f, handForward = 0.3f;
         [Tooltip("이 시간(초)이 지나도록 멈추지 않으면 그 자리에서 멈춘다(허공으로 끝없이 떨어지지 않게).")]
-        [SerializeField, Min(0.5f)] private float maxAirTime = 6f;
+        [SerializeField, Min(0.5f)] private float maxAirTime = 8f;
         [Tooltip("자리를 바꿀 때 몸이 들어갈 곳을 위로 찾는 높이(m).")]
         [SerializeField, Min(0f)] private float swapClearSearch = 1.5f;
         [Tooltip("목표에서 이 거리(m) 안에 떨어지는 길만 \"닿는 길\"로 본다.")]
@@ -141,7 +145,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 화면 가운데(조준점)가 가리키는 곳을 목표로 잡는다 — 커서는 쓰지 않는다(사냥터지기 그랩처럼). 광선 = 카메라 자리(AimRayOrigin)에서 시야 각도(LookYaw·LookPitch) 쪽.
-        /// 캐릭터·판정은 지나간다. 아무것도 안 닿으면 maxRange 끝 아래 땅, 그것도 없으면 그 허공.
+        /// 캐릭터·판정은 지나간다. 아무것도 안 닿으면(하늘) 거리 제한 없이 시야 방향 그대로 skyThrowSpeed로 던진다.
         /// </summary>
         private void UpdateAimTarget(in CharacterInputFrame input)
         {
@@ -150,12 +154,17 @@ namespace Project1.Systems
             // 카메라는 캐릭터 뒤에 있으니 그만큼 더 멀리까지 본다(몸에서 maxRange).
             float camBack = Mathf.Max(0f, Vector3.Dot(transform.position - eye, dir));
             float reach = maxRange + camBack;
+            aimBySky = false;
             if (RayCast(eye, dir, reach, out var hit))
                 aimTarget = hit.point + hit.normal * 0.02f;
             else
             {
-                Vector3 end = eye + dir * reach;
-                aimTarget = RayCast(end + Vector3.up * 0.5f, Vector3.down, 60f, out var down) ? down.point : end;
+                // 하늘(아무것도 안 닿음): 거리 제한 없이 시야 방향 그대로 skyThrowSpeed로 던진다 — 높이 볼수록(45도까지) 멀리 날아간다.
+                aimBySky = true;
+                skyVelocity = dir * skyThrowSpeed;
+                aimTarget = eye + dir * reach;
+                aimCancels = false;
+                return;
             }
             // 좌우는 고정: 던지는 손에서 몸 정면(시야 좌우 각도)으로 곧게 — 목표를 손을 지나는 앞뒤·위아래 평면 위로 옮긴다(카메라가 어깨 옆에 있어 생기는 비스듬함도 없앰).
             // 앞뒤(거리)·위아래(높이)는 조준점이 가리키는 대로. 옮긴 자리가 바닥 위가 아니면 바로 아래 바닥으로(1m 안).
@@ -176,6 +185,15 @@ namespace Project1.Systems
         /// </summary>
         private void UpdateAimArc()
         {
+            if (aimBySky)
+            {
+                aimVelocity = skyVelocity;
+                arc.Clear();
+                bool flew = Simulate(Hand, aimVelocity, out Vector3 skyEnd, arc);
+                AimLanding = skyEnd;
+                AimValid = flew;
+                return;
+            }
             Vector3 from = Hand, to = aimTarget + Vector3.up * dollRadius;
             Vector3 flat = to - from; flat.y = 0f;
             float t0 = Mathf.Clamp(flat.magnitude / throwSpeed, minFlight, maxFlight);

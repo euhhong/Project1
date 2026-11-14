@@ -26,6 +26,9 @@ namespace Project1.Presentation
         [Tooltip("카메라 상하 각도 제한(도). + = 내려다봄.")]
         [SerializeField] private float minCameraPitch = -10f;
         [SerializeField] private float maxCameraPitch = 75f;
+        [Tooltip("시야가 평소 범위보다 더 위를 볼 때(좌클릭 꾹 겨누기 — 예: 공장장 인형을 하늘로 던지기) 카메라가 올려다볼 수 있는 한계(도). 평소엔 minCameraPitch 그대로.")]
+        [SerializeField] private float lookUpMinCameraPitch = -25f; // 더 올리면 카메라가 땅 밑으로 내려간다 — 던지는 방향(시야)은 이보다 더 위도 된다
+        private float curMinPitch = -10f;
         [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 시야 상하 각도(도).")]
         [SerializeField] private float fallbackPitch = 0f;
 
@@ -105,7 +108,8 @@ namespace Project1.Presentation
             float wantDistance = Mathf.Lerp(distance, indoorDistance, indoor);
             float wantPitchOffset = Mathf.Lerp(pitchOffset, indoorPitchOffset, indoor);
 
-            float targetPitch = Mathf.Clamp(lookPitch + wantPitchOffset, minCameraPitch, maxCameraPitch);
+            curMinPitch = Mathf.Min(minCameraPitch, Mathf.Max(lookUpMinCameraPitch, lookPitch + wantPitchOffset)); // 평소엔 minCameraPitch, 더 위를 보면 lookUpMinCameraPitch까지
+            float targetPitch = Mathf.Clamp(lookPitch + wantPitchOffset, curMinPitch, maxCameraPitch);
             Vector3 targetPivot = target.position + Vector3.up * curPivotHeight;
 
             if (!initialized)
@@ -127,7 +131,7 @@ namespace Project1.Presentation
             if (snapCrane) { crane = craneGoal; craneVelocity = 0f; snapCrane = false; }
             else crane = Mathf.SmoothDamp(crane, craneGoal, ref craneVelocity, craneGoal > crane ? craneUpTime : craneDownTime);
 
-            Quaternion orbit = Quaternion.Euler(Mathf.Clamp(pitch + crane, minCameraPitch, maxCameraPitch), yaw, 0f);
+            Quaternion orbit = Quaternion.Euler(Mathf.Clamp(pitch + crane, curMinPitch, maxCameraPitch), yaw, 0f);
             Vector3 back = -(orbit * Vector3.forward);
             // 시선 각도는 벽에 막히지 않았을 때 자리 기준으로 정한다(당겨져도 화면이 갑자기 아래로 꺾이지 않게).
             Vector3 freePosition = pivot + back * wantDistance;
@@ -172,7 +176,7 @@ namespace Project1.Presentation
         private float CraneAngle(float wantDistance)
         {
             if (maxCraneAngle <= 0f || wantDistance <= 0.01f) return 0f;
-            float basePitch = Mathf.Clamp(pitch, minCameraPitch, maxCameraPitch);
+            float basePitch = Mathf.Clamp(pitch, curMinPitch, maxCameraPitch);
             Vector3 baseBack = -(Quaternion.Euler(basePitch, yaw, 0f) * Vector3.forward);
             float free = ObstacleDistance(baseBack, wantDistance);
             if (free >= wantDistance * 0.95f) return 0f;

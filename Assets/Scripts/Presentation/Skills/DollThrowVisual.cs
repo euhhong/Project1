@@ -6,7 +6,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 공장장 인형 던지기 연출(IDollThrow, BE DollThrow를 읽어 그린다).
     /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 원(나비 놓기 미리보기처럼). 못 던지는 곳 = 붉게, 몸 근처(떼면 취소) = 흐리게.
-    /// - 던진 인형: 날아가는 동안은 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·번지는 꼬리로 또렷한 공처럼 안 보이게(flyAsPuppet을 켜면 예전처럼 꼭두각시 실루엣), 땅에 닿아 멈춰 있으면 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
+    /// - 던진 인형: 날아가는 동안은 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·번지는 꼬리로 또렷한 공처럼 안 보이게(flyAsPuppet을 켜면 예전처럼 꼭두각시 실루엣), 땅에 닿아 멈춰 있으면 감시자보다 큰(키 ×1.25) 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
     /// - E로 자리 바꾸기를 기다리는 동안(SwapPending) 몸(모델)을 경련하듯 떤다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그린 것은 캐릭터를 따라 움직이지 않게 따로 둔다.
     /// </summary>
@@ -25,6 +25,8 @@ namespace Project1.Presentation
         [SerializeField] private Color ringColor = new(1f, 1f, 1f, 0.7f);
         [Tooltip("멈춰 있는 인형 모델(꼭두각시)의 키(m) / 팔을 내리는 정도(0 = T자세, 1 = 몸에 붙임).")]
         [SerializeField, Min(0.1f)] private float puppetHeight = 1f;
+        [Tooltip("멈춰 있는 인형은 공장장(감시자) 키의 이 배율 — 감시자보다 크게. puppetHeight보다 작으면 puppetHeight.")]
+        [SerializeField, Min(0.1f)] private float puppetOverOwner = 1.25f;
         [SerializeField, Range(0f, 1f)] private float puppetArmsDown = 0.85f;
         [Tooltip("날아가는 인형: 꼭두각시를 칙칙하고 어두운 실루엣으로(잘 안 보이게) — 키(m) / 색 / 구르는 빠르기(도/초).")]
         [SerializeField, Min(0.1f)] private float flyerHeight = 0.7f;
@@ -133,7 +135,7 @@ namespace Project1.Presentation
             }
             wasResting = resting;
             restRing.gameObject.SetActive(resting);
-            if (resting) SetRing(restRing, doll.DollPosition - Vector3.up * (dollSize * 0.5f), ringRadius * 0.6f, Time.time * -40f);
+            if (resting) SetRing(restRing, doll.DollPosition - Vector3.up * (dollSize * 0.5f), ringRadius * 1.3f, Time.time * -40f); // 큰 인형 둘레
             Shake();
         }
 
@@ -157,7 +159,8 @@ namespace Project1.Presentation
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.2f);
             ball.GetComponent<MeshRenderer>().sharedMaterial = mat;
             ball.SetActive(false);
-            puppet = BuildPuppet("DollPuppet", puppetHeight, null);
+            float ownerHeight = TryGetComponent(out CharacterController occ) ? occ.height * transform.lossyScale.y : 2.7f;
+            puppet = BuildPuppet("DollPuppet", Mathf.Max(puppetHeight, ownerHeight * puppetOverOwner), null); // 감시자보다 큰 인형
             var dull = new Material(shader != null ? shader : Shader.Find("Standard")) { name = "DollSilhouette", color = flyerColor };
             if (dull.HasProperty("_Smoothness")) dull.SetFloat("_Smoothness", 0f);
             if (dull.HasProperty("_Metallic")) dull.SetFloat("_Metallic", 0f);

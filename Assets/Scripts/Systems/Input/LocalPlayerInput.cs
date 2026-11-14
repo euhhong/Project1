@@ -19,6 +19,8 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float gamepadLookSpeed = 120f;  // 초당 도
         [SerializeField] private float minPitch = -30f;
         [SerializeField] private float maxPitch = 60f;
+        [Tooltip("좌클릭 꾹으로 시점을 돌리는 동안(IChargeLook, 예: 공장장 인형 겨누기) 위로 볼 수 있는 한계(도) — 하늘로 멀리 던지게 거의 제한 없음.")]
+        [SerializeField] private float chargeMinPitch = -85f;
         [SerializeField] private bool invertY;
 
         [Header("공격")]
@@ -283,7 +285,7 @@ namespace Project1.Systems
             // 캐릭터가 상하 감도를 바꾸면(예: 안토니오 음표 고르는 중) 곱한다.
             GetComponents(lookScales);
             foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
-            lookPitch = Mathf.Clamp(lookPitch + pitchDelta, minPitch, maxPitch);
+            lookPitch = Mathf.Clamp(lookPitch + pitchDelta, chargeLook ? Mathf.Min(minPitch, chargeMinPitch) : minPitch, maxPitch);
         }
 
         private readonly System.Collections.Generic.List<IChargeLook> chargeLooks = new();
