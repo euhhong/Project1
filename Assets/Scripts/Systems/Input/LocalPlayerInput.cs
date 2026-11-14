@@ -261,19 +261,20 @@ namespace Project1.Systems
         private void UpdateLook()
         {
             bool holding = lookHoldAction.IsPressed();
-            // 좌클릭 차징(강공격 모으기 시간이 지남) + 캐릭터가 허락하면(IChargeLook, 예: 공장장 인형 겨누기): 시야 상하를 고정(ChargeViewPitch)하고,
-            // 세부 위치는 우클릭을 누른 채 마우스로 조정한다(위아래 = LookDelta.y로만 — 시점은 움직이지 않음, 좌우 = 평소처럼 방향). 좌클릭만으로는 시점·위치가 움직이지 않는다.
+            // 좌클릭 차징(강공격 모으기 시간이 지남) + 캐릭터가 허락하면(IChargeLook, 예: 공장장 인형 겨누기):
+            // - 좌클릭을 누른 채 마우스 = 떨어질 자리 조절(위아래 = LookDelta.y로만 — 시점 높이는 안 바뀜, 좌우 = 방향).
+            // - 우클릭을 누른 채 마우스 = 시야 높이(위쪽 한계가 열림 — chargeMinPitch까지)와 방향. 이때는 자리 거리는 안 바뀜.
+            // - 차징을 시작하면 그 순간 시야에서 ChargeViewRaise도만 위로 올리고 그 자리에 고정(우클릭으로만 바뀜). 끝나면 평소 한계로 부드럽게 돌아온다.
             float chargeScale = ChargeLookScale();
             bool chargeLook = chargeScale > 0f;
-            SetCursorLocked(holding);
+            SetCursorLocked(holding || chargeLook);
 
             Vector2 look = lookAction.ReadValue<Vector2>();
             InputDevice device = lookAction.activeControl?.device;
             Vector2 deltaDegrees;
             if (device is Pointer)
             {
-                deltaDegrees = holding ? look * mouseSensitivity : Vector2.zero;
-                if (chargeLook) deltaDegrees.y *= chargeScale; // 차징 중 우클릭 끌기: 좌우 감도는 그대로, 상하만 배율(공장장 인형 — 끌어 올리면 멀리)
+                deltaDegrees = holding || chargeLook ? look * mouseSensitivity : Vector2.zero;
             }
             else
             {
@@ -282,33 +283,40 @@ namespace Project1.Systems
 
             lookYaw = Mathf.Repeat(lookYaw + deltaDegrees.x, 360f);
             float pitchDelta = invertY ? deltaDegrees.y : -deltaDegrees.y; // 마우스를 올리면 위를 본다(pitch 감소)
+
+            if (chargeLook)
+            {
+                if (!chargeLookActive) { chargeLookActive = true; lookPitch = Mathf.Max(lookPitch - chargeViewRaise, chargeMinPitch); } // 그 순간 시야에서 조금 위로
+                if (holding)
+                {
+                    lookDeltaQueued += new Vector2(deltaDegrees.x, 0f);                                   // 우클릭: 시야 높이만(거리는 그대로)
+                    lookPitch = Mathf.Clamp(lookPitch + pitchDelta, chargeMinPitch, maxPitch);            // 위쪽 한계 열림
+                }
+                else lookDeltaQueued += new Vector2(deltaDegrees.x, pitchDelta * chargeScale);           // 좌클릭: 자리 조절(시야 높이는 고정)
+                return;
+            }
+            chargeLookActive = false;
+
             lookDeltaQueued += new Vector2(deltaDegrees.x, pitchDelta);
             // 캐릭터가 상하 감도를 바꾸면(예: 안토니오 음표 고르는 중) 곱한다.
             GetComponents(lookScales);
             foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
-            // 좌클릭 차징 중 시야 고정(IChargeLook.ChargeViewPitch, 예: 공장장 인형 — 하늘 쪽): 마우스 위아래는 시점을 움직이지 않고(LookDelta로만 쓴다), 떼면 원래 각도로.
-            float fixedPitch = chargeLook ? chargeViewPitch : float.NaN;
-            if (!float.IsNaN(fixedPitch))
-            {
-                if (!pitchFixed) { pitchFixed = true; pitchBeforeFix = lookPitch; }
-                lookPitch = Mathf.MoveTowards(lookPitch, Mathf.Clamp(fixedPitch, chargeMinPitch, maxPitch), 300f * Time.deltaTime);
-                return;
-            }
-            if (pitchFixed) { pitchFixed = false; lookPitch = pitchBeforeFix; }
-            lookPitch = Mathf.Clamp(lookPitch + pitchDelta, chargeLook ? Mathf.Min(minPitch, chargeMinPitch) : minPitch, maxPitch);
+            // 평소 한계 밖(차징 중 더 위를 봤던 시야)이면 한계 안으로 부드럽게 돌아온다.
+            lookPitch = Mathf.Clamp(lookPitch + pitchDelta, Mathf.Min(minPitch, lookPitch), maxPitch);
+            if (lookPitch < minPitch) lookPitch = Mathf.MoveTowards(lookPitch, minPitch, 120f * Time.deltaTime);
         }
 
         private readonly System.Collections.Generic.List<IChargeLook> chargeLooks = new();
-        private float chargeViewPitch = float.NaN, pitchBeforeFix;
-        private bool pitchFixed;
+        private float chargeViewRaise;
+        private bool chargeLookActive;
 
         /// <summary>좌클릭을 꾹 누르는 중(강공격 모으기 시간이 지남)이고 캐릭터가 그동안 시점 돌리기를 허락하면 그 감도 배율, 아니면 0.</summary>
         private float ChargeLookScale()
         {
             if (!attackHeld || Time.time - attackPressTime < heavyAttackHoldTime) return 0f;
             GetComponents(chargeLooks);
-            chargeViewPitch = float.NaN;
-            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.LookWhileCharging) { chargeViewPitch = c.ChargeViewPitch; return c.ChargeLookScale; }
+            chargeViewRaise = 0f;
+            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.LookWhileCharging) { chargeViewRaise = c.ChargeViewRaise; return c.ChargeLookScale; }
             return 0f;
         }
 
