@@ -110,6 +110,12 @@ namespace Project1.Systems
         private bool hopTurn;
         [Tooltip("몸이 옆으로 옮겨 가는 진행도 구간 — 모션에서 몸이 뛰어올라 손을 옮기는 동안(도약 ~ 다시 매달림).")]
         [SerializeField] private Vector2 hopMoveRange = new(0.12f, 0.72f);
+        [Header("창틀(얇은 턱) 매달리기")]
+        [Tooltip("생존자: 얇은 턱(창틀·난간·벽 꼭대기, 두께 sillGripThickness 미만)에 매달릴 때 몸을 이만큼(Humanoid 단위) 올려 손이 턱 윗면을 더 위에서 감아 쥐게 한다. 넓은 턱(바닥 끝·구덩이)은 그대로.")]
+        [SerializeField, Range(0f, 0.3f)] private float sillGripRaise = 0.1f;
+        [SerializeField, Min(0.1f)] private float sillGripThickness = 0.6f;
+        private bool releaseArmed = true;
+
         private bool hopRight;
         public bool HopRight => hopRight;
 
@@ -242,6 +248,7 @@ namespace Project1.Systems
                     if (actionTime > actionDuration + dt * 0.5f) FinishScripted();
                     return;
                 case TraversalAction.HangGrab:
+                    if (input.Move.y > -0.5f) releaseArmed = true; // 잡을 때 누르고 있던 뒤(S)는 한 번 뗀 뒤에야 놓기로 친다
                     actionTime += dt;
                     if (actionTime >= actionDuration) { action = TraversalAction.Hang; actionTime = 0f; actionDuration = 0f; }
                     return;
@@ -484,6 +491,7 @@ namespace Project1.Systems
             braced = wall;
             hangPos = hp;
             faceYaw = YawOf(-l.Normal);
+            releaseArmed = false;
             StartAction(TraversalAction.HangGrab, wall ? bracedGrabTime : grabTime);
             return true;
         }
@@ -503,6 +511,7 @@ namespace Project1.Systems
             Vector3 foot = basePos; foot.y = l.Top - (BracedHangTop - BracedFeet) * hu;
             wall = Cast(foot, -l.Normal, cc.radius + 0.4f, out _);
             hp = basePos; hp.y = l.Top - (wall ? BracedHangTop : FreeHangTop) * hu;
+            if (!hunterStyle && sillGripRaise > 0f && ThinTop(l)) hp.y += sillGripRaise * hu; // 생존자: 창틀은 조금 더 위를 잡는다
             float dy = pos.y - hp.y;
             // 손이 닿는 가장 높은 턱은 늘어진 매달림도 벽을 짚는 매달림과 같게(늘어진 자세는 손이 낮은 만큼 더 끌어 올린다).
             float pull = (pullUp + (wall ? 0f : BracedHangTop - FreeHangTop)) * hu;
@@ -511,6 +520,14 @@ namespace Project1.Systems
             Vector3 low = hp + Vector3.up * ((wall ? BracedFeet * hu - BracedFloorGap : 0f) + 0.3f);
             if (OverlapSphere(low, 0.05f) || Cast(low, Vector3.down, 0.45f, out _)) return false;
             return true;
+        }
+
+        /// <summary>얇은 턱(창틀·난간·벽 꼭대기)인지: 턱 안쪽 sillGripThickness에서 앞면 쪽으로 쏴 뒷면(뒤가 빈 면 — 바닥판 조각 이음매 말고)을 맞으면 얇다.</summary>
+        private bool ThinTop(in Ledge l)
+        {
+            float probe = sillGripThickness;
+            Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
+            return Cast(far, l.Normal, probe, out var back) && !OverlapSphere(back.point - l.Normal * 0.06f, 0.03f);
         }
 
         /// <summary>
@@ -533,6 +550,10 @@ namespace Project1.Systems
         {
             // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
             if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
+            // 뒤(S)는 잡은 뒤 한 번 뗐다가 다시 눌러야 놓는다: 잡기는 시야 기준 방향, 놓기는 키 그대로라
+            // 시야가 벽 반대쪽일 때 S(뒤로 걸으며)로 잡으면 잡자마자 놓고 → 다시 잡기를 튕기듯 반복했다(감시자·봇에서 잘 보임).
+            if (input.Move.y > -0.5f) releaseArmed = true;
+            else if (!releaseArmed) return;
             if (input.Move.y < -0.5f && !TryReturnToLadder() && !TryStartHangFlip()) { Release(); return; } // 사다리로 올라온 턱이면 다시 사다리로 // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
             // 옆(A/D) = 턱을 따라 크게 한 보폭(모션 한 사이클), 모서리에 닿으면 돌아서 옆 변으로 이어 간다. 끝날 때까지 다음 입력은 받지 않고, 꾹 누르면 계속 간다.
             if (Mathf.Abs(input.Move.x) > 0.5f && Mathf.Abs(input.Move.y) <= 0.5f) TryStartHangHop(input.Move.x > 0f);
