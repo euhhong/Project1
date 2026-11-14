@@ -102,6 +102,10 @@ namespace Project1.Systems
         [SerializeField, Min(0.2f)] private float hopTime = 1.05f;
         [Tooltip("옆 턱 높이가 지금 턱과 이만큼(m)까지 달라도 같은 높이로 본다.")]
         [SerializeField, Min(0f)] private float hopHeightTolerance = 0.12f;
+        [Tooltip("옆으로 갈 수 있는 턱: 같은 높이로 이어진 길이가 이만큼(m) 이상이어야 한다(구덩이 가장자리·큰 창틀). 좁은 창틀(1.6m)·난간 틈(2~3m)은 막는다.")]
+        [SerializeField, Min(0f)] private float hopMinLedgeSpan = 3.5f;
+        [Tooltip("이보다 얇은(m) 턱은 난간으로 보고 옆으로 가지 않는다(맵 난간 0.15m, 벽 0.4m).")]
+        [SerializeField, Min(0f)] private float hopRailThickness = 0.3f;
         [Tooltip("몸이 옆으로 옮겨 가는 진행도 구간 — 모션에서 몸이 뛰어올라 손을 옮기는 동안(도약 ~ 다시 매달림).")]
         [SerializeField] private Vector2 hopMoveRange = new(0.12f, 0.72f);
         private bool hopRight;
@@ -543,6 +547,7 @@ namespace Project1.Systems
             Vector3 side = Vector3.Cross(Vector3.up, face) * (right ? 1f : -1f);
             float hu = HumanUnit();
             float stride = hopStride * hu, minStride = Mathf.Min(hopMinStride * hu, stride);
+            if (!ShimmyLedge(ledge, side)) return false; // 난간·좁은 턱에서는 옆으로 가지 않는다
             Vector3 pos = transform.position;
             // 가는 길: 매달린 몸(벽을 짚은 발 ~ 어깨) 높이로 옆을 훑어 막히면 그 앞까지만.
             float reach = stride;
@@ -565,6 +570,41 @@ namespace Project1.Systems
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 옆으로 다닐 만한 턱인지: 난간(hopRailThickness보다 얇거나 바로 뒤에 바닥이 있는 턱)이 아니고, 같은 높이로 이어진 길이가 hopMinLedgeSpan 이상(구덩이 가장자리·큰 창틀).
+        /// 좁은 창틀·난간 틈처럼 옆으로 가 봐야 쓸모없는 곳은 막는다.
+        /// </summary>
+        private bool ShimmyLedge(in Ledge l, Vector3 side)
+        {
+            // 두께: 턱 안쪽 1.25m에서 앞면 쪽으로 쏴 뒷면을 맞으면 얇은 턱.
+            const float probe = 1.25f;
+            Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
+            if (Cast(far, l.Normal, probe, out var back) && probe - back.distance < hopRailThickness) return false;
+            if (FindFloorBehindRail(l, out _)) return false;
+            float span = LedgeRun(l, side) + LedgeRun(l, -side);
+            return span >= hopMinLedgeSpan;
+        }
+
+        /// <summary>지금 잡은 자리에서 dir 쪽으로 턱이 같은 높이로 끊기지 않고 이어지는 길이(m, hopMinLedgeSpan까지만 잰다).</summary>
+        private float LedgeRun(in Ledge l, Vector3 dir)
+        {
+            const float step = 0.25f;
+            float run = 0f;
+            for (float d = step; d <= hopMinLedgeSpan + 1e-3f; d += step)
+            {
+                Vector3 at = l.Face + dir * d;
+                // 윗면: 앞면 바로 안쪽 위에서 아래로
+                Vector3 top = at - l.Normal * LedgeInset; top.y = l.Top + 0.3f;
+                if (OverlapSphere(top, 0.05f) || !Cast(top, Vector3.down, 0.3f + hopHeightTolerance + 0.05f, out var hit) || hit.normal.y < 0.7f
+                    || Mathf.Abs(hit.point.y - l.Top) > hopHeightTolerance || NoGrab(hit.collider)) break;
+                // 앞면: 바깥에서 벽 쪽으로(앞면이 같은 자리에 이어지는지)
+                Vector3 face = at + l.Normal * 0.3f; face.y = l.Top - 0.1f;
+                if (!Cast(face, -l.Normal, 0.45f, out var f) || Mathf.Abs(f.normal.y) > 0.3f) break;
+                run = d;
+            }
+            return run;
         }
 
         /// <summary>
