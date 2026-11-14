@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙어 공격 구간 동안 자기 Hitbox들로 히트를 판정한다.
     /// - BeginAttack(slots)~EndAttack() 사이에만 FixedUpdate마다 겹침 검사.
     /// - 한 공격에서 같은 대상은 한 번만 맞힌다. 자기 자신·같은 팀은 맞지 않는다.
+    /// - 내 몸과 상대 사이가 벽·지형으로 막혀 있으면 맞지 않는다(CombatLineOfSight).
     /// - 맞으면 HitResult를 Hit 이벤트와 HitEvents.HitOccurred로 낸다. 데미지는 처리하지 않는다.
     /// Hitbox는 자식(모델 뼈) 어디에 있어도 되고, 모델이 바뀌면 RefreshHitboxes()로 다시 찾는다.
     /// </summary>
@@ -129,6 +130,7 @@ namespace Project1.Systems
 
                     // 같은 틱에 한 대상의 여러 부위가 겹치면 Hitbox에 가장 가까운 부위 하나만.
                     Vector3 point = hurtbox.Collider.ClosestPoint(origin);
+                    if (!CombatLineOfSight.Clear(gameObject, victim.gameObject, point)) continue; // 벽 너머: 무기·팔다리가 벽을 뚫어도 맞지 않는다
                     float distSq = (point - origin).sqrMagnitude;
                     if (hitbox.PrefersHead && hurtbox.Part == BodyPart.Head) distSq = -1f; // 머리를 노리는 판정(발차기): 머리가 겹치면 머리
                     if (!bestThisTick.TryGetValue(victim.Id, out Candidate best) || distSq < best.DistSq)
