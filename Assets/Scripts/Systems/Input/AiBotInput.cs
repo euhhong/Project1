@@ -6,7 +6,7 @@ namespace Project1.Systems
     /// <summary>
     /// AI 봇 입력(게임 시작 모드의 상대). 키보드·마우스를 흉내 낸 입력(CharacterInputFrame)을 틱마다 한 번 만든다.
     /// 실제 판단은 나눠 맡긴다: 눈 = AiOpponentView(상대 상태, 반응 지연), 머리 = AiMeleeTactics(동작 고르기 — 여러 공격 커맨드·반응·전위 유도 박치기),
-    /// 손 = AiKeyPresser(꾹 누르기·짧게 누르기). 여기는 목표를 받아 이어 주기만 한다.
+    /// 손 = AiKeyPresser(꾹 누르기·짧게 누르기). 여기는 목표를 받아 이어 주기만 한다. 하스터는 촉수 쓰기(AiTentacleUser)를 그 위에 덮는다.
     /// 조절 값은 인스펙터의 Settings(AiMeleeSettings). 목표가 없거나 꺼져 있으면 가만히 있는다.
     /// </summary>
     public class AiBotInput : MonoBehaviour, ICharacterInputSource
@@ -21,6 +21,9 @@ namespace Project1.Systems
         private int cachedTick = int.MinValue;
         private float lastThink = -1f;
         private CharacterInputFrame cachedFrame;
+        private ITentacleField tentacleField;
+        private AiTentacleUser tentacles;
+        private bool tentacleChecked;
 
         public AiMeleeTactics Tactics => tactics ??= new AiMeleeTactics(gameObject, settings, view);
         public AiMeleeSettings Settings => settings;
@@ -49,6 +52,9 @@ namespace Project1.Systems
             }
             view.SetTarget(target); // 인스펙터에서 바꿨을 때
             cachedFrame = Tactics.Tick(now, dt);
+            // 하스터: 촉수 세우기·내려찍기(TentacleField — E 스킬이 아니라 근접 AI가 쓰지 않음)
+            if (tentacleField == null && !tentacleChecked) { tentacleChecked = true; if (TryGetComponent(out ITentacleField tf)) { tentacleField = tf; tentacles = new AiTentacleUser(transform, tf); } }
+            if (tentacles != null && tentacleField is Behaviour { isActiveAndEnabled: true }) tentacles.Apply(ref cachedFrame, now, target);
             return cachedFrame;
         }
 

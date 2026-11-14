@@ -79,6 +79,9 @@ namespace Project1.Systems
         [Min(0f)] public float vaultLandTime = 0.45f;
         [Tooltip("뛰어넘는 빠르기 배율. 높이·거리는 그대로 두고 공중에 있는 시간을 이 배만큼 줄인다(1 = 보통 중력 포물선).")]
         [Min(0.5f)] public float vaultSpeedScale = 1f;
+        [Tooltip("뛰어넘기에 성공해 착지를 마치면 이 시간(초) 동안 이동 속도 배율(2 = +100%).")]
+        [Min(1f)] public float vaultSpeedBoost = 2f;
+        [Min(0f)] public float vaultBoostTime = 2f;
 
         [Header("조준 (E 꾹 누르기)")]
         [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
@@ -303,6 +306,7 @@ namespace Project1.Systems
                 }
 
                 case VaultLanding:
+                    if (ctx.PhaseTime >= vaultLandTime) TimedSpeedBoost.Give(ctx.gameObject, vaultSpeedBoost, vaultBoostTime); // 뛰어넘기 성공: 잠깐 빠르게
                     return ctx.PhaseTime >= vaultLandTime;
 
                 case Towing:
