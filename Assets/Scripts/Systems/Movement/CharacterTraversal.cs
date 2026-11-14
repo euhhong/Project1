@@ -919,8 +919,7 @@ namespace Project1.Systems
         public bool TryGetFacingYaw(out float yaw)
         {
             yaw = action == TraversalAction.HangHop ? Mathf.LerpAngle(hopYawFrom, faceYaw, Smooth(hopMoveRange.x, hopMoveRange.y, ActionProgress)) : faceYaw; // 옆 변으로 건너가며 몸을 돌린다
-            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
-                   || LadderJumpFacing(state != null && state.IsGrounded); // 사다리에서 뛰어내려 착지할 때까지 벽 반대쪽
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)
