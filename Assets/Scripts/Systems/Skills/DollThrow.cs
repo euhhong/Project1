@@ -12,9 +12,11 @@ namespace Project1.Systems
     ///   목표까지 닿는 포물선을 여러 높이(낮고 빠르게 ~ 높이 띄워)로 날려 보고, 막히지 않고 목표 가까이(landTolerance) 떨어지는 첫 길을 쓴다 —
     ///   창문 틈으로는 낮은 길, 낮은 벽 너머·높은 곳으로는 높은 길. 그런 길이 없으면 기본 길(막히면 거기서 떨어짐).
     ///   겨누는 동안 그 포물선(AimArc)과 멈출 자리(AimLanding)를 보여 준다. 발밑(cancelRadius 안)을 가리키고 떼면 던지지 않는다(취소).
-    /// - 떼면 인형을 그 포물선으로 던진다(실제로 날아가는 투사체: 비행 시간 = 수평 거리 ÷ throwSpeed, 중력 gravity).
+    /// - 먼저 앞의 한 지점(목표)을 정하고 던지는 손에서 그 지점까지 포물선으로 잇는다 — 이 선이 보조선(AimArc)이고 떨어질 자리(AimLanding)는 그 지점.
+    /// - 떼면 인형이 그 포물선을 그대로 따라가(벽은 지나감) 그 지점에 떨어진다(비행 시간 = 수평 거리 ÷ throwSpeed, minFlight~maxFlight초, 중력 gravity).
     ///   바닥(윗면)에 닿으면 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다. 몸 근처를 가리키거나 못 가는 곳이면 던지지 않는다. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
-    /// - 좌클릭을 꾹 누르는 동안은 우클릭 없이 마우스로 시점(= 포물선)을 돌린다(IChargeLook, 감도 aimLookScale배).
+    /// - 좌클릭을 꾹 누르는 동안은 우클릭 없이 마우스로 시점을 돌린다(IChargeLook — 좌우 감도 그대로, 상하 aimLookScale배).
+    ///   거리는 마우스를 위로 끌면 멀리 / 아래로 끌면 가까이(시야 상하 1도당 dragPerDegree m — 안토니오 음표 놓기 감도, 맵 끝 maxAimDistance까지 — 시점이 위아래 한계에 닿아도 계속 끌림), 방향은 몸 정면. 처음 거리 = 누르기 시작할 때 조준점까지.
     /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 누른 순간의 인형 자리를 도착점으로 정하고, swapDelay초 동안 제자리에서 몸을 떤 뒤(FE) 인형 자리와 공장장 자리를 맞바꾼다.
     ///   공장장은 인형이 있던 자리(공중이면 그 공중)로 가서 떨어지고, 인형은 공장장이 있던 자리에 놓인다(멈춤 — 다시 바꾸면 돌아온다).
     ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않고(ISafeFallSource → FallDamage), 서 있는 자세로 그냥 툭 떨어져 착지 동작 없이 바로 움직인다(IGentleDropSource → CharacterTraversal DollDrop). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
@@ -24,7 +26,7 @@ namespace Project1.Systems
     public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit
     {
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
-        [SerializeField, Min(0.1f)] private float aimLookScale = 1.8f;
+        [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         private float swapLeft;
@@ -37,7 +39,14 @@ namespace Project1.Systems
         private Vector3 skyVelocity;
         [Tooltip("던진 인형의 수평 속도(m/s) — 비행 시간 = 수평 거리 ÷ 이 값(minFlight~maxFlight초로 자름). 느릴수록 높이 날아 오래 걸린다.")]
         [SerializeField, Min(1f)] private float throwSpeed = 14f;
-        [SerializeField, Min(0.05f)] private float minFlight = 0.4f, maxFlight = 1.8f;
+        [SerializeField, Min(0.05f)] private float minFlight = 0.4f, maxFlight = 4f;
+        [Tooltip("겨누는 거리 끌기: 좌클릭을 꾹 누른 채 마우스를 위로 끌면 멀리, 아래로 끌면 가까이 — 시야 상하 1도당 이 거리(m, 안토니오 음표 놓기와 같은 0.25). 맵 끝(maxAimDistance)까지.")]
+        [SerializeField, Min(0.001f)] private float dragPerDegree = 0.25f;
+        [SerializeField, Min(1f)] private float maxAimDistance = 300f;
+        [SerializeField, Min(0.1f)] private float minAimDistance = 1f;
+        private float aimDistance;
+        private float aimFlightTime, throwTime;
+        private Vector3 throwFrom, throwTo, throwVel;
         [Tooltip("인형에 걸리는 중력(m/s²).")]
         [SerializeField, Min(1f)] private float gravity = 20f;
         [Tooltip("인형(구체) 반지름(m) — 벽·바닥에 닿는 판정.")]
@@ -82,7 +91,7 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
-        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 발밑을 보고 떼기";
+        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 아래로 끌어 발밑에서 떼기";
         public bool LookWhileCharging => isActiveAndEnabled; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput)
         public float ChargeLookScale => aimLookScale;
         public bool SwapPending => swapLeft > 0f;
@@ -117,8 +126,9 @@ namespace Project1.Systems
 
             if (input.HeavyCharging && !blocked)
             {
+                if (!Aiming) StartAimDistance(input); // 누르기 시작: 지금 화면 가운데가 가리키는 곳까지의 거리에서 시작
                 Aiming = true;
-                UpdateAimTarget(input);
+                UpdateDragTarget(input);
                 UpdateAimArc();
             }
             else if (Aiming)
@@ -142,6 +152,28 @@ namespace Project1.Systems
         // ───────────────────── 던지기 ─────────────────────
 
         private Vector3 Hand => transform.position + Vector3.up * handUp + transform.right * handRight + transform.forward * handForward;
+
+        /// <summary>겨누기 시작: 화면 가운데(조준점)가 가리키는 곳까지의 수평 거리에서 시작한다(하늘이면 40m).</summary>
+        private void StartAimDistance(in CharacterInputFrame input)
+        {
+            UpdateAimTarget(input);
+            Vector3 flat = aimTarget - transform.position; flat.y = 0f;
+            aimDistance = aimBySky ? 40f : Mathf.Clamp(flat.magnitude, minAimDistance, maxAimDistance);
+        }
+
+        /// <summary>
+        /// 겨누는 동안: 마우스를 위로 끌면 멀리, 아래로 끌면 가까이(시야 상하 변화량 LookDelta.y — 시점이 위아래 한계에 닿아도 계속 끌린다), 방향은 몸 정면(시야 좌우).
+        /// 목표 = 그 거리의 땅(위에서 아래로 찾은 첫 윗면 — 지붕 위도), 땅이 없으면 발 높이. maxAimDistance(맵 끝)까지. 발밑까지 끌어 내리면(cancelRadius 안) 취소.
+        /// </summary>
+        private void UpdateDragTarget(in CharacterInputFrame input)
+        {
+            aimBySky = false;
+            aimDistance = Mathf.Clamp(aimDistance - input.LookDelta.y * dragPerDegree, minAimDistance, maxAimDistance); // 마우스를 올리면 멀리(안토니오 음표 놓기처럼)
+            Vector3 fwd = Quaternion.Euler(0f, input.LookYaw, 0f) * Vector3.forward;
+            Vector3 p = transform.position + fwd * aimDistance;
+            aimTarget = RayCast(p + Vector3.up * 80f, Vector3.down, 200f, out var ground) ? ground.point : new Vector3(p.x, transform.position.y, p.z);
+            aimCancels = aimDistance < cancelRadius;
+        }
 
         /// <summary>
         /// 화면 가운데(조준점)가 가리키는 곳을 목표로 잡는다 — 커서는 쓰지 않는다(사냥터지기 그랩처럼). 광선 = 카메라 자리(AimRayOrigin)에서 시야 각도(LookYaw·LookPitch) 쪽.
@@ -185,41 +217,35 @@ namespace Project1.Systems
         /// </summary>
         private void UpdateAimArc()
         {
-            if (aimBySky)
-            {
-                aimVelocity = skyVelocity;
-                arc.Clear();
-                bool flew = Simulate(Hand, aimVelocity, out Vector3 skyEnd, arc);
-                AimLanding = skyEnd;
-                AimValid = flew;
-                return;
-            }
+            // 먼저 앞의 한 지점(aimTarget)을 정하고, 던지는 손에서 그 지점까지 포물선으로 잇는다 — 이 선이 공장장에게 보이는 보조선이고, 인형은 이 선을 그대로 따라가 그 지점에 떨어진다.
             Vector3 from = Hand, to = aimTarget + Vector3.up * dollRadius;
             Vector3 flat = to - from; flat.y = 0f;
             float t0 = Mathf.Clamp(flat.magnitude / throwSpeed, minFlight, maxFlight);
-            float[] tries = { t0, t0 * 0.75f, t0 * 0.55f, t0 * 0.4f, t0 * 1.3f, t0 * 1.6f, t0 * 2f };
-            bool found = false;
+            // 막히지 않는 높이가 있으면 그 높이로(창문 틈 = 낮게, 벽 너머 = 높게), 없으면 기본 높이 — 그래도 선·인형은 벽을 지나 그 지점까지 간다.
+            float[] tries = { t0, t0 * 0.75f, t0 * 0.55f, t0 * 1.3f, t0 * 1.6f, t0 * 2f };
+            aimFlightTime = t0;
             foreach (float k in tries)
             {
                 float t = Mathf.Max(0.2f, k);
-                Vector3 v0 = flat / t;
-                v0.y = (to.y - from.y + 0.5f * gravity * t * t) / t;
-                if (Simulate(from, v0, out Vector3 land) && (land - to).sqrMagnitude <= landTolerance * landTolerance)
-                {
-                    aimVelocity = v0; found = true; break;
-                }
+                if (Simulate(from, LaunchVelocity(from, to, t), out Vector3 land) && (land - to).sqrMagnitude <= landTolerance * landTolerance) { aimFlightTime = t; break; }
             }
-            if (!found)
-            {
-                aimVelocity = flat / t0;
-                aimVelocity.y = (to.y - from.y + 0.5f * gravity * t0 * t0) / t0;
-            }
+            aimVelocity = LaunchVelocity(from, to, aimFlightTime);
 
             arc.Clear();
-            bool landed = Simulate(from, aimVelocity, out Vector3 end, arc);
-            AimLanding = end;
-            AimValid = !aimCancels && landed;
+            const int samples = 60;
+            for (int i = 0; i <= samples; i++) arc.Add(ArcPoint(from, aimVelocity, aimFlightTime * i / samples));
+            AimLanding = aimTarget;
+            AimValid = !aimCancels;
         }
+
+        private Vector3 LaunchVelocity(Vector3 from, Vector3 to, float t)
+        {
+            Vector3 v = (to - from) / t;
+            v.y = (to.y - from.y + 0.5f * gravity * t * t) / t;
+            return v;
+        }
+
+        private Vector3 ArcPoint(Vector3 from, Vector3 v, float t) => from + v * t + Vector3.down * (0.5f * gravity * t * t);
 
         /// <summary>처음 자리·속도로 날려 본다(멈출 때까지 또는 maxAirTime). 멈췄으면 true. path가 있으면 지나간 자리를 담는다.</summary>
         private bool Simulate(Vector3 p, Vector3 v, out Vector3 end, List<Vector3> path = null)
@@ -252,17 +278,24 @@ namespace Project1.Systems
 
         private void Throw()
         {
-            dollPos = Hand;
+            throwFrom = Hand;
+            throwTo = aimTarget + Vector3.up * dollRadius;
+            throwTime = Mathf.Max(0.05f, aimFlightTime);
+            throwVel = aimVelocity; // 던진 뒤 다시 겨눠도 날아가는 길은 그대로
+            dollPos = throwFrom;
             dollVel = aimVelocity;
             dollAir = 0f;
             DollActive = true; DollFlying = true;
             ThrowCount++;
         }
 
+        /// <summary>날아가는 인형: 보조선과 같은 포물선을 그대로 따라가(벽은 지나감) 비행 시간이 되면 겨눈 지점에 멈춘다.</summary>
         private void StepDoll(float dt)
         {
             dollAir += dt;
-            if (Step(ref dollPos, ref dollVel, dt) || dollAir > maxAirTime) { DollFlying = false; dollVel = Vector3.zero; }
+            if (dollAir >= throwTime) { dollPos = throwTo; dollVel = Vector3.zero; DollFlying = false; return; }
+            dollPos = ArcPoint(throwFrom, throwVel, dollAir);
+            dollVel = throwVel + Vector3.down * (gravity * dollAir);
         }
 
         /// <summary>

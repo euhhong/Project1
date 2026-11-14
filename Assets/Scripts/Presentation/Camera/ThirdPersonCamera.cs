@@ -27,7 +27,7 @@ namespace Project1.Presentation
         [SerializeField] private float minCameraPitch = -10f;
         [SerializeField] private float maxCameraPitch = 75f;
         [Tooltip("시야가 평소 범위보다 더 위를 볼 때(좌클릭 꾹 겨누기 — 예: 공장장 인형을 하늘로 던지기) 카메라가 올려다볼 수 있는 한계(도). 평소엔 minCameraPitch 그대로.")]
-        [SerializeField] private float lookUpMinCameraPitch = -25f; // 더 올리면 카메라가 땅 밑으로 내려간다 — 던지는 방향(시야)은 이보다 더 위도 된다
+        [SerializeField] private float lookUpMinCameraPitch = -75f; // 공장장 인형 겨누기(좌클릭 꾹) 때만 닿는 범위 — 멀리 고르면 크게 그려지는 포물선을 올려다본다
         private float curMinPitch = -10f;
         [Tooltip("시야 상태가 없을 때(임시 연결) 쓰는 시야 상하 각도(도).")]
         [SerializeField] private float fallbackPitch = 0f;

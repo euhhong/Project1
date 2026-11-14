@@ -272,7 +272,8 @@ namespace Project1.Systems
             Vector2 deltaDegrees;
             if (device is Pointer)
             {
-                deltaDegrees = holding ? look * (mouseSensitivity * (chargeLook ? chargeScale : 1f)) : Vector2.zero;
+                deltaDegrees = holding ? look * mouseSensitivity : Vector2.zero;
+                if (chargeLook) deltaDegrees.y *= chargeScale; // 좌클릭 꾹: 좌우 감도는 그대로, 상하만 배율(공장장 인형 — 끌어 올리면 멀리)
             }
             else
             {
