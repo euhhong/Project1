@@ -472,6 +472,13 @@ namespace Project1.Presentation.EditorTools
                     var st = sm.AddState(stateName);
                     st.motion = clip;
                     if (stateName == "Push") st.speed = 2.2f; // 모션은 아주 느리게 밀며 걷는다(약 0.25m/s) → 게임 미는 빠르기(CharacterPush 1m/s)에 맞춰 빠르게
+                    if (stateName == "HangHop")
+                    {
+                        // 오른쪽으로 건너 잡기: 같은 모션을 좌우 뒤집어(Humanoid mirror) 쓴다.
+                        var mirrored = sm.AddState("HangHopRight");
+                        mirrored.motion = clip;
+                        mirrored.mirror = true;
+                    }
                 }
             }
         }

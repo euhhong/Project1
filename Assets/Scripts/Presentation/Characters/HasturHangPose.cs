@@ -65,7 +65,7 @@ namespace Project1.Presentation
                 float p = traversal.ActionProgress;
                 target = a switch
                 {
-                    TraversalAction.HangGrab or TraversalAction.Hang => 1f,
+                    TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop => 1f,
                     TraversalAction.HangClimb or TraversalAction.HangClimbRail => 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 0.85f, p)), // 올라선 뒤 놓음
                     TraversalAction.HangClimbOver => 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.75f, 1f, p)),
                     _ => 0f,
@@ -75,7 +75,7 @@ namespace Project1.Presentation
             if (Weight <= 0f && !IsHang(a)) hasLedge = false;
         }
 
-        private static bool IsHang(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangClimb
+        private static bool IsHang(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop or TraversalAction.HangClimb
             or TraversalAction.HangClimbRail or TraversalAction.HangClimbOver;
 
         /// <summary>매달린 턱 모서리를 찾는다: 캐릭터는 벽을 보고 있다(앞 = 벽 쪽). 위에서 아래로 윗면, 옆에서 앞으로 벽면.</summary>

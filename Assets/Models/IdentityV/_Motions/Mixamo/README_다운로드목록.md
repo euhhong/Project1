@@ -38,6 +38,8 @@
 | Attack_RunJump_Hunter | 앞으로 달리다 점프 중 좌클릭(감시자) | **받음** — 36~70프레임, 내려치기 | Standing Melee Run Jump Attack |
 | Down | 맞아서 쓰러짐 | **받음** — Animator `IsDown`(bool)을 켜면 재생, 누운 자세로 멈춤 | Standing Death Left 01 |
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
+| Hit_Head2 / Hit_Head_Light | 머리 피격 세기별 — 작은 데미지 = Hit_Head_Light, 강공격·점프 공격·스킬 = Hit_Head와 Hit_Head2 번갈아 | **받음** — HitReact 레이어. (Medium Hit To Head는 받다 말아 없음 — 있으면 Hit_Head_Medium으로 넣으면 약공격 머리 피격에 쓴다) | Head Hit (두 번째 판) / Light Hit To Head |
+| Traversal_HangHop | 매달린 채 옆(A/D)으로 건너 잡기 — 옆에 같은 높이 턱이 있을 때(CharacterTraversal HangHop) | **받음** — 오른쪽은 같은 모션을 좌우 뒤집은 상태(HangHopRight) | Braced Hang Hop Left |
 | Hit_Body_Front | 몸통 피격(공통) — 몸 앞(약 ±60°)에서 맞음, 크게 뒤로 젖힘 | **받음** — 상체만(HitReact 레이어) | Standing React Large From Front |
 | Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
 | Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |
@@ -53,7 +55,7 @@
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
 | Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |
-| Stairs_Up | 계단 오르기(공통, 반복) | **받음, 연결 대기** — 맵에 계단이 생기면 연결 | Running Up Stairs |
+| Stairs_Up | 계단 오르기(공통, 반복) | **받음** — Stairs 레이어(전신), 앞으로 가며 충분히 오르면 CharacterStairsAnimator가 켬(빠르기 = 앞 속도). 붉은나비·하스터는 미끄러지는 이동 그대로 | Running Up Stairs |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |
 | Vault_Run | 뛰면서 점프로 창틀·판자 넘기 | **받음, 연결 대기** — 넘기 판정이 생기면 연결 | Jumping (1) |
 | Vault_Survivor | 창틀·판자 넘기(생존자) | **받음, 연결 대기** — 넘기 기능이 아직 없어 Animator에는 넣지 않았다 | Jumping Down |

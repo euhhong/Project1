@@ -36,6 +36,8 @@ namespace Project1.Core
         HangFlip,
         /// <summary>사다리에 매달려 오르내리는 중(Ladder 표시). 스태미나를 조금씩 쓰고, 다 쓰면 뒤로 떨어진다. 꼭대기에 닿으면 턱에 매달림(Hang)으로 넘어간다.</summary>
         Ladder,
+        /// <summary>턱에 매달린 채 옆(A/D)으로 건너 잡기 — 옆에 같은 높이로 매달릴 턱이 있을 때(Braced Hang Hop Left, 오른쪽은 좌우 뒤집음). 끝나면 다시 매달림(Hang).</summary>
+        HangHop,
     }
 
     /// <summary>캐릭터의 오르기·매달리기·낙하 상태. 캐릭터 루트에서 GetComponent로 얻는다.</summary>
@@ -51,6 +53,9 @@ namespace Project1.Core
 
         /// <summary>낙하(Fall)가 넉백·뒤로 걷다가 떨어진 것인지(하늘을 보며 등으로 떨어지는 모션 — Falling을 뒤집음).</summary>
         bool FallBackward { get; }
+
+        /// <summary>옆으로 건너 잡기(HangHop)가 오른쪽인지(아니면 왼쪽).</summary>
+        bool HopRight { get; }
 
         /// <summary>감시자인지(창틀을 감시자 모션 Jump로 뛰어넘는다).</summary>
         bool HunterStyle { get; }

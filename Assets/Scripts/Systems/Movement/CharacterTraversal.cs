@@ -87,6 +87,18 @@ namespace Project1.Systems
             new Keyframe(0f, 0f), new Keyframe(0.2f, 0f), new Keyframe(0.27f, 0.08f), new Keyframe(0.33f, 0.24f), new Keyframe(0.4f, 0.41f),
             new Keyframe(0.47f, 0.59f), new Keyframe(0.53f, 0.83f), new Keyframe(0.6f, 1f), new Keyframe(1f, 1f));
 
+        [Header("매달린 채 옆으로 건너 잡기 (A/D)")]
+        [Tooltip("한 번에 옆으로 건너가는 거리(m).")]
+        [SerializeField, Min(0.2f)] private float hopDistance = 0.9f;
+        [Tooltip("건너 잡기 시간(초, Braced Hang Hop Left 1.5초 모션을 이 시간에 맞춰 재생).")]
+        [SerializeField, Min(0.2f)] private float hopTime = 1.2f;
+        [Tooltip("옆 턱 높이가 지금 턱과 이만큼(m)까지 달라도 같은 높이로 본다.")]
+        [SerializeField, Min(0f)] private float hopHeightTolerance = 0.12f;
+        [Tooltip("이 진행도부터 루트를 옆 턱으로 옮긴다(모션 앞부분은 몸이 옆으로 쏠리기만 한다).")]
+        [SerializeField, Range(0f, 0.9f)] private float hopMoveFrom = 0.45f;
+        private bool hopRight;
+        public bool HopRight => hopRight;
+
         [Header("감시자 넘기 (부드럽게)")]
         [Tooltip("감시자: 창틀 넘기·뛰어 올라서기를 들어오던 속도로 출발해, 끝날 때 이 비율의 속도로 이어 나간다(0 = 멈췄다 출발하고 멈춰 끝남). 생존자는 쓰지 않는다.")]
         [SerializeField, Range(0f, 1f)] private float hunterSpeedCarry = 1f;
@@ -157,7 +169,7 @@ namespace Project1.Systems
 
         /// <summary>창틀 넘기를 감시자 길(곧게 Jump 시간)로 하는지 — 감시자 또는 창틀 뚫고 지나가기.</summary>
         private bool HunterPath => hunterStyle || windowPassThrough;
-        public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
+        public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
         private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
@@ -202,7 +214,7 @@ namespace Project1.Systems
             bool stunned = stun != null && stun.IsStunned;
             bool grounded = state == null || state.IsGrounded;
 
-            if ((IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang) && (dead || stunned))
+            if ((IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop) && (dead || stunned))
             {
                 Release(); // 기절·쓰러짐: 놓친다
                 return;
@@ -221,6 +233,10 @@ namespace Project1.Systems
                     return;
                 case TraversalAction.Hang:
                     HandleHang(input);
+                    return;
+                case TraversalAction.HangHop:
+                    actionTime += dt;
+                    if (actionTime >= actionDuration) { hangPos = pathEnd; action = TraversalAction.Hang; actionTime = 0f; actionDuration = 0f; } // 옆 턱에 다시 매달림
                     return;
                 case TraversalAction.Ladder:
                     HandleLadder(input, dead, stunned);
@@ -471,7 +487,36 @@ namespace Project1.Systems
         {
             // 앞(또는 점프) = 올라가기, 뒤 = 놓고 떨어지기. 올라갈 자리가 없으면 앞은 그대로 매달림.
             if ((input.Move.y > 0.5f || input.Jump) && TryStartHangClimb()) return;
-            if (input.Move.y < -0.5f && !TryReturnToLadder() && !TryStartHangFlip()) Release(); // 사다리로 올라온 턱이면 다시 사다리로 // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
+            if (input.Move.y < -0.5f && !TryReturnToLadder() && !TryStartHangFlip()) { Release(); return; } // 사다리로 올라온 턱이면 다시 사다리로 // 생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비
+            // 옆(A/D) = 옆에 같은 높이로 매달릴 턱이 있으면 건너 잡는다(꾹 누르면 계속).
+            if (Mathf.Abs(input.Move.x) > 0.5f && Mathf.Abs(input.Move.y) <= 0.5f) TryStartHangHop(input.Move.x > 0f);
+        }
+
+        /// <summary>
+        /// 매달린 채 옆으로 건너 잡기: 벽을 따라 옆으로 hopDistance 간 자리에 지금 턱과 같은 높이(hopHeightTolerance 안)·같은 방향의 매달릴 턱이 있고,
+        /// 가는 길(매달린 몸 높이)이 막히지 않았으면 그리로 건너간다. 사이에 턱이 끊겨 있어도 건너편이 잡히면 건넌다.
+        /// </summary>
+        private bool TryStartHangHop(bool right)
+        {
+            Vector3 face = Vector3.ProjectOnPlane(-ledge.Normal, Vector3.up);
+            if (face.sqrMagnitude < 1e-4f) return false;
+            face.Normalize();
+            Vector3 side = Vector3.Cross(Vector3.up, face) * (right ? 1f : -1f);
+            float hu = HumanUnit();
+            Vector3 pos = transform.position;
+            // 가는 길: 매달린 몸(벽을 짚은 발 ~ 어깨) 높이로 옆을 훑어 막히면 못 간다.
+            foreach (float h in new[] { BracedFeet * hu, 1.6f * hu })
+                if (Cast(pos + Vector3.up * h, side, hopDistance + cc.radius, out _)) return false;
+            if (!FindHang(pos + side * hopDistance, face, out var l, out bool wall, out var hp)) return false;
+            if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Angle(l.Normal, ledge.Normal) > 25f) return false;
+            pathStart = pos;
+            pathEnd = hp;
+            ledge = l;
+            braced = wall;
+            faceYaw = YawOf(-l.Normal);
+            hopRight = right;
+            StartAction(TraversalAction.HangHop, hopTime);
+            return true;
         }
 
         /// <summary>
@@ -556,7 +601,7 @@ namespace Project1.Systems
         private void Release()
         {
             LiftOutOfFloor();
-            hangDrop = action == TraversalAction.Hang || action == TraversalAction.HangGrab; // 매달렸다 놓음: 아주 높지 않으면 다치지 않는다
+            hangDrop = action == TraversalAction.Hang || action == TraversalAction.HangGrab || action == TraversalAction.HangHop; // 매달렸다 놓음: 아주 높지 않으면 다치지 않는다
             action = TraversalAction.None;
             actionTime = actionDuration = 0f;
             regrab = regrabDelay;
@@ -574,7 +619,7 @@ namespace Project1.Systems
         [Tooltip("넉백으로 떨어진 뒤 다시 턱을 잡을 수 없는 시간(초).")]
         [SerializeField, Min(0f)] private float knockOffRegrab = 1f;
 
-        private static bool IsHanging(TraversalAction a) => a == TraversalAction.HangGrab || a == TraversalAction.Hang
+        private static bool IsHanging(TraversalAction a) => a == TraversalAction.HangGrab || a == TraversalAction.Hang || a == TraversalAction.HangHop
                                                             || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver;
 
         /// <summary>
@@ -669,6 +714,13 @@ namespace Project1.Systems
                 worldVelocity = Vector3.ClampMagnitude((hangPos - pos) / (hunterStyle ? snapTime * 1.6f : snapTime), 25f); // 감시자는 조금 천천히 붙는다
                 return true;
             }
+            if (action == TraversalAction.HangHop)
+            {
+                // 모션(제자리)은 앞부분에서 몸이 옆으로 쏠렸다가 뒷부분에서 제자리로 돌아온다 → 루트는 그 뒷부분 동안 옆 턱으로 옮겨 몸이 한쪽으로만 가게.
+                Vector3 to = Vector3.Lerp(pathStart, pathEnd, Smooth(hopMoveFrom, 1f, ActionProgress));
+                worldVelocity = Vector3.ClampMagnitude((to - pos) / dt, 25f);
+                return true;
+            }
             if (!IsScripted(action)) return false;
             worldVelocity = Vector3.ClampMagnitude((PathPoint(ActionProgress) - pos) / dt, 30f);
             return true;
@@ -758,7 +810,7 @@ namespace Project1.Systems
         public bool TryGetFacingYaw(out float yaw)
         {
             yaw = faceYaw;
-            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
+            return IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder;
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)

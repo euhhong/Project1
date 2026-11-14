@@ -94,6 +94,7 @@ namespace Project1.Presentation
             TraversalAction.WindowDrop => "WindowDrop",
             TraversalAction.HangGrab => t.BracedHang ? "HangBraced_Grab" : "Hang_Grab",
             TraversalAction.Hang => t.BracedHang ? "HangBraced" : "Hang",
+            TraversalAction.HangHop => t.HopRight ? "HangHopRight" : "HangHop", // 매달린 채 옆으로 건너 잡기(Braced Hang Hop Left, 오른쪽은 좌우 뒤집은 상태)
             TraversalAction.HangClimb => "HangClimb",
             TraversalAction.HangClimbRail => "HangClimbRail",
             TraversalAction.HangFlip => "HangFlip", // 생존자: 벽을 박차고 뒤로 공중제비(Backflip) → 아래 바닥에 내려섬
