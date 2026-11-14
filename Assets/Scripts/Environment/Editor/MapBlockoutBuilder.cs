@@ -556,6 +556,30 @@ namespace Project1.Map.EditorTools
                 Pillar(p, $"Post_W_{a:0}", x0, a, 0.7f, b, h + 0.7f);
                 Pillar(p, $"Post_E_{a:0}", x1, a, 0.7f, b, h + 0.7f);
             }
+            // 투명벽: 담장 선(직선 4 + 깎은 모서리 4)을 따라 아주 높게(-5 ~ 100m) — 담장을 넘어 맵 밖으로 나가지 못하게. 보이지 않고(렌더러 없음) 카메라 광선은 지나간다(Ignore Raycast).
+            var bound = Group(p, "Boundary", Vector3.zero);
+            InvisibleWall(bound, "S", new Vector2(x0 + c, z0), new Vector2(x1 - c, z0));
+            InvisibleWall(bound, "N", new Vector2(x0 + c, z1), new Vector2(x1 - c, z1));
+            InvisibleWall(bound, "W", new Vector2(x0, z0 + c), new Vector2(x0, z1 - c));
+            InvisibleWall(bound, "E", new Vector2(x1, z0 + c), new Vector2(x1, z1 - c));
+            InvisibleWall(bound, "SW", new Vector2(x0, z0 + c), new Vector2(x0 + c, z0));
+            InvisibleWall(bound, "SE", new Vector2(x1 - c, z0), new Vector2(x1, z0 + c));
+            InvisibleWall(bound, "NW", new Vector2(x0, z1 - c), new Vector2(x0 + c, z1));
+            InvisibleWall(bound, "NE", new Vector2(x1 - c, z1), new Vector2(x1, z1 - c));
+        }
+
+        /// <summary>보이지 않는 벽(콜라이더만): a → b 선을 따라, 두께 0.6m, 높이 -5 ~ 100m. Ignore Raycast 층(캐릭터 몸은 막고 카메라·조준 광선은 지나감).</summary>
+        private static void InvisibleWall(Transform p, string name, Vector2 a, Vector2 b)
+        {
+            Vector2 d = b - a;
+            var go = new GameObject("Invisible_" + name);
+            go.transform.SetParent(p, false);
+            go.transform.localPosition = new Vector3((a.x + b.x) * 0.5f, 47.5f, (a.y + b.y) * 0.5f);
+            go.transform.localRotation = Quaternion.LookRotation(new Vector3(d.x, 0f, d.y), Vector3.up);
+            var box = go.AddComponent<BoxCollider>();
+            box.size = new Vector3(0.6f, 105f, d.magnitude + 0.6f);
+            go.layer = LayerMask.NameToLayer("Ignore Raycast");
+            GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic);
         }
 
         /// <summary>
