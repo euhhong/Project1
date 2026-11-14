@@ -104,10 +104,8 @@ namespace Project1.Systems
         [SerializeField, Min(0.2f)] private float hopTime = 1.05f;
         [Tooltip("옆 턱 높이가 지금 턱과 이만큼(m)까지 달라도 같은 높이로 본다.")]
         [SerializeField, Min(0f)] private float hopHeightTolerance = 0.12f;
-        [Tooltip("옆으로 갈 수 있는 턱: 같은 높이로 이어진 길이가 이만큼(m) 이상이거나, 가는 쪽 끝이 모서리로 꺾여 이어져야 한다(구덩이 가장자리·큰 창틀). 좁은 창틀(1.6m)·난간 틈은 막는다.")]
-        [SerializeField, Min(0f)] private float hopMinLedgeSpan = 3.5f;
-        [Tooltip("이보다 얇은(m) 턱은 난간으로 보고 옆으로 가지 않는다(맵 난간 0.15m, 벽 0.4m).")]
-        [SerializeField, Min(0f)] private float hopRailThickness = 0.3f;
+        [Tooltip("가는 쪽 모서리(옆 변으로 꺾이는 곳)를 찾아보는 거리(m). 턱 종류(바닥 끝·구덩이·창틀·얇은 턱·난간)와 상관없이 옆으로 가고, 이어지는 턱이 정말 없을 때만 멈춘다.")]
+        [SerializeField, Min(0.5f)] private float hopLookAhead = 3.5f;
         private float hopYawFrom, hopTurnAt;
         private bool hopTurn;
         [Tooltip("몸이 옆으로 옮겨 가는 진행도 구간 — 모션에서 몸이 뛰어올라 손을 옮기는 동안(도약 ~ 다시 매달림).")]
@@ -545,7 +543,7 @@ namespace Project1.Systems
         /// 옆 변으로 넘어가 매달린다(모서리까지 간 뒤 남은 만큼 옆 변으로, 몸은 새 벽을 보게 90도 돈다).
         /// - 안쪽 모서리(구덩이 구석): 옆쪽 벽이 지금 벽과 직각으로 막고, 그 벽 위가 같은 높이 턱.
         /// - 바깥 모서리(볼록하게 꺾임): 지금 턱이 끝나는 곳에서 옆면이 뒤(벽 쪽)로 꺾여 들어가고, 그 옆면 위가 같은 높이 턱.
-        /// 이어지는 턱이 없으면(진짜 끝·막힘) 갈 수 있는 만큼만 가고(hopMinStride 미만이면 안 감), 난간(얇은 턱)·좁은 턱(이어진 길이 hopMinLedgeSpan 미만이고 끝이 모서리도 아님)에서는 가지 않는다.
+        /// 이어지는 턱이 없으면(진짜 끝·막힘) 갈 수 있는 만큼만 가고(hopMinStride 미만이면 안 감). 턱 종류(바닥 끝·구덩이·창틀·얇은 턱·난간)는 가리지 않는다.
         /// </summary>
         private bool TryStartHangHop(bool right)
         {
@@ -553,11 +551,10 @@ namespace Project1.Systems
             if (face.sqrMagnitude < 1e-4f) return false;
             face.Normalize();
             Vector3 side = Vector3.Cross(Vector3.up, face) * (right ? 1f : -1f);
-            if (IsRailLedge(ledge)) return false;
             float hu = HumanUnit();
             float stride = hopStride * hu, minStride = Mathf.Min(hopMinStride * hu, stride), cornerMin = hopCornerMin * hu;
             Vector3 pos = transform.position;
-            float look = Mathf.Max(hopMinLedgeSpan, stride);
+            float look = Mathf.Max(hopLookAhead, stride);
 
             // 가는 쪽: 손 높이(턱 바로 아래)와 매달린 몸(벽을 짚은 발 ~ 어깨) 높이에서 옆을 막는 벽까지 거리.
             // 손 높이도 본다: 바닥판 구멍(두께 0.3m, 아래는 빈 곳)에 늘어져 매달리면 옆 변은 손 높이의 판 끝면뿐이다.
@@ -569,7 +566,7 @@ namespace Project1.Systems
                     wallAt = Mathf.Max(0f, hit.distance - cc.radius - Skin);
                     wallNormal = Vector3.ProjectOnPlane(hit.normal, Vector3.up).normalized;
                 }
-            float runAhead = LedgeRun(ledge, side, look), runBack = LedgeRun(ledge, -side, look);
+            float runAhead = LedgeRun(ledge, side, look);
 
             // 가는 쪽 끝이 모서리로 꺾여 이어지는지(그 모서리를 돌아 옆 변으로 갈 자리).
             bool corner = false;
@@ -586,9 +583,6 @@ namespace Project1.Systems
                 corner = inside ? PlanInsideCorner(pos, side, face, cornerAt, into, out mid, out end, out next, out nextWall)
                                 : PlanOutsideCorner(pos, side, face, cornerAt, into, out mid, out end, out next, out nextWall);
             }
-            // 좁은 턱(창틀·난간 틈): 이어진 길이가 짧고 가는 쪽이 모서리로 이어지지도 않으면 옆으로 가지 않는다.
-            if (!corner && runAhead + runBack < hopMinLedgeSpan) return false;
-
             if (corner && cornerAt < stride)
             {
                 // 모서리 돌기: 모서리(mid)까지 턱을 따라 → 돌아서 옆 변 자리(end)로. 몸은 모서리를 지날 무렵 90도 돈다.
@@ -638,7 +632,7 @@ namespace Project1.Systems
             for (float t = into; t >= lo; t -= 0.1f)
             {
                 if (!FindHang(mid - face * t, side, out var l, out wall, out var hp)) continue;
-                if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Dot(l.Normal, -side) < 0.9f || IsRailLedge(l)) continue;
+                if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Dot(l.Normal, -side) < 0.9f) continue;
                 if (!HopClear(mid, hp)) continue;
                 next = l; end = hp;
                 return true;
@@ -656,7 +650,7 @@ namespace Project1.Systems
             for (float t = into; t >= lo; t -= 0.1f)
             {
                 if (!FindHang(mid + face * t, -side, out var l, out wall, out var hp)) continue;
-                if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Dot(l.Normal, side) < 0.9f || IsRailLedge(l)) continue;
+                if (Mathf.Abs(l.Top - ledge.Top) > hopHeightTolerance || Vector3.Dot(l.Normal, side) < 0.9f) continue;
                 if (!HopClear(mid, hp)) continue;
                 next = l; end = hp;
                 return true;
@@ -668,7 +662,7 @@ namespace Project1.Systems
         private bool FindOutsideCorner(Vector3 side, Vector3 face, float run, out float edgeAt)
         {
             edgeAt = 0f;
-            Vector3 origin = ledge.Face + side * (run + 0.6f) + face * 0.25f;
+            Vector3 origin = ledge.Face + side * (run + 0.6f) + face * LedgeInset; // 앞면 바로 안쪽(얇은 창틀·난간도 옆면을 맞힌다)
             origin.y = ledge.Top - 0.1f;
             if (!Cast(origin, -side, 0.9f, out var hit) || Vector3.Dot(Vector3.ProjectOnPlane(hit.normal, Vector3.up).normalized, side) < 0.9f) return false;
             edgeAt = Mathf.Max(0f, Vector3.Dot(hit.point - transform.position, side));
@@ -685,17 +679,6 @@ namespace Project1.Systems
             foreach (float h in new[] { BracedFeet * hu, 1.6f * hu })
                 if (Cast(a + Vector3.up * h, d / len, len, out _)) return false;
             return true;
-        }
-
-        /// <summary>난간(hopRailThickness보다 얇거나 바로 뒤에 바닥이 있는 턱)인지 — 난간에서는 옆으로 가지 않는다.</summary>
-        private bool IsRailLedge(in Ledge l)
-        {
-            // 두께: 턱 안쪽 1.25m에서 앞면 쪽으로 쏴 뒷면을 맞으면 얇은 턱.
-            const float probe = 1.25f;
-            Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
-            // 뒷면 바로 뒤가 비어 있어야 진짜 뒷면이다(바닥판을 여러 조각으로 나눈 이음매는 뒤가 다른 조각 안이라 난간이 아니다).
-            if (Cast(far, l.Normal, probe, out var back) && probe - back.distance < hopRailThickness && !OverlapSphere(back.point - l.Normal * 0.06f, 0.03f)) return true;
-            return FindFloorBehindRail(l, out _);
         }
 
         /// <summary>잡은 자리에서 dir 쪽으로 턱이 같은 높이로 끊기지 않고 이어지는 길이(m, max까지만 잰다).</summary>
