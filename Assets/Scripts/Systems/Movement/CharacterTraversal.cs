@@ -65,6 +65,12 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float climbMin = 0.35f, climbMax = 1.1f;
         [SerializeField, Min(0f)] private float climbReach = 0.9f;
         [SerializeField, Min(0.1f)] private float climbTime = 0.65f;
+        [Tooltip("달리며 올라서기(ClimbUpRun): 턱 높이가 키의 이 비율 이하일 때(책상 등) 멈추지 않고 뛰어 올라 그대로 달려 나간다.")]
+        [SerializeField, Range(0.2f, 1.1f)] private float runClimbMax = 0.6f;
+        [Tooltip("달리며 올라서기 시간(초, 짧을수록 빠르게 뛰어오름 — 실제로는 달리던 빠르기로 이 시간만큼 간다).")]
+        [SerializeField, Min(0.1f)] private float runClimbTime = 0.3f;
+        [Tooltip("달리며 올라서기: 이 진행도까지 턱 높이로 다 올라간다.")]
+        [SerializeField, Range(0.2f, 0.9f)] private float runClimbRiseEnd = 0.5f;
 
         [Header("매달리기 (공중에서 방향키)")]
         [SerializeField, Min(0f)] private float hangReach = 0.45f;
@@ -172,7 +178,7 @@ namespace Project1.Systems
         public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
                                     || ((action == TraversalAction.LandHigh || action == TraversalAction.LandHard) && actionTime < landStop);
 
-        private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
+        private static bool IsScripted(TraversalAction a) => a == TraversalAction.ClimbUp || a == TraversalAction.ClimbUpRun || a == TraversalAction.WindowVault || a == TraversalAction.WindowDrop
                                                              || a == TraversalAction.WindowJump || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver || a == TraversalAction.HangFlip;
         private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
 
@@ -221,7 +227,7 @@ namespace Project1.Systems
             }
             switch (action)
             {
-                case TraversalAction.ClimbUp: case TraversalAction.WindowVault: case TraversalAction.WindowDrop: case TraversalAction.WindowJump:
+                case TraversalAction.ClimbUp: case TraversalAction.ClimbUpRun: case TraversalAction.WindowVault: case TraversalAction.WindowDrop: case TraversalAction.WindowJump:
                 case TraversalAction.HangClimb: case TraversalAction.HangClimbRail: case TraversalAction.HangClimbOver: case TraversalAction.HangFlip:
                     actionTime += dt;
                     // 진행도 1인 틱에 이동이 끝 자리로 옮긴 뒤 다음 틱에 끝낸다.
@@ -422,10 +428,40 @@ namespace Project1.Systems
             float h = cc.height;
             if (!FindLedge(dir, transform.position.y, climbMin * h, climbMax * h, climbReach, out var l)) return false;
             if (!HasStandRoom(l, out var stand)) return false;
+            if (TryStartClimbUpRun(l, stand)) return true;
             faceYaw = YawOf(-l.Normal);
             pathStart = transform.position;
             pathEnd = stand;
             StartAction(TraversalAction.ClimbUp, climbTime);
+            return true;
+        }
+
+        /// <summary>
+        /// 달리는 중에 낮은 턱(키의 runClimbMax 이하 — 책상 등)으로 올라서면: 멈춰 서지 않고 달리던 빠르기 그대로 뛰어 올라 위로 달려 나간다(ClimbUpRun).
+        /// 턱 위 달려 나갈 자리(몸이 들어가고 막히지 않음)가 있어야 한다. 턱이 짧으면 그대로 반대편으로 달려 나가 떨어진다.
+        /// </summary>
+        private bool TryStartClimbUpRun(in Ledge l, Vector3 stand)
+        {
+            if (state == null || !state.IsGrounded) return false;
+            Vector2 v = state.LocalPlanarVelocity;
+            float speed = v.magnitude;
+            if (v.y < state.WalkSpeed + 0.5f) return false; // 앞으로 달리는 중만
+            Vector3 pos = transform.position;
+            if (l.Top - pos.y > runClimbMax * cc.height) return false;
+            Vector3 dir = Vector3.ProjectOnPlane(-l.Normal, Vector3.up).normalized;
+            float toFace = Vector3.Dot(l.Face - pos, dir);
+            // 몸이 턱 앞면에 닿을 때(진행도 runClimbRiseEnd)는 발이 턱 위에 있도록, 그리고 runClimbTime 동안 달리던 빠르기로 간다.
+            float dist = Mathf.Max(speed * runClimbTime, (toFace + cc.radius) / runClimbRiseEnd);
+            Vector3 end = pos + dir * dist; end.y = l.Top + 0.02f;
+            float onTop = dist - toFace; // 턱 위로 달려 들어가는 거리
+            // 턱 위 가는 길: 무릎·가슴 높이로 막히지 않고, 끝 자리에 몸이 들어간다.
+            foreach (float h in new[] { 0.3f, cc.height * 0.7f })
+                if (Cast(stand + Vector3.up * h, dir, Mathf.Max(0.05f, onTop + cc.radius), out _)) return false;
+            if (OverlapCapsule(end, cc.radius * 0.9f)) return false;
+            faceYaw = YawOf(dir);
+            pathStart = pos;
+            pathEnd = end;
+            StartAction(TraversalAction.ClimbUpRun, dist / Mathf.Max(speed, 0.1f));
             return true;
         }
 
@@ -734,6 +770,12 @@ namespace Project1.Systems
             float spread = hunter ? hunterClimbSpread : 0f;
             switch (action)
             {
+                case TraversalAction.ClimbUpRun: // 달리던 빠르기 그대로(곧게) 앞으로, 앞부분에 턱 높이로 뛰어오름 → 끝나면 그대로 달려 나간다
+                {
+                    Vector3 xz = Vector3.Lerp(s, e, p);
+                    xz.y = Mathf.Lerp(s.y, e.y, Smooth(0f, runClimbRiseEnd, p));
+                    return xz;
+                }
                 case TraversalAction.ClimbUp: // Running Jump: 발이 떨어짐(0.08) → 높은 바닥에 닿음(0.42)
                 {
                     // 감시자: 달려오던 속도로 출발(발이 아직 낮을 때 너무 앞서 가 벽에 파묻히지 않게 기울기 1까지), 올라선 뒤(0.6~)는 그대로 — 끝 속도는 모션이 멈춰 서므로 이어 가지 않는다.

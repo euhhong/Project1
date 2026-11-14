@@ -89,6 +89,7 @@ namespace Project1.Presentation
             // 창틀 뚫고 지나가기(붉은나비 — 하스터처럼): 창틀 넘기 모션 없이 걷기·달리기 모션 그대로 지나간다.
             TraversalAction.WindowVault or TraversalAction.WindowJump or TraversalAction.WindowDrop when t.PassesThroughWindows => null,
             TraversalAction.ClimbUp => "ClimbUp",
+            TraversalAction.ClimbUpRun => "ClimbUpRun", // 달리며 낮은 턱(책상 등)에 올라 그대로 달려 나감 — 달리기 모션 그대로
             TraversalAction.WindowVault => t.HunterStyle ? "WindowVaultHunter" : "WindowJump", // 걸어서 넘기도 점프 넘기와 같은 모션(BE가 더 길게 = 느리게)
             TraversalAction.WindowJump => t.HunterStyle ? "WindowVaultHunter" : "WindowJump",
             TraversalAction.WindowDrop => "WindowDrop",
@@ -108,6 +109,6 @@ namespace Project1.Presentation
             _ => null,
         };
 
-        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall;
+        private static bool Synced(TraversalAction a) => a != TraversalAction.Hang && a != TraversalAction.Fall && a != TraversalAction.ClimbUpRun; // 달리며 올라서기는 달리기 모션을 제 빠르기로
     }
 }

@@ -485,6 +485,12 @@ namespace Project1.Presentation.EditorTools
                     var st = sm.AddState(stateName);
                     st.motion = clip;
                     if (stateName == "Push") st.speed = 2.2f; // 모션은 아주 느리게 밀며 걷는다(약 0.25m/s) → 게임 미는 빠르기(CharacterPush 1m/s)에 맞춰 빠르게
+                    if (stateName == "HangHop" && !sm.states.Any(s => s.state.name == "ClimbUpRun"))
+                    {
+                        // 달리며 책상 등 낮은 턱에 올라서기(ClimbUpRun): 다리는 달리기 모션 그대로(Run_F — 감시자·붉은나비 등은 Override Controller가 바꾼 달리기).
+                        var runClip = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/Run_F.fbx");
+                        if (runClip != null) sm.AddState("ClimbUpRun").motion = runClip;
+                    }
                     if (stateName == "HangHop")
                     {
                         // 오른쪽으로 건너 잡기: 같은 모션을 좌우 뒤집어(Humanoid mirror) 쓴다.

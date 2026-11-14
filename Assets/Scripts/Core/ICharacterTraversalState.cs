@@ -38,6 +38,8 @@ namespace Project1.Core
         Ladder,
         /// <summary>턱에 매달린 채 옆(A/D)으로 건너 잡기 — 옆에 같은 높이로 매달릴 턱이 있을 때(Braced Hang Hop Left, 오른쪽은 좌우 뒤집음). 끝나면 다시 매달림(Hang).</summary>
         HangHop,
+        /// <summary>달리다(방향키 + 점프) 낮은 턱(책상 등) 위로 뛰어 올라 그대로 달려 나감 — 위에 달려 나갈 자리가 있을 때. 다리는 달리기 모션 그대로.</summary>
+        ClimbUpRun,
     }
 
     /// <summary>캐릭터의 오르기·매달리기·낙하 상태. 캐릭터 루트에서 GetComponent로 얻는다.</summary>
