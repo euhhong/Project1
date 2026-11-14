@@ -48,7 +48,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_HasturSlam", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
-            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_Head_Big", "Hit_EdgeSlip", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
+            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_Head_Big", "Hit_EdgeSlip", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick", "GetUp",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -391,7 +391,7 @@ namespace Project1.Presentation.EditorTools
             ac.layers = fullLayers;
             var fullSm = ac.layers[ac.layers.Length - 1].stateMachine;
             fullSm.defaultState = fullSm.AddState("Empty");
-            if (clips["Hit_HeadKick"] != null) { var kd = fullSm.AddState("Hit_HeadKick"); kd.motion = clips["Hit_HeadKick"]; kd.speed = 1.27f; } // 1.9초 → 나가떨어진 기절(FollowUpKickStun.knockdownTime 1.5초)에 맞춤
+            if (clips["Hit_HeadKick"] != null) { var kd = fullSm.AddState("Hit_HeadKick"); kd.motion = clips["Hit_HeadKick"]; kd.speed = 1.27f; } // 나가떨어져 눕기까지(약 0.8초). 일어나기는 GetUp 레이어(Kip Up)가 이어 받는다(기절 1.5초 안에)
             // 뒤에서 맞아 기절(전위 돌진·신호탄): 휘청이며 돌아 쓰러져 누움(Turn To Knocked Unconscious). 재생 위치는 CharacterHitReactionAnimator가 기절 시간에 맞춘다.
             if (clips["Stun_Back"] != null) fullSm.AddState("Stun_Back").motion = clips["Stun_Back"];
 
@@ -455,6 +455,19 @@ namespace Project1.Presentation.EditorTools
             foreach (var (skillId, slot) in SkillEndMotions)
                 if (clips.TryGetValue(slot, out var endClip) && endClip != null)
                     skillSm.AddState(skillId + "_End").motion = endClip;
+
+            // 일어나기 레이어(전신, 맨 위): 누워 있다가 일어날 때는 상황·캐릭터와 상관없이 모두 Kip Up(GetUp). 재생 위치는 CharacterGetUpAnimator가 행동 불가 시간에 맞춘다.
+            if (clips["GetUp"] != null)
+            {
+                ac.AddLayer("GetUp");
+                var getUpLayers = ac.layers;
+                var getUpLayer = getUpLayers[getUpLayers.Length - 1];
+                getUpLayer.defaultWeight = 0f; getUpLayer.blendingMode = AnimatorLayerBlendingMode.Override;
+                ac.layers = getUpLayers;
+                var getUpSm = ac.layers[ac.layers.Length - 1].stateMachine;
+                getUpSm.defaultState = getUpSm.AddState("Empty");
+                getUpSm.AddState("GetUp").motion = clips["GetUp"];
+            }
 
             EditorUtility.SetDirty(ac);
             return ac;

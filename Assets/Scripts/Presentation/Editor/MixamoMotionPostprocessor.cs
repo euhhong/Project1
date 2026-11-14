@@ -117,7 +117,8 @@ namespace Project1.Presentation.EditorTools
             ["Attack_Heavy_Ripper"] = new Vector2(7, 51),
             ["Attack_RunJump_Ripper"] = new Vector2(37, 71),
             ["Stun_Back"] = new Vector2(62, 138),              // 뒤에서 맞아 기절(Turn To Knocked Unconscious): 가만히 선 앞부분(0~47)·뒤돌기 앞부분은 빼고 휘청이며 돎(62~84) → 쓰러짐(88) → 누운 채(~138)
-            ["Hit_HeadKick"] = new Vector2(19, 76),           // 헤드샷 킥에 맞음(Corkscrew Evade): 뒤로 회오리치며 뛰어오름(19~34) → 땅에 떨어짐(43) → 엎드림 → 일어섬(76)
+            ["Hit_HeadKick"] = new Vector2(19, 50),           // 헤드샷 킥에 맞음(Corkscrew Evade): 뒤로 회오리치며 뛰어오름(19~34) → 땅에 떨어짐(43) → 누운 채(50). 일어서기는 GetUp(Kip Up)
+            ["GetUp"] = new Vector2(6, 50),                   // 누워 있다가 일어나기(Kip Up): 누운 채 다리 접기(6) → 튕겨 일어남(~30) → 선 자세(50). 쓰러짐·넉다운·스킬 넘어짐 모두 이것
             ["Air"] = new Vector2(0, 22),                     // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
             ["Air_F"] = new Vector2(25, 44),                   // Jumping(걸어서 점프): 발이 떨어짐(25) → 꼭대기(34) → 착지(44)
             ["Air_Run"] = new Vector2(0, 20),                  // Running Jump(뛰면서 점프): 도약(0) → 꼭대기(10) → 착지(20)

@@ -11,14 +11,15 @@ namespace Project1.Presentation
     /// - 몸통: 맞은 위치가 몸 앞(약 ±60°)이면 Hit_Body_Front(Standing React Large From Front), 옆이면 Hit_Body_Side(Big Side Hit)
     /// - 팔·다리: Hit_Limb(Side Hit). 몸통·팔·다리를 등 쪽에서 맞으면 Hit_Body_Back(Standing React Large From Left)
     /// - 작은 데미지(세기 0.75 미만, 예: 리퍼 E): 부위·방향과 상관없이 Hit_Small(Standing React Small From Headshot)
-    /// - 뒤에서 맞아 1초 이상 기절(전위 돌진·신호탄): "HitReactFull"(전신)에 Stun_Back(Turn To Knocked Unconscious — 휘청이며 쓰러져 누움)을 기절 시간에 맞춰 재생
+    /// - 뒤에서 맞아 1초 이상 기절(전위 돌진·신호탄): "HitReactFull"(전신)에 Stun_Back(Turn To Knocked Unconscious — 휘청이며 쓰러져 누움)을 기절 시간에 맞춰 재생, 끝에는 Kip Up으로 일어남(CharacterGetUpAnimator)
     /// 상체만 움직이므로 걷기·달리기 다리 모션은 그대로 이어진다. 연출 전용이고 게임 상태는 바꾸지 않는다.
-    /// 쓰러지며 나가떨어지는 피격(HitResult.Knockdown — 헤드샷 킥)은 "HitReactFull" 레이어(전신)에 Hit_HeadKick(Corkscrew Evade)을 재생한다.
+    /// 쓰러지며 나가떨어지는 피격(HitResult.Knockdown — 헤드샷 킥)은 "HitReactFull" 레이어(전신)에 Hit_HeadKick(Corkscrew Evade — 나가떨어져 누움)을 재생하고, 기절이 끝날 때 맞춰 Kip Up으로 일어난다(CharacterGetUpAnimator).
     /// 공격 중(약·강공격)에는 피격 모션을 얹지 않는다 — 둘이 바짝 붙어 서로 때려도 공격 모션이 끝까지 제대로 나온다.
     /// 캐릭터 루트에 붙인다. Animator는 자식 모델에서 자동으로 찾는다(모델이 바뀌면 다시 찾는다).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterShockReactionAnimator))] // 데미지 없는 충격파에 맞으면 휘청이는 모션(Edge Slip)도 같이
+    [RequireComponent(typeof(CharacterGetUpAnimator))] // 누워 있다가 일어날 때(넉다운·뒤에서 맞아 쓰러짐)는 모두 Kip Up
     public class CharacterHitReactionAnimator : MonoBehaviour
     {
         private const string LayerName = "HitReact";
@@ -45,7 +46,8 @@ namespace Project1.Presentation
         [Tooltip("기절이 풀릴 때 쓰러진 자세에서 돌아오는 시간(초).")]
         [SerializeField, Min(0.01f)] private float stunBackFadeOut = 0.35f;
         private bool stunBack;
-        private float stunBackTime, stunBackSpeed;
+        private float stunBackTime, stunBackSpeed, stunBackTotal;
+        private CharacterGetUpAnimator getUp;
         private static readonly int BodySideId = Animator.StringToHash("Hit_Body_Side");
         private static readonly int BodyBackId = Animator.StringToHash("Hit_Body_Back");
         private static readonly int LimbId = Animator.StringToHash("Hit_Limb");
@@ -80,7 +82,11 @@ namespace Project1.Presentation
         private float fullWeight;
         private bool knockdown;
 
-        private void Awake() => identity = GetComponent<CharacterIdentity>();
+        private void Awake()
+        {
+            identity = GetComponent<CharacterIdentity>();
+            getUp = GetComponent<CharacterGetUpAnimator>();
+        }
 
         private void OnEnable() => HitEvents.HitOccurred += OnHit;
 
@@ -158,10 +164,13 @@ namespace Project1.Presentation
             if (!Resolve()) return;
             if (knockdown)
             {
-                // 나가떨어지는 전신 모션이 끝나 갈 때 풀고, 그동안 상체 피격·기절 모션은 얹지 않는다.
+                // 나가떨어져 누운 뒤 기절이 GetUpTime만큼 남으면 Kip Up으로 일어난다(기절이 끝나는 순간 다 일어섬). 그동안 상체 피격·기절 모션은 얹지 않는다.
+                bool gettingUp = TryGetUp(0f);
                 var full = animator.GetCurrentAnimatorStateInfo(fullLayer);
-                if (full.shortNameHash == KnockdownId && full.normalizedTime >= 0.9f) fullWeight = Mathf.MoveTowards(fullWeight, 0f, Time.deltaTime / fadeOut);
-                if (fullWeight <= 0f) knockdown = false;
+                bool noGetUp = getUp == null || !getUp.Available; // 일어나기 레이어가 없으면 예전처럼 모션 끝에서 푼다
+                if (gettingUp || (noGetUp && full.shortNameHash == KnockdownId && full.normalizedTime >= 0.9f) || (!noGetUp && stun != null && !stun.IsStunned))
+                    fullWeight = Mathf.MoveTowards(fullWeight, 0f, Time.deltaTime / fadeOut); // 일어나는 동안 아래의 누운 자세는 걷어 둔다(GetUp 레이어가 덮음)
+                if (fullWeight <= 0f && !gettingUp) knockdown = false;
                 animator.SetLayerWeight(fullLayer, fullWeight);
                 animator.SetLayerWeight(layer, 0f);
                 return;
@@ -174,8 +183,10 @@ namespace Project1.Presentation
                 var backInfo = animator.GetCurrentAnimatorStateInfo(fullLayer);
                 float length = backInfo.shortNameHash == StunBackId && backInfo.length > 0f ? backInfo.length : 2.5f;
                 animator.Play(StunBackId, fullLayer, Mathf.Min(stunBackTime * stunBackSpeed / length, 0.999f));
-                fullWeight = Mathf.MoveTowards(fullWeight, down ? 1f : 0f, Time.deltaTime / (down ? 0.1f : stunBackFadeOut));
-                if (!down && fullWeight <= 0f) stunBack = false;
+                bool gettingUp = TryGetUp(stunBackTotal * 0.5f); // 쓰러지는 데 기절 절반을 쓰므로 일어나기는 나머지 절반 안에서
+                if (gettingUp) fullWeight = Mathf.MoveTowards(fullWeight, 0f, Time.deltaTime / fadeOut); // 일어나는 동안 아래의 누운 자세는 걷어 둔다
+                else fullWeight = Mathf.MoveTowards(fullWeight, down ? 1f : 0f, Time.deltaTime / (down ? 0.1f : stunBackFadeOut));
+                if (!down && fullWeight <= 0f && !gettingUp) stunBack = false;
                 animator.SetLayerWeight(fullLayer, fullWeight);
                 weight = 0f; playing = false;
                 animator.SetLayerWeight(layer, 0f);
@@ -207,6 +218,18 @@ namespace Project1.Presentation
             animator.SetLayerWeight(layer, weight);
         }
 
+        /// <summary>누운 채 남은 기절이 GetUpTime(maxTime > 0이면 그것과 더 짧은 쪽)만큼이면 일어나기(Kip Up)를 시작한다. 일어나는 중이면 true.</summary>
+        private bool TryGetUp(float maxTime)
+        {
+            if (getUp == null) return false;
+            if (!getUp.Playing && stun != null && stun.IsStunned)
+            {
+                float window = maxTime > 0f ? Mathf.Min(getUp.GetUpTime, maxTime) : getUp.GetUpTime;
+                if (stun.StunRemaining <= window) getUp.Begin(stun.StunRemaining);
+            }
+            return getUp.Playing;
+        }
+
         // 기절(BE CharacterStun)은 실행 중에 붙을 수 있어 매 프레임 확인하고 한 번만 구독한다.
         private void WatchStun()
         {
@@ -222,6 +245,7 @@ namespace Project1.Presentation
             // 뒤에서 맞아 기절(돌진·신호탄): 전신으로 휘청이며 쓰러진다. 기절이 길어질 때는 이어서.
             if (stun != null && stun.StunnedFromBehind && seconds >= stunBackMin && fullLayer >= 0 && animator.HasState(fullLayer, StunBackId))
             {
+                stunBackTotal = seconds;
                 if (!stunBack)
                 {
                     stunBack = true;
