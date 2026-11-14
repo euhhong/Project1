@@ -43,7 +43,7 @@ namespace Project1.Core
     {
         TraversalAction Action { get; }
 
-        /// <summary>시간이 정해진 동작의 진행도(0~1). 매달림·낙하처럼 끝이 정해지지 않은 동작은 0.</summary>
+        /// <summary>시간이 정해진 동작의 진행도(0~1). 매달림·낙하처럼 끝이 정해지지 않은 동작은 0. 사다리(Ladder)는 오른 높이로 도는 모션 재생 위치(반복).</summary>
         float ActionProgress { get; }
 
         /// <summary>매달린 턱 아래가 벽이라 발로 벽을 짚고 매달렸는지(Braced Hang). 아니면 몸이 늘어진 매달림(Freehang).</summary>

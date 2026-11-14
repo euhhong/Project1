@@ -136,7 +136,7 @@ namespace Project1.Systems
         private static readonly Collider[] Overlaps = new Collider[16];
 
         public TraversalAction Action => action;
-        public float ActionProgress => actionDuration > 0f ? Mathf.Clamp01(actionTime / actionDuration) : 0f;
+        public float ActionProgress => action == TraversalAction.Ladder ? LadderPhase() : actionDuration > 0f ? Mathf.Clamp01(actionTime / actionDuration) : 0f;
         public bool BracedHang => braced;
         public bool FallBackward => fallBackward;
         public bool HunterStyle => hunterStyle;

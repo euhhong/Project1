@@ -85,7 +85,7 @@ namespace Project1.Presentation.EditorTools
         {
             "Idle", "Walk_F", "Walk_B", "Walk_L", "Walk_R", "Run_F", "Run_B", "Run_L", "Run_R",
             "Attack_HeavyCharge", "Attack_AirCharge", "Block", "Idle_Thief", "Idle_Luchino", "Idle_HellEmber", "Idle_Antonio", "Move_Hastur", "SelectIdle_Hunter", "SelectIdle_Survivor", "Skill_Forward_Charge", "Stun", "Stairs_Up", "Carry_Joker", "Skill_SmileyFace_RocketCharge", "Skill_SmileyFace_RocketCharge_Raise", "Skill_Thief_Flashlight",
-            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", "Traversal_Push", // 매달린 채 대기, 허우적대며 떨어짐, 물건 밀기
+            "Traversal_Hang", "Traversal_HangBraced", "Traversal_FallBack", "Traversal_Push", "Traversal_Ladder", "Traversal_LadderHunter", // 매달린 채 대기, 허우적대며 떨어짐, 물건 밀기, 사다리 오르기(생존자·감시자)
         };
         // Air(Standing Jump)는 반복하지 않는다: 도약 → 착지 직전 자세에서 멈추고, 땅에 닿으면 이동으로 돌아간다.
 
@@ -124,7 +124,10 @@ namespace Project1.Presentation.EditorTools
         };
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
-        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper" };
+        private static readonly HashSet<string> NoRootHeight = new() { "Air", "Air_F", "Air_Run", "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_RunJump_Ripper", "Traversal_Ladder", "Traversal_LadderHunter" };
+        // 몸 높이를 AirHeightOffset 말고 다른 높이로 고정하는 모션. 사다리 오르기(Climbing Ladder 생존자 / Climbing 감시자)는 오르는 높이를 빼 제자리 반복으로 만들고
+        // 골반을 루트 위 1.76(Humanoid 단위)에 둔다 — 발 ≈ 루트 + 0.8, 손 ≈ 루트 + 2.1~2.2로 벽을 짚고 매달린 자세(BE 사다리 루트 기준)와 같다.
+        private static readonly Dictionary<string, float> BodyHeightOffset = new() { ["Traversal_Ladder"] = -1.76f, ["Traversal_LadderHunter"] = -1.76f };
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
         private const float AirHeightOffset = -0.91f;
         // 발을 땅에 붙이는 모션(몸 높이는 발 기준): 광대 로켓 돌진(다리를 벌려 디딘 자세라 몸이 낮아진다).
@@ -269,7 +272,7 @@ namespace Project1.Presentation.EditorTools
             // Body: 몸 중심 기준으로 몸 높이를 고정하고 서 있을 때 높이만큼 올린다(발차기처럼 두 발이 들려도 몸이 안 꺼진다).
             // Feet: 발 기준. 발이 땅에 붙고 몸만 웅크린다.
             clip.heightFromFeet = height == Height.Feet;
-            clip.heightOffset = height == Height.Body ? AirHeightOffset : 0f;
+            clip.heightOffset = height == Height.Body ? (BodyHeightOffset.TryGetValue(name, out float bodyOffset) ? bodyOffset : AirHeightOffset) : 0f;
             clip.lockRootPositionXZ = false;      // 수평 이동은 루트로 빼서 버린다 → 제자리 모션(Apply Root Motion 꺼짐)
             clip.keepOriginalPositionXZ = false;
             clip.mirror = Mirrored.Contains(name);

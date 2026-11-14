@@ -22,7 +22,7 @@ namespace Project1.Systems
 
         private static NavMeshDataInstance instance;
         private static bool built;
-        private static int builtScene = -1;
+        private static Scene builtScene;
         private static readonly List<NavMeshBuildSource> sources = new();
         private static readonly List<NavMeshBuildMarkup> noMarkups = new();
 
@@ -31,7 +31,7 @@ namespace Project1.Systems
         /// <summary>NavMesh가 없으면 굽는다. 걸을 바닥이 하나도 없으면 false.</summary>
         public static bool Ensure()
         {
-            int scene = SceneManager.GetActiveScene().handle;
+            Scene scene = SceneManager.GetActiveScene();
             if (built && builtScene == scene && instance.valid) return true;
             Clear();
             built = true; // 실패해도 매 틱 다시 굽지 않는다(Invalidate로 다시)
@@ -91,7 +91,7 @@ namespace Project1.Systems
             if (instance.valid) NavMesh.RemoveNavMeshData(instance);
             instance = default;
             built = false;
-            builtScene = -1;
+            builtScene = default;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -99,7 +99,7 @@ namespace Project1.Systems
         {
             instance = default; // 도메인 리로드 없이 플레이할 때: 지난 플레이의 인스턴스는 이미 사라졌다
             built = false;
-            builtScene = -1;
+            builtScene = default;
             SceneManager.activeSceneChanged -= OnSceneChanged;
             SceneManager.activeSceneChanged += OnSceneChanged;
         }

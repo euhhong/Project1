@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// 사다리 타기(CharacterTraversal의 한 부분 — 매달리기·턱 오르기와 상태를 나눠 쓴다).
     /// - 잡기: 사다리(Ladder 표시) 앞에서 사다리 쪽으로 방향키(땅·공중 모두). 위층에서는 사다리 꼭대기 쪽 턱 끝으로 걸어 나가면 내려가는 사다리를 잡는다.
     ///   지쳐 있으면(스태미나 IsExhausted) 잡지 못한다.
-    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 손을 놓고 뒤로 떨어짐. 모션은 벽을 짚고 매달린 자세(Braced Hang)를 쓴다.
+    /// - 타는 중(TraversalAction.Ladder): 방향키가 벽 쪽 = 오르기, 벽 바깥쪽 = 내리기(시야 기준 — 보통 W/S), 점프 = 손을 놓고 뒤로 떨어짐. 모션은 사다리 오르기(생존자 Climbing Ladder / 감시자 Climbing)를 오른 높이에 맞춰 돌린다(ActionProgress).
     ///   스태미나를 초당 ladderStaminaDrain씩 쓰고(회복 없음 — IStaminaDrain), 다 쓰면 손이 풀려 뒤로(등으로) 떨어진다(보통 낙하 데미지).
     ///   기절·쓰러짐·넉백도 손이 풀려 떨어진다.
     /// - 꼭대기: 위 끝에 닿으면 그 턱에 매달린 상태(Hang)로 넘어가고, 앞을 누르고 있으면 그대로 턱 위로 올라간다(HangClimb). 거기서 뒤(S) = 다시 사다리로.
@@ -17,7 +17,9 @@ namespace Project1.Systems
     {
         [Header("사다리")]
         [Tooltip("오르는 / 내려가는 속도(m/s).")]
-        [SerializeField, Min(0.1f)] private float ladderUpSpeed = 1.9f, ladderDownSpeed = 2.6f;
+        [SerializeField, Min(0.1f)] private float ladderUpSpeed = 3f, ladderDownSpeed = 4f;
+        [Tooltip("사다리 모션 한 바퀴(두 손 한 번씩)에 오르는 높이(Humanoid 단위) — 생존자 Climbing Ladder / 감시자 Climbing. 모션 재생 위치 = 오른 높이 ÷ 이 값(빠르게 오르면 모션도 빠르게, 내리면 거꾸로).")]
+        [SerializeField, Min(0.05f)] private float ladderCycleRise = 0.5f, hunterLadderCycleRise = 0.57f;
         [Tooltip("사다리에 있는 동안 초당 쓰는 스태미나(달리기 20). 다 쓰면 뒤로 떨어진다.")]
         [SerializeField, Min(0f)] private float ladderStaminaDrain = 4f;
         [Tooltip("손이 풀려 떨어질 때 벽 바깥으로 밀리는 속도(m/s).")]
@@ -32,6 +34,13 @@ namespace Project1.Systems
         private ICharacterStamina stamina;
 
         public float StaminaDrainPerSecond => action == TraversalAction.Ladder ? ladderStaminaDrain : 0f;
+
+        /// <summary>사다리 모션 재생 위치(0~1, 반복): 오른 높이 ÷ 한 바퀴 높이. 멈추면 그 자세로 멈춘다.</summary>
+        private float LadderPhase()
+        {
+            float cycle = (hunterStyle ? hunterLadderCycleRise : ladderCycleRise) * HumanUnit();
+            return Mathf.Repeat(ladderRoot / cycle, 1f);
+        }
 
         private float LadderBottomRoot(Ladder l, float hu) => l.BottomY + LadderFirstRung - BracedFeet * hu;
         private float LadderTopRoot(Ladder l, float hu) => Mathf.Max(LadderBottomRoot(l, hu), l.TopY - BracedHangTop * hu);
