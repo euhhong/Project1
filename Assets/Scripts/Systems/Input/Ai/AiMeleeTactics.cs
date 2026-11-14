@@ -25,6 +25,7 @@ namespace Project1.Systems
         private readonly AiOpponentView view;
         private readonly AiKeyPresser keys = new();
         private readonly AiChargeBaiter baiter = new();
+        private readonly AiRouteFinder route;
 
         private ICharacterAttackState attack;
         private ICharacterState state;
@@ -66,6 +67,7 @@ namespace Project1.Systems
             tr = self.transform;
             cfg = settings;
             this.view = view;
+            route = new AiRouteFinder(self);
         }
 
         private void RefreshComponents()
@@ -115,6 +117,7 @@ namespace Project1.Systems
             if (attack != null && attack.AttackState != CharacterAttackState.None) lastOwnAttack = now;
             TrackSelfSkill(now);
 
+            float yawBefore = yaw;
             Vector3 flat = me.Position - tr.position; flat.y = 0f;
             float dist = flat.magnitude;
             float targetYaw = dist > 0.01f ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg : yaw;
@@ -158,6 +161,22 @@ namespace Project1.Systems
 
             Vector2 move = Vector2.zero; bool run = false;
             Execute(now, dist, seen, prof, ref move, ref run);
+
+            // 길: 상대에게 다가가는 동안 벽이 가로막으면 창틀 쪽(없으면 NavMesh 길)으로 돌고, 앞에 창틀·낮은 턱이 있으면 점프해 넘는다(플레이어와 같은 입력).
+            bool pursuing = maneuver is Maneuver.Approach or Maneuver.None && move.y > 0.3f && dist > MyReach + 0.5f
+                            && !(traversal != null && traversal.LocksActions);
+            if (pursuing)
+            {
+                Vector3 wdir = route.Steer(me.Position, now, true, Grounded, out bool jump);
+                if (route.Detouring)
+                {
+                    yaw = Mathf.MoveTowardsAngle(yawBefore, Mathf.Atan2(wdir.x, wdir.z) * Mathf.Rad2Deg, 720f * dt); // 돌아가는 동안은 가는 쪽을 본다
+                    f.LookYaw = yaw;
+                    Vector3 local = Quaternion.Euler(0f, -yaw, 0f) * wdir;
+                    move = new Vector2(local.x, local.z).normalized;
+                }
+                if (jump) keys.Jump();
+            }
             f.Move = Vector2.ClampMagnitude(move, 1f);
             f.Run = run && CanRun && f.Move.y > 0.3f;
             keys.Apply(ref f, now);
