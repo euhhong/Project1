@@ -159,7 +159,10 @@ namespace Project1.Presentation
                     r.sharedMaterials = mats;
                     r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
-            foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c); // 보이기만(판정은 BE)
+            // 보이기만(판정은 BE): 판정 컴포넌트(Collider가 있어야 하는 Hitbox·Hurtbox)를 먼저 바로 지운 뒤 Collider를 지운다.
+            foreach (var hb in go.GetComponentsInChildren<Project1.Systems.Hitbox>(true)) DestroyImmediate(hb);
+            foreach (var hb in go.GetComponentsInChildren<Project1.Systems.Hurtbox>(true)) DestroyImmediate(hb);
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Destroy(c);
             float h = 0f;
             foreach (var r in go.GetComponentsInChildren<Renderer>()) h = Mathf.Max(h, r.bounds.max.y - go.transform.position.y);
             if (h > 1e-3f) go.transform.localScale = Vector3.one * (height / h);
