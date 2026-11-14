@@ -8,7 +8,7 @@ namespace Project1.Presentation
     /// - 두 팔(소매)을 머리 위 턱 쪽으로 뻗고, 땅까지 닿는 두 촉수 팔은 턱 모서리를 넘어 위로 말아 감아 쥔다
     ///   (바닥이 이어지면 윗면을 따라 눕고, 얇은 난간이면 너머로 늘어진다).
     /// - 다리 대신 치마 밑 촉수 다섯 가닥은 벽 쪽으로 눕혀 벽에 붙인다(벽이 없으면 아래로 늘어진다).
-    /// 매달림(ICharacterTraversalState: HangGrab·Hang)에서 켜지고, 매달려 올라가는 동안(HangClimb·HangClimbRail·HangClimbOver)은
+    /// 매달림(ICharacterTraversalState: HangGrab·Hang)과 사다리 타기(Ladder — 잡는 자리가 몸 앞 손 높이로 몸을 따라 오르내림)에서 켜지고, 매달려 올라가는 동안(HangClimb·HangClimbRail·HangClimbOver)은
     /// 손을 턱에 둔 채 몸이 올라가다 끝 무렵 놓는다. 턱 위치는 매달리기 시작할 때 레이로 찾는다.
     /// 뼈는 그 뼈를 맡은 컴포넌트가 이 자세를 불러 적용한다(팔 = HasturArmWalk, 다리 촉수 = HasturLegWriggle) — 한 뼈를 두 곳에서 쓰지 않게.
     /// HasturLegWriggle이 붙인다(하스터만).
@@ -58,6 +58,7 @@ namespace Project1.Presentation
             if ((a == TraversalAction.HangGrab || a == TraversalAction.Hang) && a != lastAction) FindLedge(); // 잡을 때 + 몸이 자리 잡은 뒤 다시
             else if (IsHang(a) && !IsHang(lastAction)) FindLedge();
             else if (a == TraversalAction.HangHop) FindLedge(); // 옆으로 한 보폭 가는 동안 잡는 자리도 몸을 따라 옮긴다(팔이 처음 자리에 남아 늘어나지 않게)
+            else if (a == TraversalAction.Ladder) LadderGrip(); // 사다리: 창틀(턱)을 잡은 자세 그대로, 잡는 자리가 몸을 따라 오르내린다
             lastAction = a;
 
             float target = 0f;
@@ -66,7 +67,7 @@ namespace Project1.Presentation
                 float p = traversal.ActionProgress;
                 target = a switch
                 {
-                    TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop => 1f,
+                    TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop or TraversalAction.Ladder => 1f,
                     TraversalAction.HangClimb or TraversalAction.HangClimbRail => 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 0.85f, p)), // 올라선 뒤 놓음
                     TraversalAction.HangClimbOver => 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.75f, 1f, p)),
                     _ => 0f,
@@ -77,7 +78,25 @@ namespace Project1.Presentation
         }
 
         private static bool IsHang(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop or TraversalAction.HangClimb
-            or TraversalAction.HangClimbRail or TraversalAction.HangClimbOver;
+            or TraversalAction.HangClimbRail or TraversalAction.HangClimbOver or TraversalAction.Ladder;
+
+        /// <summary>
+        /// 사다리를 타는 동안: 몸 바로 앞(사다리 쪽) 벽을 짚고 매달린 손 높이(Braced Hang, 2.28 Humanoid 단위)를 "턱"으로 삼는다 — 창틀을 잡은 자세 그대로.
+        /// 가로대는 충돌이 없어 레이를 쓰지 않는다. 얇은 가로대라 촉수 팔은 너머로 늘어진다(floorOnTop 아님).
+        /// </summary>
+        private void LadderGrip()
+        {
+            unit = cc != null ? Mathf.Max(cc.height, 0.5f) : 2f;
+            float radius = cc != null ? cc.radius : 0.4f;
+            Vector3 fwd = transform.forward; fwd.y = 0f;
+            fwd = fwd.sqrMagnitude > 1e-6f ? fwd.normalized : Vector3.forward;
+            normal = -fwd;
+            float hu = unit / 1.75f;
+            edge = transform.position + fwd * (radius + 0.03f);
+            edge.y = transform.position.y + 2.28f * hu;
+            floorOnTop = false;
+            hasLedge = true;
+        }
 
         /// <summary>매달린 턱 모서리를 찾는다: 캐릭터는 벽을 보고 있다(앞 = 벽 쪽). 위에서 아래로 윗면, 옆에서 앞으로 벽면.</summary>
         private void FindLedge()
