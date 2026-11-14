@@ -10,6 +10,7 @@ namespace Project1.Systems
     /// - 생존자 평타가 같은 상대를 경직시킨 뒤 SurvivorRestunWindow(1초) 동안은 다시 경직을 걸지 못한다(넉백·피해는 들어감 — 스턴락 방지).
     /// - 주먹 막기(패링)에 막힌 공격: 때린 쪽이 ParryCounterStun(0.5초) 경직(반격 기회).
     /// - 스킬의 경직(루키노 내려찍기·돌진·그랩 등)은 각 스킬이 건다(여기서는 건드리지 않음).
+    /// - 분신(CharacterIdentity.Summoner가 있는 캐릭터 — 공장장 분신)의 공격은 피해만 주고 경직을 걸지 않는다.
     /// 플레이를 시작하면 저절로 켜진다(붙일 것 없음). 끄려면 Enabled = false.
     /// </summary>
     public static class HitStunRules
@@ -36,6 +37,7 @@ namespace Project1.Systems
         {
             if (!Enabled || hit.VictimId == hit.AttackerId) return;
             var attacker = DamageRules.Find(hit.AttackerId);
+            if (attacker != null && attacker.Summoner != null) return; // 분신(공장장 분신 등)의 공격은 피해만 — 경직 없음
             bool hunter = DamageRules.IsHunter(attacker != null ? attacker.gameObject : null);
             if (!DamageRules.TryGetBasic(hunter, hit.Kind, out var spec) || spec.Stun <= 0f) return; // 스킬은 스킬이 건다
             var victim = DamageRules.Find(hit.VictimId);

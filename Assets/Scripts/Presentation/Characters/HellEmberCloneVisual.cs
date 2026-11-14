@@ -51,6 +51,7 @@ namespace Project1.Presentation
             Ensure<CharacterAttackAnimator>(clone);
             Ensure<CharacterBodyTurn>(clone);
             Ensure<CharacterHitReactionAnimator>(clone);
+            Ensure<AttackHitStop>(clone); // 공격이 맞으면 모션을 짧게 멈춤(히트스톱)
 
             var animator = clone.GetComponentInChildren<Animator>();
             var scythe = AttachScythe(clone, animator);

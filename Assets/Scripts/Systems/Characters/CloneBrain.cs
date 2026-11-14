@@ -10,6 +10,7 @@ namespace Project1.Systems
     /// - 길은 NavPathFollower(런타임 NavMesh)로 찾는다 — 다른 층이면 계단으로, 벽이 있으면 돌아서 간다. 막히면 점프해 본다.
     /// - 길이 멀면(runDistance 넘게) 달린다. 스태미나(CharacterStamina)가 바닥나면 모터가 걷기 속도로 묶는다.
     /// - 공격 범위(attackRange, 수평) 안이고 높이 차가 작으면 멈춰 서서 공격한다(약공격, 공격이 끝나고 attackGap초 뒤 다시).
+    ///   한 번 휘두르면 swingPause초 그 자리에 멈춰 서고, 공격이 맞으면 hitStop초 짧게 멈춘다. 분신의 공격은 피해만 주고 경직·넉백은 없다(HitStunRules·DefaultHitKnockback).
     /// - 제한시간은 없다. 쓰러지거나(체력이 있다면), 불러낸 캐릭터가 사라지거나, 맵 밖으로 떨어지거나, 다시 불러 바뀔 때 사라진다.
     /// 입력은 틱마다 한 번 정해 같은 틱의 이동·공격·스킬이 같은 값을 읽게 한다.
     /// </summary>
@@ -21,6 +22,14 @@ namespace Project1.Systems
         private const float SwitchRatio = 0.7f;      // 새 상대가 지금 목표보다 이 비율 이상 가까워야 바꾼다(번갈아 흔들리지 않게)
         private const float AttackHeight = 1.6f;     // 이 높이 차(m) 안이어야 같은 바닥으로 보고 때린다
         private const float FallOutY = -100f;
+
+        [Tooltip("공격을 한 번 휘두르고 나면 이만큼(초) 그 자리에 멈춰 선다(목표가 멀어져도 바로 쫓지 않음).")]
+        [SerializeField, Min(0f)] private float swingPause = 0.6f;
+        [Tooltip("공격이 맞으면 이만큼(초) 짧게 멈춘다(이동 정지).")]
+        [SerializeField, Min(0f)] private float hitStop = 0.15f;
+        private float holdUntil = -1f;
+        private bool wasAttacking;
+        private CharacterIdentity self;
 
         private CharacterIdentity owner, target;
         private float attackRange, attackGap, runDistance;
@@ -52,8 +61,21 @@ namespace Project1.Systems
             age += Time.fixedDeltaTime;
             if (attack == null) TryGetComponent(out attack);
             if (health == null) TryGetComponent(out health);
-            if (attack != null && attack.AttackState != CharacterAttackState.None) lastAttackEnd = age;
+            bool attacking = attack != null && attack.AttackState != CharacterAttackState.None;
+            if (attacking) lastAttackEnd = age;
+            if (wasAttacking && !attacking) holdUntil = Mathf.Max(holdUntil, age + swingPause); // 한 번 휘두른 뒤 잠시 멈춤
+            wasAttacking = attacking;
             if (owner == null || (health != null && health.IsDead) || transform.position.y < FallOutY) Despawn();
+        }
+
+        private void OnEnable() => HitEvents.HitOccurred += OnHit;
+        private void OnDisable() => HitEvents.HitOccurred -= OnHit;
+
+        /// <summary>이 분신의 공격이 맞으면 짧게 멈춘다.</summary>
+        private void OnHit(HitResult hit)
+        {
+            if (self == null) TryGetComponent(out self);
+            if (self != null && hit.AttackerId == self.Id && hit.VictimId != self.Id) holdUntil = Mathf.Max(holdUntil, age + hitStop);
         }
 
         public void Despawn()
@@ -77,6 +99,15 @@ namespace Project1.Systems
             Vector3 to = tpos - transform.position;
             Vector3 flat = new(to.x, 0f, to.z);
             float dist = flat.magnitude;
+
+            // 휘두른 뒤 잠시·맞힌 뒤 짧게: 제자리에 멈춰 선다(목표만 바라봄, 공격도 다시 내지 않음).
+            if (age < holdUntil)
+            {
+                follower.ResetPath();
+                if (dist > 1e-3f) f.LookYaw = Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg;
+                InRange = dist <= attackRange;
+                return f;
+            }
 
             if (dist <= attackRange && Mathf.Abs(to.y) <= AttackHeight)
             {
