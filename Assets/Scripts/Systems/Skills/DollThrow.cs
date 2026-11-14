@@ -38,6 +38,11 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float landBoostTime = 2f;
         [SerializeField, Min(1f)] private float landBoostMultiplier = 1.5f;
         private float lockLeft, boostLeft;
+        [Tooltip("인형과 자리를 바꾼 뒤 다시 바꿀 수 있을 때까지(초) — E 꾹(분신)은 해당 없음.")]
+        [SerializeField, Min(0f)] private float swapCooldown = 17f;
+        private float swapCooldownLeft;
+        /// <summary>다음 자리 바꾸기까지 남은 재사용 대기(초).</summary>
+        public float SwapCooldownRemaining => swapCooldownLeft;
         private bool boostArmed;
         private float swapLeft;
         private Vector3 swapFeet;
@@ -133,7 +138,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Aiming = false; arc.Clear();
-            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false;
+            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false; swapCooldownLeft = 0f;
         }
 
         private void FixedUpdate()
@@ -378,6 +383,7 @@ namespace Project1.Systems
             if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) return false; // 오르는 중·매달림
             if ((stun != null && stun.IsStunned) || (health != null && health.IsDead)) return false;
             if (SwapPending) return false; // 이미 바꾸는 중
+            if (swapCooldownLeft > 0f) return false; // 재사용 대기 중(E 짧게 = 아무 일 없음)
             if (!FindRoom(dollPos - Vector3.up * dollRadius, out swapFeet)) return false;
             // 도착 자리는 지금(누른 순간) 정하고, swapDelay초 뒤에 옮긴다 — 그동안 제자리에서 몸을 떤다(FE).
             swapLeft = swapDelay;
@@ -411,6 +417,7 @@ namespace Project1.Systems
             safeFall = true; groundedTicks = 0; // 다음 착지까지 다치지 않는다
             SwapCount++;
             lockLeft = postSwapLock; // 바꾼 직후 짧은 경직(보이는 표시 없음)
+            swapCooldownLeft = swapCooldown; // 다음 자리 바꾸기까지 재사용 대기
             // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면(낙하) 경직이 풀린 순간부터 빠르게
             boostArmed = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _);
         }
@@ -419,6 +426,7 @@ namespace Project1.Systems
         private void TrackSwapAfter(float dt)
         {
             if (boostLeft > 0f) boostLeft = Mathf.Max(0f, boostLeft - dt);
+            if (swapCooldownLeft > 0f) swapCooldownLeft = Mathf.Max(0f, swapCooldownLeft - dt);
             if (lockLeft <= 0f) return;
             lockLeft = Mathf.Max(0f, lockLeft - dt);
             if (lockLeft <= 0f && boostArmed) { boostArmed = false; boostLeft = landBoostTime; } // 경직이 풀림 → 낙하였으면 빠르게
