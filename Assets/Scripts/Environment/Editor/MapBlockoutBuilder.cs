@@ -117,8 +117,9 @@ namespace Project1.Map.EditorTools
             BuildPerimeter(Group(root, "Perimeter", Vector3.zero));
 
             int count = root.GetComponentsInChildren<Renderer>().Length;
+            string dressed = MapDresser.Apply(root); // VARCO 텍스처·모델 입히기(충돌은 블록 그대로)
             EditorSceneManager.MarkSceneDirty(scene);
-            message = $"MapBlockout: 블록 {count}개 생성";
+            message = $"MapBlockout: 블록 {count}개 생성 / {dressed}";
             return true;
         }
 
