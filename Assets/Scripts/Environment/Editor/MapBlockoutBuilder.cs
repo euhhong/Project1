@@ -752,22 +752,22 @@ namespace Project1.Map.EditorTools
         private const float LadderZ = 12f; // 별관 사다리 자리(별관 z — 바깥벽 2F 창 z 4.5·15 사이)
 
         /// <summary>
-        /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 0.3m 간격 발판(보이기만 — 충돌 없음),
+        /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 1.2m 간격 발판(보이기만 — 충돌 없음),
         /// 타기는 Ladder 표시로 CharacterTraversal이 한다. 기둥은 위 끝(위층 바닥)보다 1m 더 올라가 손잡이가 된다.
         /// </summary>
         private static void Ladder(Transform p, string name, Vector3 bottom, Vector3 outward, float height)
         {
-            const float width = 0.8f, depth = 0.15f, rail = 0.07f, rungStep = 0.3f;
+            const float width = 0.8f, depth = 0.15f, rail = 0.08f, rungStep = 1.2f, firstRung = 0.3f; // 칸을 크게 — 오르기 모션 한 사이클에 한 칸(CharacterTraversal)
             var g = Group(p, name, bottom);
             g.localRotation = Quaternion.LookRotation(outward, Vector3.up);
-            g.gameObject.AddComponent<Project1.Core.Ladder>().Set(height, width, depth);
+            g.gameObject.AddComponent<Project1.Core.Ladder>().Set(height, width, depth, rungStep);
             g.gameObject.AddComponent<Project1.Core.NoLedgeGrab>();
             var r = Quaternion.identity;
             foreach (float s in new[] { -1f, 1f })
                 BoxR(g, s < 0 ? "Rail_L" : "Rail_R", new Vector3(s * width / 2f, (height + 1f) / 2f, depth), new Vector3(rail, height + 1f, rail), r, accentMat, false);
             int i = 0;
-            for (float y = rungStep; y < height + 0.9f; y += rungStep, i++)
-                BoxR(g, $"Rung_{i:00}", new Vector3(0f, y, depth), new Vector3(width, 0.04f, 0.05f), r, accentMat, false);
+            for (float y = firstRung; y < height + 0.9f; y += rungStep, i++)
+                BoxR(g, $"Rung_{i:00}", new Vector3(0f, y, depth), new Vector3(width, 0.06f, 0.07f), r, accentMat, false);
         }
 
         private static void WallX(Transform p, string name, float xa, float xb, float z, float y0, float h, float t, Material m, params Opening[] ops)

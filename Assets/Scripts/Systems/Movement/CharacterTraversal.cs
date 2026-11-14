@@ -267,6 +267,8 @@ namespace Project1.Systems
             Vector3 dir = MoveDirection(input);
             // 점프 중 창틀을 넘어가려 하면(날아가는 방향 앞에 창틀) 반드시 짚고 넘는다 — 방향키를 놓아도 날아가던 방향으로.
             if (!grounded && airborne && jumped && action == TraversalAction.None && TryStartWindowJump(FlightDirection(dir))) return;
+            // 공중(점프·낙하 중): 방향키를 안 눌러도 사다리 판정에 닿으면 잡는다(사다리 반대쪽으로 누를 때만 안 잡음).
+            if (!grounded && (action == TraversalAction.None || action == TraversalAction.Fall) && TryStartLadderInAir(dir)) return;
             if (dir == Vector3.zero) return;
             if ((action == TraversalAction.None || action == TraversalAction.Fall || IsLanding(action)) && TryStartLadder(dir, grounded)) return;
             if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))

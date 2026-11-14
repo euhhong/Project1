@@ -14,6 +14,8 @@ namespace Project1.Core
         [SerializeField, Min(0.2f)] private float width = 0.8f;
         [Tooltip("벽 면에서 사다리 발판까지(m).")]
         [SerializeField, Min(0f)] private float depth = 0.15f;
+        [Tooltip("가로대 간격(m). 사다리 오르기 모션 한 사이클에 한 칸씩 오른다.")]
+        [SerializeField, Min(0.2f)] private float rungStep = 1.2f;
 
         private static readonly List<Ladder> all = new();
         public static IReadOnlyList<Ladder> All => all;
@@ -21,13 +23,14 @@ namespace Project1.Core
         public float Height => height;
         public float Width => width;
         public float Depth => depth;
+        public float RungStep => rungStep;
         public Vector3 Bottom => transform.position;
         public float BottomY => transform.position.y;
         public float TopY => transform.position.y + height;
         /// <summary>벽 바깥쪽(수평).</summary>
         public Vector3 Normal { get { Vector3 f = transform.forward; f.y = 0f; return f.normalized; } }
 
-        public void Set(float height, float width, float depth) { this.height = height; this.width = width; this.depth = depth; }
+        public void Set(float height, float width, float depth, float rungStep) { this.height = height; this.width = width; this.depth = depth; this.rungStep = rungStep; }
 
         private void OnEnable() { if (!all.Contains(this)) all.Add(this); }
         private void OnDisable() => all.Remove(this);
