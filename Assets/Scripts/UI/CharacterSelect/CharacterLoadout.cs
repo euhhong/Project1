@@ -62,6 +62,7 @@ namespace Project1.UI
             SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 하스터: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
             SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 하스터: 다리 촉수 다섯 가닥 꿈틀거림(FE)
             SetProp<LuchinoTailSway>(player, entry.id == "Hunter_Luchino");   // 루키노: 꼬리 흔들기·관성(돌면 처졌다 따라옴, 착지하면 탁 침)(FE)
+            SetProp<WeaponHitboxPad>(player, entry.id == "Hunter_Luchino");   // 루키노: 마체테 판정을 두껍고 조금 길게(빠른 가로 베기가 틱 사이에 빗나가지 않게)(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
             SetProp<AntonioViolin>(player, entry.id == "Hunter_Antonio"); // 안토니오: 바이올린·활(VARCO) — 대기 땐 켜는 자세, 움직일 땐 들고 다님(FE)
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
