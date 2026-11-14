@@ -17,6 +17,7 @@ namespace Project1.Presentation
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(GrabAimLine))] // 조준 보조선(점선)도 같이 붙인다
+    [RequireComponent(typeof(ShockwaveRing))] // 벽에 도착할 때의 충격파 고리
     public class GrabShotVisual : MonoBehaviour
     {
         private const float TailEnd = 0.40f, JawStart = 0.62f;

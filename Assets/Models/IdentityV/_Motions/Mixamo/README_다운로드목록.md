@@ -40,6 +40,7 @@
 | Hit_Head | 머리 피격(공통) | **받음** — HitReact 레이어(상체)에서 한 번 재생 | Head Hit |
 | Hit_Head2 / Hit_Head_Light | 머리 피격 세기별 — 작은 데미지 = Hit_Head_Light, 강공격·점프 공격·스킬 = Hit_Head와 Hit_Head2 번갈아 | **받음** — HitReact 레이어. (Medium Hit To Head는 받다 말아 없음 — 있으면 Hit_Head_Medium으로 넣으면 약공격 머리 피격에 쓴다) | Head Hit (두 번째 판) / Light Hit To Head |
 | Traversal_HangHop | 매달린 채 옆(A/D)으로 건너 잡기 — 옆에 같은 높이 턱이 있을 때(CharacterTraversal HangHop) | **받음** — 오른쪽은 같은 모션을 좌우 뒤집은 상태(HangHopRight) | Braced Hang Hop Left |
+| Hit_EdgeSlip | 데미지 없는 충격파에 맞아 휘청임(사냥터지기 그랩이 벽에 도착할 때의 충격파) — ShockReact 레이어(전신), 1.5배속 | **받음** | Edge Slip |
 | Hit_Body_Front | 몸통 피격(공통) — 몸 앞(약 ±60°)에서 맞음, 크게 뒤로 젖힘 | **받음** — 상체만(HitReact 레이어) | Standing React Large From Front |
 | Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
 | Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |

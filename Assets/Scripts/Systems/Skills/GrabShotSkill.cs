@@ -60,6 +60,11 @@ namespace Project1.Systems
         [Range(0f, 1f)] public float wallMaxNormalY = 0.6f;
         [Tooltip("그랩 머리(벽)에서 이 거리(m)까지 끌려가면 멈춘다(손이 벽에 닿는 곳).")]
         [Min(0f)] public float towStopReach = 0.1f;
+        [Tooltip("벽에 도착하면 주변에 퍼지는 충격파 반지름(m, 루키노 내려찍기처럼 — 아주 작게). 데미지 없음, 맞으면 감속 + 휘청이는 모션. 0 = 없음.")]
+        [Min(0f)] public float wallShockRadius = 1.8f;
+        [Tooltip("충격파에 맞은 상대가 느려지는 시간(초) / 최대 속도(상대 달리기 속도 대비).")]
+        [Min(0f)] public float wallShockSlowTime = 1.5f;
+        [Range(0.05f, 1f)] public float wallShockSlowRatio = 0.4f;
 
         [Header("카우보이: 벽 반응 · 뛰어넘기")]
         [Tooltip("벽을 물면 그쪽으로 끌려갈지(사냥터지기). 끄면 벽에 닿아도 그냥 되감는다(카우보이).")]
@@ -302,6 +307,7 @@ namespace Project1.Systems
                     bool arrived = ctx.Reach <= towStopReach + 0.01f;
                     bool blocked = ctx.PhaseTime > 0.05f && ctx.TryGetComponent(out CharacterMotor motor) && motor.HitObstacle; // 가는 길에 다른 것에 막힘
                     bool timeout = ctx.PhaseTime > ctx.AreaRadius / towSpeed + 0.3f;
+                    if (arrived) WallShock(ctx); // 벽에 도착: 주변에 작은 충격파
                     if (arrived || blocked || timeout) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
                     return false;
                 }
@@ -592,6 +598,28 @@ namespace Project1.Systems
             if (!found) return false;
             hitAt = from + best;
             return true;
+        }
+
+        /// <summary>
+        /// 그랩에 끌려가 벽에 도착: 몸 둘레 wallShockRadius 안의 상대(판정 상자)에게 데미지 없는 충격파 — 감속(ShockSlow, 휘청이는 모션은 FE).
+        /// 피격(HitEvents)으로 치지 않는다(데미지·피격 모션·패링과 상관없음).
+        /// </summary>
+        private void WallShock(CharacterSkill ctx)
+        {
+            if (wallShockRadius <= 0f) return;
+            Vector3 feet = ctx.transform.position;
+            ShockwaveEvents.Raise(ctx.gameObject, feet, wallShockRadius);
+            var self = ctx.GetComponent<CharacterIdentity>();
+            var cc = ctx.GetComponent<CharacterController>();
+            Vector3 center = feet + Vector3.up * (cc != null ? cc.height * 0.5f : 0.9f);
+            var done = new System.Collections.Generic.HashSet<CharacterIdentity>();
+            foreach (var c in Physics.OverlapSphere(center, wallShockRadius, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
+            {
+                if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
+                var other = hurt.Owner;
+                if (other == null || (self != null && !self.CanHit(other)) || !done.Add(other)) continue;
+                ShockSlow.Apply(other.gameObject, wallShockSlowTime, wallShockSlowRatio);
+            }
         }
 
         private void RaiseHit(CharacterSkill ctx, Hurtbox victim, Vector3 point)

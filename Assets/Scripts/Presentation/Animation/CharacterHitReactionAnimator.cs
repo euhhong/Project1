@@ -17,6 +17,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다. Animator는 자식 모델에서 자동으로 찾는다(모델이 바뀌면 다시 찾는다).
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(CharacterShockReactionAnimator))] // 데미지 없는 충격파에 맞으면 휘청이는 모션(Edge Slip)도 같이
     public class CharacterHitReactionAnimator : MonoBehaviour
     {
         private const string LayerName = "HitReact";

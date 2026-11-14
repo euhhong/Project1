@@ -48,7 +48,7 @@ namespace Project1.Presentation.EditorTools
             "Attack_RunJump_Survivor", "Attack_RunJump2_Survivor", "Attack_RunJump_Hunter", "Attack_Light_Hunter",
             "Attack_Light_Luchino", "Attack_Light_Geisha", "Attack_Light_Hastur", "Attack_Light_HasturSlam", "Attack_Light_MindsEye", "Attack_Light_HookPunch", "Attack_SwipeL", "Attack_SwipeR",
             "Attack_Light_Joker", "Attack_Heavy_Joker", "Carry_Joker", "Attack_Light_Ripper", "Attack_Heavy_Ripper", "Attack_RunJump_Ripper",
-            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
+            "Hit_Head", "Hit_Head2", "Hit_Head_Light", "Hit_Head_Medium", "Hit_EdgeSlip", "Stairs_Up", "Hit_Body_Front", "Hit_Body_Side", "Hit_Body_Back", "Hit_Limb", "Hit_Small", "Stun", "Stun_Back", "Fall_1", "Hit_HeadKick",
         };
 
         // Override Controller: 생존자 Controller(기본)에서 표의 자리만 다른 모션으로 바꾼다. 뒤에 적은 것이 이긴다.
@@ -392,6 +392,19 @@ namespace Project1.Presentation.EditorTools
             if (clips["Hit_HeadKick"] != null) { var kd = fullSm.AddState("Hit_HeadKick"); kd.motion = clips["Hit_HeadKick"]; kd.speed = 1.27f; } // 1.9초 → 나가떨어진 기절(FollowUpKickStun.knockdownTime 1.5초)에 맞춤
             // 뒤에서 맞아 기절(전위 돌진·신호탄): 휘청이며 돌아 쓰러져 누움(Turn To Knocked Unconscious). 재생 위치는 CharacterHitReactionAnimator가 기절 시간에 맞춘다.
             if (clips["Stun_Back"] != null) fullSm.AddState("Stun_Back").motion = clips["Stun_Back"];
+
+            // 데미지 없는 충격파에 맞음(사냥터지기 그랩이 벽에 도착): 전신으로 휘청임(Edge Slip). CharacterShockReactionAnimator가 무게를 켠다.
+            if (clips["Hit_EdgeSlip"] != null)
+            {
+                ac.AddLayer("ShockReact");
+                var shockLayers = ac.layers;
+                var shock = shockLayers[shockLayers.Length - 1];
+                shock.defaultWeight = 0f; shock.blendingMode = AnimatorLayerBlendingMode.Override;
+                ac.layers = shockLayers;
+                var shockSm = ac.layers[ac.layers.Length - 1].stateMachine;
+                shockSm.defaultState = shockSm.AddState("Empty");
+                var slip = shockSm.AddState("Hit_EdgeSlip"); slip.motion = clips["Hit_EdgeSlip"]; slip.speed = 1.5f; // 2.5초 → 약 1.65초(감속 1.5초에 맞춤)
+            }
 
             // 고유 스킬 레이어(전신): Mixamo/Skill_<스킬 ID>.fbx마다 상태 하나. 재생 위치는 CharacterSkillAnimator가 정한다.
             // 반복 모션(예: 돌진 달리기)은 SkillLoopSpeed 배속으로 계속 돌고, 아니면 시전 진행도에 맞춘다.
