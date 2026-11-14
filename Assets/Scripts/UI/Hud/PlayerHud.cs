@@ -12,6 +12,7 @@ namespace Project1.UI
         private ICharacterHealth health;
         private ICharacterSkillState skill;
         private ICharacterStun stun;
+        private ICharacterStamina stamina;
         private string characterName;
         private GUIStyle label, small;
         private float blockedMessageUntil;
@@ -23,6 +24,7 @@ namespace Project1.UI
             health = player.GetComponent<ICharacterHealth>();
             skill = player.GetComponent<ICharacterSkillState>();
             stun = player.GetComponent<ICharacterStun>();
+            stamina = player.GetComponent<ICharacterStamina>();
             characterName = displayName;
         }
 
@@ -55,6 +57,14 @@ namespace Project1.UI
                 Bar(r, health.Current / Mathf.Max(health.Max, 1f), new Color(0.85f, 0.2f, 0.2f));
                 small.normal.textColor = Color.white;
                 GUI.Label(r, $"{Mathf.CeilToInt(health.Current)} / {Mathf.CeilToInt(health.Max)}", small);
+            }
+
+            // 스태미나(체력 막대 아래, 지치면 주황색)
+            if (stamina != null)
+            {
+                var r = new Rect(40 * u, Screen.height - 52 * u, 420 * u, 12 * u);
+                Bar(r, stamina.Current / Mathf.Max(stamina.Max, 1f),
+                    stamina.IsExhausted ? new Color(0.95f, 0.55f, 0.15f) : new Color(0.95f, 0.85f, 0.3f));
             }
 
             // 기절
