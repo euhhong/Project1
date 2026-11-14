@@ -280,7 +280,7 @@ namespace Project1.Systems
             arc.Clear();
             Simulate(from, aimVelocity, out Vector3 end, arc);                // 실제로 멈출 곳까지(위층·지붕에 걸리면 거기서 끝)
             ActualLanding = end;
-            AimLanding = aimTarget;
+            AimLanding = end - Vector3.up * dollRadius; // 흰 조준원 = 실제로 멈출 곳(3층에 걸리면 3층) — 포물선은 1층 목표 기준 그대로
             AimValid = !aimCancels;
         }
 
