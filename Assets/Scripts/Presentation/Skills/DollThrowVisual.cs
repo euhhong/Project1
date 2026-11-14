@@ -5,7 +5,8 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 공장장 인형 던지기 연출(IDollThrow, BE DollThrow를 읽어 그린다).
-    /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 원(나비 놓기 미리보기처럼). 못 던지는 곳 = 붉게, 몸 근처(떼면 취소) = 흐리게.
+    /// - 좌클릭을 꾹 누르는 동안: 던지면 인형이 날아갈 포물선 보조선 + 떨어질 자리에 이중 원과 위로 솟는 빛기둥. 원·빛기둥은 벽·바닥에 가려도 맵을 뚫고 또렷하게 보이고(ZTest Always),
+    ///   포물선은 가려진 구간이 흐리게 비쳐 보인다. 못 던지는 곳 = 붉게. 떨어져 있는 인형의 바닥 원도 맵 너머에서 보인다.
     /// - 던진 인형: 날아가는 동안은 작은 검은 구체 — 흐릿한 연기 막·속도 방향으로 늘어남·번지는 꼬리로 또렷한 공처럼 안 보이게(flyAsPuppet을 켜면 예전처럼 꼭두각시 실루엣), 땅에 닿아 멈춰 있으면 감시자보다 큰(키 ×1.25) 꼭두각시 인형 모델(Resources EvilPuppet — 팔을 내린 자세, 공장장 쪽을 봄) + 바닥에 옅은 원.
     /// - E로 자리 바꾸기를 기다리는 동안(SwapPending) 몸(모델)을 경련하듯 떤다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그린 것은 캐릭터를 따라 움직이지 않게 따로 둔다.
@@ -23,6 +24,8 @@ namespace Project1.Presentation
         [Tooltip("떨어질 자리 원 반지름(m) / 색.")]
         [SerializeField, Min(0.05f)] private float ringRadius = 0.6f;
         [SerializeField] private Color ringColor = new(1f, 1f, 1f, 0.7f);
+        [Tooltip("떨어질 자리에서 위로 솟는 빛기둥 높이(m) — 맵 너머에서도 보인다.")]
+        [SerializeField, Min(0f)] private float beaconHeight = 3f;
         [Tooltip("멈춰 있는 인형 모델(꼭두각시)의 키(m) / 팔을 내리는 정도(0 = T자세, 1 = 몸에 붙임).")]
         [SerializeField, Min(0.1f)] private float puppetHeight = 1f;
         [Tooltip("멈춰 있는 인형은 공장장(감시자) 키의 이 배율 — 감시자보다 크게. puppetHeight보다 작으면 puppetHeight.")]
@@ -46,7 +49,8 @@ namespace Project1.Presentation
 
         private IDollThrow doll;
         private Transform root;
-        private LineRenderer arc, ring, restRing;
+        private LineRenderer arc, ring, restRing, ringInner, beacon, arcHidden;
+        private static Material seeThroughMat;
         private GameObject ball, puppet, flyer;
         private TrailRenderer trail;
         private Transform haze;
@@ -85,15 +89,29 @@ namespace Project1.Presentation
             bool aiming = doll.Aiming && doll.AimArc.Count > 1;
             arc.gameObject.SetActive(aiming);
             ring.gameObject.SetActive(aiming);
+            ringInner.gameObject.SetActive(aiming);
+            beacon.gameObject.SetActive(aiming);
+            arcHidden.gameObject.SetActive(aiming);
             if (aiming)
             {
                 var pts = doll.AimArc;
                 arc.positionCount = pts.Count;
-                for (int i = 0; i < pts.Count; i++) arc.SetPosition(i, pts[i]);
+                arcHidden.positionCount = pts.Count;
+                for (int i = 0; i < pts.Count; i++) { arc.SetPosition(i, pts[i]); arcHidden.SetPosition(i, pts[i]); }
                 Color c = doll.AimValid ? arcColor : invalidColor;
                 arc.startColor = new Color(c.r, c.g, c.b, c.a * 0.4f); arc.endColor = c;
-                ring.startColor = ring.endColor = doll.AimValid ? ringColor : invalidColor;
-                SetRing(ring, doll.AimLanding, ringRadius * (1f + Mathf.Sin(Time.time * 6f) * 0.06f), Time.time * 60f);
+                arcHidden.startColor = new Color(c.r, c.g, c.b, 0.12f); arcHidden.endColor = new Color(c.r, c.g, c.b, 0.35f); // 가려진 구간은 흐리게
+                // 떨어질 자리: 맵을 뚫고 보이는 또렷한 이중 원 + 위로 솟는 빛기둥(나비 놓기 미리보기처럼 확실히)
+                Color rc = doll.AimValid ? ringColor : invalidColor;
+                rc.a = 0.95f;
+                ring.startColor = ring.endColor = rc;
+                ringInner.startColor = ringInner.endColor = new Color(rc.r, rc.g, rc.b, 0.6f);
+                float pulse = 1f + Mathf.Sin(Time.time * 6f) * 0.06f;
+                SetRing(ring, doll.AimLanding, ringRadius * pulse, Time.time * 60f);
+                SetRing(ringInner, doll.AimLanding, ringRadius * 0.45f / pulse, Time.time * -90f);
+                beacon.SetPosition(0, doll.AimLanding + Vector3.up * 0.05f);
+                beacon.SetPosition(1, doll.AimLanding + Vector3.up * beaconHeight);
+                beacon.startColor = new Color(rc.r, rc.g, rc.b, 0.8f); beacon.endColor = new Color(rc.r, rc.g, rc.b, 0f);
             }
 
             // 인형: 날아가는 동안 칙칙한 실루엣(꼭두각시를 어둡게, 데굴데굴 구름), 멈춰 있으면 꼭두각시 모델 + 바닥 원. 모델이 없으면 구체.
@@ -146,8 +164,23 @@ namespace Project1.Presentation
             arc.widthMultiplier = arcWidth;
             ring = Line("AimRing", ringColor, true);
             ring.positionCount = RingSegments;
+            ring.widthMultiplier = 0.1f;
+            SeeThrough(ring);                                   // 떨어질 자리: 벽·바닥에 가려도 맵을 뚫고 또렷하게
+            ringInner = Line("AimRingInner", ringColor, true);
+            ringInner.positionCount = RingSegments;
+            ringInner.widthMultiplier = 0.05f;
+            SeeThrough(ringInner);
+            beacon = Line("AimBeacon", ringColor, false);        // 떨어질 자리에서 위로 솟는 빛기둥(멀리서도 보이게)
+            beacon.positionCount = 2;
+            beacon.widthMultiplier = 0.08f;
+            SeeThrough(beacon);
+            arcHidden = Line("AimArcThrough", arcColor, false);  // 포물선 중 가려진 구간: 흐리게 비쳐 보임
+            arcHidden.widthMultiplier = arcWidth * 0.8f;
+            SeeThrough(arcHidden);
             restRing = Line("DollRing", new Color(1f, 0.45f, 0.15f, 0.45f), true);
             restRing.positionCount = RingSegments;
+            restRing.widthMultiplier = 0.08f;
+            SeeThrough(restRing);                               // 떨어져 있는 인형 자리도 맵 너머에서 보이게
 
             ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             ball.name = "Doll";
@@ -290,6 +323,25 @@ namespace Project1.Presentation
             Vector3 off = new Vector3(Mathf.PerlinNoise(t, 0.1f) - 0.5f, (Mathf.PerlinNoise(0.3f, t) - 0.5f) * 0.6f, Mathf.PerlinNoise(t, 7.7f) - 0.5f) * (2f * shakeOffset * amp);
             Vector3 ang = new Vector3(Mathf.PerlinNoise(t, 3.3f) - 0.5f, Mathf.PerlinNoise(5.1f, t) - 0.5f, Mathf.PerlinNoise(t, 9.9f) - 0.5f) * (2f * shakeAngle * amp);
             shakeT.SetLocalPositionAndRotation(shakeBasePos + off, shakeBaseRot * Quaternion.Euler(ang));
+        }
+
+        /// <summary>벽·바닥·지형에 가려도 맵을 뚫고 보이게(깊이 검사 없이 맨 위에 그림 — 히트박스 디버그 선과 같은 Hidden/Internal-Colored, ZTest Always).</summary>
+        private static void SeeThrough(LineRenderer lr)
+        {
+            if (seeThroughMat == null)
+            {
+                var shader = Shader.Find("Hidden/Internal-Colored");
+                if (shader == null) return; // 없으면 보통 선 그대로
+                seeThroughMat = new Material(shader) { name = "DollMarkerSeeThrough", hideFlags = HideFlags.DontSave };
+                seeThroughMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                seeThroughMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                seeThroughMat.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+                seeThroughMat.SetInt("_ZWrite", 0);
+                seeThroughMat.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.Always);
+                seeThroughMat.SetColor("_Color", Color.white);
+                seeThroughMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Overlay;
+            }
+            lr.sharedMaterial = seeThroughMat;
         }
 
         private LineRenderer Line(string name, Color color, bool loop)
