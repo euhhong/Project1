@@ -21,6 +21,7 @@ namespace Project1.Systems
     /// - TrySwap(E 짧게 — CloneSummonSkill이 부른다): 누른 순간의 인형 자리를 도착점으로 정하고, swapDelay초 동안 제자리에서 몸을 떤 뒤(FE) 인형 자리와 공장장 자리를 맞바꾼다.
     ///   공장장은 인형이 있던 자리(공중이면 그 공중)로 가서 떨어지고, 인형은 공장장이 있던 자리에 놓인다(멈춤 — 다시 바꾸면 돌아온다).
     ///   바꾼 뒤 다음 착지까지의 낙하는 다치지 않고(ISafeFallSource → FallDamage), 서 있는 자세로 그냥 툭 떨어져 착지 동작 없이 바로 움직인다(IGentleDropSource → CharacterTraversal DollDrop). 그 자리에 몸이 들어갈 곳이 없으면 위로 조금씩 찾고, 없으면 바꾸지 않는다.
+    /// - 인형 회수: 자기 평타의 판정 구간에 손·무기 판정이 인형(멈춘 인형 기둥 / 날아가는 구체)에 닿으면 거둔다 — 집어 드는 동안 retrieveTime초 이동·공격·스킬 불가(FE: 평타에서 Taking Item 모션으로 마무리).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
@@ -43,6 +44,14 @@ namespace Project1.Systems
         private float swapCooldownLeft;
         /// <summary>다음 자리 바꾸기까지 남은 재사용 대기(초).</summary>
         public float SwapCooldownRemaining => swapCooldownLeft;
+        [Tooltip("인형 회수: 공장장이 자기 평타(Light, 판정 구간)로 인형을 맞히면 인형을 거둔다. 인형 판정 = 멈춘 인형은 발밑부터 키(공장장 키 × dollHitHeightScale) 높이의 기둥(반지름 dollHitRadius), 날아가는 인형은 구체.")]
+        [SerializeField, Min(0.1f)] private float dollHitRadius = 0.6f;
+        [SerializeField, Min(0.1f)] private float dollHitHeightScale = 1.25f;
+        [Tooltip("회수하며 집어 드는 동안(초) — 이동·공격·스킬 불가(보이는 표시 없음). FE 모션 길이와 같게.")]
+        [SerializeField, Min(0f)] private float retrieveTime = 1.5f;
+        private float retrieveLeft;
+        private ICharacterAttackState attackState;
+        public int RetrieveCount { get; private set; }
         private bool boostArmed;
         private float swapLeft;
         private Vector3 swapFeet;
@@ -106,7 +115,7 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
-        public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: E 또는 몸 쪽으로 끌고 떼기 · 우클릭 = 시야 높이";
+        public string ChargeCancelHint => !Aiming ? null : "E 취소";
         private bool waitRelease;
         /// <summary>차징을 E로 취소한 틱 / 취소한 뒤 좌클릭을 아직 떼지 않음. 이 동안 E 스킬(분신·자리 바꾸기)은 나가지 않는다.</summary>
         public int CancelTick { get; private set; } = int.MinValue;
@@ -120,10 +129,10 @@ namespace Project1.Systems
         public float SwapProgress => swapDelay > 0f && SwapPending ? 1f - swapLeft / swapDelay : 0f;
 
         /// <summary>자리를 바꾸려고 기다리는 동안은 제자리(움직이지 않음).</summary>
-        public bool TryGetSpeedLimit(out float maxSpeed) { maxSpeed = 0f; return SwapPending || lockLeft > 0f; }
+        public bool TryGetSpeedLimit(out float maxSpeed) { maxSpeed = 0f; return SwapPending || lockLeft > 0f || retrieveLeft > 0f; }
 
         /// <summary>자리를 바꾼 직후 짧은 경직(보이는 표시 없음) — 공격·스킬 불가.</summary>
-        public bool ActionsLocked => isActiveAndEnabled && (SwapPending || lockLeft > 0f);
+        public bool ActionsLocked => isActiveAndEnabled && (SwapPending || lockLeft > 0f || retrieveLeft > 0f);
 
         /// <summary>공중의 인형과 바꿔 떨어져 내려온 뒤 landBoostTime초 동안 빠르게.</summary>
         public bool TryGetSpeedBoost(out float multiplier) { multiplier = landBoostMultiplier; return boostLeft > 0f; }
@@ -138,7 +147,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Aiming = false; arc.Clear();
-            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false; swapCooldownLeft = 0f;
+            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false; swapCooldownLeft = 0f; retrieveLeft = 0f;
         }
 
         private void FixedUpdate()
@@ -186,6 +195,8 @@ namespace Project1.Systems
             if (DollActive && DollFlying) StepDoll(Time.fixedDeltaTime);
             TrackSafeFall();
             TrackSwapAfter(Time.fixedDeltaTime);
+            if (retrieveLeft > 0f) retrieveLeft = Mathf.Max(0f, retrieveLeft - Time.fixedDeltaTime);
+            CheckRetrieve();
         }
 
         // ───────────────────── 던지기 ─────────────────────
@@ -420,6 +431,34 @@ namespace Project1.Systems
             swapCooldownLeft = swapCooldown; // 다음 자리 바꾸기까지 재사용 대기
             // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면(낙하) 경직이 풀린 순간부터 빠르게
             boostArmed = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _);
+        }
+
+        /// <summary>
+        /// 인형 회수: 자기 평타(Light)의 판정 구간(Active)에 손·무기 판정이 인형에 닿으면 인형을 거둔다(사라짐 — 다시 던질 수 있음).
+        /// 멈춘 인형 = 발밑부터 공장장 키 × dollHitHeightScale 높이의 기둥, 날아가는 인형 = 그 자리 구체(반지름 dollHitRadius). 집어 드는 동안(retrieveTime) 이동·공격·스킬 불가.
+        /// </summary>
+        private void CheckRetrieve()
+        {
+            if (!DollActive || SwapPending) return;
+            if (attackState == null) TryGetComponent(out attackState);
+            if (attackState == null || attackState.AttackState != CharacterAttackState.Light || attackState.AttackPhase != AttackPhase.Active) return;
+            float height = DollFlying || cc == null ? 0f : cc.height * transform.lossyScale.y * dollHitHeightScale;
+            Vector3 bottom = DollFlying ? dollPos : dollPos - Vector3.up * dollRadius, top = bottom + Vector3.up * height;
+            foreach (var hb in GetComponentsInChildren<Hitbox>())
+            {
+                if ((hb.Slot & (HitboxSlot.Weapon | HitboxSlot.RightHand | HitboxSlot.LeftHand)) == 0 || hb.Collider == null || !hb.Collider.enabled) continue;
+                Vector3 c = hb.Collider.bounds.center;
+                Vector3 axis = top - bottom;
+                float t = axis.sqrMagnitude > 1e-6f ? Mathf.Clamp01(Vector3.Dot(c - bottom, axis) / axis.sqrMagnitude) : 0f;
+                Vector3 p = bottom + axis * t;                       // 인형 기둥에서 판정에 가장 가까운 점
+                Vector3 q = hb.Collider.ClosestPoint(p);              // 판정에서 그 점에 가장 가까운 점
+                if ((q - p).sqrMagnitude > dollHitRadius * dollHitRadius) continue;
+                DollActive = false; DollFlying = false; dollVel = Vector3.zero;
+                retrieveLeft = retrieveTime;
+                swapCooldownLeft = 0f; // 회수하면 자리 바꾸기 재사용 대기가 바로 풀린다
+                RetrieveCount++;
+                return;
+            }
         }
 
         /// <summary>바꾼 직후 경직 시간을 줄이고, 공중으로 바꿨으면(낙하) 경직이 풀린 순간부터 가속(landBoostTime초)을 건다.</summary>

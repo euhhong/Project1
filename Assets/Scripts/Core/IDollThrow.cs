@@ -29,6 +29,8 @@ namespace Project1.Core
         int SwapCount { get; }
         /// <summary>E를 눌러 자리를 바꾸려고 기다리는 중(잠깐 뒤 누른 순간의 인형 자리로 옮긴다 — 그동안 몸을 떤다) / 그 진행도(0~1).</summary>
         bool SwapPending { get; }
+        /// <summary>공장장이 자기 평타로 인형을 맞혀 회수한 횟수(늘어날 때 FE가 집어 드는 모션을 낸다).</summary>
+        int RetrieveCount { get; }
         float SwapProgress { get; }
     }
 

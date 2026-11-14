@@ -71,6 +71,7 @@ namespace Project1.UI
             SetProp<DollThrowVisual>(player, entry.id == "Hunter_HellEmber");  // 공장장: 포물선 보조선·떨어질 자리 원·인형(작은 검은 구체)(FE)
             SetProp<DollThrowAnimator>(player, entry.id == "Hunter_HellEmber"); // 공장장: 인형 던지기 상체 모션(Throw — 차징 중 팔을 젖혀 든 자세, 던지면 나머지)(FE)
             SetProp<HellEmberWeaponFade>(player, entry.id == "Hunter_HellEmber"); // 공장장: 인형 차징 중 상어 망치를 반투명하게(FE)
+            SetProp<DollRetrieveAnimator>(player, entry.id == "Hunter_HellEmber"); // 공장장: 평타로 인형을 맞혀 회수 — 평타에서 Taking Item으로 집어 들며 마무리(FE)
             SetProp<MistCharge>(player, entry.id == "Hunter_Ripper");     // 리퍼: 공격하지 않으면 7초마다 안개 1칸(최대 2칸), 2칸에서 공격 = 안개 칼날, E = 1칸으로 약한 칼날(BE)
             SetProp<MistClawVisual>(player, entry.id == "Hunter_Ripper"); // 리퍼: 손톱에 감기는 안개·날아가는 손톱 모양 안개 칼날(FE)
             SetProp<MistTrailField>(player, entry.id == "Hunter_Ripper");  // 리퍼: 칼날이 지나간 자리에 7초 안개, 그 위에서 30% 빠름(BE)

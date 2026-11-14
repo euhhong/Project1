@@ -122,6 +122,7 @@ namespace Project1.Presentation.EditorTools
             ["Air"] = new Vector2(0, 22),                     // Jump (1)(제자리 점프): 바로 도약(0) → 꼭대기(10) → 착지(22)
             ["Air_F"] = new Vector2(25, 44),                   // Jumping(걸어서 점프): 발이 떨어짐(25) → 꼭대기(34) → 착지(44)
             ["Air_Run"] = new Vector2(0, 20),                  // Running Jump(뛰면서 점프): 도약(0) → 꼭대기(10) → 착지(20)
+            ["Skill_HellEmber_TakeItem"] = new Vector2(40, 112), // 공장장 인형 회수(Taking Item): 손을 뻗어 집음(40~44) → 들고 일어섬(68) → 손을 내림(112). 앞의 가만히 선 부분은 뺌 — 평타가 내려친 자세에서 이어 받는다(DollRetrieveAnimator)
         };
 
         // 공중에서 쓰는 모션은 모션 자체의 뛰어오름을 빼서 버린다. 높이는 게임의 점프 궤적이 정한다.
