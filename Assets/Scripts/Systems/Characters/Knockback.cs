@@ -6,6 +6,7 @@ namespace Project1.Systems
     /// 넉백(밀려남, BE): Push로 받은 속도로 수평으로 밀려나고, duration초 동안 0까지 줄어든다(이동 거리 ≈ 속도 × 시간 ÷ 2).
     /// stun이 켜져 있으면(기본) 밀려나는 동안과 조금 뒤까지 기절(CharacterStun)로 이동·공격·스킬을 못 한다. 끄면 기절 없이 밀리기만 한다(예: 맹인 지팡이 평타). 벽에 막히면 거기서 멈춘다(CharacterController).
     /// 밀려나다가 벽·장애물이나 다른 캐릭터에 옆으로 부딪히면 그때 빠르기만큼 데미지를 입고(impactDamagePerSpeed × 속도, 한 번) 거기서 멈춘다.
+    /// 밀기 직전에 맞은 캐릭터의 IKnockbackReceiver가 반응·방향을 고친다(예: 매달린 채 넉백되면 손을 놓고 벽 바깥으로 떨어져 나감 — CharacterTraversal).
     /// 맞은 캐릭터에 그때 붙는다(직접 붙일 필요 없음). 예: 맹인 지팡이.
     /// </summary>
     [DisallowMultipleComponent]
@@ -17,6 +18,7 @@ namespace Project1.Systems
         private bool impacted, impactDamage = true;
         private float impactPerSpeedOverride = -1f, impactStun;
         private Collider lastHit;
+        private static readonly System.Collections.Generic.List<Project1.Core.IKnockbackReceiver> Receivers = new();
 
         [Tooltip("부딪혔을 때 데미지 = 이 값 × 부딪힌 순간 밀려나던 속도(m/s). 예: 16m/s로 바로 부딪히면 약 19.")]
         [SerializeField, Min(0f)] private float impactDamagePerSpeed = 1.2f;
@@ -36,6 +38,9 @@ namespace Project1.Systems
             float impactPerSpeed = -1f, float impactStun = 0f)
         {
             if (target == null || duration <= 0f) return;
+            Receivers.Clear();
+            target.GetComponents(Receivers);
+            foreach (var r in Receivers) r.OnKnockback(ref velocity); // 예: 매달린 채 맞으면 손을 놓고 벽 바깥으로 떨어져 나간다
             if (!target.TryGetComponent(out Knockback k)) k = target.AddComponent<Knockback>();
             k.impactDamage = impactDamage; k.impactPerSpeedOverride = impactPerSpeed; k.impactStun = impactStun;
             k.Begin(velocity, duration, stunAfter, stun);

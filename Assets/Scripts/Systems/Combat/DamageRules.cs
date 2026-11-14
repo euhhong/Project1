@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// 데미지·경직·넉백 규칙 표(BE). Docs/DamageSystem.md(2026-11-14 사용자 확정, 감시자 피해 조금 낮춤)의 값을 한곳에 둔다.
     /// - 감시자 평타 = 한 방이 아픔(약 30 · 강 45~54 · 달리기 점프 36), 짧은 경직, 작은 넉백.
     /// - 생존자 평타 = 모기 딜(3~5) + 경직·넉백 위주(넉백으로 벽에 박으면 벽꿍 피해·추가 경직).
-    /// - 피해 = 기본 피해 × 부위 배율 × 공격 세기(Power) × 등 뒤 배율. 스킬은 HitResult.BaseDamage(직접 정함) 또는 분류별 기본값.
+    /// - 피해 = 기본 피해 × 부위 배율 × 공격 세기(Power) × 등 뒤 배율 × 창틀 넘기 배율. 스킬은 HitResult.BaseDamage(직접 정함) 또는 분류별 기본값.
     /// 쓰는 곳: BattleDamage(피해), DefaultHitKnockback(넉백), HitStunRules(경직·패링 반격), CharacterLoadout(최대 체력).
     /// </summary>
     public static class DamageRules
@@ -45,6 +45,8 @@ namespace Project1.Systems
         // ── 배율·겹침
         public const float HeadScale = 1.25f, BodyScale = 1f, LimbScale = 0.8f;
         public const float BehindScale = 1.2f, BehindDot = -0.7071f; // 맞은 쪽 정면과 '맞은 쪽 → 때린 쪽'의 내적이 이보다 작으면 등 뒤(뒤쪽 90°)
+        /// <summary>창틀을 넘는 동작(WindowVault·WindowDrop·WindowJump) 중에 맞으면 피해 배율(무방비 — 크게 다친다).</summary>
+        public const float VaultScale = 2f;
         /// <summary>생존자 평타가 같은 상대를 경직시킨 뒤 이 시간(초) 동안은 다시 경직을 걸지 못한다(넉백·피해는 들어감).</summary>
         public const float SurvivorRestunWindow = 1f;
         /// <summary>패링(주먹 막기)에 막힌 쪽(때린 쪽) 경직(초).</summary>
@@ -88,6 +90,11 @@ namespace Project1.Systems
             return Vector3.Dot(fwd, toAttacker.normalized) < BehindDot;
         }
 
+        /// <summary>캐릭터가 창틀을 넘는 동작 중인지(창틀 넘기·창틀 위에서 뛰어내리기·점프 중 짚고 넘기).</summary>
+        public static bool IsVaulting(GameObject character)
+            => character != null && character.TryGetComponent(out ICharacterTraversalState t)
+               && t.Action is TraversalAction.WindowVault or TraversalAction.WindowDrop or TraversalAction.WindowJump;
+
         /// <summary>이 히트의 피해. 데미지 없는 히트(NoDamage)는 0.</summary>
         public static float Damage(in HitResult hit, GameObject attacker, GameObject victim)
         {
@@ -104,6 +111,7 @@ namespace Project1.Systems
 
             float damage = baseDamage * PartScale(hit.Part) * hit.PowerScale;
             if (FromBehind(attacker != null ? attacker.transform : null, victim != null ? victim.transform : null)) damage *= BehindScale;
+            if (IsVaulting(victim)) damage *= VaultScale;
             return damage;
         }
 

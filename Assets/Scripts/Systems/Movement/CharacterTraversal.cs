@@ -17,6 +17,7 @@ namespace Project1.Systems
     ///   매달린 채 앞(W, 또는 점프) → 턱 위에 설 자리가 있으면 올라가고(HangClimb, Freehang Climb), 난간이 막고 그 뒤에 바닥이 있으면 난간을 넘어 그 바닥에 내린다(HangClimbRail, Climbing).
     ///   벽 한 장(창틀 윗부분·담 꼭대기처럼 얇고 반대편이 낮음)이면 앞 → 꼭대기를 잡은 채 끌어 올라 넘어가자마자 반대편으로 떨어진다(HangClimbOver, Freehang Climb 앞부분).
     ///   뒤(S) → 놓고 떨어진다(생존자는 다치지 않을 높이면 벽을 박차고 뒤로 공중제비를 돌아 아래 바닥에 내려선다 — HangFlip, Backflip). 잡는 턱은 손이 닿는 가장 높은 윗면(창틀·벽 맨 꼭대기, 창틀 없는 바닥 끝도).
+    ///   잡는 중·매달린 채·매달려 올라가는 중에 넉백되면(IKnockbackReceiver) 손이 풀려 벽 바깥으로 밀려 떨어진다(등으로 떨어지는 낙하, 낙하 데미지는 놓은 것과 같음).
     ///   벽 종류·두께와 상관없이 같은 규칙: 올라서기로는 못 가는 낮은 벽(약 1.8~2.9m)도 발로 벽을 짚고 매달린다(루트는 바닥 아래로 내려가도 되고, 놓으면 바닥 위로 올림).
     /// - 감시자(HunterStyle): 창틀 넘기·올라서기는 들어오던 속도로 출발해 속도를 이어 나가고(Carry), 매달려 오르기는 붙기·옮기기 끝을 조금 늘려 덜 끊긴다.
     /// - 낙하: 점프하지 않고 0.5m 넘게 떨어지면 Fall(걸어서 떨어짐 = Jumping, 넉백·뒤로 걷다 떨어짐 = Falling을 뒤집어 하늘을 보며 등으로).
@@ -30,7 +31,7 @@ namespace Project1.Systems
     [DefaultExecutionOrder(-50)] // 이동(CharacterMotor)보다 먼저: 점프 입력을 창틀 넘기·올라서기로 가로챈다
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CharacterController))]
-    public class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit
+    public class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit, IKnockbackReceiver
     {
         // 모션 기준 높이(Humanoid 단위, 루트 = 모션의 바닥). 의사·루키노 모델에 모션을 입혀 잼 — 모델이 달라도 같다.
         private const float FreeHangTop = 2.05f;   // Jump To Freehang: 매달린 자세의 턱 윗면(손목 1.93 + 손가락)
@@ -555,6 +556,42 @@ namespace Project1.Systems
             regrab = regrabDelay;
             airborne = false; // 놓은 자리부터 떨어진 높이를 잰다
             jumpedFlag = false;
+        }
+
+        // ───────────────────── 매달린 채 넉백 ─────────────────────
+
+        [Header("매달린 채 넉백")]
+        [Tooltip("매달린(잡는 중·매달려 올라가는 중 포함) 채 넉백되면 손을 놓고 벽 바깥으로 밀려 떨어진다. 미는 힘 가운데 벽 바깥쪽 몫을 이 비율 이상으로 돌린다(벽 쪽으로 밀려 벽에 박히지 않게).")]
+        [SerializeField, Range(0f, 1f)] private float knockOffOutward = 0.7f;
+        [Tooltip("미는 힘이 이보다 약하면 이 속도(m/s)로 벽 바깥으로 민다.")]
+        [SerializeField, Min(0f)] private float knockOffMinSpeed = 4f;
+        [Tooltip("넉백으로 떨어진 뒤 다시 턱을 잡을 수 없는 시간(초).")]
+        [SerializeField, Min(0f)] private float knockOffRegrab = 1f;
+
+        private static bool IsHanging(TraversalAction a) => a == TraversalAction.HangGrab || a == TraversalAction.Hang
+                                                            || a == TraversalAction.HangClimb || a == TraversalAction.HangClimbRail || a == TraversalAction.HangClimbOver;
+
+        /// <summary>
+        /// 넉백(Knockback.Push) 직전: 턱을 잡고 있으면(잡기·매달림·매달려 올라가기) 손이 풀려 떨어진다. 미는 방향은 벽 바깥쪽으로 돌린다.
+        /// 떨어지는 동안은 넉백 낙하(하늘을 보며 등으로 — FallBackward), 낙하 데미지는 손으로 놓은 것과 같다(매달린 높이부터 hangDropSafeHeight 미만이면 없음).
+        /// </summary>
+        public void OnKnockback(ref Vector3 velocity)
+        {
+            if (!IsHanging(action)) return;
+            Vector3 n = Vector3.ProjectOnPlane(ledge.Normal, Vector3.up); // 벽 → 캐릭터(바깥)
+            if (n.sqrMagnitude > 1e-4f)
+            {
+                n.Normalize();
+                Vector3 v = Vector3.ProjectOnPlane(velocity, Vector3.up);
+                float speed = Mathf.Max(v.magnitude, knockOffMinSpeed);
+                Vector3 side = Vector3.ProjectOnPlane(v, n);
+                float outward = Mathf.Max(Vector3.Dot(v, n), speed * knockOffOutward);
+                Vector3 dir = side + n * outward;
+                velocity = (dir.sqrMagnitude > 1e-4f ? dir.normalized : n) * speed;
+            }
+            Release();
+            hangDrop = true; // 놓은 낙하로 친다(매달린 높이부터 아주 높지 않으면 다치지 않음)
+            regrab = knockOffRegrab;
         }
 
         /// <summary>낮은 벽에 발로 짚고 매달리면 루트(모션의 바닥)가 바닥 아래에 있을 수 있다 — 놓을 때 발을 바닥 위로 올린다.</summary>
