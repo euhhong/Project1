@@ -27,6 +27,8 @@ namespace Project1.Systems
     {
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
+        [Tooltip("좌클릭 차징(겨누는) 동안 시야를 이 각도(도, - = 위)로 고정 — 카메라가 늘 하늘 쪽을 올려다보고(크게 그려지는 포물선이 보이게), 마우스 위아래는 거리만 바꾼다.")]
+        [SerializeField] private float aimViewPitch = -50f;
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         private float swapLeft;
@@ -94,6 +96,7 @@ namespace Project1.Systems
         public string ChargeCancelHint => !Aiming ? null : aimCancels ? "떼면 취소" : "취소: 아래로 끌어 발밑에서 떼기";
         public bool LookWhileCharging => isActiveAndEnabled; // 좌클릭 꾹 = 마우스로 포물선 움직이기(LocalPlayerInput)
         public float ChargeLookScale => aimLookScale;
+        public float ChargeViewPitch => aimViewPitch;
         public bool SwapPending => swapLeft > 0f;
         public float SwapProgress => swapDelay > 0f && SwapPending ? 1f - swapLeft / swapDelay : 0f;
 

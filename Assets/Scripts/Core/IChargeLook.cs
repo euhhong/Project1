@@ -8,5 +8,7 @@ namespace Project1.Core
     {
         bool LookWhileCharging { get; }
         float ChargeLookScale { get; }
+        /// <summary>그동안 시야 상하 각도를 이 값(도, - = 위)으로 고정한다(마우스 위아래는 시점을 움직이지 않고 LookDelta로만 — 예: 공장장 인형 거리 끌기). NaN = 고정하지 않음. 떼면 원래 각도로.</summary>
+        float ChargeViewPitch { get; }
     }
 }

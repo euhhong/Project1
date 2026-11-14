@@ -286,17 +286,29 @@ namespace Project1.Systems
             // 캐릭터가 상하 감도를 바꾸면(예: 안토니오 음표 고르는 중) 곱한다.
             GetComponents(lookScales);
             foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
+            // 좌클릭 차징 중 시야 고정(IChargeLook.ChargeViewPitch, 예: 공장장 인형 — 하늘 쪽): 마우스 위아래는 시점을 움직이지 않고(LookDelta로만 쓴다), 떼면 원래 각도로.
+            float fixedPitch = chargeLook ? chargeViewPitch : float.NaN;
+            if (!float.IsNaN(fixedPitch))
+            {
+                if (!pitchFixed) { pitchFixed = true; pitchBeforeFix = lookPitch; }
+                lookPitch = Mathf.MoveTowards(lookPitch, Mathf.Clamp(fixedPitch, chargeMinPitch, maxPitch), 300f * Time.deltaTime);
+                return;
+            }
+            if (pitchFixed) { pitchFixed = false; lookPitch = pitchBeforeFix; }
             lookPitch = Mathf.Clamp(lookPitch + pitchDelta, chargeLook ? Mathf.Min(minPitch, chargeMinPitch) : minPitch, maxPitch);
         }
 
         private readonly System.Collections.Generic.List<IChargeLook> chargeLooks = new();
+        private float chargeViewPitch = float.NaN, pitchBeforeFix;
+        private bool pitchFixed;
 
         /// <summary>좌클릭을 꾹 누르는 중(강공격 모으기 시간이 지남)이고 캐릭터가 그동안 시점 돌리기를 허락하면 그 감도 배율, 아니면 0.</summary>
         private float ChargeLookScale()
         {
             if (!attackHeld || Time.time - attackPressTime < heavyAttackHoldTime) return 0f;
             GetComponents(chargeLooks);
-            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.LookWhileCharging) return c.ChargeLookScale;
+            chargeViewPitch = float.NaN;
+            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.LookWhileCharging) { chargeViewPitch = c.ChargeViewPitch; return c.ChargeLookScale; }
             return 0f;
         }
 
