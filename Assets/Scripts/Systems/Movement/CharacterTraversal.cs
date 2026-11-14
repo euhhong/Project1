@@ -189,9 +189,13 @@ namespace Project1.Systems
 
         [Tooltip("창틀 뚫고 지나가기(붉은나비): 창틀 넘기 모션 없이 감시자 넘기 길(곧은 길, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼). 캐릭터를 고를 때 SetWindowPassThrough로 정한다.")]
         [SerializeField] private bool windowPassThrough;
-        [Tooltip("창틀 뚫고 지나가기: 창틀을 찾는 각도(마주 보는 정도, 0.26 = 약 75도까지 비스듬히) / 더 멀리서 찾는 거리(m).")]
-        [SerializeField, Range(0f, 0.64f)] private float passThroughFacing = 0.26f;
-        [SerializeField, Min(0f)] private float passThroughExtraReach = 0.5f;
+        [Tooltip("창틀 뚫고 지나가기(붉은나비) — 판정을 후하게: 창틀을 찾는 각도(마주 보는 정도, 0.17 = 약 80도까지 비스듬히) / 더 멀리서 찾는 거리(m).")]
+        [SerializeField, Range(0f, 0.64f)] private float passThroughFacing = 0.17f;
+        [SerializeField, Min(0f)] private float passThroughExtraReach = 0.8f;
+        [Tooltip("창틀 뚫고 지나가기: 창틀 높이 범위(키 대비, 보통 sillMin~sillMax 대신) / 창틀 두께 한계(m) / 창 가운데로 당기는 최대 거리(m, 창 기둥에 걸리지 않게 지나가는 길을 창 가운데로).")]
+        [SerializeField, Range(0f, 1.2f)] private float passSillMin = 0.12f, passSillMax = 0.95f;
+        [SerializeField, Min(0.1f)] private float passMaxThickness = 1.2f;
+        [SerializeField, Min(0f)] private float passCenterPull = 0.6f;
 
         /// <summary>창틀을 모션 없이 뚫고 지나갈지 정한다(캐릭터를 고를 때).</summary>
         public void SetWindowPassThrough(bool pass) => windowPassThrough = pass;
@@ -380,7 +384,7 @@ namespace Project1.Systems
 
         // ───────────────────── 창틀 넘기·올라서기 ─────────────────────
 
-        private struct Window { public Ledge Sill; public Vector3 Mid, Beyond; public RaycastHit Floor; public float OtherDrop; }
+        private struct Window { public Ledge Sill; public Vector3 Mid, Beyond, CenterShift; public RaycastHit Floor; public float OtherDrop; } // CenterShift: 창 가운데로 당기는 수평 이동(뚫고 지나가기만)
 
         /// <summary>
         /// dir 쪽 창틀: 바닥(groundY) 기준 키의 sillMin~sillMax 높이 턱, 두께 sillMaxThickness 이하, 위가 열린 틈, 반대편 바닥.
@@ -393,21 +397,35 @@ namespace Project1.Systems
             Vector3 up = Vector3.up;
             // 창틀 뚫고 지나가기(붉은나비): 비스듬히(약 75도까지) 다가가도, 조금 멀어도 창틀을 찾는다 — 창틀 아랫부분에 막히지 않고 뚫고 가게.
             bool pass = windowPassThrough;
-            if (!FindLedge(dir, groundY, sillMin * h, sillMax * h, reach + (pass ? passThroughExtraReach : 0f), out var l, pass ? passThroughFacing : DefaultFacing)) return false;
+            if (!FindLedge(dir, groundY, (pass ? passSillMin : sillMin) * h, (pass ? passSillMax : sillMax) * h, reach + (pass ? passThroughExtraReach : 0f), out var l, pass ? passThroughFacing : DefaultFacing)) return false;
             // 두께: 반대편에서 거꾸로 쏴서 뒷면을 찾는다(너무 두꺼우면 시작점이 벽 안이라 안 맞는다).
-            float probe = sillMaxThickness + 0.05f;
+            float probe = (pass ? passMaxThickness : sillMaxThickness) + 0.05f;
             Vector3 far = l.Face - l.Normal * probe; far.y = l.Top - 0.08f;
             if (!Cast(far, l.Normal, probe, out var back)) return false;
             float thick = probe - back.distance;
             Vector3 mid = l.Face - l.Normal * (thick * 0.5f); mid.y = l.Top;
             // 위가 열린 틈이어야 한다(창문).
-            float gap = pass ? 0.12f : 0.25f; // 뚫고 지나가기는 창문 옆 기둥 가까이(비스듬히)도 틈으로 본다
+            float gap = pass ? 0.08f : 0.25f; // 뚫고 지나가기는 창문 옆 기둥 가까이(비스듬히)도 틈으로 본다
             if (OverlapSphere(mid + up * 0.6f, gap) || OverlapSphere(mid + up * Mathf.Min(1.4f, h * 0.6f), gap)) return false;
             // 반대편 바닥
             Vector3 o = l.Face - l.Normal * (thick + cc.radius + 0.2f); o.y = l.Top + 0.3f;
             if (OverlapSphere(o, 0.1f) || !Cast(o, Vector3.down, o.y - groundY + 8f, out var floor) || floor.normal.y < 0.7f) return false;
-            w = new Window { Sill = l, Mid = mid, Beyond = o, Floor = floor, OtherDrop = groundY - floor.point.y };
+            w = new Window { Sill = l, Mid = mid, Beyond = o, Floor = floor, OtherDrop = groundY - floor.point.y, CenterShift = pass ? OpeningCenterShift(mid, l.Normal, h) : Vector3.zero };
             return w.OtherDrop >= -0.4f; // 반대편이 더 높으면 넘지 않는다
+        }
+
+        /// <summary>창틀 뚫고 지나가기: 창 틈 가운데로 당기는 수평 이동 — 창틀 위(mid)에서 벽을 따라 양옆 기둥까지 재서 가운데와의 차이(최대 passCenterPull). 기둥을 못 찾으면 0.</summary>
+        private Vector3 OpeningCenterShift(Vector3 mid, Vector3 normal, float h)
+        {
+            Vector3 along = Vector3.Cross(Vector3.up, normal);
+            if (along.sqrMagnitude < 1e-4f) return Vector3.zero;
+            along.Normalize();
+            Vector3 o = mid + Vector3.up * Mathf.Min(0.6f, h * 0.3f);
+            const float look = 2.5f;
+            bool l = Cast(o, -along, look, out var hl), r = Cast(o, along, look, out var hr);
+            if (!l && !r) return Vector3.zero;
+            float dl = l ? hl.distance : look, dr = r ? hr.distance : look;
+            return along * Mathf.Clamp((dr - dl) * 0.5f, -passCenterPull, passCenterPull);
         }
 
         private bool TryStartWindow(Vector3 dir)
@@ -418,15 +436,17 @@ namespace Project1.Systems
             pathStart = pos;
             if (w.OtherDrop <= dropMin)
             {
-                if (!StandRoom(w.Floor.point)) return false;
-                pathEnd = w.Floor.point;
+                if (!StandRoom(w.Floor.point + w.CenterShift)) w.CenterShift = Vector3.zero; // 창 가운데로 당긴 자리에 못 서면 그대로
+                if (!StandRoom(w.Floor.point + w.CenterShift)) return false;
+                pathEnd = w.Floor.point + w.CenterShift; // 뚫고 지나가기: 창 가운데 쪽으로(기둥에 걸리지 않게)
                 StartAction(TraversalAction.WindowVault, HunterPath ? hunterVaultTime : vaultTime);
             }
             else
             {
-                Vector3 edge = new(w.Beyond.x, w.Sill.Top + 0.02f, w.Beyond.z); // 창밖 허공(턱 높이) — 여기서 놓으면 떨어진다
+                Vector3 edge = new Vector3(w.Beyond.x, w.Sill.Top + 0.02f, w.Beyond.z) + w.CenterShift; // 창밖 허공(턱 높이) — 여기서 놓으면 떨어진다
+                if (OverlapCapsule(edge, cc.radius * 0.9f)) { edge -= w.CenterShift; w.CenterShift = Vector3.zero; }
                 if (OverlapCapsule(edge, cc.radius * 0.9f)) return false;
-                pathMid = w.Mid + Vector3.up * 0.02f;
+                pathMid = w.Mid + w.CenterShift + Vector3.up * 0.02f;
                 pathEnd = edge;
                 // 창틀 모션은 생존자만: 감시자는 감시자 넘기(Jump)로 창밖까지 뛰어넘고 그대로 떨어진다.
                 if (HunterPath) StartAction(TraversalAction.WindowVault, hunterVaultTime);
@@ -443,9 +463,9 @@ namespace Project1.Systems
             if (!Cast(pos + Vector3.up * 0.1f, Vector3.down, 3f, out var ground)) return false; // 바닥 높이 기준으로 창틀을 잰다
             float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
             if (!FindWindow(dir, ground.point.y, sillReach + speed * 0.12f, out var w) || w.OtherDrop > dropMin) return false;
-            if (pos.y > w.Sill.Top + cc.height * 0.5f) return false; // 창틀보다 한참 위로 날아감(짚을 수 없다)
-            Vector3 end = w.Floor.point - w.Sill.Normal * windowJumpCarry;
-            if (!StandRoom(end)) { end = w.Floor.point; if (!StandRoom(end)) return false; }
+            if (pos.y > w.Sill.Top + cc.height * (windowPassThrough ? 0.8f : 0.5f)) return false; // 창틀보다 한참 위로 날아감(짚을 수 없다) — 뚫고 지나가기는 더 높이 날아도
+            Vector3 end = w.Floor.point + w.CenterShift - w.Sill.Normal * windowJumpCarry;
+            if (!StandRoom(end)) { end = w.Floor.point - w.Sill.Normal * windowJumpCarry; if (!StandRoom(end)) { end = w.Floor.point; if (!StandRoom(end)) return false; } }
             faceYaw = YawOf(-w.Sill.Normal);
             pathStart = pos;
             pathEnd = end;
