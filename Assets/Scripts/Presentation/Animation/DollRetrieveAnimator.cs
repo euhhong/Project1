@@ -16,8 +16,8 @@ namespace Project1.Presentation
         private const string SkillLayerName = "Skill", AttackLayerName = "Attack";
         private static readonly int StateId = Animator.StringToHash("HellEmber_TakeItem");
 
-        [Tooltip("집어 드는 모션 시간(초) — BE DollThrow.retrieveTime과 같게(클립 2.4초를 약 1.6배 빠르게).")]
-        [SerializeField, Min(0.1f)] private float playTime = 1.5f;
+        [Tooltip("집어 드는 모션 시간(초) — BE DollThrow.retrieveTime과 같게(클립 2.4초를 약 2.4배 빠르게).")]
+        [SerializeField, Min(0.1f)] private float playTime = 1f;
         [Tooltip("평타에서 넘어가는 시간(초) / 끝에서 놓기 시작하는 진행도.")]
         [SerializeField, Min(0.01f)] private float blendIn = 0.12f;
         [SerializeField, Range(0f, 1f)] private float fadeFrom = 0.85f;

@@ -48,7 +48,7 @@ namespace Project1.Systems
         [SerializeField, Min(0.1f)] private float dollHitRadius = 0.6f;
         [SerializeField, Min(0.1f)] private float dollHitHeightScale = 1.25f;
         [Tooltip("회수하며 집어 드는 동안(초) — 이동·공격·스킬 불가(보이는 표시 없음). FE 모션 길이와 같게.")]
-        [SerializeField, Min(0f)] private float retrieveTime = 1.5f;
+        [SerializeField, Min(0f)] private float retrieveTime = 1f;
         private float retrieveLeft;
         private ICharacterAttackState attackState;
         public int RetrieveCount { get; private set; }
