@@ -42,13 +42,18 @@ namespace Project1.Presentation
         [SerializeField, Range(0f, 0.7f)] private float ramHugBack = 0.4f;
         private const string RocketChargeId = "SmileyFace_RocketCharge";
 
-        [Header("손을 쓰는 동안(창틀·턱 잡기·매달림·사다리) 한 손으로 듦")]
-        [Tooltip("로켓 꼬리를 오른손에 쥐고 아래팔을 따라 팔꿈치 쪽으로 눕힌다. 몸 바깥쪽으로 띄우는 거리(m, 로켓 반지름에 더함).")]
-        [SerializeField] private float oneHandOut = 0.04f;
-        [Tooltip("꼬리가 오른손보다 손가락 쪽으로 나오는 길이(m) — 손에 쥔 느낌.")]
-        [SerializeField] private float oneHandTailPast = 0.06f;
+        [Header("손을 쓰는 동안(창틀·턱 잡기·매달림·사다리) 어깨에 받쳐 둠 — 두 손 모두 씀")]
+        [Tooltip("로켓을 오른쪽 어깨 위에 얹고 머리를 뒤·위로 세우는 각도(도, 0 = 수평으로 뒤, 90 = 똑바로 위). 앞(벽 쪽)으로 튀어나오지 않게.")]
+        [SerializeField, Range(0f, 90f)] private float shoulderPitch = 50f;
+        [Tooltip("어깨에 닿는 자리: 꼬리에서 길이의 이 비율(0 = 꼬리를 어깨에, 0.5 = 가운데를 어깨에).")]
+        [SerializeField, Range(0f, 0.6f)] private float shoulderBalance = 0.25f;
+        [Tooltip("머리를 바깥(오른쪽)으로 벌리는 정도 — 머리·얼굴에 닿지 않게.")]
+        [SerializeField, Range(0f, 1f)] private float shoulderOutward = 0.2f;
+        [Tooltip("어깨 위로 띄우는 거리(m, 로켓 반지름에 더함).")]
+        [SerializeField] private float shoulderLift = 0.02f;
         private ICharacterTraversalState traversal;
-        private float oneHandBlend;
+        private Transform rightShoulder;
+        private float shoulderBlend;
 
         private ICharacterAttackState attack;
         private ICharacterSkillState skill;
@@ -123,27 +128,28 @@ namespace Project1.Presentation
                 rot = Quaternion.Slerp(rot, skillRot, skillBlend);
             }
 
-            // 손을 쓰는 동안(창틀·턱 잡기·매달림·옆 이동·매달려 오르기·사다리): 두 손 사이에 걸치지 않고 오른손 하나로 쥔다 —
-            // 꼬리를 오른손에 쥐고 아래팔을 따라 팔꿈치 쪽으로 눕혀(몸 바깥으로 살짝 띄움) 손이 턱·가로대를 잡아도 같이 따라간다.
+            // 손을 쓰는 동안(창틀·턱 잡기·매달림·옆 이동·매달려 오르기·사다리): 로켓을 오른쪽 어깨에 받쳐 두고 두 손 모두 쓴다 —
+            // 어깨 위에 얹어 머리를 뒤·위(벽 반대쪽)로 세우고 바깥으로 살짝 벌린다. 몸(어깨)을 따라 움직인다.
             traversal ??= GetComponent<ICharacterTraversalState>();
             bool handsBusy = !attacking && !inSkill && traversal != null && UsesHands(traversal.Action); // 공격·로켓 돌진은 언제나 두 손
-            oneHandBlend = Mathf.MoveTowards(oneHandBlend, handsBusy ? 1f : 0f, Time.deltaTime / gripSwitchTime);
-            if (oneHandBlend > 0f)
+            shoulderBlend = Mathf.MoveTowards(shoulderBlend, handsBusy ? 1f : 0f, Time.deltaTime / gripSwitchTime);
+            if (shoulderBlend > 0f && rightShoulder != null)
             {
-                Vector3 alongArm = rightLower.position - r; // 손 → 팔꿈치
-                if (alongArm.sqrMagnitude < 1e-4f) alongArm = -transform.up;
-                alongArm.Normalize();
-                Vector3 outSide = Vector3.ProjectOnPlane(transform.right, alongArm);
-                outSide = outSide.sqrMagnitude > 1e-4f ? outSide.normalized : transform.right;
-                Vector3 onePos = r + alongArm * -oneHandTailPast + outSide * (rocket.Radius * worldScale + oneHandOut);
-                Quaternion oneRot = Quaternion.LookRotation(alongArm, outSide);
-                pos = Vector3.Lerp(pos, onePos, oneHandBlend);
-                rot = Quaternion.Slerp(rot, oneRot, oneHandBlend);
+                Vector3 fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+                Vector3 side = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+                float pitch = shoulderPitch * Mathf.Deg2Rad;
+                Vector3 axis = (-fwd * Mathf.Cos(pitch) + Vector3.up * Mathf.Sin(pitch) + side * shoulderOutward).normalized; // 꼬리 → 머리
+                float length = rocket.Length * worldScale;
+                Vector3 rest = rightShoulder.position + Vector3.up * (rocket.Radius * worldScale + shoulderLift); // 어깨 위
+                Vector3 shoulderPos = rest - axis * (length * shoulderBalance);
+                Quaternion shoulderRot = Quaternion.LookRotation(axis, Vector3.Cross(axis, Vector3.up).sqrMagnitude > 1e-4f ? Vector3.up : -fwd);
+                pos = Vector3.Lerp(pos, shoulderPos, shoulderBlend);
+                rot = Quaternion.Slerp(rot, shoulderRot, shoulderBlend);
             }
             rocket.transform.SetPositionAndRotation(pos, rot);
         }
 
-        /// <summary>두 손을 쓰는 오르기·매달리기 동작(로켓을 한 손으로 든다).</summary>
+        /// <summary>두 손을 쓰는 오르기·매달리기 동작(로켓을 어깨에 받쳐 둔다).</summary>
         private static bool UsesHands(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop
             or TraversalAction.HangClimb or TraversalAction.HangClimbRail or TraversalAction.HangClimbOver or TraversalAction.Ladder
             or TraversalAction.ClimbUp or TraversalAction.WindowVault or TraversalAction.WindowJump or TraversalAction.WindowDrop;
@@ -154,6 +160,7 @@ namespace Project1.Presentation
             leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
             rightLower = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
             leftLower = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            rightShoulder = animator.GetBoneTransform(HumanBodyBones.RightUpperArm); // 어깨 관절(팔을 들어도 거의 그 자리)
             if (rightHand == null || leftHand == null || rightLower == null || leftLower == null) return;
             if (rocket != null) Destroy(rocket.gameObject);
             var go = new GameObject("Rocket");
