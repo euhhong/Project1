@@ -23,7 +23,7 @@ namespace Project1.UI
             traversal.SetHunterStyle(entry.role == CharacterRole.Hunter); // 창틀 넘기·올라서기·매달리기·낙하·착지(BE, 감시자는 창틀을 감시자 모션으로) — 이동이 알도록 아래 RefreshSpeedLimits 전에
             traversal.SetWindowPassThrough(entry.id == "Hunter_Geisha");  // 붉은나비: 창틀 넘기 모션 없이 창틀을 뚫고 곧게 지나감(하스터처럼)
             Ensure<CharacterPush>(player);              // 상자 등 밀기(BE) — 모션은 CharacterTraversalAnimator
-            Ensure<FallDamage>(player);                 // 높이 떨어지면 데미지(3m 넘은 1m마다 10, 구르면 절반)
+            Ensure<FallDamage>(player);                 // 높이 떨어지면 데미지(7.5m — 한 층 + 점프 — 넘은 1m마다 10, 구르면 절반)
             Ensure<CharacterTraversalAnimator>(player); // 그 모션(FE, Animator 레이어 Traversal)
             var skill = Ensure<CharacterSkill>(player);
             skill.SetSkill(entry.skill);

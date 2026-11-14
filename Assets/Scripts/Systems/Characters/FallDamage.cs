@@ -13,8 +13,8 @@ namespace Project1.Systems
     [DisallowMultipleComponent]
     public class FallDamage : MonoBehaviour
     {
-        [Tooltip("이 높이(m)까지는 떨어져도 괜찮다(점프 1.45m·창고 지붕 정도).")]
-        [SerializeField, Min(0f)] private float safeHeight = 3f;
+        [Tooltip("이 높이(m)까지는 떨어져도 괜찮다 — 한 층(층고 6m) + 점프 높이 정도. 2층에서 1층으로는 다치지 않고, 3층 이상에서 떨어지면 다친다.")]
+        [SerializeField, Min(0f)] private float safeHeight = 7.5f;
         [Tooltip("safeHeight를 넘은 1m마다 데미지(최대 체력 100 기준).")]
         [SerializeField, Min(0f)] private float damagePerMeter = 10f;
         [Tooltip("앞구르기로 착지하면 데미지에 곱하는 값.")]
