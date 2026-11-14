@@ -303,11 +303,19 @@ namespace Project1.Systems
             foreach (var s in lookScales) if (s is not Behaviour b || b.isActiveAndEnabled) pitchDelta *= s.PitchScale;
             // 평소 한계 밖(차징 중 더 위를 봤던 시야)이면 한계 안으로 부드럽게 돌아온다.
             lookPitch = Mathf.Clamp(lookPitch + pitchDelta, Mathf.Min(minPitch, lookPitch), maxPitch);
-            if (lookPitch < minPitch) lookPitch = Mathf.MoveTowards(lookPitch, minPitch, 120f * Time.deltaTime);
+            if (lookPitch < minPitch && !HoldView()) lookPitch = Mathf.MoveTowards(lookPitch, minPitch, 120f * Time.deltaTime); // 인형이 날아가는 동안·떨어지고 1초까지는 그대로
         }
 
         private readonly System.Collections.Generic.List<IChargeLook> chargeLooks = new();
         private float chargeViewRaise;
+
+        /// <summary>캐릭터가 시야를 그대로 두라고 하는지(IChargeLook.HoldView — 예: 공장장 인형이 날아가는 동안).</summary>
+        private bool HoldView()
+        {
+            GetComponents(chargeLooks);
+            foreach (var c in chargeLooks) if ((c is not Behaviour b || b.isActiveAndEnabled) && c.HoldView) return true;
+            return false;
+        }
         private bool chargeLookActive;
 
         /// <summary>좌클릭을 꾹 누르는 중(강공격 모으기 시간이 지남)이고 캐릭터가 그동안 시점 돌리기를 허락하면 그 감도 배율, 아니면 0.</summary>

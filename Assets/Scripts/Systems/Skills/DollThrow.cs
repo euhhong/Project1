@@ -26,7 +26,7 @@ namespace Project1.Systems
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
         [Tooltip("좌클릭 차징을 시작하는 순간 그때 시야에서 이만큼(도) 위로 올리고 그 높이에 고정 — 우클릭을 누른 채 마우스로만 높이를 바꾼다(위쪽 한계 열림).")]
-        [SerializeField, Range(0f, 45f)] private float aimViewRaise = 10f;
+        [SerializeField, Range(0f, 45f)] private float aimViewRaise = 0f; // 0 = 차징해도 카메라를 강제로 움직이지 않음
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         [Tooltip("자리를 바꾼 직후 경직(초) — 땅이든 공중(낙하)이든 같다. 이동·공격·스킬 불가, 보이는 표시 없음(IActionLock).")]
@@ -125,6 +125,10 @@ namespace Project1.Systems
         public bool LookWhileCharging => isActiveAndEnabled && !waitRelease; // 좌클릭 차징 = 좌클릭 끌기로 자리 조절 + 우클릭 끌기로 시야 높이(LocalPlayerInput), E로 취소하면 끝
         public float ChargeLookScale => aimLookScale;
         public float ChargeViewRaise => aimViewRaise;
+        [Tooltip("던진 인형이 땅에 떨어진 뒤에도 시야를 자동으로 되돌리지 않고 그대로 두는 시간(초) — 날아가는 동안은 늘 그대로.")]
+        [SerializeField, Min(0f)] private float viewHoldAfterLand = 1f;
+        private float viewHoldLeft;
+        public bool HoldView => isActiveAndEnabled && (DollFlying || viewHoldLeft > 0f);
         public bool SwapPending => swapLeft > 0f;
         public float SwapProgress => swapDelay > 0f && SwapPending ? 1f - swapLeft / swapDelay : 0f;
 
@@ -196,6 +200,7 @@ namespace Project1.Systems
             TrackSafeFall();
             TrackSwapAfter(Time.fixedDeltaTime);
             if (retrieveLeft > 0f) retrieveLeft = Mathf.Max(0f, retrieveLeft - Time.fixedDeltaTime);
+            if (viewHoldLeft > 0f) viewHoldLeft = Mathf.Max(0f, viewHoldLeft - Time.fixedDeltaTime);
             CheckRetrieve();
         }
 
@@ -341,7 +346,7 @@ namespace Project1.Systems
         private void StepDoll(float dt)
         {
             dollAir += dt;
-            if (Step(ref dollPos, ref dollVel, dt) || dollAir > maxAirTime) { DollFlying = false; dollVel = Vector3.zero; }
+            if (Step(ref dollPos, ref dollVel, dt) || dollAir > maxAirTime) { DollFlying = false; dollVel = Vector3.zero; viewHoldLeft = viewHoldAfterLand; } // 떨어진 뒤 1초까지 시야 그대로
         }
 
         /// <summary>

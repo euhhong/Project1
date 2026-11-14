@@ -10,5 +10,7 @@ namespace Project1.Core
         float ChargeLookScale { get; }
         /// <summary>차징을 시작하는 순간 시야를 이만큼(도) 위로 올리고 그 높이에 고정한다(좌클릭 끌기는 LookDelta로만 — 예: 공장장 인형 자리 조절, 우클릭 끌기 = 시야 높이, 위쪽 한계 열림). 0 = 올리지 않음.</summary>
         float ChargeViewRaise { get; }
+        /// <summary>차징이 끝난 뒤에도 시야를 자동으로 평소 범위로 되돌리지 않고 그대로 둔다(예: 공장장 인형이 날아가는 동안 + 떨어지고 1초).</summary>
+        bool HoldView { get; }
     }
 }
