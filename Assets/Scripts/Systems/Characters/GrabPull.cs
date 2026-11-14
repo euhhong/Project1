@@ -7,7 +7,8 @@ namespace Project1.Systems
     /// 사냥터지기 그랩에 걸려 끌려가는 쪽. 그랩이 맞힌 캐릭터에 붙어(없으면 그때 붙인다),
     /// 그랩을 쏜 쪽(CharacterSkill + GrabShotSkill)이 되감는 동안 그랩 머리를 따라 쏜 쪽 앞까지 끌려온다.
     /// - 맞는 순간 기절(CharacterStun)을 끌려오는 시간 + 잠깐만큼 한 번 건다 → 끌려가는 동안·놓인 뒤 잠깐 이동·점프·공격·스킬을 못 한다.
-    /// - 쏜 쪽 몸에 겹치지 않게 minGap 앞에서 멈춘다. 벽 등에 걸려 그랩 머리에서 1.5m 넘게 처지면 놓인다.
+    /// - 맞힌 뒤에는 가는 길의 벽·창틀·물건을 모두 뚫고 끌려온다(ColliderPassThrough, 바닥과 캐릭터는 그대로).
+    /// - 쏜 쪽 몸에 겹치지 않게 minGap 앞에서 멈춘다. 그래도 무언가에 걸려 그랩 머리에서 1.5m 넘게 처지면 놓인다.
     /// - 끌려온 뒤에는 강한 감속(IMoveSpeedLimit): 기절이 풀린 뒤 slowTime초 동안 달리기 속도의 slowRatio배까지만 움직인다(끝 무렵 원래 속도로 돌아옴).
     /// 캐릭터 루트에 붙는다(직접 붙일 필요 없음).
     /// </summary>
@@ -26,6 +27,7 @@ namespace Project1.Systems
 
         private CharacterController controller;
         private CharacterStun stun;
+        private ColliderPassThrough pass;
 
         /// <summary>지금 그랩에 끌려가는 중인지.</summary>
         public bool IsPulled => puller != null;
@@ -98,7 +100,8 @@ namespace Project1.Systems
 
             Vector3 here = Flat(transform.position);
             Vector3 delta = target - here;
-            if (delta.magnitude > LoseDistance) { Release(); return; } // 벽 등에 걸려 처졌다
+            if (delta.magnitude > LoseDistance) { Release(); return; } // (벽은 뚫고 오므로) 무언가에 걸려 처졌다
+            PassThroughWalls(delta);
             if (controller != null && controller.enabled) controller.Move(delta);
             else transform.position += delta;
 
@@ -109,6 +112,34 @@ namespace Project1.Systems
             if (puller != null && stun != null)
                 slowUntil = Time.time + stun.StunRemaining + (grab != null ? grab.dragSlowTime : 2f); // 일찍 놓여도 기절이 풀린 뒤부터 감속
             puller = null;
+        }
+
+        /// <summary>
+        /// 이번 틱에 끌려갈 길(delta)을 막는 벽·창틀·물건을 뚫고 지나가게 한다(ColliderPassThrough — 빠져나오면 다시 막힌다).
+        /// 바닥(위를 보는 면)·다른 캐릭터는 그대로 둔다(바닥을 뚫고 떨어지거나 쏜 쪽 몸을 지나치지 않게). 발밑 stepOffset 아래는 보지 않는다(서 있는 바닥).
+        /// </summary>
+        private void PassThroughWalls(Vector3 delta)
+        {
+            if (controller == null || !controller.enabled) return;
+            float dist = delta.magnitude;
+            if (dist < 0.0001f) return;
+            if (pass == null && !TryGetComponent(out pass)) pass = gameObject.AddComponent<ColliderPassThrough>();
+
+            float r = controller.radius * 0.95f;
+            Vector3 center = transform.position + controller.center;
+            float half = Mathf.Max(controller.height * 0.5f - r, 0f);
+            Vector3 top = center + Vector3.up * half;
+            Vector3 bottom = center - Vector3.up * half;
+            bottom.y = Mathf.Min(bottom.y + controller.stepOffset, top.y);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            foreach (var h in Physics.CapsuleCastAll(bottom, top, r, delta / dist, dist + controller.skinWidth + 0.1f, mask, QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider == controller) continue;
+                if (h.distance <= 0f && h.point == Vector3.zero) continue;            // 처음부터 겹쳐 있던 것(이미 뚫는 중이면 ColliderPassThrough가 쥐고 있다)
+                if (h.normal.y > 0.7f) continue;                                     // 바닥·윗면
+                if (h.collider.GetComponentInParent<CharacterIdentity>() != null) continue; // 캐릭터
+                pass.Allow(h.collider);
+            }
         }
 
         private void OnDisable() => puller = null;
