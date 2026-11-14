@@ -224,7 +224,8 @@ namespace Project1.Systems
                     if (health == null) TryGetComponent(out health);
                     if (traversal == null) TryGetComponent(out traversal);
                     if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead)
-                        || (traversal != null && traversal.LocksActions)) // 오르는 중·매달림·구르기·크게 착지하는 중
+                        || (traversal != null && traversal.LocksActions) // 오르는 중·매달림·구르기·크게 착지하는 중
+                        || ActionLocked())                                // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
                     {
                         break;
                     }
@@ -485,6 +486,16 @@ namespace Project1.Systems
             bufferedSwipe = 0;
             if (!chaining) comboFollowUps = 0;
             AttackEnded?.Invoke();
+        }
+
+        private static readonly System.Collections.Generic.List<IActionLock> actionLocks = new();
+
+        /// <summary>보이지 않는 짧은 경직(IActionLock)이 하나라도 걸려 있는지.</summary>
+        private bool ActionLocked()
+        {
+            GetComponents(actionLocks);
+            foreach (var l in actionLocks) if ((l is not Behaviour b || b.isActiveAndEnabled) && l.ActionsLocked) return true;
+            return false;
         }
     }
 }

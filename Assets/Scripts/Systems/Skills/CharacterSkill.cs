@@ -109,6 +109,7 @@ namespace Project1.Systems
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
                 if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) { BlockedReason = null; return false; } // 오르는 중·매달림
                 if (TryGetComponent(out ISkillLock skillLock) && skillLock.SkillLocked) { BlockedReason = skillLock.LockReason; return false; } // 예: 도둑 손전등에 지져짐
+                if (TryGetComponent(out IActionLock actionLock) && actionLock.ActionsLocked) { BlockedReason = null; return false; } // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
                 if (attack != null && attack.AttackState != CharacterAttackState.None) { BlockedReason = "공격 중"; return false; }
                 bool ok = skill.CanStart(gameObject, out var reason);
                 BlockedReason = ok ? null : reason;

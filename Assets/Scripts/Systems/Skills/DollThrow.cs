@@ -24,7 +24,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit
+    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit, IActionLock, IMoveSpeedBoost
     {
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
@@ -32,6 +32,13 @@ namespace Project1.Systems
         [SerializeField, Range(0f, 45f)] private float aimViewRaise = 10f;
         [Tooltip("E를 짧게 누른 뒤 실제로 자리를 바꾸기까지(초) — 그동안 제자리에서 몸을 떤다. 도착은 누른 순간의 인형 자리.")]
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
+        [Tooltip("자리를 바꾼 직후 짧은 경직(초) — 이동·공격·스킬 불가, 보이는 표시 없음(IActionLock).")]
+        [SerializeField, Min(0f)] private float postSwapLock = 0.3f;
+        [Tooltip("공중의 인형과 바꿔 떨어져 내려왔으면 착지한 순간부터 이 시간(초) 동안 이동 속도 배율.")]
+        [SerializeField, Min(0f)] private float landBoostTime = 2f;
+        [SerializeField, Min(1f)] private float landBoostMultiplier = 1.5f;
+        private float lockLeft, boostLeft;
+        private bool boostArmed, boostAirSeen;
         private float swapLeft;
         private Vector3 swapFeet;
         [Tooltip("겨눌 수 있는 최대 거리(m).")]
@@ -108,7 +115,13 @@ namespace Project1.Systems
         public float SwapProgress => swapDelay > 0f && SwapPending ? 1f - swapLeft / swapDelay : 0f;
 
         /// <summary>자리를 바꾸려고 기다리는 동안은 제자리(움직이지 않음).</summary>
-        public bool TryGetSpeedLimit(out float maxSpeed) { maxSpeed = 0f; return SwapPending; }
+        public bool TryGetSpeedLimit(out float maxSpeed) { maxSpeed = 0f; return SwapPending || lockLeft > 0f; }
+
+        /// <summary>자리를 바꾼 직후 짧은 경직(보이는 표시 없음) — 공격·스킬 불가.</summary>
+        public bool ActionsLocked => isActiveAndEnabled && (SwapPending || lockLeft > 0f);
+
+        /// <summary>공중의 인형과 바꿔 떨어져 내려온 뒤 landBoostTime초 동안 빠르게.</summary>
+        public bool TryGetSpeedBoost(out float multiplier) { multiplier = landBoostMultiplier; return boostLeft > 0f; }
 
         private void Awake()
         {
@@ -120,7 +133,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Aiming = false; arc.Clear();
-            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false;
+            DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false;
         }
 
         private void FixedUpdate()
@@ -167,6 +180,7 @@ namespace Project1.Systems
             }
             if (DollActive && DollFlying) StepDoll(Time.fixedDeltaTime);
             TrackSafeFall();
+            TrackSwapAfter(Time.fixedDeltaTime);
         }
 
         // ───────────────────── 던지기 ─────────────────────
@@ -396,6 +410,20 @@ namespace Project1.Systems
             DollFlying = false;
             safeFall = true; groundedTicks = 0; // 다음 착지까지 다치지 않는다
             SwapCount++;
+            lockLeft = postSwapLock; // 바꾼 직후 짧은 경직(보이는 표시 없음)
+            // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면 떨어져 내려와 착지한 순간부터 빠르게
+            boostArmed = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _); boostAirSeen = false;
+        }
+
+        /// <summary>바꾼 직후 경직 시간을 줄이고, 공중으로 바꿨으면 떨어져 내려와 착지한 순간 가속(landBoostTime초)을 건다.</summary>
+        private void TrackSwapAfter(float dt)
+        {
+            if (lockLeft > 0f) lockLeft = Mathf.Max(0f, lockLeft - dt);
+            if (boostLeft > 0f) boostLeft = Mathf.Max(0f, boostLeft - dt);
+            if (!boostArmed) return;
+            bool grounded = state != null && state.IsGrounded;
+            if (!grounded) boostAirSeen = true;
+            else if (boostAirSeen) { boostArmed = false; boostLeft = landBoostTime; } // 착지(이동 완료)
         }
 
         /// <summary>바꾼 뒤 땅에 두 틱 이상 서 있으면 다치지 않는 낙하 표시를 끈다(FallDamage가 착지 틱에 묻는다).</summary>
