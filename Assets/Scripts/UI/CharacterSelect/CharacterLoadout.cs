@@ -36,7 +36,7 @@ namespace Project1.UI
 
             Ensure<CharacterSkillAnimator>(player);
             Ensure<CharacterHitReactionAnimator>(player);
-            Ensure<CharacterStairsAnimator>(player); // 계단을 앞으로 오를 때 계단 오르기 모션(Running Up Stairs)
+            SetProp<CharacterStairsAnimator>(player, false); // 계단 오르기 모션은 쓰지 않음(계단도 평소 걷기·달리기 모션) — Stairs 레이어 무게 0 그대로
             Ensure<CharacterDeathAnimator>(player); // 체력 0 = 쓰러지는 모션(Zombie Dying)
             Ensure<SwingTrail>(player); // 휘두르는 궤적(반투명 블렌드 띠)
             Ensure<HitFlash>(player);   // 맞으면 몸이 빨갛게 달궈졌다 식음
