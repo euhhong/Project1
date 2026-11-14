@@ -150,7 +150,7 @@ namespace Project1.Presentation
         }
 
         /// <summary>두 손을 쓰는 오르기·매달리기 동작(로켓을 어깨에 받쳐 둔다).</summary>
-        private static bool UsesHands(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop
+        internal static bool UsesHands(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop
             or TraversalAction.HangClimb or TraversalAction.HangClimbRail or TraversalAction.HangClimbOver or TraversalAction.Ladder
             or TraversalAction.ClimbUp or TraversalAction.WindowVault or TraversalAction.WindowJump or TraversalAction.WindowDrop;
 
