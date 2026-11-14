@@ -15,7 +15,7 @@ namespace Project1.Core
         [Tooltip("벽 면에서 사다리 발판까지(m).")]
         [SerializeField, Min(0f)] private float depth = 0.15f;
         [Tooltip("가로대 간격(m). 사다리 오르기 모션 한 사이클에 한 칸씩 오른다.")]
-        [SerializeField, Min(0.2f)] private float rungStep = 1.2f;
+        [SerializeField, Min(0.2f)] private float rungStep = 1.6f;
 
         private static readonly List<Ladder> all = new();
         public static IReadOnlyList<Ladder> All => all;

@@ -27,7 +27,7 @@ namespace Project1.Presentation.EditorTools
         }
 
         // 전위 럭비공 돌진: 무게중심을 낮추고(무릎을 더 굽히고 상체를 앞으로 숙임), 두 손으로 가슴 앞에 공을 안는다.
-        // 사다리 오르기(생존자 Climbing Ladder / 감시자 Climbing): 팔·다리를 더 크게 뻗고 당겨 한 사이클에 큰 칸(1.2m)을 오르는 것처럼 보이게.
+        // 사다리 오르기(생존자 Climbing Ladder / 감시자 Climbing): 팔·다리를 더 크게 뻗고 당겨 한 사이클에 큰 칸(1.6m)을 오르는 것처럼 보이게.
         public static readonly Adjustment[] Adjustments =
         {
             new Adjustment { slot = "Traversal_Ladder", amplify = LadderStride.Amplify },
@@ -45,7 +45,7 @@ namespace Project1.Presentation.EditorTools
         /// <summary>사다리 보폭: 손을 더 높이 뻗고 더 아래까지 당기고, 무릎을 더 높이 올렸다가 더 쭉 편다. 배율을 올리면 보폭이 더 커진다.</summary>
         public static class LadderStride
         {
-            public const float Arm = 1.6f, Leg = 1.6f;
+            public const float Arm = 1.9f, Leg = 1.9f; // 가로대 1.6m에 맞춤(-1~1로 잘림)
             public static Dictionary<string, float> Amplify = new()
             {
                 ["Left Shoulder Down-Up"] = Arm, ["Right Shoulder Down-Up"] = Arm,

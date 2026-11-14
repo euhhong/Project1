@@ -752,12 +752,12 @@ namespace Project1.Map.EditorTools
         private const float LadderZ = 12f; // 별관 사다리 자리(별관 z — 바깥벽 2F 창 z 4.5·15 사이)
 
         /// <summary>
-        /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 1.2m 간격 발판(보이기만 — 충돌 없음),
+        /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 1.6m 간격 발판(보이기만 — 충돌 없음),
         /// 타기는 Ladder 표시로 CharacterTraversal이 한다. 기둥은 위 끝(위층 바닥)보다 1m 더 올라가 손잡이가 된다.
         /// </summary>
         private static void Ladder(Transform p, string name, Vector3 bottom, Vector3 outward, float height)
         {
-            const float width = 0.8f, depth = 0.15f, rail = 0.08f, rungStep = 1.2f, firstRung = 0.3f; // 칸을 크게 — 오르기 모션 한 사이클에 한 칸(CharacterTraversal)
+            const float width = 0.8f, depth = 0.15f, rail = 0.08f, rungStep = 1.6f, firstRung = 0.3f; // 칸을 크게 — 오르기 모션 한 사이클에 한 칸(CharacterTraversal)
             var g = Group(p, name, bottom);
             g.localRotation = Quaternion.LookRotation(outward, Vector3.up);
             g.gameObject.AddComponent<Project1.Core.Ladder>().Set(height, width, depth, rungStep);
