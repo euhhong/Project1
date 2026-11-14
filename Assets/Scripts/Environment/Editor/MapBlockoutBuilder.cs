@@ -458,6 +458,8 @@ namespace Project1.Map.EditorTools
             HB(fu, "LowTerrace_Crate", new Vector3(-3.6f, -0.3f, 8.8f), new Vector3(-2.4f, 1.2f, 10f), accentMat);
             // 동관: 낮은 테라스 → 옥상 테라스 사다리(바깥벽, 2F 창 사이). 옥상 난간은 사다리 위만 트였다.
             if (!tall) Ladder(fu, "Ladder_Roof", new Vector3(X(-WallT / 2f), LowTerraceH, LadderZ), east ? Vector3.right : Vector3.left, F3 - LowTerraceH);
+            // 서관(옥상 테라스 없음): 낮은 테라스 → 3층 창문 사다리(바깥벽 z 15 창 줄). 위 끝 = 3층 창턱 — 다 오르면 창턱을 넘어 3층 안으로.
+            else Ladder(fu, "Ladder_3F_Window", new Vector3(X(-WallT / 2f), LowTerraceH, WestLadderZ), east ? Vector3.right : Vector3.left, F3 + WinSill - LowTerraceH);
 
             var g = Group(h, "Gothic", Vector3.zero);
             if (tall) GableRoof(g, "Roof", -0.25f, w + 0.25f, -0.25f, d + 0.25f, RoofTop, 8f, gapSide: east ? 1 : -1, gapZ0: -0.5f, gapZ1: 6.5f);
@@ -751,6 +753,7 @@ namespace Project1.Map.EditorTools
 
         /// <summary>x 방향 벽(z 위치 고정). 개구부의 from/to는 x 값, bottom/top은 y0 기준 높이.</summary>
         private const float LadderZ = 12f; // 별관 사다리 자리(별관 z — 바깥벽 2F 창 z 4.5·15 사이)
+        private const float WestLadderZ = 15f; // 서관 사다리 자리(바깥벽 2F·3F 창 z 15 — 위 끝이 3층 창턱)
 
         /// <summary>
         /// 사다리: bottom = 아래 끝 가운데(벽 면, 발 딛는 바닥 높이), outward = 벽 바깥쪽. 기둥 2개 + 0.8m 간격 발판(보이기만 — 충돌 없음),
