@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 신호총(공군 E): 잠깐 겨눈 뒤(windup) 신호탄을 쏜다. 신호탄은 가장 가까운 상대(targetRange 안, 화면·시야 방향과 상관없이)를
+    /// 신호총(공군 E): 잠깐 겨눈 뒤(windup) 신호탄을 쏜다. 신호탄은 가장 가까운 상대(거리 제한 없음 — targetRange 0, 화면·시야 방향과 상관없이)를
     /// 따라가는 유도탄(HomingProjectile)이다. 겨누는 동안 몸이 그 상대 쪽으로 저절로 돌아간다(시점은 그대로).
     /// 신호탄은 — 곡선으로 휘지만 길을 찾지 않고 곧장 가므로 벽·바닥·천장에 닿으면 사라진다.
     /// 상대가 없으면 바라보는 방향으로 곧게 난다. 쏘는 동안 잠깐 제자리(이동·공격 불가).
@@ -29,8 +29,8 @@ namespace Project1.Systems
         [Min(0f)] public float stunTime = 2.5f;
         [Tooltip("신호탄이 사라지기까지(초).")]
         [Min(0.1f)] public float lifetime = 4f;
-        [Tooltip("목표로 고를 상대의 최대 거리(m). 이 안에서 가장 가까운 상대를 노린다(보고 있지 않아도).")]
-        [Min(1f)] public float targetRange = 40f;
+        [Tooltip("목표로 고를 상대의 최대 거리(m). 0 = 제한 없음(맵 어디에 있든 가장 가까운 상대 — 보고 있지 않아도).")]
+        [Min(0f)] public float targetRange = 0f;
         [Tooltip("쏘는 방향을 바라보는 방향보다 위로(도) — 신호탄이 살짝 떠올랐다가 휘어 간다.")]
         public float launchPitchUp = 12f;
         [Tooltip("쏘는 자리(캐릭터 키 대비 높이 / 몸 가운데에서 오른쪽 m / 앞 m) — 오른손 신호총 총구.")]
@@ -104,7 +104,7 @@ namespace Project1.Systems
         private CharacterIdentity FindTarget(CharacterIdentity self, Vector3 origin)
         {
             CharacterIdentity best = null;
-            float bestDist = targetRange;
+            float bestDist = targetRange > 0f ? targetRange : float.MaxValue;
             foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
             {
                 if (self != null && !self.CanHit(c)) continue;
