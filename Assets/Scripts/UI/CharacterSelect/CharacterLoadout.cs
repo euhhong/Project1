@@ -66,6 +66,8 @@ namespace Project1.UI
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
             SetProp<HellEmberCloneVisual>(player, entry.id == "Hunter_HellEmber"); // 공장장: 분신 모델·용암 겉모습·갈고리 낫(FE)
             if (player.TryGetComponent(out HellEmberCloneVisual cloneVisual)) cloneVisual.SetModel(entry.model, entry.scale, entry.gameController);
+            SetProp<DollThrow>(player, entry.id == "Hunter_HellEmber");        // 공장장: 좌클릭 꾹 = 인형 겨누기 → 떼면 포물선으로 던짐, E 짧게 = 인형과 자리 바꿈(E 꾹 = 분신, CloneSummonSkill)(BE)
+            SetProp<DollThrowVisual>(player, entry.id == "Hunter_HellEmber");  // 공장장: 포물선 보조선·떨어질 자리 원·인형(작은 검은 구체)(FE)
             SetProp<MistCharge>(player, entry.id == "Hunter_Ripper");     // 리퍼: 공격하지 않으면 7초마다 안개 1칸(최대 2칸), 2칸에서 공격 = 안개 칼날, E = 1칸으로 약한 칼날(BE)
             SetProp<MistClawVisual>(player, entry.id == "Hunter_Ripper"); // 리퍼: 손톱에 감기는 안개·날아가는 손톱 모양 안개 칼날(FE)
             SetProp<MistTrailField>(player, entry.id == "Hunter_Ripper");  // 리퍼: 칼날이 지나간 자리에 7초 안개, 그 위에서 30% 빠름(BE)

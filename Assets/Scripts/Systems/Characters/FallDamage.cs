@@ -49,6 +49,7 @@ namespace Project1.Systems
             airborne = false;
             if (bySkill || skillBusy || health == null || health.IsDead) return;
             if (traversal != null && traversal.IsSafeFall(peakY - y)) return; // 턱에 매달렸다 놓음 · 앞으로 뛰어내려 구름 — 아주 높지 않으면 다치지 않는다
+            foreach (var s in GetComponents<ISafeFallSource>()) if (s.SafeFall) return; // 착지할 때만 찾는다(캐릭터를 바꾸면 붙는 것이 바뀜) // 예: 공장장 인형과 자리 바꿈 — 다음 착지까지 다치지 않음
             float over = peakY - y - safeHeight;
             if (over <= 0f) return;
             float damage = over * damagePerMeter;

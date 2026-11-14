@@ -5,14 +5,18 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 분신(공장장 E): 옆에 분신을 하나 불러낸다. 분신은 가장 가까운 상대를 끝까지 쫓아가(다른 층이면 계단으로 — NavPathFollower),
-    /// 공격 범위에 들면 멈춰 서서 공격한다(CloneBrain). 제한시간 없음 — 쓰러지거나 불러낸 캐릭터가 사라질 때까지 있다. 한 번에 하나 — 다시 부르면 지난 분신은 사라진다.
+    /// 공장장 E: 짧게 누르면 던진 인형과 자리 바꾸기(DollThrow.TrySwap), 꾹 누르면(castTime초 = 0.4) 분신 꺼내기.
+    /// - E를 누르면 시전이 시작되고, castTime 전에 떼면 인형과 자리를 바꾼다(인형이 없으면 아무 일 없음). 그동안 이동은 막지 않는다.
+    /// - castTime까지 누르고 있으면 옆에 분신을 하나 불러낸다. 분신은 가장 가까운 상대를 끝까지 쫓아가(다른 층이면 계단으로 — NavPathFollower),
+    ///   공격 범위에 들면 멈춰 서서 공격한다(CloneBrain). 제한시간 없음 — 불러낸 캐릭터가 사라질 때까지 있다. 한 번에 하나 — 다시 부르면 지난 분신은 사라진다.
+    /// - 분신은 공격에 면역(HitImmunity — 맞아도 데미지·경직·넉백 없음)이고, 몸(CharacterController)이 다른 캐릭터를 막는 장애물이다.
     /// 분신의 몸·이동·공격·맞는 판정은 여기(BE)서 만들고, 모델·겉모습(검은 몸 + 용암 균열)·무기(갈고리 낫)는 FE가 붙인다(CloneEvents.Spawned).
-    /// 분신과 불러낸 캐릭터는 서로 맞지 않는다(CharacterIdentity.Summoner). 체력은 다루지 않는다.
+    /// 분신과 불러낸 캐릭터는 서로 맞지 않는다(CharacterIdentity.Summoner).
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Clone Summon")]
     public class CloneSummonSkill : SkillDefinition
     {
+        private const int PhaseHolding = 0, PhaseSwapped = 1;
         [Tooltip("이 거리(m, 몸 가운데끼리) 안에 들면 멈춰 서서 공격한다.")]
         [Min(0.5f)] public float attackRange = 1.7f;
         [Tooltip("공격이 끝나고 다음 공격까지(초).")]
@@ -25,18 +29,32 @@ namespace Project1.Systems
         private static readonly Dictionary<int, CloneBrain> current = new();
 
         public override bool SyncAnimationToCast => false;
+        public override bool LimitsMoveSpeed => false; // E를 누르고 있는 동안에도 움직인다
 
-        public override void OnStart(CharacterSkill ctx)
+        /// <summary>E를 짧게 누르는 동안은 분신 모션을 띄우지 않는다(바꾸기는 바로 끝난다).</summary>
+        public override string AnimationState(CharacterSkill ctx) => string.Empty;
+
+        public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
-            var owner = ctx.GetComponent<CharacterIdentity>();
-            if (owner == null) return;
-            if (current.TryGetValue(owner.Id, out var old) && old != null) old.Despawn(); // 한 번에 하나
-            current[owner.Id] = Summon(ctx, owner);
+            recovery = 0f;
+            if (input.SkillHeld) return false; // 꾹 누르는 중 — castTime이 되면 Complete(분신)
+            // castTime 전에 뗐다: 인형과 자리 바꾸기
+            ctx.SetPhase(PhaseSwapped);
+            if (ctx.TryGetComponent(out DollThrow doll)) doll.TrySwap();
+            return true;
         }
 
-        public override void Complete(GameObject owner) { }
+        public override void Complete(GameObject owner)
+        {
+            var ctx = owner.GetComponent<CharacterSkill>();
+            if (ctx == null || ctx.Phase == PhaseSwapped) return; // 짧게 = 자리 바꾸기만
+            var id = owner.GetComponent<CharacterIdentity>();
+            if (id == null) return;
+            if (current.TryGetValue(id.Id, out var old) && old != null) old.Despawn(); // 한 번에 하나
+            current[id.Id] = Summon(ctx, id);
+        }
 
-        public override string StatusText(CharacterSkill ctx) => "분신!";
+        public override string StatusText(CharacterSkill ctx) => "꾹 = 분신";
 
         public override string IdleStatusText(CharacterSkill ctx)
         {
@@ -67,6 +85,8 @@ namespace Project1.Systems
             var brain = go.AddComponent<CloneBrain>();
             brain.Init(owner, target, attackRange, attackGap, runDistance);
             go.AddComponent<CharacterIdentity>().SetSummoner(owner);
+            go.AddComponent<HitImmunity>(); // 공격에 면역(맞아도 데미지·경직·넉백 없음)
+            cc.detectCollisions = true;     // 몸은 다른 캐릭터를 막는 장애물
             go.AddComponent<CharacterMotor>();
             go.AddComponent<AttackHitDetector>();
             var atk = go.AddComponent<CharacterAttack>();
