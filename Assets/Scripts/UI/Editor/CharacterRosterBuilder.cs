@@ -30,6 +30,7 @@ namespace Project1.UI.EditorTools
                 var s = src != null ? Object.Instantiate(src) : ScriptableObject.CreateInstance<Project1.Systems.GrabShotSkill>();
                 s.id = "Cowboy_Lasso"; s.displayName = "올가미"; s.castTime = src != null ? src.castTime : 3f; s.cooldown = 0f;
                 s.towToWalls = false; s.vaultOverVictim = true;
+                s.vaultSpeedScale = 1.8f; s.vaultLandTime = 0.3f; // 빠르게 뛰어넘기
                 return s;
             },
             ["Survivor_Mercenary"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.WallDashSkill>(); s.id = "Mercenary_Guard"; s.displayName = "아대"; s.castTime = 99999f; /* 켜 두는 스킬: 다시 누를 때까지 */ s.cooldown = 0f; return s; },

@@ -77,6 +77,8 @@ namespace Project1.Systems
         [Min(0.5f)] public float vaultMaxHeight = 5f;
         [Tooltip("착지해서 일어서는 시간(초).")]
         [Min(0f)] public float vaultLandTime = 0.45f;
+        [Tooltip("뛰어넘는 빠르기 배율. 높이·거리는 그대로 두고 공중에 있는 시간을 이 배만큼 줄인다(1 = 보통 중력 포물선).")]
+        [Min(0.5f)] public float vaultSpeedScale = 1f;
 
         [Header("조준 (E 꾹 누르기)")]
         [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
@@ -109,7 +111,7 @@ namespace Project1.Systems
         /// <summary>뛰어넘는 동안 올가미가 문 자리(월드).</summary>
         public Vector3 VaultHook(CharacterSkill ctx) => vaults.TryGetValue(ctx, out var v) ? v.Hook : ctx.ReachOrigin;
 
-        private struct Vault { public Vector3 Hook, Land; public float AirTime, Speed; public CharacterController Victim; }
+        private struct Vault { public Vector3 Hook, Land; public float AirTime, Speed, LaunchSpeed, Gravity; public CharacterController Victim; }
         private static readonly System.Collections.Generic.Dictionary<CharacterSkill, Vault> vaults = new();
 
         public override bool CanStart(GameObject owner, out string reason)
@@ -292,6 +294,9 @@ namespace Project1.Systems
                     vaults.TryGetValue(ctx, out var v);
                     // 올가미는 상대를 지나칠 때까지 문 자리에 걸려 있다(사슬 길이 = 손 → 문 자리, 앞쪽 거리).
                     ctx.Reach = Mathf.Max(0f, Vector3.Dot(Flat(v.Hook - ctx.ReachOrigin), ctx.Direction));
+                    // 빠르게 뛰어넘기(vaultSpeedScale > 1): 보통 중력보다 센 중력의 포물선을 직접 따라간다(같은 높이를 더 짧은 시간에).
+                    if (v.Gravity > 0f && ctx.TryGetComponent(out CharacterMotor vm) && !vm.IsGrounded)
+                        vm.Launch(v.LaunchSpeed - v.Gravity * ctx.PhaseTime);
                     bool landed = ctx.PhaseTime > v.AirTime * 0.5f && ctx.TryGetComponent(out CharacterMotor m) && m.IsGrounded;
                     if (landed || ctx.PhaseTime > v.AirTime + 0.6f) { EndVault(ctx); ctx.Reach = 0f; ctx.SetPhase(VaultLanding); }
                     return false;
@@ -382,13 +387,15 @@ namespace Project1.Systems
             float above = victim.Owner.GetComponent<CharacterController>() is { } vcc ? victimPos.y + vcc.height - ctx.transform.position.y : 0f; // 상대 머리가 나보다 높은 만큼
             float height = Mathf.Clamp(Mathf.Max(vaultHeight + vaultHeightPerMeter * travel, above + 1f), vaultHeight, Mathf.Max(vaultHeight, vaultMaxHeight));
             var motor = ctx.GetComponent<CharacterMotor>();
-            float g = motor != null ? Mathf.Abs(motor.Gravity) : 20f;
+            float scale = Mathf.Max(0.5f, vaultSpeedScale);
+            float g = (motor != null ? Mathf.Abs(motor.Gravity) : 20f) * scale * scale; // 같은 높이, 공중 시간 1/scale
             float vy = Mathf.Sqrt(2f * g * height);
             float air = 2f * vy / g;
             var mine = ctx.GetComponent<CharacterController>();
             var theirs = victim.Owner.GetComponent<CharacterController>();
             if (mine != null && theirs != null) Physics.IgnoreCollision(mine, theirs, true);
-            vaults[ctx] = new Vault { Hook = hookPoint, Land = land, AirTime = air, Speed = travel / Mathf.Max(air, 0.05f), Victim = theirs };
+            vaults[ctx] = new Vault { Hook = hookPoint, Land = land, AirTime = air, Speed = travel / Mathf.Max(air, 0.05f),
+                LaunchSpeed = vy, Gravity = Mathf.Approximately(scale, 1f) ? 0f : g, Victim = theirs };
             if (motor != null) motor.Launch(vy);
             ctx.Reach = Mathf.Max(0f, Vector3.Dot(Flat(hookPoint - ctx.ReachOrigin), ctx.Direction));
             ctx.AreaRadius = 0f;

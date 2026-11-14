@@ -38,7 +38,8 @@ MonoBehaviour:
   vaultHeight: 2.6
   vaultHeightPerMeter: 0.1
   vaultMaxHeight: 5
-  vaultLandTime: 0.45
+  vaultLandTime: 0.3
+  vaultSpeedScale: 1.8
   aimMoveSpeedRatio: 1
   snapTolerance: 1
   maxSnapAngle: 20
