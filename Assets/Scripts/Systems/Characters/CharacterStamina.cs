@@ -36,8 +36,8 @@ namespace Project1.Systems
 
         public event Action<float, float> Changed;
 
-        /// <summary>진영별 달리기 소모량(초당): 감시자 20(가득 차면 5초), 생존자 14(약 7초) — 생존자가 더 오래 달린다.</summary>
-        public static float DrainFor(bool hunter) => hunter ? 20f : 14f;
+        /// <summary>진영별 달리기 소모량(초당): 감시자 20(가득 차면 5초), 생존자 10(10초) — 생존자가 더 오래 달린다.</summary>
+        public static float DrainFor(bool hunter) => hunter ? 20f : 10f;
 
         /// <summary>달리는 동안 초당 소모량을 바꾼다(진영별 — CharacterLoadout).</summary>
         public void SetDrainPerSecond(float perSecond) => drainPerSecond = Mathf.Max(0f, perSecond);

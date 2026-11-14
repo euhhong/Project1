@@ -32,7 +32,12 @@ namespace Project1.UI
             skill.SetSkill(entry.skill);
             // 스킬·기절이 이동을 제한하거나 대신 정하므로, 이동 컴포넌트가 새 컴포넌트를 알게 한다.
             var motor = player.GetComponent<CharacterMotor>();
-            if (motor != null) motor.RefreshSpeedLimits();
+            if (motor != null)
+            {
+                var (walk, run) = CharacterMotor.SpeedsFor(entry.role == CharacterRole.Hunter); // 감시자 걷기 빠르게·달리기 조금 더, 생존자 걷기 그대로·달리기는 감시자보다 빠르게
+                motor.SetSpeeds(walk, run);
+                motor.RefreshSpeedLimits();
+            }
 
             Ensure<CharacterSkillAnimator>(player);
             Ensure<CharacterHitReactionAnimator>(player);

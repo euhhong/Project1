@@ -43,6 +43,19 @@ namespace Project1.Systems
         public float WalkSpeed => walkSpeed;
         public float RunSpeed => runSpeed;
 
+        /// <summary>
+        /// 역할별 이동 속도(m/s) — CharacterLoadout이 캐릭터를 고를 때 SetSpeeds로 넣는다.
+        /// 감시자: 기본(걷기) 빠르게 4.6, 달리면 조금 더 6.0. 생존자: 기본 3.6 그대로, 달리면 감시자 달리기보다 빠르게 6.8(스태미나를 쓴다).
+        /// </summary>
+        public static (float walk, float run) SpeedsFor(bool hunter) => hunter ? (4.6f, 6.0f) : (3.6f, 6.8f);
+
+        /// <summary>걷기·달리기 속도(m/s)를 바꾼다.</summary>
+        public void SetSpeeds(float walk, float run)
+        {
+            walkSpeed = Mathf.Max(0f, walk);
+            runSpeed = Mathf.Max(walkSpeed, run);
+        }
+
         /// <summary>지난 틱 이동에서 옆으로 무언가(벽·장애물·다른 캐릭터)에 부딪혔다.</summary>
         public bool HitObstacle { get; private set; }
 
