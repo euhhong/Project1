@@ -25,6 +25,7 @@ namespace Project1.Systems
         public static void Apply(GameObject target, float time, float ratio)
         {
             if (target == null || time <= 0f) return;
+            CharacterStun.BreakFragile(target); // 충격파에 맞으면(모션이 바뀜) 깨지는 기절(돌진 벽 충돌 페널티)은 바로 풀린다
             if (!target.TryGetComponent(out ShockSlow slow))
             {
                 slow = target.AddComponent<ShockSlow>();

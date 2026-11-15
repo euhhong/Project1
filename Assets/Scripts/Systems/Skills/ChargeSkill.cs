@@ -107,10 +107,11 @@ namespace Project1.Systems
                 return true;
             }
 
+            if (!CrashPenalty) return true; // 벽 충돌 페널티가 없는 돌진(광대 로켓): 그냥 멈춘다
             // 벽·장애물: 넘어지지 않고 일반 기절(기절 모션). 짧게 달렸으면 잠깐, 길게 달렸으면 달린 거리에 비례해 오래.
             float run = elapsed * chargeSpeed;
             float stunTime = Mathf.Lerp(minCrashStun, crashRecovery, Mathf.InverseLerp(0f, fullCrashDistance, run)); // 짧게 달릴수록 짧게
-            CharacterStun.Apply(owner, stunTime, Vector3.zero); // 방향 없음 = 앞으로 숙이는 일반 기절(뒤로 쓰러지는 모션 아님)
+            CharacterStun.ApplyBreakable(owner, stunTime); // 방향 없음 = 앞으로 숙이는 일반 기절. 깨지는 기절: 맞거나 밀리거나 충격파·다른 기절이 걸리면 바로 풀림
             recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
             return true;
         }
@@ -153,6 +154,9 @@ namespace Project1.Systems
 
         /// <summary>HUD: 돌진 중 멈추는 방법.</summary>
         public override string StatusText(CharacterSkill ctx) => "돌진 중 — E로 멈춤";
+
+        /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(전위 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
+        protected virtual bool CrashPenalty => true;
 
         public override void Complete(GameObject owner) { }
     }

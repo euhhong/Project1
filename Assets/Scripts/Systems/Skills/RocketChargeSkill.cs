@@ -7,8 +7,8 @@ namespace Project1.Systems
     /// 로켓 돌진(광대 E): 전위 돌진(ChargeSkill)과 같은 돌진 앞에 "들고 다니기"가 붙는다.
     /// 1) E를 꾹 누르는 동안: 로켓을 두 손으로 머리 위로 치켜든 채 걸어 다닌다(castMoveSpeed, 점프 가능).
     ///    이때 좌클릭(공격)을 누르면 돌진하지 않고 끝난다(취소).
-    /// 2) E를 떼면(한 번만 눌러도 바로) 로켓 머리를 앞으로 한 채 chargeSpeed로 돌진한다 — 벽에 부딪히면 넘어지고,
-    ///    캐릭터에 부딪히면 상대가 돌진 거리만큼 기절한다(ChargeSkill과 같음). 돌진 중 E를 한 번 더 누르면 멈춘다.
+    /// 2) E를 떼면(한 번만 눌러도 바로) 로켓 머리를 앞으로 한 채 chargeSpeed로 돌진한다 — 벽에 부딪히면 기절 페널티 없이 그냥 멈추고(CrashPenalty 끔),
+    ///    캐릭터에 부딪히면 박치기(ChargeSkill과 같음 — 돌진 거리만큼 넉백, 벽에 박히면 기절). 돌진 중 E를 한 번 더 누르면 멈춘다.
     /// 동작 구간: 들고 다님 = Windup, 돌진 = Active(TryGetMotionPhase) — FE가 로켓 쥐는 법을 바꾼다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Rocket Charge")]
@@ -64,6 +64,8 @@ namespace Project1.Systems
         // 들고 다님 = ID_Raise(상체만, 다리는 걷기), 돌진 = ID(전신), 넘어짐 = ID_End
         public override string AnimationState(CharacterSkill ctx) =>
             ctx.State == SkillState.Recovering ? id + "_End" : ctx.Phase == Charging ? id : id + "_Raise";
+
+        protected override bool CrashPenalty => false; // 로켓 돌진은 벽에 박아도 기절 페널티 없이 그냥 멈춘다
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "로켓 돌진! — E로 멈춤" :"로켓 들기 — E를 떼면 돌진(좌클릭 취소)";
     }

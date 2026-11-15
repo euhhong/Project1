@@ -40,6 +40,7 @@ namespace Project1.Systems
             float impactPerSpeed = -1f, float impactStun = 0f, bool impactStunWallOnly = false)
         {
             if (target == null || duration <= 0f) return;
+            CharacterStun.BreakFragile(target); // 밀리면(모션이 바뀜) 깨지는 기절(돌진 벽 충돌 페널티)은 바로 풀린다
             Receivers.Clear();
             target.GetComponents(Receivers);
             foreach (var r in Receivers) r.OnKnockback(ref velocity); // 예: 매달린 채 맞으면 손을 놓고 벽 바깥으로 떨어져 나간다
