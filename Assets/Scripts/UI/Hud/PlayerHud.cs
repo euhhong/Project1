@@ -26,7 +26,6 @@ namespace Project1.UI
             skill = player.GetComponent<ICharacterSkillState>();
             stamina = player.GetComponent<ICharacterStamina>();
             target = player;
-            shownGauges.Clear(); readyFlashes.Clear(); // 캐릭터가 바뀜: 재사용 대기 게이지 새로
             characterName = displayName;
         }
 
@@ -136,15 +135,10 @@ namespace Project1.UI
 
         // ───────── 오른쪽 아래: 재사용 대기 게이지(ICooldownGauge) ─────────
         private readonly System.Collections.Generic.List<ICooldownGauge> gauges = new();
-        private readonly System.Collections.Generic.Dictionary<ICooldownGauge, string> shownGauges = new();
-        private readonly System.Collections.Generic.List<(string label, float until)> readyFlashes = new();
-        private readonly System.Collections.Generic.List<ICooldownGauge> gaugeScratch = new();
-        private const float ReadyFlashTime = 0.5f;
 
         /// <summary>
-        /// 재사용 대기 중인 기술마다 원 하나(오른쪽 아래 구석부터 왼쪽으로): 원이 12시 방향에서 시계 방향으로 돌면서 채워지고(파랑), 다 차면 쓸 수 있다.
-        /// 줄어드는 게이지(주황, 예: 그랩 다시 쏘기)는 채워진 부분이 돌면서 줄어든다. 원 아래에 이름.
-        /// 다 차서 쓸 수 있게 되면 잠깐(ReadyFlashTime) 금색으로 꽉 찬 원을 보여 주고 사라진다. 남은 초는 글로 쓰지 않는다.
+        /// 재사용 대기 중인 기술마다 원 하나(오른쪽 아래 구석부터 왼쪽으로): 원이 12시 방향에서 시계 방향으로 돌면서 채워지고(파랑), 다 차면 바로 사라진다.
+        /// 줄어드는 게이지(주황, 예: 그랩 다시 쏘기)는 채워진 부분이 돌면서 줄어든다. 원 아래에 이름. 남은 초는 글로 쓰지 않는다.
         /// </summary>
         private void DrawCooldowns(float u)
         {
@@ -152,25 +146,11 @@ namespace Project1.UI
             target.GetComponents(gauges);
             float r = 34 * u, gap = 22 * u, labelH = 26 * u;
             float cx = Screen.width - 40 * u - r, cy = Screen.height - 40 * u - labelH - r;
-
-            gaugeScratch.Clear();
             foreach (var g in gauges)
             {
                 if (g is Behaviour { isActiveAndEnabled: false }) continue;
                 if (!g.TryGetCooldown(out string name, out float fill, out bool draining)) continue;
-                gaugeScratch.Add(g);
-                shownGauges[g] = draining ? null : name; // 줄어드는 게이지는 끝나도 '준비' 표시 안 함
                 DrawGaugeCircle(new Vector2(cx, cy), r, labelH, name, Mathf.Clamp01(fill), draining ? new Color(1f, 0.6f, 0.2f) : new Color(0.35f, 0.65f, 1f));
-                cx -= r * 2f + gap;
-            }
-            // 방금 다 찬 게이지 → 잠깐 금색으로
-            var ended = new System.Collections.Generic.List<ICooldownGauge>();
-            foreach (var kv in shownGauges) if (!gaugeScratch.Contains(kv.Key)) ended.Add(kv.Key);
-            foreach (var g in ended) { if (shownGauges[g] != null) readyFlashes.Add((shownGauges[g], Time.time + ReadyFlashTime)); shownGauges.Remove(g); }
-            for (int i = readyFlashes.Count - 1; i >= 0; i--)
-            {
-                if (Time.time > readyFlashes[i].until) { readyFlashes.RemoveAt(i); continue; }
-                DrawGaugeCircle(new Vector2(cx, cy), r, labelH, readyFlashes[i].label, 1f, new Color(1f, 0.85f, 0.3f));
                 cx -= r * 2f + gap;
             }
         }
