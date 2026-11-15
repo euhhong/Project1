@@ -162,6 +162,11 @@ namespace Project1.Systems
         /// </summary>
         public void IgnoreAttackUntilRelease() => waitAirRelease = true;
 
+        private float extraWindup;
+
+        /// <summary>평타(약·강·달리기 점프 공격)의 준비 시간(선딜레이)에 더하는 초 — 캐릭터를 고를 때 정한다(예: 하스터 0.1초). 두 번째 날아 차기·스킬은 그대로.</summary>
+        public void SetExtraWindup(float seconds) => extraWindup = Mathf.Max(0f, seconds);
+
         public void SetAttackSlots(HitboxSlot light, HitboxSlot heavy)
         {
             if (!slotDefaultsSaved) { defaultLightSlots = lightAttack.Slots; defaultHeavySlots = heavyAttack.Slots; slotDefaultsSaved = true; }
@@ -446,7 +451,8 @@ namespace Project1.Systems
             while (true)
             {
                 if (IsFollowUpKick && AttackPhase == AttackPhase.Recovery) { FollowUpRecovery(dt); return; }
-                float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f);
+                float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f)
+                             + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f); // 캐릭터별 평타 선딜레이 더하기(예: 하스터)
                 if (phaseTime < length)
                 {
                     PhaseProgress = length > 0f ? phaseTime / length : 1f;

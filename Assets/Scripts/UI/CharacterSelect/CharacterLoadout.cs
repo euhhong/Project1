@@ -102,6 +102,7 @@ namespace Project1.UI
                 // 생존자 강공격 = 머리를 노리는 왼발 돌려차기(모션은 CharacterAttackAnimator.HeavyKick) → 강공격 판정은 왼발.
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
+                attack.SetExtraWindup(entry.id == "Hunter_Hastur" ? 0.1f : 0f); // 하스터 평타: 선딜레이를 조금 더(0.1 → 0.2초) — 촉수 스킬은 그대로
                 // 감시자 달리기 점프 공격 = 무기 내려치기(Run Jump Attack) → 발이 아니라 약공격 부위(무기·손) + 몸 앞 긴 판정(RunJumpReach). 생존자는 처음 값(양발 플라잉킥).
                 bool hunter = entry.role == CharacterRole.Hunter;
                 attack.SetRunJumpSlots(hunter ? attack.LightAttack.Slots | Project1.Core.HitboxSlot.RunJumpReach : Project1.Core.HitboxSlot.None);
