@@ -86,6 +86,10 @@ namespace Project1.Systems
         public bool IsAirAttack { get; private set; }
         public bool IsRunJumpAttack { get; private set; }
         public int Swipe { get; private set; }
+        public bool WallBounced { get; private set; }
+
+        [Tooltip("평타가 벽을 정면으로 쳐서 튕겨 나오면 후딜레이에 더하는 시간(초).")]
+        [SerializeField, Min(0f)] private float wallBounceRecovery = 0.35f;
 
         [Tooltip("마우스를 좌우로 그어 그 방향으로 후리는 약공격을 받을지(맹인 지팡이). 캐릭터를 고를 때 SetSwipeAttacks로 켠다.")]
         [SerializeField] private bool swipeAttacks;
@@ -183,6 +187,19 @@ namespace Project1.Systems
             inputSource = GetComponent<ICharacterInputSource>();
             characterState = GetComponent<ICharacterState>();
             hitDetector = GetComponent<AttackHitDetector>();
+            if (hitDetector != null) { hitDetector.WallStruck -= OnWallStruck; hitDetector.WallStruck += OnWallStruck; }
+        }
+
+        /// <summary>판정이 벽을 정면으로 쳤다: 판정을 끄고 바로 후딜레이로(+wallBounceRecovery) — 모션은 되감기듯 튕겨 나온다(FE).</summary>
+        private void OnWallStruck(Vector3 point, Vector3 normal)
+        {
+            if (AttackState is not (CharacterAttackState.Light or CharacterAttackState.Heavy) || AttackPhase != AttackPhase.Active) return;
+            hitDetector.EndAttack();
+            AttackPhase = AttackPhase.Recovery;
+            phaseTime = 0f;
+            PhaseProgress = 0f;
+            WallBounced = true;
+            bufferedSwipe = 0; // 튕겨 나오면 이어 휘두르기도 끊는다
         }
 
         private void OnDisable()
@@ -412,6 +429,7 @@ namespace Project1.Systems
         {
             IsRunJumpAttack = IsAirAttack && IsRunningForward();
             if (IsRunJumpAttack) runJumpAirborne = true;
+            WallBounced = false;
             AttackState = state;
             AttackPhase = AttackPhase.Windup;
             phaseTime = 0f;
@@ -428,7 +446,7 @@ namespace Project1.Systems
             while (true)
             {
                 if (IsFollowUpKick && AttackPhase == AttackPhase.Recovery) { FollowUpRecovery(dt); return; }
-                float length = PhaseLength(spec, AttackPhase);
+                float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f);
                 if (phaseTime < length)
                 {
                     PhaseProgress = length > 0f ? phaseTime / length : 1f;
@@ -484,6 +502,7 @@ namespace Project1.Systems
             followUpLanded = -1f;
             Swipe = 0;
             bufferedSwipe = 0;
+            WallBounced = false;
             if (!chaining) comboFollowUps = 0;
             AttackEnded?.Invoke();
         }

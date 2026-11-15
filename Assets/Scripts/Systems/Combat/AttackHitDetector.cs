@@ -43,6 +43,19 @@ namespace Project1.Systems
         /// <summary>이 캐릭터가 누군가를 맞혔을 때.</summary>
         public event Action<HitResult> Hit;
 
+        /// <summary>평타 판정이 벽을 정면으로 확실히 쳤을 때(벽에 닿은 자리, 벽 면 바깥 방향). 한 공격에 한 번. CharacterAttack이 튕겨 나오기로 바꾼다.</summary>
+        public event Action<Vector3, Vector3> WallStruck;
+
+        [Header("벽 치기(튕겨 나옴)")]
+        [Tooltip("벽으로 칠 판정: 몸 가운데에서 이 거리(m) 안에 벽 면이 있어야 한다.")]
+        [SerializeField, Min(0.1f)] private float wallMaxDistance = 1.0f;
+        [Tooltip("판정(무기·손·발 가운데)이 벽 면을 이만큼(m) 넘게 파고들어야 '확실히 벽에 대고 친' 것으로 본다.")]
+        [SerializeField, Min(0f)] private float wallMinPenetration = 0.12f;
+        [Tooltip("벽이 몸 정면에서 이 각도(도) 안에 있어야 한다(옆으로 스치는 건 아님).")]
+        [SerializeField, Range(0f, 90f)] private float wallMaxAngle = 35f;
+        private bool wallStruckThisAttack;
+        private static readonly RaycastHit[] wallHits = new RaycastHit[8];
+
         public bool IsAttacking => activeSlots != HitboxSlot.None;
         public int CurrentAttackId => attackCounter;
 
@@ -52,6 +65,7 @@ namespace Project1.Systems
             attackCounter++;
             activeSlots = slots;
             hitVictims.Clear();
+            wallStruckThisAttack = false;
             return attackCounter;
         }
 
@@ -141,6 +155,16 @@ namespace Project1.Systems
                 }
             }
 
+            // 아직 아무도 맞히지 않았는데 판정이 앞의 벽을 확실히 쳤으면: 튕겨 나온다(한 공격에 한 번).
+            if (bestThisTick.Count == 0 && hitVictims.Count == 0 && !wallStruckThisAttack && WallEligible()
+                && TryFindWallStrike(out Vector3 wallPoint, out Vector3 wallNormal))
+            {
+                wallStruckThisAttack = true;
+                WallStruck?.Invoke(wallPoint, wallNormal);
+                WallBounceEvents.Raise(gameObject, wallPoint, wallNormal);
+                return;
+            }
+
             int tick = SimulationTick.Current;
             foreach (KeyValuePair<int, Candidate> pair in bestThisTick)
             {
@@ -165,6 +189,51 @@ namespace Project1.Systems
                 Hit?.Invoke(hit);
                 HitEvents.Raise(hit);
             }
+        }
+
+        /// <summary>벽 치기를 보는 공격: 약·강 평타(땅·공중). 달리기 점프 공격·두 번째 날아 차기는 빼고, 스킬이 판정을 쓰는 경우(AttackState None)도 뺀다.</summary>
+        private bool WallEligible()
+        {
+            if (attackState == null) return false;
+            if (attackState.IsRunJumpAttack || attackState.IsFollowUpKick) return false;
+            return attackState.AttackState == CharacterAttackState.Light || attackState.AttackState == CharacterAttackState.Heavy;
+        }
+
+        /// <summary>
+        /// 확실히 벽에 대고 쳤는지: 켜진 판정마다 몸 가운데 → 판정 가운데로 쏴서, 그 사이에 벽(세운 면, 캐릭터·트리거·판정 아님)이 있고
+        /// - 벽 면이 몸에서 wallMaxDistance 안, - 벽이 몸 정면 wallMaxAngle 안을 마주 보고, - 판정 가운데가 벽 면을 wallMinPenetration 넘게 파고들었으면.
+        /// 바닥·천장·스치기는 아니다.
+        /// </summary>
+        private bool TryFindWallStrike(out Vector3 point, out Vector3 normal)
+        {
+            point = normal = Vector3.zero;
+            Vector3 body = transform.position + Vector3.up * 1f;
+            if (TryGetComponent(out CharacterController cc)) body = transform.TransformPoint(cc.center);
+            Vector3 fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            float bestPen = 0f; bool found = false;
+            foreach (Hitbox hitbox in hitboxes)
+            {
+                if (hitbox == null || !hitbox.isActiveAndEnabled || (hitbox.Slot & activeSlots) == 0) continue;
+                Vector3 tip = hitbox.Collider.bounds.center;
+                Vector3 d = tip - body;
+                float len = d.magnitude;
+                if (len < 0.05f) continue;
+                int n = Physics.RaycastNonAlloc(body, d / len, wallHits, len, mask, QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < n; i++)
+                {
+                    var h = wallHits[i];
+                    if (h.collider == null || h.collider.GetComponentInParent<CharacterIdentity>() != null) continue;
+                    if (Mathf.Abs(h.normal.y) > 0.35f) continue;                       // 바닥·천장·경사 아님
+                    if (h.distance > wallMaxDistance) continue;                        // 몸 가까이의 벽만
+                    Vector3 wallFace = Vector3.ProjectOnPlane(-h.normal, Vector3.up).normalized;
+                    if (Vector3.Angle(fwd, wallFace) > wallMaxAngle) continue;         // 정면을 마주 본 벽
+                    float pen = Vector3.Dot(tip - h.point, -h.normal);                 // 판정이 벽 속으로 들어간 깊이
+                    if (pen < wallMinPenetration || pen <= bestPen) continue;
+                    bestPen = pen; point = h.point; normal = h.normal; found = true;
+                }
+            }
+            return found;
         }
 
         /// <summary>지금 평타의 종류(두 번째 날아 차기 → 달리기 점프 → 강 → 약).</summary>

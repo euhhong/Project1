@@ -222,13 +222,27 @@ namespace Project1.Presentation
         private float Normalized(Vector2 timing)
         {
             float p = Mathf.Clamp01(attack.PhaseProgress);
+            float t;
             switch (attack.AttackPhase)
             {
-                case AttackPhase.Windup: return Mathf.Lerp(0f, timing.x, p);
-                case AttackPhase.Active: return Mathf.Lerp(timing.x, timing.y, p);
-                case AttackPhase.Recovery: return Mathf.Lerp(timing.y, 0.999f, p);
-                default: return 0f;
+                case AttackPhase.Windup: t = Mathf.Lerp(0f, timing.x, p); break;
+                case AttackPhase.Active: t = Mathf.Lerp(timing.x, timing.y, p); break;
+                case AttackPhase.Recovery when attack.WallBounced:
+                    // 벽을 쳐서 튕겨 나옴: 친 자리에서 휘두르기를 되감듯 처음 쪽으로 빠르게 돌아갔다가 그 자세로 버틴다(후딜레이).
+                    if (!bouncing) { bouncing = true; bounceFrom = lastNormalized; }
+                    float back = 1f - (1f - Mathf.Clamp01(p * 2.5f)) * (1f - Mathf.Clamp01(p * 2.5f)); // 앞 40%에 빠르게
+                    t = Mathf.Lerp(bounceFrom, timing.x * 0.35f, back);
+                    lastNormalized = t;
+                    return t;
+                case AttackPhase.Recovery: t = Mathf.Lerp(timing.y, 0.999f, p); break;
+                default: t = 0f; break;
             }
+            bouncing = false;
+            lastNormalized = t;
+            return t;
         }
+
+        private bool bouncing;
+        private float bounceFrom, lastNormalized;
     }
 }

@@ -37,6 +37,9 @@ namespace Project1.Core
         /// <summary>마우스를 좌우로 그어 낸 약공격의 방향(-1 = 왼쪽으로 후림, +1 = 오른쪽으로 후림, 0 = 그냥 공격). 공격이 끝날 때까지 유지된다.</summary>
         int Swipe { get; }
 
+        /// <summary>벽을 정면으로 쳐서 공격이 튕겨 나온 뒤의 후딜레이 중인지(모션은 되감기듯 튕겨 나온다). 공격이 끝날 때까지 유지된다.</summary>
+        bool WallBounced => false;
+
         /// <summary>약공격(Light) 또는 강공격(Heavy)이 시작될 때(준비 구간 시작).</summary>
         event Action<CharacterAttackState> AttackStarted;
 
