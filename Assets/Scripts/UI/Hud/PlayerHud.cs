@@ -122,6 +122,8 @@ namespace Project1.UI
                 small.normal.textColor = new Color(1f, 0.6f, 0.5f);
                 GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), hint, small);
             }
+            else if (target != null && target.TryGetComponent(out IHudChargeIcons icons) && icons.IconMax > 0)
+                DrawChargeIcons(icons, new Rect(box.x, box.y + 36 * u, w, 28 * u), u); // 예: 붉은나비 — 쥔 나비를 나비 그림으로
 
             // 시간이 가는 단계: 칸 안 아래쪽에 차오르는 막대
             if (fill >= 0f) Bar(new Rect(box.x + 12 * u, box.yMax - 18 * u, w - 24 * u, 10 * u), Mathf.Clamp01(fill), fillColor);
@@ -197,6 +199,66 @@ namespace Project1.UI
                 if (!string.IsNullOrEmpty(s)) return s;
             }
             return null;
+        }
+
+        // ───────── 스킬 칸 안 "쥔 개수" 그림(IHudChargeIcons) ─────────
+        private static Texture2D butterflyIcon;
+
+        /// <summary>그림을 가운데 줄에 나란히: 가진 만큼 진하게, 다음 하나는 차는 만큼 아래에서 위로 채워지고, 나머지는 흐리게.</summary>
+        private static void DrawChargeIcons(IHudChargeIcons icons, Rect area, float u)
+        {
+            Texture2D tex = icons.IconKind == "butterfly" ? ButterflyIcon() : Texture2D.whiteTexture;
+            Color full = icons.IconKind == "butterfly" ? new Color(0.95f, 0.2f, 0.25f) : Color.white;
+            Color dim = new(1f, 1f, 1f, 0.18f);
+            float size = area.height, gap = 8 * u;
+            float total = icons.IconMax * size + (icons.IconMax - 1) * gap;
+            float x = area.center.x - total * 0.5f;
+            for (int i = 0; i < icons.IconMax; i++, x += size + gap)
+            {
+                var r = new Rect(x, area.y, size, size);
+                GUI.color = dim;
+                GUI.DrawTexture(r, tex);
+                float f = i < icons.IconCount ? 1f : i == icons.IconCount ? Mathf.Clamp01(icons.IconNextFill) : 0f;
+                if (f > 0f)
+                {
+                    // 아래에서 위로 f만큼만 진하게(차는 중인 나비)
+                    GUI.color = i < icons.IconCount ? full : new Color(full.r, full.g, full.b, 0.75f);
+                    GUI.DrawTextureWithTexCoords(new Rect(r.x, r.yMax - r.height * f, r.width, r.height * f), tex, new Rect(0f, 0f, 1f, f));
+                }
+            }
+            GUI.color = Color.white;
+        }
+
+        /// <summary>나비 기호(코드로 한 번 그려 둠): 위 날개 둘(크게)·아래 날개 둘(작게)·가운데 몸통·더듬이. 흰색 — 칠할 때 GUI.color로 색을 입힌다.</summary>
+        private static Texture2D ButterflyIcon()
+        {
+            if (butterflyIcon != null) return butterflyIcon;
+            const int N = 64;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color32[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    // 0~1 좌표(아래 → 위), 가운데 기준 좌우 대칭
+                    float fx = Mathf.Abs((x + 0.5f) / N - 0.5f), fy = (y + 0.5f) / N;
+                    bool upper = Ellipse(fx, fy, 0.22f, 0.62f, 0.2f, 0.2f, 35f);  // 위 날개
+                    bool lower = Ellipse(fx, fy, 0.17f, 0.33f, 0.15f, 0.13f, -30f); // 아래 날개
+                    bool body = fx < 0.035f && fy > 0.22f && fy < 0.78f;
+                    bool antenna = Mathf.Abs(fx - (fy - 0.78f) * 0.6f) < 0.018f && fy > 0.78f && fy < 0.95f;
+                    float a = upper || lower || body || antenna ? 1f : 0f;
+                    px[y * N + x] = new Color32(255, 255, 255, (byte)(a * 255));
+                }
+            tex.SetPixels32(px);
+            tex.Apply();
+            return butterflyIcon = tex;
+        }
+
+        /// <summary>(fx, fy)가 가운데(cx, cy)·반지름(rx, ry)·기울기(도) 타원 안인지.</summary>
+        private static bool Ellipse(float fx, float fy, float cx, float cy, float rx, float ry, float tiltDeg)
+        {
+            float t = tiltDeg * Mathf.Deg2Rad, dx = fx - cx, dy = fy - cy;
+            float lx = dx * Mathf.Cos(t) + dy * Mathf.Sin(t), ly = -dx * Mathf.Sin(t) + dy * Mathf.Cos(t);
+            return (lx * lx) / (rx * rx) + (ly * ly) / (ry * ry) <= 1f;
         }
 
         private static void Bar(Rect r, float fill, Color color)

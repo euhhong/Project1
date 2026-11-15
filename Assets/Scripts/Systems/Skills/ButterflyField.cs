@@ -21,7 +21,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 붉은나비만). 그리기는 FE(ButterflyVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class ButterflyField : MonoBehaviour, IButterflyField, IAttackHoldOverride, IChargeCancelHint, ICooldownGauge
+    public class ButterflyField : MonoBehaviour, IButterflyField, IAttackHoldOverride, IChargeCancelHint, IHudChargeIcons
     {
         [Tooltip("놓아 둘 수 있는 나비 수. 넘으면 가장 오래된 나비가 사라진다.")]
         [SerializeField, Min(1)] private int maxButterflies = 3;
@@ -48,12 +48,11 @@ namespace Project1.Systems
         /// <summary>다음 한 마리가 차는 진행도(0~1). 가득이면 0.</summary>
         public float ChargeProgress => Charges >= maxCharges ? 0f : Mathf.Clamp01(chargeTimer / chargeTime);
 
-        /// <summary>HUD 게이지: 쥔 나비가 덜 찼으면 다음 한 마리까지(차오름).</summary>
-        public bool TryGetCooldown(out string label, out float fill, out bool draining)
-        {
-            label = $"나비 {Mathf.Max(0, Charges)}/{maxCharges}"; fill = ChargeProgress; draining = false;
-            return Charges >= 0 && Charges < maxCharges;
-        }
+        // HUD 가운데 아래 스킬 칸: 쥔 나비를 나비 그림으로(가진 만큼 진하게, 다음 한 마리는 차는 만큼) — 오른쪽 아래 원 게이지는 E(도약) 재사용 대기만.
+        public string IconKind => "butterfly";
+        public int IconCount => Mathf.Max(0, Charges);
+        public int IconMax => maxCharges;
+        public float IconNextFill => ChargeProgress;
         private float chargeTimer;
         [Tooltip("놓아 둔 나비가 사라지기까지(초).")]
         [SerializeField, Min(0.1f)] private float butterflyLifetime = 21f;
