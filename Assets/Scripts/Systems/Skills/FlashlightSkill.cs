@@ -6,10 +6,9 @@ namespace Project1.Systems
     /// <summary>
     /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르거나 castTime(최대)이 지나면 넣는다. 비추는 동안에도 달릴 수 있고, 걷기·달리기 속도만 moveSpeedScale배로 조금 느려진다.
     /// - 빛(원뿔: range m, 반각 halfAngle도, 벽에 가리면 안 닿음)에 든 상대는 LightExposure로 지져진다:
-    ///   지져짐 게이지가 차서 일정 이상이면 그 상대의 E가 잠기고, 정면(얼굴 쪽)으로 받으면 따로 정면 게이지도 차서 다 차면 기절.
-    ///   비추지 않으면 두 게이지는 계속 떨어진다(LightExposure).
+    ///   지져짐 게이지가 차서 일정 이상이면 그 상대의 E가 잠기고, 정면(얼굴 쪽)으로 받으면 따로 정면 게이지도 차서 다 차면 기절 + 피해(stunDamage).
+    ///   비추지 않으면 두 게이지는 떨어진다(LightExposure — 지져짐이 다 찼던 뒤에는 2초 뒤부터).
     /// - 빛이 나가는 자리·방향·길이는 CharacterSkill.ReachOrigin / Direction / Reach로 알린다(FE가 손전등 빛을 그린다).
-    /// 체력은 다루지 않는다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Flashlight")]
     public class FlashlightSkill : SkillDefinition
@@ -19,6 +18,8 @@ namespace Project1.Systems
         [Range(1f, 60f)] public float halfAngle = 16f;
         [Tooltip("빛을 받을 때 1초에 차는 양(게이지 전체 = 1) — 아래 칸(어디로든, 다 차면 E 봉인, 빠르게) / 위 칸(정면, 다 차면 기절, 느리게).")]
         [Min(0f)] public float fillRate = 0.6f, frontFillRate = 0.25f;
+        [Tooltip("정면 게이지가 다 차 기절할 때 상대가 받는 피해.")]
+        [Min(0f)] public float stunDamage = DamageRules.SurvivorSkillDamage;
         [Tooltip("상대가 빛 쪽을 이 각도(도) 안으로 보고 있으면 정면으로 받는다.")]
         [Range(1f, 180f)] public float frontAngle = 70f;
         [Tooltip("빛이 나가는 자리(캐릭터 키 대비 높이 / 몸 앞 m / 오른쪽 m) — 오른손에 든 손전등.")]
@@ -86,7 +87,7 @@ namespace Project1.Systems
                 bool front = toLight.sqrMagnitude > 1e-6f && Vector3.Dot(face.normalized, toLight.normalized) >= frontCos;
                 var ex = c.GetComponent<LightExposure>();
                 if (ex == null) ex = c.gameObject.AddComponent<LightExposure>();
-                ex.Shine(Time.fixedDeltaTime, front, fillRate, frontFillRate);
+                ex.Shine(Time.fixedDeltaTime, front, fillRate, frontFillRate, stunDamage);
             }
         }
 
