@@ -10,7 +10,7 @@ namespace Project1.Presentation
     ///   조준 방향과 수직인 흰 일자선을 긋되, 가운데에 구멍을 뚫어(— —) 조준선처럼 보이게 한다. 높이는 그랩이 나가는 손 높이.
     /// - 지금 던지면 맞을 때(상대 판정 또는 끌려갈 벽 — GrabShotSkill.PredictsHit)는 흰 선이 맞는 자리(그랩 타격 지점)로 따라가고,
     ///   구멍 바로 위에 세로 가늠쇠 선을 하나 더 세운다. 가늠쇠가 없으면 빗나간다.
-    /// - 쓸 수 있을 때는 옅게, E를 눌러 조준하는 동안(준비·꾹 누르기)은 진하게. 그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
+    /// - E를 눌러 조준하는 동안(그랩 차징 — 준비·꾹 누르기)에만 보인다. 평소·그랩이 날아간 뒤·재사용 대기 중에는 숨긴다.
     /// 연출 전용(판정은 BE GrabShotSkill). GrabShotVisual이 붙을 때 같이 붙는다(RequireComponent).
     /// </summary>
     [DisallowMultipleComponent]
@@ -64,7 +64,7 @@ namespace Project1.Presentation
             if (skill == null) skill = GetComponent<CharacterSkill>();
             var grab = skill != null ? skill.Skill as GrabShotSkill : null;
             bool aiming = grab != null && grab.IsAiming(skill);
-            bool show = isLocal && grab != null && (skill.State == SkillState.Ready || aiming);
+            bool show = isLocal && grab != null && aiming; // 그랩 차징(E를 눌러 조준하는 동안)에만 보인다
             if (!show) { Hide(); return; }
 
             Vector3 dir = aiming ? skill.Direction : Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;

@@ -397,7 +397,7 @@ namespace Project1.Systems
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {
-            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "조준 — E를 떼면 던짐(좌클릭 취소)" : "준비",
+            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "취소: 좌클릭" : "준비",
             Cancelled => "취소",
             Dragging => "끌어오기!",
             Towing => "벽으로!",
