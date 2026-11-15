@@ -45,6 +45,9 @@ namespace Project1.Core
         /// <summary>고유 스킬 키(E)를 지금 누르고 있는 중(꾹 눌러 모으는 스킬용, 예: 광대 로켓 돌진).</summary>
         public bool SkillHeld;
 
+        /// <summary>지난 틱 이후 우클릭(시야 돌리기 키)이 눌렸다(누른 순간). 시야 돌리기는 그대로 되고, 예: 붉은나비 나비 차징 중이면 차징 취소.</summary>
+        public bool LookHoldPressed;
+
         /// <summary>지난 틱 이후 공격 키가 눌렸다(누른 순간, 짧게/길게와 상관없이). 공중 공격처럼 바로 나가야 할 때 쓴다.</summary>
         public bool AttackPressed;
 

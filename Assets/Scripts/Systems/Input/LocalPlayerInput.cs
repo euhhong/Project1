@@ -46,6 +46,7 @@ namespace Project1.Systems
         private bool lightAttackQueued;
         private bool heavyReleaseQueued;
         private bool skillQueued;
+        private bool lookHoldPressedQueued;
         private bool attackPressedQueued;
         private int swipeQueued;      // -1 왼쪽 / +1 오른쪽 그음
         private Vector2 lookDeltaQueued;  // 지난 틱 이후 시점 입력(도, 상하 배율 전)
@@ -96,6 +97,7 @@ namespace Project1.Systems
                 AttackHeld = attackHeld,
                 HeavyRelease = heavyReleaseQueued,
                 Skill = skillQueued,
+                LookHoldPressed = lookHoldPressedQueued,
                 SkillHeld = skillAction != null && skillAction.IsPressed(),
                 AttackPressed = attackPressedQueued,
                 AttackSwipe = swipeQueued,
@@ -113,6 +115,7 @@ namespace Project1.Systems
             swipeQueued = 0;
             lookDeltaQueued = Vector2.zero;
             skillQueued = false;
+            lookHoldPressedQueued = false;
             return cachedFrame;
         }
 
@@ -195,6 +198,8 @@ namespace Project1.Systems
             {
                 jumpQueued = true; // FixedUpdate에서 꺼내 갈 때까지 유지
             }
+
+            if (lookHoldAction != null && lookHoldAction.WasPressedThisFrame()) lookHoldPressedQueued = true; // 우클릭 누른 순간(예: 붉은나비 나비 차징 취소 — 시야 돌리기는 그대로)
 
             if (skillAction.WasPressedThisFrame())
             {

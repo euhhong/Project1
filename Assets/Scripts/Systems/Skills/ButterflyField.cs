@@ -69,7 +69,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
-        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E";
+        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E·우클릭";
         public float PlaceCooldownRemaining { get; private set; }
         public float PlaceCooldownDuration => placeCooldown;
         public int TargetIndex { get; private set; } = -1;
@@ -157,9 +157,9 @@ namespace Project1.Systems
                 if (!Placing) placement.Begin(); // 새로 누르기 시작: 지난 자리는 버린다
                 Placing = true;
                 placement.Update(transform, input);
-                if (input.Skill)
+                if (input.Skill || input.LookHoldPressed)
                 {
-                    // 누른 채 E → 취소
+                    // 누른 채 E 또는 우클릭 → 취소(우클릭은 원래대로 시야도 돌린다 — 입력은 그대로 지나감)
                     Placing = false; placement.Clear(); waitRelease = true;
                     CancelTick = SimulationTick.Current;
                 }
