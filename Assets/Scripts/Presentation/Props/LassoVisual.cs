@@ -13,6 +13,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 카우보이만). 연출 전용.
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(60)] // 줄 돌리는 팔 자세(RopeSpinPose) 뒤에 — 손 자리를 따라 그린다
     [RequireComponent(typeof(GrabAimLine))]
     public class LassoVisual : MonoBehaviour
     {
@@ -53,6 +54,7 @@ namespace Project1.Presentation
             var grab = skill != null ? skill.Skill as GrabShotSkill : null;
             float reach = skill != null ? skill.Reach : 0f;
             bool vaulting = grab != null && grab.IsVaulting(skill);
+            if (grab != null && reach <= 0.01f && grab.IsAiming(skill)) { if (ResolveHand()) { Ensure(); DrawSpin(); } lastReach = 0f; return; } // 조준 중: 머리 위에서 고리를 붕붕 돌린다
             if (grab == null || (reach <= 0.01f && !vaulting)) { Hide(); lastReach = 0f; return; }
             if (!ResolveHand()) return;
             Ensure();
@@ -87,6 +89,35 @@ namespace Project1.Presentation
             {
                 float a = i / (float)LoopPoints * Mathf.PI * 2f;
                 loop.SetPosition(i, center - fwd * (Mathf.Cos(a) * r) + side * (Mathf.Sin(a) * r));
+            }
+        }
+
+        [Tooltip("조준 중 붕붕 돌리기: 고리 반지름(m) / 손에서 고리 가운데까지 거리(m) / 손 위 높이(m).")]
+        [SerializeField, Min(0.05f)] private float spinLoopRadius = 0.5f;
+        [SerializeField, Min(0f)] private float spinOffset = 0.65f, spinHeight = 0.12f;
+
+        /// <summary>조준 중(E 꾹): 손 위에서 누운 고리가 손 둘레를 돌고(RopeSpin 박자), 손에서 고리 가장 가까운 쪽까지 짧은 밧줄.</summary>
+        private void DrawSpin()
+        {
+            float a = RopeSpin.Angle;
+            Vector3 handPos = hand.position;
+            Vector3 outward = RopeSpin.Around(transform, a);
+            Vector3 center = handPos + Vector3.up * spinHeight + outward * spinOffset;
+            Vector3 near = center - outward * spinLoopRadius; // 고리에서 손 쪽 끝
+            rope.enabled = true;
+            rope.positionCount = 2;
+            rope.SetPosition(0, handPos);
+            rope.SetPosition(1, near);
+            Vector3 side = Vector3.Cross(Vector3.up, outward);
+            loop.enabled = true;
+            loop.positionCount = LoopPoints + 1;
+            for (int i = 0; i <= LoopPoints; i++)
+            {
+                float t = i / (float)LoopPoints * Mathf.PI * 2f;
+                // 살짝 기울어진 고리(바깥쪽이 조금 낮게 — 도는 힘에 끌려 처짐)
+                Vector3 p = center + outward * (Mathf.Cos(t) * spinLoopRadius) + side * (Mathf.Sin(t) * spinLoopRadius);
+                p += Vector3.down * (Mathf.Cos(t) * spinLoopRadius * 0.15f);
+                loop.SetPosition(i, p);
             }
         }
 

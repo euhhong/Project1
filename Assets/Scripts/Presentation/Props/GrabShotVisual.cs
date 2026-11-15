@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Project1.Core;
+using Project1.Systems;
 using UnityEngine;
 
 namespace Project1.Presentation
@@ -16,6 +17,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 사냥터지기만).
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(60)] // 줄 돌리는 팔 자세(RopeSpinPose) 뒤에 — 손 자리를 따라 그린다
     [RequireComponent(typeof(GrabAimLine))] // 조준 보조선(점선)도 같이 붙인다
     [RequireComponent(typeof(ShockwaveRing))] // 벽에 도착할 때의 충격파 고리
     public class GrabShotVisual : MonoBehaviour
@@ -61,6 +63,8 @@ namespace Project1.Presentation
             float reach = skill.Reach;
             if (reach <= 0.01f)
             {
+                // 조준 중(E 꾹): 손 둘레로 물고기를 사슬에 매달아 붕붕 돌린다(RopeSpin 박자 — 걸어도 계속).
+                if (skill is CharacterSkill cs && cs.Skill is GrabShotSkill gs && gs.IsAiming(cs)) { Whirl(); lastReach = 0f; return; }
                 if (shooting) Restore();
                 lastReach = 0f;
                 return;
@@ -100,6 +104,43 @@ namespace Project1.Presentation
                 Quaternion r = Quaternion.AngleAxis(i * 90f, dir) * Quaternion.FromToRotation(linkAxisLocal, dir);
                 links[i].rotation = r;
                 links[i].position = tailEnd + dir * d - r * (linkCenterLocal * links[i].localScale.x);
+            }
+        }
+
+        [Tooltip("조준 중 붕붕 돌리기: 손에서 물고기 꼬리까지 사슬 길이(m) / 손 위 높이(m).")]
+        [SerializeField, Min(0.1f)] private float whirlChain = 0.6f;
+        [SerializeField, Min(0f)] private float whirlHeight = 0.1f;
+
+        /// <summary>조준 중: 손(쥔 손잡이 자리) 둘레 수평 원 위에 물고기 꼬리를 두고 머리가 도는 방향을 보게, 손 → 꼬리는 사슬.</summary>
+        private void Whirl()
+        {
+            shooting = true;
+            float a = RopeSpin.Angle;
+            Vector3 handle = grab.TransformPoint(fishLocalPos);
+            Vector3 outward = RopeSpin.Around(transform, a);
+            Vector3 travel = RopeSpin.Around(transform, a + Mathf.PI * 0.5f); // 도는 방향
+            Vector3 tail = handle + Vector3.up * whirlHeight + outward * whirlChain;
+            Quaternion inHand = grab.rotation * fishLocalRot;
+            Vector3 headNow = grab.TransformDirection(axisLocal);
+            fish.rotation = Quaternion.FromToRotation(headNow, travel) * inHand;
+            fish.position = tail;
+            jaw = Mathf.MoveTowards(jaw, 0f, jawSpeed * Time.deltaTime);
+            SetJaw(jaw);
+
+            Vector3 dir = tail - handle;
+            float length = dir.magnitude;
+            if (length < 1e-4f) return;
+            dir /= length;
+            EnsureLinks(Mathf.CeilToInt(length / linkSpacing));
+            for (int i = 0; i < links.Count; i++)
+            {
+                float d = (i + 0.5f) * linkSpacing;
+                bool on = d < length;
+                links[i].gameObject.SetActive(on);
+                if (!on) continue;
+                Quaternion r = Quaternion.AngleAxis(i * 90f, dir) * Quaternion.FromToRotation(linkAxisLocal, dir);
+                links[i].rotation = r;
+                links[i].position = handle + dir * d - r * (linkCenterLocal * links[i].localScale.x);
             }
         }
 

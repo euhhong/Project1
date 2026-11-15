@@ -57,6 +57,7 @@ namespace Project1.UI
             SetProp<ButterflyVisual>(player, entry.id == "Hunter_Geisha"); // 붉은나비: 나비·미리보기·표적 표시(FE)
             SetProp<GrabShotVisual>(player, entry.id == "Hunter_Gamekeeper"); // 사냥터지기: 그랩 쏘기 연출
             SetProp<LassoVisual>(player, entry.id == "Survivor_Cowboy");      // 카우보이: 올가미 밧줄·고리 연출 + 조준 보조선(스킬은 사냥터지기 그랩과 같은 GrabShotSkill)
+            SetProp<RopeSpinPose>(player, entry.id == "Hunter_Gamekeeper" || entry.id == "Survivor_Cowboy"); // 그랩·올가미 조준 중 오른팔을 들어 줄을 붕붕 돌리는 자세(걸어도)
             SetProp<FlareShotVisual>(player, entry.id == "Survivor_Coordinator"); // 공군: 신호탄 붉은 연기 궤적
             SetProp<NoteField>(player, entry.id == "Hunter_Antonio");   // 안토니오: 좌클릭 꾹 / E = 붉은 음표, 두 개를 전류선으로 이음(BE)
             SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 하스터: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
