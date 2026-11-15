@@ -12,7 +12,7 @@ namespace Project1.Systems
     /// - 촉수는 최대 maxTentacles개, 넘으면 가장 오래된 것이 땅속으로 들어간다. 세운 뒤 lifetime초가 지나도 들어간다.
     /// - E를 꾹 누르면 바라보는 방향(시야)에 가장 맞는 서 있는 촉수를 고른다(TargetIndex). E를 떼면 그 촉수가 내려찍는다:
     ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 펼친 부채꼴 안의 상대를 한 번씩 맞힘 — 바짝 붙은 곳은 안전) → 다시 섬(slamRecovery) → 땅속으로(sink).
-    ///   내려찍는 방향 = 촉수가 닿는 거리 안의 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 없으면 하스터가 바라보는 방향.
+    ///   내려찍는 방향 = 거리와 상관없이(닿지 않아도) 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 상대가 없으면 하스터가 바라보는 방향.
     /// - 쓰는 동안 하스터는 자유롭게 움직인다. 맞히기만 하고 체력·데미지는 다루지 않는다(HitEvents).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
     /// </summary>
@@ -189,7 +189,7 @@ namespace Project1.Systems
             hitBySlam[t.Id] = new HashSet<int>();
         }
 
-        /// <summary>촉수 키 안의 가장 가까운 상대 쪽, 없으면 하스터가 바라보는 방향(수평).</summary>
+        /// <summary>거리와 상관없이 가장 가까운 상대 쪽, 없으면 하스터가 바라보는 방향(수평).</summary>
         private Vector3 SlamDirection(Vector3 basePoint, in CharacterInputFrame input)
         {
             if (TryNearestTarget(basePoint, out var best)) return best;
@@ -197,16 +197,15 @@ namespace Project1.Systems
             return Flat(look).normalized;
         }
 
-        /// <summary>밑동에서 닿는 거리(SlamReach + 여유) 안의 가장 가까운 상대 쪽(수평). 촉수에 바짝 붙은(slamInnerRadius 안) 상대는 고르지 않는다.</summary>
+        /// <summary>밑동에서 가장 가까운 상대 쪽(수평, 거리 제한 없음 · 쓰러진 상대 제외). 촉수에 바짝 붙은(slamInnerRadius 안) 상대는 고르지 않는다.</summary>
         private bool TryNearestTarget(Vector3 basePoint, out Vector3 dir)
         {
             dir = Vector3.zero;
-            float bestD = SlamReach + slamRadius;
-            foreach (var c in Physics.OverlapSphere(basePoint + Vector3.up, bestD, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide))
+            float bestD = float.MaxValue; // 거리 제한 없음: 닿지 않는 먼 상대라도 가장 가까운 쪽으로 내려찍는다
+            foreach (var owner in FindObjectsByType<CharacterIdentity>())
             {
-                if (!c.TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
-                var owner = hurt.Owner;
-                if (owner == null || (self != null && !self.CanHit(owner))) continue;
+                if (owner == null || owner == self || (self != null && !self.CanHit(owner))) continue;
+                if (owner.TryGetComponent(out ICharacterHealth hp) && hp.IsDead) continue; // 쓰러진 상대는 겨누지 않는다
                 Vector3 to = Flat(owner.transform.position - basePoint);
                 float d = to.magnitude;
                 if (d < bestD && d > slamInnerRadius) { bestD = d; dir = to / d; } // 바짝 붙은 상대는 맞지 않으니 겨누지 않는다
