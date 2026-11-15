@@ -137,6 +137,11 @@ namespace Project1.Systems
                 maxSpeed = characterState.WalkSpeed;
                 return true;
             }
+            if (InChargedRecovery)
+            {
+                maxSpeed = 0f; // 모은 강공격 후딜레이(예: 사냥터지기): 제자리
+                return true;
+            }
             if (heavyRoots && AttackState == CharacterAttackState.Heavy && !IsAirAttack)
             {
                 maxSpeed = 0f; // 땅 강공격(생존자 돌려차기) 동안은 멈춰 서서 찬다
@@ -164,18 +169,23 @@ namespace Project1.Systems
         public void IgnoreAttackUntilRelease() => waitAirRelease = true;
 
         private float extraWindup;
-        private float autoChargeTime, chargeSpeedBoost = 1f;
+        private float autoChargeTime, chargeSpeedBoost = 1f, chargedRecovery;
 
         /// <summary>
         /// 강공격 모으기(좌클릭 꾹) 방식 — 캐릭터를 고를 때 정한다(예: 사냥터지기).
         /// autoSeconds > 0: 그만큼 모으면 키를 떼지 않아도 바로 강공격(공격 전 자세로 선딜레이 기다림). 그 전에 떼면 예전처럼 바로 강공격.
         /// speedBoostAtFull > 1: 모으는 동안 이동 속도가 1배 → 이 배율까지 점점 빨라진다(걷기 속도 제한 위에 곱함, 다 모았을 때 최대). 0·1이면 끔.
+        /// extraRecovery > 0: 모은 강공격(땅)의 후딜레이에 이 초를 더하고, 후딜레이 동안 제자리(못 움직임) — 빨라지는 대신 치고 나면 멈춘다.
         /// </summary>
-        public void SetChargeStyle(float autoSeconds, float speedBoostAtFull)
+        public void SetChargeStyle(float autoSeconds, float speedBoostAtFull, float extraRecovery = 0f)
         {
             autoChargeTime = Mathf.Max(0f, autoSeconds);
             chargeSpeedBoost = Mathf.Max(1f, speedBoostAtFull);
+            chargedRecovery = Mathf.Max(0f, extraRecovery);
         }
+
+        /// <summary>모은 강공격(땅)의 후딜레이 중인지(SetChargeStyle의 extraRecovery를 쓰는 캐릭터만) — 그동안 제자리.</summary>
+        private bool InChargedRecovery => chargedRecovery > 0f && AttackState == CharacterAttackState.Heavy && !IsAirAttack && !IsRunJumpAttack && AttackPhase == AttackPhase.Recovery;
 
         /// <summary>모으는 동안 점점 빨라지기(IMoveSpeedBoost — SetChargeStyle).</summary>
         public bool TryGetSpeedBoost(out float multiplier)
@@ -481,7 +491,8 @@ namespace Project1.Systems
             {
                 if (IsFollowUpKick && AttackPhase == AttackPhase.Recovery) { FollowUpRecovery(dt); return; }
                 float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f)
-                             + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f); // 캐릭터별 평타 선딜레이 더하기(예: 하스터)
+                             + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f) // 캐릭터별 평타 선딜레이 더하기(예: 하스터)
+                             + (InChargedRecovery ? chargedRecovery : 0f);                              // 모은 강공격 후딜레이 더하기(예: 사냥터지기)
                 if (phaseTime < length)
                 {
                     PhaseProgress = length > 0f ? phaseTime / length : 1f;
