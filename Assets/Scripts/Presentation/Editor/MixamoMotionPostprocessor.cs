@@ -133,7 +133,8 @@ namespace Project1.Presentation.EditorTools
         // 몸 중심을 서 있을 때 골반 높이로 올리는 값(Humanoid 단위, - = 위로). 의사 기준으로 맞춰 발이 땅 높이에 온다.
         private const float AirHeightOffset = -0.91f;
         // 발을 땅에 붙이는 모션(몸 높이는 발 기준): 광대 로켓 돌진(다리를 벌려 디딘 자세라 몸이 낮아진다).
-        private static readonly HashSet<string> FeetOnGround = new(); // (광대 로켓 돌진은 다리·엉덩이 높이를 달리기 모션에서 가져와 Bake로 충분)
+        // 발을 땅에 붙인다(몸 높이를 원본에서 가져오지 않음). 사냥터지기 충격파에 휘청이는 Edge Slip은 원본이 턱 위에 선 높이라 그대로 두면 공중에 뜬다.
+        private static readonly HashSet<string> FeetOnGround = new() { "Hit_EdgeSlip" }; // (광대 로켓 돌진은 다리·엉덩이 높이를 달리기 모션에서 가져와 Bake로 충분)
         // 몸이 누운 모션은 몸 방향으로 맞추면 앞이 흔들린다 → 원래 방향 그대로(Root Rotation: Original).
         private static readonly HashSet<string> OriginalOrientation = new() { "Traversal_FallBack" };
 
