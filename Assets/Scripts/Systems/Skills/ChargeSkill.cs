@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   짧게(shortCrashDistance 5m 미만) 달렸으면 shortCrashRecovery(0.4초), 그보다 길면 달린 거리에 비례해 minFallRecovery(1초) ~ crashRecovery(1.8초, 12m 이상).
-    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 몸보다 ramExtraRadius만큼 넓은 앞쪽 범위) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
@@ -35,8 +35,8 @@ namespace Project1.Systems
         [Min(0f)] public float minFallRecovery = 1f;
 
         [Header("캐릭터에 부딪힘(박치기) → 상대 넉백")]
-        [Tooltip("돌진하는 동안 박치기 판정을 몸(CharacterController)보다 이만큼(m) 더 넓게 본다 — 몸 앞쪽 반원 안의 상대는 닿기 전이라도 박는다.")]
-        [Min(0f)] public float ramExtraRadius = 0.4f;
+        [Tooltip("돌진하는 동안 박치기 판정을 옆으로만 이만큼(m) 넓힌다 — 앞으로는 넓히지 않는다(정면은 몸이 닿아야 박음). 몸 옆으로 살짝 비켜 선 상대도 박는다.")]
+        [Min(0f)] public float ramSideExtra = 0.2f;
         [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
         [Min(0f)] public float knockSpeedPerMeter = 1f;
         [Min(0f)] public float minKnockSpeed = 5f, maxKnockSpeed = 25f;
@@ -84,7 +84,7 @@ namespace Project1.Systems
             if (motor == null) return false;
             var self = owner.GetComponent<CharacterIdentity>();
 
-            // 박치기 판정: 몸보다 조금 큰 앞쪽 범위(ramExtraRadius) 안의 상대 — 몸이 닿기 전이라도 박는다.
+            // 박치기 판정: 앞으로는 몸이 닿는 거리 그대로, 옆으로만 ramSideExtra만큼 넓게 본 범위 안의 상대.
             var victim = FindRamVictim(owner, self);
             if (victim == null)
             {
@@ -122,23 +122,34 @@ namespace Project1.Systems
 
         private static readonly Collider[] RamHits = new Collider[32];
 
-        /// <summary>몸보다 ramExtraRadius 넓은 캡슐(몸 앞쪽 반원) 안에서 박을 수 있는 가장 가까운 상대. 없으면 null.</summary>
+        /// <summary>
+        /// 박을 수 있는 가장 가까운 상대(없으면 null). 두 몸(수평 원)이 닿는 거리 = 내 반지름 + 상대 반지름 기준으로,
+        /// 앞쪽(몸 중심 앞, 0 ~ 닿는 거리)은 그대로, 옆쪽 거리만 ramSideExtra만큼 더 봐 준다.
+        /// </summary>
         private CharacterIdentity FindRamVictim(GameObject owner, CharacterIdentity self)
         {
-            if (ramExtraRadius <= 0f || !owner.TryGetComponent(out CharacterController cc)) return null;
+            if (ramSideExtra <= 0f || !owner.TryGetComponent(out CharacterController cc)) return null;
             Vector3 fwd = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
-            float r = cc.radius * owner.transform.lossyScale.x + ramExtraRadius;
+            Vector3 right = Vector3.Cross(Vector3.up, fwd);
+            float r = cc.radius * owner.transform.lossyScale.x;
             float h = cc.height * owner.transform.lossyScale.y;
             Vector3 basePos = owner.transform.position;
-            Vector3 a = basePos + Vector3.up * r, b = basePos + Vector3.up * Mathf.Max(r, h - r);
-            int n = Physics.OverlapCapsuleNonAlloc(a, b, r, RamHits, ~0, QueryTriggerInteraction.Collide);
+            float search = r + ramSideExtra + 1f; // 넉넉히 모은 뒤 아래에서 정확히 거른다
+            Vector3 a = basePos + Vector3.up * search, b = basePos + Vector3.up * Mathf.Max(search, h);
+            int n = Physics.OverlapCapsuleNonAlloc(a, b, search, RamHits, ~0, QueryTriggerInteraction.Collide);
             CharacterIdentity best = null; float bestD = float.MaxValue;
             for (int i = 0; i < n; i++)
             {
                 var c = RamHits[i].GetComponentInParent<CharacterIdentity>();
-                if (c == null || c.gameObject == owner || (self != null && !self.CanHit(c))) continue;
+                if (c == null || c == best || c.gameObject == owner || (self != null && !self.CanHit(c))) continue;
+                float rv = c.TryGetComponent(out CharacterController vcc) ? vcc.radius * c.transform.lossyScale.x : 0.35f;
+                if (Mathf.Abs(c.transform.position.y - basePos.y) > h) continue; // 위·아래층
                 Vector3 to = Vector3.ProjectOnPlane(c.transform.position - basePos, Vector3.up);
-                if (Vector3.Dot(to, fwd) <= 0f) continue; // 앞쪽만(옆·뒤로 스친 상대는 아님)
+                float along = Vector3.Dot(to, fwd), side = Mathf.Abs(Vector3.Dot(to, right));
+                float touch = r + rv;
+                if (along < 0f || along > touch) continue;   // 앞으로는 넓히지 않음(몸이 닿는 거리까지만), 뒤쪽은 아님
+                if (side > touch + ramSideExtra) continue;   // 옆으로만 조금 더
+                if (along * along + Mathf.Max(0f, side - ramSideExtra) * Mathf.Max(0f, side - ramSideExtra) > touch * touch) continue; // 앞 모서리는 몸 둥근 모양 그대로
                 float d = to.sqrMagnitude;
                 if (d < bestD) { bestD = d; best = c; }
             }
