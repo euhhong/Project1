@@ -51,6 +51,9 @@ namespace Project1.Systems
         /// <summary>시전 중 걷기·달리기 속도에 곱하는 배율(1 = 그대로). 달리기를 막지 않고 조금만 느리게 할 때(예: 도둑 손전등).</summary>
         public virtual float CastSpeedScale => 1f;
 
+        /// <summary>시전 중 이 공격(attacker, 모르면 null)에 면역인지(예: 붉은나비 나비에게 — 맹인 밀기만 받음). CharacterSkill이 IAttackImmunity로 알린다.</summary>
+        public virtual bool ImmuneTo(CharacterSkill ctx, GameObject attacker) => false;
+
         /// <summary>켜져(시전 중) 있어도 창틀 넘기·턱 오르기·매달리기를 막지 않는지(예: 용병 아대 — 켠 채 다님). 기본 false.</summary>
         public virtual bool AllowsTraversal(CharacterSkill ctx) => false;
 

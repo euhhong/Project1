@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// - 겨누는 나비가 없거나 나비를 놓는 중이면(놓기를 E로 취소하고 좌클릭을 아직 안 뗀 동안 포함) 쓰지 않는다.
     /// - 가는 동안 장애물(벽·다른 캐릭터 등)에 부딪히면 거기서 멈추고 툭 떨어진다(잠깐 못 움직임, bumpRecovery).
     ///   단 창틀 아랫부분(창턱)은 뚫고 지나간다(창틀 옆·윗부분은 막힘, PassWindowSills).
+    /// - 날아가는 동안은 모든 공격·스킬에 면역(IAttackImmunity — 닿지 않은 것으로 봄). 단 맹인의 밀기(지팡이 평타·찌르기)는 받아 밀려나며 날아가기가 끊긴다.
     /// - 이동·공격 불가. 날아가는 동안은 위아래 속도를 일직선에 맞춰 중력을 상쇄한다(도착하면 다시 중력).
     /// - 날아가는 동안 화면을 돌려도 몸(모델)은 시작할 때 각도를 지킨다(TryGetFacingYaw). 끝나면 다시 시야를 본다.
     /// 목표 자리는 시전 동안 CharacterSkill.AreaCenter에 둔다(ShowArea는 끔).
@@ -25,6 +26,9 @@ namespace Project1.Systems
 
         public override bool LocksActions => true;
         public override bool SyncAnimationToCast => false;
+
+        /// <summary>날아가는 동안은 모든 공격·스킬에 면역 — 맹인(지팡이로 미는 캐릭터, CaneKnockback)의 밀기만 받는다(밀리면 끊김, Tick).</summary>
+        public override bool ImmuneTo(CharacterSkill ctx, GameObject attacker) => attacker == null || !attacker.TryGetComponent(out CaneKnockback _);
 
         public override bool CanStart(GameObject owner, out string reason)
         {
@@ -200,6 +204,11 @@ namespace Project1.Systems
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
             recovery = 0f;
+            if (ctx.TryGetComponent(out Knockback kb) && kb.Active) // 맹인에게 밀림 → 날아가기가 끊긴다(밀려나는 대로)
+            {
+                if (ctx.TryGetComponent(out ColliderPassThrough kbPass)) kbPass.RestoreClear();
+                return true;
+            }
             Vector3 to = FlatTo(ctx);
             Vector3 to3 = ctx.AreaCenter - ctx.transform.position;
             if (to.magnitude <= arriveDistance && Mathf.Abs(to3.y) <= 0.6f) // 도착(위아래도 거의 맞음)

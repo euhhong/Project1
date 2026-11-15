@@ -48,7 +48,7 @@ namespace Project1.Systems
             if (summoner != null) teamId = summoner.teamId;
         }
 
-        /// <summary>other를 공격할 수 있는지 (자기 자신·같은 팀·불러낸 쪽/불려 나온 쪽 제외).</summary>
+        /// <summary>other를 공격할 수 있는지 (자기 자신·같은 팀·불러낸 쪽/불려 나온 쪽 제외, 지금 이 공격에 면역인 상대 제외 — IAttackImmunity).</summary>
         public bool CanHit(CharacterIdentity other)
         {
             if (other == null || other == this)
@@ -57,7 +57,8 @@ namespace Project1.Systems
             }
             CharacterIdentity mine = Summoner != null ? Summoner : this, theirs = other.Summoner != null ? other.Summoner : other;
             if (mine == theirs) return false; // 나와 내 분신, 같은 주인의 분신끼리
-            return teamId == NoTeam || teamId != other.teamId;
+            if (teamId != NoTeam && teamId == other.teamId) return false;
+            return !AttackImmunity.Immune(other.gameObject, gameObject); // 예: 나비에게 날아가는 붉은나비(맹인 밀기만 받음)
         }
     }
 }
