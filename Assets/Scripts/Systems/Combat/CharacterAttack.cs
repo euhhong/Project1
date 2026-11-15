@@ -332,15 +332,14 @@ namespace Project1.Systems
                 case CharacterAttackState.HeavyCharge:
                     ChargeTime += dt;
                     if (swipeAttacks && input.AttackSwipe != 0 && grounded) { ChargeTime = 0f; StartSwipe(input.AttackSwipe); break; } // 모으다가 그음 → 후리기
+                    // 모은 시간(ChargeTime)은 강공격이 끝날 때까지 둔다 — 판정(AttackHitDetector)이 HitResult.Charge로 읽어 감시자 강공격 피해를 늘린다(DamageRules.HeavyChargeBonus). EndAttack이 0으로.
                     if (input.HeavyRelease || !input.HeavyCharging)
                     {
-                        ChargeTime = 0f;
                         StartAttack(CharacterAttackState.Heavy);
                     }
                     else if (autoChargeTime > 0f && ChargeTime >= autoChargeTime)
                     {
                         // 다 모았다(예: 사냥터지기 1초) → 키를 누르고 있어도 바로 강공격. 그 키를 뗄 때 약공격이 나가지 않게 뗄 때까지 무시.
-                        ChargeTime = 0f;
                         waitAirRelease = true;
                         StartAttack(CharacterAttackState.Heavy);
                     }
