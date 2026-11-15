@@ -103,7 +103,7 @@ namespace Project1.Systems
         {
             get
             {
-                if (skill == null) { BlockedReason = "스킬 없음"; return false; }
+                if (skill == null) { BlockedReason = null; return false; } // 보통 스킬이 없는 캐릭터(하스터·안토니오 — E는 다른 기능이 받음): 이유 글을 띄우지 않는다
                 if (State != SkillState.Ready) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
