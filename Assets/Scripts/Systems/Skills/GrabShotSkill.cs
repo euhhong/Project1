@@ -265,6 +265,7 @@ namespace Project1.Systems
                     }
                     bool hitChar = FindVictim(ctx, from, to, out float charAt, out Hurtbox victim);
                     bool hitWall = FindWall(ctx, from, to, out float wallAt, out Vector3 wallNormal);
+                    bool wallNoTow = lastWallNoTow; // 촉수 기둥·인형: 막히지만 끌려가지 않음
                     // 조준 보정: 바로 맞히지 못했어도 그랩 머리가 상대 근처(snapTolerance 안)를 지나면 그쪽으로 방향을 꺾어(머리가 옆으로 빡) 문다.
                     if (!hitChar && snapTolerance > 0f && TrySnap(ctx, from, hitWall ? wallAt : to, out charAt, out victim))
                     {
@@ -274,7 +275,7 @@ namespace Project1.Systems
                     if (hitWall && (!hitChar || wallAt < charAt))
                     {
                         ctx.Reach = wallAt;
-                        if (towToWalls && wallNormal.y <= wallMaxNormalY && wallAt > towStopReach)
+                        if (towToWalls && !wallNoTow && wallNormal.y <= wallMaxNormalY && wallAt > towStopReach)
                         {
                             // 벽을 물었다 → 사냥터지기가 벽 쪽으로 끌려간다.
                             ctx.AreaCenter = ctx.ReachOrigin + ctx.Direction * wallAt;
@@ -475,6 +476,7 @@ namespace Project1.Systems
         public bool PredictsHit(Transform owner, Vector3 origin, Vector3 dir, out float hitAt)
         {
             bool wall = FindWall(origin, dir, 0f, range, out float wallAt, out Vector3 normal);
+            bool wallNoTowPredict = lastWallNoTow; // 촉수 기둥·인형은 끌려갈 벽이 아니다(조준선 가늠쇠 안 뜸)
             float reach = wall ? wallAt : range;
             var self = owner.GetComponent<CharacterIdentity>();
             hitAt = float.MaxValue;
@@ -508,7 +510,7 @@ namespace Project1.Systems
                 hitAt = Mathf.Min(hitAt, Mathf.Max(0f, h.distance));
             }
             if (hitAt < float.MaxValue) return true;
-            if (wall && towToWalls && normal.y <= wallMaxNormalY && wallAt > towStopReach) { hitAt = wallAt; return true; }
+            if (wall && wallNoTowPredict == false && towToWalls && normal.y <= wallMaxNormalY && wallAt > towStopReach) { hitAt = wallAt; return true; }
             hitAt = 0f;
             return false;
         }
@@ -638,16 +640,25 @@ namespace Project1.Systems
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
             var hits = Physics.SphereCastAll(start, wallProbeRadius, dir, length, mask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue; bool found = false;
+            lastWallNoTow = false;
             foreach (var h in hits)
             {
                 if (h.distance <= 0f && h.point == Vector3.zero) continue;               // 처음부터 겹쳐 있던 것(손이 벽 속) — 무시
                 if (h.collider.GetComponentInParent<CharacterIdentity>() != null) continue; // 캐릭터(자기 몸 포함)는 상대 판정이 맡는다
-                if (h.distance < best) { best = h.distance; normal = h.normal; found = true; }
+                if (h.distance < best) { best = h.distance; normal = h.normal; found = true; lastWallNoTow = h.collider.GetComponent<NoTowSurface>() != null; } // 촉수 기둥: 막히지만 끌려가지 않음
+            }
+            // 멈춘 공장장 인형: 콜라이더는 없지만(걸어서는 지나감) 그랩은 막힌다 — 끌려가지 않고 되감는다.
+            if (SkillObstacles.SweepDoll(start, dir, length, wallProbeRadius, out float dollAt) && dollAt < best)
+            {
+                best = dollAt; normal = -dir; found = true; lastWallNoTow = true;
             }
             if (!found) return false;
             hitAt = from + best;
             return true;
         }
+
+        /// <summary>마지막 FindWall이 찾은 면이 끌려가지 않는 방해물(촉수 기둥·인형)인지.</summary>
+        private static bool lastWallNoTow;
 
         /// <summary>
         /// 그랩에 끌려가 벽에 도착: 몸 둘레 wallShockRadius 안의 상대(판정 상자)에게 데미지 없는 충격파 — 감속(ShockSlow, 휘청이는 모션은 FE).

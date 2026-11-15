@@ -82,8 +82,11 @@ namespace Project1.Systems
             var self = owner.GetComponent<CharacterIdentity>();
 
             // 박치기 판정: 앞으로는 몸이 닿는 거리 그대로, 옆으로만 ramSideExtra만큼 넓게 본 범위 안의 상대.
-            var victim = FindRamVictim(owner, self);
-            if (victim == null)
+            var victim = UsesRamZone ? FindRamVictim(owner, self) : null; // 옛 판정(광대 로켓)은 몸이 실제로 닿아야
+            // 멈춘 공장장 인형: 걸어서는 지나가지만 돌진은 막힌다(벽에 박은 것과 같음).
+            bool dollHit = victim == null && elapsed >= obstacleGrace && owner.TryGetComponent(out CharacterController bodyCc)
+                           && SkillObstacles.TouchingDoll(owner.transform.position, Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized, bodyCc.radius, bodyCc.height);
+            if (victim == null && !dollHit)
             {
                 if (elapsed < obstacleGrace || !motor.HitObstacle) return false;
                 // 몸이 실제로 닿은 것이 캐릭터인데 박을 수 없는 상대(같은 팀·면역 — 예: 나비에게 날아가는 붉은나비)면 밀지 않고 멈추기만 한다.
@@ -96,6 +99,7 @@ namespace Project1.Systems
             }
 
             // 박치기: 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
+            if (victim != null && ContactHit(owner, victim, elapsed)) return true; // 옛 판정(광대 로켓): 닿자마자 기절
             if (victim != null)
             {
                 float distance = elapsed * chargeSpeed;
@@ -157,6 +161,12 @@ namespace Project1.Systems
 
         /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(전위 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
         protected virtual bool CrashPenalty => true;
+
+        /// <summary>박치기 판정을 몸보다 옆으로 넓게 볼지(전위 = 예). 아니오면 몸이 실제로 닿아야 박는다(광대 로켓 옛 판정).</summary>
+        protected virtual bool UsesRamZone => true;
+
+        /// <summary>몸이 상대에 닿았을 때 다르게 처리할지(광대 로켓 옛 판정: 넉백 없이 바로 기절). 처리했으면 true(넉백 박치기를 하지 않음).</summary>
+        protected virtual bool ContactHit(GameObject owner, CharacterIdentity victim, float elapsed) => false;
 
         public override void Complete(GameObject owner) { }
     }

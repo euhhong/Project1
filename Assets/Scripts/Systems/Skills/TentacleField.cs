@@ -106,6 +106,7 @@ namespace Project1.Systems
         {
             Placing = false; placement.Clear(); waitRelease = false; Selecting = false; TargetIndex = -1;
             tentacles.Clear(); hitBySlam.Clear();
+            ClearObstacles();
         }
 
         private void FixedUpdate()
@@ -145,6 +146,53 @@ namespace Project1.Systems
             if (!Selecting && !skillWasHeld) TargetIndex = -1;
 
             Step(dt);
+            UpdateObstacles();
+        }
+
+        [Header("방해물 — 서 있는 촉수는 단단한 기둥")]
+        [Tooltip("서 있는 촉수 기둥 굵기(반지름, m). 아무도 뚫고 지나가지 못한다(주인 하스터만 지나감, 붉은나비 도약은 뚫음). 그랩은 막히지만 끌려가지 않는다.")]
+        [SerializeField, Min(0.05f)] private float obstacleRadius = 0.35f;
+        private readonly Dictionary<int, CapsuleCollider> obstacles = new();
+        private readonly List<int> obstacleScratch = new();
+
+        /// <summary>서 있는 동안(솟아오르는 중 절반부터·서 있음·말아 올림·다시 섬)만 기둥을 세운다. 땅에 눕는 내리침·들어가는 중에는 없다.</summary>
+        private void UpdateObstacles()
+        {
+            obstacleScratch.Clear();
+            foreach (var t in tentacles)
+            {
+                bool upright = (t.State == TentacleState.Rising && t.StateTime >= riseTime * 0.5f)
+                               || t.State is TentacleState.Idle or TentacleState.SlamWindup or TentacleState.SlamRecovery;
+                if (!upright) continue;
+                obstacleScratch.Add(t.Id);
+                if (!obstacles.TryGetValue(t.Id, out var col) || col == null)
+                {
+                    var go = new GameObject("TentacleObstacle");
+                    col = go.AddComponent<CapsuleCollider>();
+                    col.direction = 1; col.radius = obstacleRadius; col.height = tentacleHeight; col.center = Vector3.up * (tentacleHeight * 0.5f);
+                    go.AddComponent<NoTowSurface>(); // 그랩: 막히기만(끌려가지 않음)
+                    if (TryGetComponent(out CharacterController ownCc)) Physics.IgnoreCollision(ownCc, col); // 주인 하스터는 지나간다
+                    obstacles[t.Id] = col;
+                    SkillObstacles.Tentacles.Add(col);
+                }
+                col.transform.position = t.Position;
+            }
+            foreach (var id in new List<int>(obstacles.Keys))
+                if (!obstacleScratch.Contains(id)) RemoveObstacle(id);
+        }
+
+        private void RemoveObstacle(int id)
+        {
+            if (!obstacles.TryGetValue(id, out var col)) return;
+            obstacles.Remove(id);
+            if (col == null) return;
+            SkillObstacles.Tentacles.Remove(col);
+            Destroy(col.gameObject);
+        }
+
+        private void ClearObstacles()
+        {
+            foreach (var id in new List<int>(obstacles.Keys)) RemoveObstacle(id);
         }
 
         private void Summon(Vector3 point)

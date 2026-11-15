@@ -218,6 +218,7 @@ namespace Project1.Systems
                 return true;
             }
             if (to.magnitude > 0.05f) PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
+            PassSkillObstacles(ctx); // 촉수 기둥·공장장 분신은 뚫고 간다
             PassEdges(ctx, to3);     // 다른 높이로 갈 때 바닥 끝 모서리는 뚫고 간다
             SteerVertical(ctx, to3); // 나비까지 일직선(높낮이 포함)
             var motor = ctx.GetComponent<CharacterMotor>();
@@ -228,6 +229,15 @@ namespace Project1.Systems
                 return true;
             }
             return false;
+        }
+
+        /// <summary>날아가는 동안 촉수 기둥(SkillObstacles.Tentacles)·공장장 분신 몸(Summoner가 있는 캐릭터)을 뚫고 간다(ColliderPassThrough). 인형은 원래 걸어서도 지나간다.</summary>
+        private static void PassSkillObstacles(CharacterSkill ctx)
+        {
+            if (!ctx.TryGetComponent(out ColliderPassThrough pass)) pass = ctx.gameObject.AddComponent<ColliderPassThrough>();
+            foreach (var col in SkillObstacles.Tentacles) if (col != null) pass.Allow(col);
+            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
+                if (c != null && c.Summoner != null && c.gameObject != ctx.gameObject && c.TryGetComponent(out CharacterController cc)) pass.Allow(cc);
         }
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;

@@ -160,8 +160,11 @@ namespace Project1.Systems
             if (TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits(); // 기다리는 동안 멈추게(IMoveSpeedLimit)
         }
 
+        private void OnEnable() { if (!SkillObstacles.Dolls.Contains(this)) SkillObstacles.Dolls.Add(this); } // 멈춘 인형 = 돌진·그랩을 막는 방해물
+
         private void OnDisable()
         {
+            SkillObstacles.Dolls.Remove(this);
             Aiming = false; arc.Clear();
             DollActive = false; DollFlying = false; safeFall = false; swapLeft = 0f; waitRelease = false; lockLeft = boostLeft = 0f; boostArmed = false; swapCooldownLeft = 0f; retrieveLeft = 0f;
         }
