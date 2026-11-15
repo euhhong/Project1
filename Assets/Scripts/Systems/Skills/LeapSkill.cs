@@ -18,7 +18,7 @@ namespace Project1.Systems
     [CreateAssetMenu(menuName = "Project1/Skills/Leap")]
     public class LeapSkill : SkillDefinition
     {
-        private const int Rising = 0, Slamming = 1, Dropping = 2;
+        private const int Rising = 0, Slamming = 1, Dropping = 2, SlamHit = 3; // SlamHit = 내려찍기로 상대를 맞히고 착지함(짧은 경직)
 
         [Header("도약")]
         [Tooltip("뛰어오르는 높이(m). 보통 점프는 1.2m.")]
@@ -35,6 +35,8 @@ namespace Project1.Systems
         [Min(0f)] public float slamRadius = 3f;
         [Tooltip("내려찍은 뒤 못 움직이는 시간(초). 착지 모션(Hard Landing, 1.43초)을 이 시간에 맞춰 재생한다.")]
         [Min(0f)] public float slamRecovery = 1.2f;
+        [Tooltip("내려찍기가 상대를 한 명이라도 맞혔을 때의 착지 후 경직(초). 거의 없게 — 착지 모션 없이 바로 이동·공격으로 이어 간다.")]
+        [Min(0f)] public float slamHitRecovery = 0.08f;
         [Tooltip("공중에서 E를 한 번 더 눌러 빠르게 떨어진(공격 없음) 뒤 못 움직이는 시간(초). 짧게 — 착지 모션을 빠르게 재생하고 끝낸다.")]
         [Min(0f)] public float dropRecovery = 0.25f;
         [Tooltip("내려찍기 공격 판정이 나는 자리 표시용(HitResult.Slot).")]
@@ -150,15 +152,18 @@ namespace Project1.Systems
             if (ctx.Phase == Slamming)
             {
                 ctx.AreaCenter = ctx.transform.position;
-                HitArea(ctx); // 착지 순간 범위 공격(빠른 낙하는 공격 없음)
+                // 착지 순간 범위 공격(빠른 낙하는 공격 없음). 한 명이라도 맞혔으면 후딜레이를 거의 없앤다(SlamHit).
+                if (HitArea(ctx) > 0) { ctx.SetPhase(SlamHit); recovery = slamHitRecovery; return true; }
             }
             recovery = ctx.Phase == Dropping ? dropRecovery : slamRecovery;
             return true;
         }
 
-        // 떠오름 = ID, 내리꽂는 중(공격·빠른 낙하) = ID_Slam, 착지 후 경직 = ID_Land(Hard Landing)
+        // 떠오름 = ID, 내리꽂는 중(공격·빠른 낙하) = ID_Slam, 착지 후 경직 = ID_Land(Hard Landing).
+        // 내려찍기로 맞힌 뒤의 짧은 경직은 착지 모션 없이 Slam 자세에서 바로 이동 모션으로 섞인다(빈 상태 → Skill 레이어가 사라짐).
         public override string AnimationState(CharacterSkill ctx) =>
-            ctx.State == SkillState.Recovering ? id + "_Land" : ctx.Phase != Rising ? id + "_Slam" : id;
+            ctx.State == SkillState.Recovering ? (ctx.Phase == SlamHit ? string.Empty : id + "_Land")
+            : ctx.Phase != Rising ? id + "_Slam" : id;
 
         public override void Complete(GameObject owner) { }
 
@@ -175,7 +180,8 @@ namespace Project1.Systems
             return point;
         }
 
-        private void HitArea(CharacterSkill ctx)
+        /// <summary>착지 지점 범위 안의 상대를 모두 맞힌다. 맞힌 상대 수를 돌려준다.</summary>
+        private int HitArea(CharacterSkill ctx)
         {
             var self = ctx.GetComponent<CharacterIdentity>();
             var victims = new Dictionary<CharacterIdentity, Hurtbox>();
@@ -203,6 +209,7 @@ namespace Project1.Systems
                 });
                 Stun(victim.gameObject);
             }
+            return victims.Count;
         }
 
         /// <summary>내려찍기에 맞은 상대를 slamStun초 경직시킨다(기절이 없으면 붙이고 이동에 알린다).</summary>
