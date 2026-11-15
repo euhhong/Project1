@@ -32,9 +32,12 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float swapDelay = 0.35f;
         [Tooltip("자리를 바꾼 직후 경직(초) — 땅이든 공중(낙하)이든 같다. 이동·공격·스킬 불가, 보이는 표시 없음(IActionLock).")]
         [SerializeField, Min(0f)] private float postSwapLock = 1.2f;
-        [Tooltip("공중의 인형과 바꿨으면(낙하) 경직이 풀린 순간부터 이 시간(초) 동안 이동 속도 배율.")]
+        [Tooltip("인형과 자리를 바꾸면(땅이든 공중이든) 경직이 풀린 순간부터 이 시간(초) 동안 이동 속도 배율. 공중(낙하)으로 바꿨으면 거기에 airBoostExtra배 더.")]
         [SerializeField, Min(0f)] private float landBoostTime = 2f;
         [SerializeField, Min(1f)] private float landBoostMultiplier = 1.5f;
+        [Tooltip("공중의 인형과 바꿔 떨어져 내려온 경우 이동 속도 배율에 더 곱하는 값(1.5 = 거기서 50% 더 — 1.5 × 1.5 = 2.25배).")]
+        [SerializeField, Min(1f)] private float airBoostExtra = 1.5f;
+        private bool airSwap; private float boostMultiplier = 1f;
         private float lockLeft, boostLeft;
         [Tooltip("인형과 자리를 바꾼 뒤 다시 바꿀 수 있을 때까지(초) — E 꾹(분신)은 해당 없음.")]
         [SerializeField, Min(0f)] private float swapCooldown = 17f;
@@ -139,8 +142,8 @@ namespace Project1.Systems
         /// <summary>자리를 바꾼 직후 짧은 경직(보이는 표시 없음) — 공격·스킬 불가.</summary>
         public bool ActionsLocked => isActiveAndEnabled && (SwapPending || lockLeft > 0f || retrieveLeft > 0f);
 
-        /// <summary>공중의 인형과 바꿔 떨어져 내려온 뒤 landBoostTime초 동안 빠르게.</summary>
-        public bool TryGetSpeedBoost(out float multiplier) { multiplier = landBoostMultiplier; return boostLeft > 0f; }
+        /// <summary>인형과 자리를 바꾼 뒤(경직이 풀린 순간부터) landBoostTime초 동안 빠르게 — 공중(낙하)으로 바꿨으면 airBoostExtra배 더.</summary>
+        public bool TryGetSpeedBoost(out float multiplier) { multiplier = boostMultiplier; return boostLeft > 0f; }
 
         private void Awake()
         {
@@ -458,8 +461,8 @@ namespace Project1.Systems
             SwapCount++;
             lockLeft = postSwapLock; // 바꾼 직후 짧은 경직(보이는 표시 없음)
             swapCooldownLeft = swapCooldown; // 다음 자리 바꾸기까지 재사용 대기
-            // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면(낙하) 경직이 풀린 순간부터 빠르게
-            boostArmed = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _);
+            airSwap = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _); // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면(낙하) 더 빠르게
+            boostArmed = true; // 땅이든 공중이든 경직이 풀린 순간부터 빠르게
         }
 
         /// <summary>
@@ -497,7 +500,7 @@ namespace Project1.Systems
             if (swapCooldownLeft > 0f) swapCooldownLeft = Mathf.Max(0f, swapCooldownLeft - dt);
             if (lockLeft <= 0f) return;
             lockLeft = Mathf.Max(0f, lockLeft - dt);
-            if (lockLeft <= 0f && boostArmed) { boostArmed = false; boostLeft = landBoostTime; } // 경직이 풀림 → 낙하였으면 빠르게
+            if (lockLeft <= 0f && boostArmed) { boostArmed = false; boostLeft = landBoostTime; boostMultiplier = landBoostMultiplier * (airSwap ? airBoostExtra : 1f); } // 경직이 풀림 → 빠르게(낙하였으면 더)
         }
 
         /// <summary>바꾼 뒤 땅에 두 틱 이상 서 있으면 다치지 않는 낙하 표시를 끈다(FallDamage가 착지 틱에 묻는다).</summary>
