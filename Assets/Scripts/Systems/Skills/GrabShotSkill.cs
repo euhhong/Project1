@@ -86,6 +86,10 @@ namespace Project1.Systems
         [Tooltip("뛰어넘기에 성공해 착지를 마치면 이 시간(초) 동안 이동 속도 배율(2 = +100%).")]
         [Min(1f)] public float vaultSpeedBoost = 2f;
         [Min(0f)] public float vaultBoostTime = 2f;
+        [Tooltip("뛰어넘기에 성공해 착지를 마친 직후 이 시간(초) 동안: 주는 피해 배율 / 받는 피해 배율. 화면에 표시하지 않는다.")]
+        [Min(0f)] public float vaultBuffTime = 1f;
+        [Min(1f)] public float vaultDamageDealtScale = 1.3f;
+        [Range(0f, 1f)] public float vaultDamageTakenScale = 0.7f;
 
         [Header("조준 (E 꾹 누르기)")]
         [Tooltip("E를 꾹 눌러 조준하는 동안 걷는 속도(걷기 속도 대비).")]
@@ -317,7 +321,11 @@ namespace Project1.Systems
                 }
 
                 case VaultLanding:
-                    if (ctx.PhaseTime >= vaultLandTime) TimedSpeedBoost.Give(ctx.gameObject, vaultSpeedBoost, vaultBoostTime); // 뛰어넘기 성공: 잠깐 빠르게
+                    if (ctx.PhaseTime >= vaultLandTime)
+                    {
+                        TimedSpeedBoost.Give(ctx.gameObject, vaultSpeedBoost, vaultBoostTime); // 뛰어넘기 성공: 잠깐 빠르게
+                        TimedCombatBuff.Give(ctx.gameObject, vaultDamageDealtScale, vaultDamageTakenScale, vaultBuffTime); // + 1초 동안 더 아프게 때리고 덜 아프게 맞음(표시 없음)
+                    }
                     return ctx.PhaseTime >= vaultLandTime;
 
                 case Towing:

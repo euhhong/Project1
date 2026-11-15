@@ -112,6 +112,7 @@ namespace Project1.Systems
             float damage = baseDamage * PartScale(hit.Part) * hit.PowerScale;
             if (FromBehind(attacker != null ? attacker.transform : null, victim != null ? victim.transform : null)) damage *= BehindScale;
             if (IsVaulting(victim)) damage *= VaultScale;
+            damage *= TimedCombatBuff.Outgoing(attacker); // 때린 쪽 주는 피해 배율(IDamageScale, 예: 카우보이 뛰어넘기 직후) — 받는 쪽 배율은 CharacterHealth가 곱한다
             return damage;
         }
 

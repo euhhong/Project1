@@ -29,7 +29,8 @@ namespace Project1.Systems
 
         public void Heal(float amount) => Set(Current + Mathf.Max(0f, amount));
 
-        public void Damage(float amount) => Set(Current - Mathf.Max(0f, amount));
+        /// <summary>피해를 받는다. 받는 피해 배율(IDamageScale, 예: 카우보이 뛰어넘기 직후 방어)을 곱한다.</summary>
+        public void Damage(float amount) => Set(Current - Mathf.Max(0f, amount) * TimedCombatBuff.Incoming(gameObject));
 
         public void ResetToFull() => Set(maxHealth);
 
