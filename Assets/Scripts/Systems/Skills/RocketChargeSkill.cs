@@ -5,6 +5,7 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 로켓 돌진(광대 E): 전위 돌진(ChargeSkill)과 같은 돌진 앞에 "들고 다니기"가 붙는다.
+    /// 0) 시야(화면 가운데) 가까이(lookBlockAngle 12도 안)에 보이는 상대가 있으면 E로 시작하지 못한다("상대를 보고 있음").
     /// 1) E를 꾹 누르는 동안: 로켓을 두 손으로 머리 위로 치켜든 채 걸어 다닌다(castMoveSpeed, 점프 가능).
     ///    이때 좌클릭(공격)을 누르면 돌진하지 않고 끝난다(취소).
     /// 2) E를 떼면(한 번만 눌러도 바로) 로켓 머리를 앞으로 한 채 chargeSpeed로 돌진한다 — 벽에 부딪히면 기절 페널티 없이 그냥 멈추고(CrashPenalty 끔),
@@ -66,6 +67,38 @@ namespace Project1.Systems
             ctx.State == SkillState.Recovering ? id + "_End" : ctx.Phase == Charging ? id : id + "_Raise";
 
         protected override bool CrashPenalty => false; // 로켓 돌진은 벽에 박아도 기절 페널티 없이 그냥 멈춘다
+
+        [Header("시작 제한 — 상대를 바라보고 있으면 E로 시작하지 못함")]
+        [Tooltip("시야(화면 가운데) 방향에서 이 각도(도) 안에 보이는(벽에 가리지 않은) 상대가 있으면 시작하지 못한다 / 그 거리(m)까지.")]
+        [Range(1f, 45f)] public float lookBlockAngle = 12f;
+        [Min(1f)] public float lookBlockDistance = 60f;
+
+        public override bool CanStart(GameObject owner, out string reason)
+        {
+            if (!base.CanStart(owner, out reason)) return false;
+            if (LookingAtEnemy(owner)) { reason = "상대를 보고 있음"; return false; }
+            return true;
+        }
+
+        /// <summary>시야 방향(LookYaw·LookPitch) 가까이(lookBlockAngle 안, lookBlockDistance 안)에 벽에 가리지 않은 상대가 있는지.</summary>
+        private bool LookingAtEnemy(GameObject owner)
+        {
+            if (!owner.TryGetComponent(out ICharacterState state)) return false;
+            var self = owner.GetComponent<CharacterIdentity>();
+            Vector3 eye = owner.transform.position + Vector3.up * 1.6f;
+            Vector3 look = Quaternion.Euler(state.LookPitch, state.LookYaw, 0f) * Vector3.forward;
+            float cos = Mathf.Cos(lookBlockAngle * Mathf.Deg2Rad);
+            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == null || c == self || (self != null && !self.CanHit(c))) continue;
+                Vector3 point = HomingProjectile.AimPoint(c);
+                Vector3 to = point - eye;
+                float dist = to.magnitude;
+                if (dist < 1e-3f || dist > lookBlockDistance || Vector3.Dot(to / dist, look) < cos) continue;
+                if (CombatLineOfSight.Clear(owner, c.gameObject, point)) return true;
+            }
+            return false;
+        }
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "로켓 돌진! — E로 멈춤" :"로켓 들기 — E를 떼면 돌진(좌클릭 취소)";
     }
