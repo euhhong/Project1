@@ -106,11 +106,14 @@ namespace Project1.Presentation
             float otherMove = Mathf.Clamp01(Mathf.Sqrt(Mathf.Max(0f, speed * speed - Mathf.Max(0f, v.y) * Mathf.Max(0f, v.y))) / fullSpeed);
             if (hang == null) TryGetComponent(out hang);
             // 공격 중·턱에 매달린 동안은 걷기 팔 움직임을 끈다(공격 모션 / 매달리기 자세가 대신).
-            bool attacking = (attack != null && attack.AttackState != CharacterAttackState.None) || (hang != null && hang.Weight > 0f);
+            bool striking = attack != null && attack.AttackState != CharacterAttackState.None;
+            bool attacking = striking || (hang != null && hang.Weight > 0f);
             float target = attacking ? 0f : Mathf.Lerp(idleRatio, 1f, move);
             amount = Mathf.MoveTowards(amount, target, Time.deltaTime * (attacking ? 6f : 3f));
             dash = Mathf.MoveTowards(dash, attacking ? 0f : Mathf.SmoothStep(0f, 1f, forwardMove), Time.deltaTime * (attacking ? 6f : dashBlend));
             swing = Mathf.MoveTowards(swing, attacking ? 0f : Mathf.SmoothStep(0f, 1f, otherMove), Time.deltaTime * (attacking ? 6f : dashBlend));
+            // 평타: 걷기 팔(뒤로 젖힌 대시 자세 등)을 서서히 끄면 내려치기 모션(준비 0.1초)을 잡아끌어 팔을 든 채 천천히 내려오는 것처럼 보인다 → 누르는 즉시 끈다.
+            if (striking) { amount = 0f; dash = 0f; swing = 0f; aim = 0f; }
             bow = Mathf.MoveTowards(bow, Bowing() ? 1f : 0f, Time.deltaTime * bowBlend);
             phase += Time.deltaTime * Mathf.Lerp(idleFrequency, moveFrequency, move) * Mathf.PI * 2f;
             UpdateAim(attacking);

@@ -26,8 +26,8 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float jumpDodgeHeight = 1.15f;
         [Tooltip("앞으로 달리며 하는 일반 공격: 판정을 지금 자리에서 앞으로 (속도 × 이 시간)만큼까지 훑는다 — 달려가며 칠 때 이동한 뒤의 자리까지 맞는 긴 리치.")]
         [SerializeField, Min(0f)] private float moveLeadTime = 0.25f;
-        [Tooltip("감시자 평타(약·강·공중·달리기 점프 등 기본 공격) 사거리 보정(m): 판정을 몸 정면으로 이만큼까지 밀어 한 번 더 훑는다(모델·판정 크기는 그대로). 스킬 판정은 아님.")]
-        [SerializeField, Min(0f)] private float hunterReachBonus = 0.35f;
+        [Tooltip("감시자 평타(약·강·공중·달리기 점프 등 기본 공격) 사거리 보정(m): 판정을 몸 정면으로만 이만큼까지 밀어 한 번 더 훑는다(앞 리치만 늘고 좌우 폭은 그대로, 모델·판정 크기도 그대로). 스킬 판정은 아님.")]
+        [SerializeField, Min(0f)] private float hunterReachBonus = 0.5f;
         [Tooltip("맨주먹으로 치는 캐릭터인지(생존자 주먹 기본 공격). 켜면 무기 없는 공격의 손 판정 히트가 주먹(HitResult.Fist)이 되어 주먹 막기(FistParry)에 막힌다. 캐릭터를 고를 때 SetUnarmed로 정한다.")]
         [SerializeField] private bool unarmed;
         private ICharacterAttackState attackState;

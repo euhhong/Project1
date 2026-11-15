@@ -29,7 +29,7 @@ namespace Project1.Presentation
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
             ["Attack_Light_Hastur"] = new Vector2(22f / 45f, 30f / 45f),    // Zombie Attack(원본 19~64): 두 손 내려찍기 41~49
-            ["Attack_Light_HasturSlam"] = new Vector2(0.42f, 0.6f),         // 하스터(Generic, HasturSlamMotionBuilder 0~1): 두 손 모아 머리 위(~0.42) → 위에서 아래로 내려치기(0.42~0.6, 맞는 순간 0.53) → 거두기
+            ["Attack_Light_HasturSlam"] = new Vector2(0.47f, 0.6f),         // 하스터(Generic, HasturSlamMotionBuilder 0~1): 두 손 모아 머리 위(~0.42)를 준비 동안 빠르게 지나 → 앞으로 내려치는 구간(0.47~0.6, 맞는 순간 0.53)만 판정(머리 위·뒤에서 맞지 않게) → 거두기
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
             ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
             ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34

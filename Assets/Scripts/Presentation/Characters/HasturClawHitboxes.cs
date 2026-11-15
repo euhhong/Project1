@@ -24,8 +24,8 @@ namespace Project1.Presentation
 
         [Tooltip("상자 굵기(m, 월드).")]
         [SerializeField, Min(0.05f)] private float thickness = 0.5f;
-        [Tooltip("손톱 끝 너머로 더 늘리는 길이(m, 월드).")]
-        [SerializeField, Min(0f)] private float tipExtra = 0.15f;
+        [Tooltip("손톱 끝 너머로 더 늘리는 길이(m, 월드) — 내려치는 촉수 팔의 앞 사거리(리치). 감시자 평타 보정은 굵기(좌우)가 아니라 이 길이로 한다.")]
+        [SerializeField, Min(0f)] private float tipExtra = 0.45f;
 
         private readonly List<GameObject> boxes = new();
         private Animator builtFor;
