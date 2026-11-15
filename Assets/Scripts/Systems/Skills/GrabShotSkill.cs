@@ -62,6 +62,8 @@ namespace Project1.Systems
         [Min(0f)] public float towStopReach = 0.1f;
         [Tooltip("벽에 도착하면 주변에 퍼지는 충격파 반지름(m, 루키노 내려찍기처럼 — 아주 작게). 데미지 없음, 맞으면 감속 + 휘청이는 모션. 0 = 없음.")]
         [Min(0f)] public float wallShockRadius = 1.8f;
+        [Tooltip("벽을 물고 끌려가 도착하면 이 시간(초) 안에 재사용 대기 없이 그랩을 다시 쏠 수 있다(안 쏘고 지나가면 그때 재사용 대기).")]
+        [Min(0f)] public float wallRecastWindow = 3f;
         [Tooltip("맞힌 상대에게 그랩 자체 피해를 줄지(끄면 맞힘·끌어오기만 — 사냥터지기). 끄면 끌어오기를 마친 뒤 followUpTime초 안의 타격이 피해 × followUpDamageScale.")]
         public bool grabDealsDamage = true;
         [Min(0f)] public float followUpTime = 1f;
@@ -344,7 +346,7 @@ namespace Project1.Systems
                     bool arrived = ctx.Reach <= towStopReach + 0.01f;
                     bool blocked = ctx.PhaseTime > 0.05f && ctx.TryGetComponent(out CharacterMotor motor) && motor.HitObstacle; // 가는 길에 다른 것에 막힘
                     bool timeout = ctx.PhaseTime > ctx.AreaRadius / towSpeed + 0.3f;
-                    if (arrived) WallShock(ctx); // 벽에 도착: 주변에 작은 충격파
+                    if (arrived) { WallShock(ctx); ctx.GrantFreeRecast(wallRecastWindow); } // 벽에 도착: 주변에 충격파 + wallRecastWindow초 안에 재사용 대기 없이 다시 쏠 수 있음
                     if (arrived || blocked || timeout) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
                     return false;
                 }
@@ -394,6 +396,9 @@ namespace Project1.Systems
         public override string AnimationState(CharacterSkill ctx) =>
             ctx.State != SkillState.Casting || (ctx.Phase == Windup && ctx.AreaCenter.sqrMagnitude > 0.0001f) ? string.Empty
             : ctx.Phase == Vaulting ? id + "_Vault" : ctx.Phase == VaultLanding ? id + "_Land" : id;
+
+        /// <summary>HUD: 벽을 물고 도착한 뒤 재사용 대기 없이 다시 쏠 수 있는 남은 시간.</summary>
+        public override string IdleStatusText(CharacterSkill ctx) => ctx.FreeRecastLeft > 0f ? $"다시 쏘기 {ctx.FreeRecastLeft:0.0}초" : null;
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {

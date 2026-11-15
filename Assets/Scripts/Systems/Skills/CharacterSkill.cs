@@ -137,6 +137,7 @@ namespace Project1.Systems
             State = SkillState.Ready;
             CooldownRemaining = 0f;
             RecoveryProgress = 0f;
+            FreeRecastLeft = 0f; freeRecastPending = 0f;
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)
@@ -200,6 +201,12 @@ namespace Project1.Systems
             switch (State)
             {
                 case SkillState.Ready:
+                    if (FreeRecastLeft > 0f)
+                    {
+                        // 바로 다시 쓸 수 있는 시간이 지나도록 안 썼다 → 이제 재사용 대기
+                        FreeRecastLeft = Mathf.Max(0f, FreeRecastLeft - dt);
+                        if (FreeRecastLeft <= 0f && !input.Skill) { StartCooldown(); break; }
+                    }
                     if (input.Skill)
                     {
                         if (CanUse) { StartedFromCombo = false; StartedByAttack = false; StartCast(); }
@@ -252,6 +259,7 @@ namespace Project1.Systems
 
         private void StartCast()
         {
+            FreeRecastLeft = 0f; freeRecastPending = 0f; // 바로 다시 쓰기를 썼다(또는 새 시전)
             State = SkillState.Casting;
             castTime = 0f;
             CastProgress = 0f;
@@ -287,9 +295,26 @@ namespace Project1.Systems
             SkillEnded?.Invoke(completed);
         }
 
+        /// <summary>
+        /// 이번 시전이 끝나면 재사용 대기 없이 바로 다시 쓸 수 있는 시간(초)을 준다(스킬이 시전 중에 부른다, 예: 사냥터지기 그랩이 벽을 물면 3초).
+        /// 그 안에 다시 쓰면 재사용 대기 없음, 안 쓰고 지나가면 그때 재사용 대기가 시작된다.
+        /// </summary>
+        public void GrantFreeRecast(float seconds) => freeRecastPending = Mathf.Max(freeRecastPending, seconds);
+
+        /// <summary>재사용 대기 없이 다시 쓸 수 있는 남은 시간(초). 0이면 없음.</summary>
+        public float FreeRecastLeft { get; private set; }
+        private float freeRecastPending;
+
         private void StartCooldown()
         {
             RecoveryProgress = 0f;
+            if (freeRecastPending > 0f)
+            {
+                // 바로 다시 쓸 수 있는 시간: 준비 상태로 두고, 그 안에 안 쓰면 그때 재사용 대기(Ready 틱에서)
+                FreeRecastLeft = freeRecastPending; freeRecastPending = 0f;
+                State = SkillState.Ready;
+                return;
+            }
             if (skill != null && skill.cooldown > 0f)
             {
                 State = SkillState.Cooldown;
