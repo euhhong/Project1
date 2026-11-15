@@ -300,6 +300,14 @@ namespace Project1.Systems
         /// 이번 시전이 끝나면 재사용 대기 없이 바로 다시 쓸 수 있는 시간(초)을 준다(스킬이 시전 중에 부른다, 예: 사냥터지기 그랩이 벽을 물면 3초).
         /// 그 안에 다시 쓰면 재사용 대기 없음, 안 쓰고 지나가면 그때 재사용 대기가 시작된다.
         /// </summary>
+        /// <summary>시전을 쓰지 않은 것으로 끝낸다 — 재사용 대기 없이 바로 준비(예: 그랩을 조준하다 좌클릭으로 취소). 스킬이 시전 중(Tick)에 부른다.</summary>
+        public void CancelCast()
+        {
+            if (State != SkillState.Casting) return;
+            freeRecastPending = 0f;
+            EndCast(false);
+        }
+
         public void GrantFreeRecast(float seconds) { freeRecastPending = Mathf.Max(freeRecastPending, seconds); freeRecastDuration = freeRecastPending; }
         private float freeRecastDuration = 1f;
 

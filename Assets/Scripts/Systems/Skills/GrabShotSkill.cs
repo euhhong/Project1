@@ -356,7 +356,8 @@ namespace Project1.Systems
 
                 case Cancelled:
                     ctx.Reach = 0f;
-                    return true; // 취소한 다음 틱에 끝낸다(취소한 틱에는 아직 시전 중이라 공격이 나가지 않는다)
+                    ctx.CancelCast(); // 취소한 다음 틱에 끝낸다(취소한 틱에는 아직 시전 중이라 공격이 나가지 않는다) — 던지지 않았으니 재사용 대기 없이 바로 준비
+                    return false;
 
                 default: // 마무리
                     return ctx.PhaseTime >= followThrough;
