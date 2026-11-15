@@ -149,7 +149,8 @@ namespace Project1.Systems
         {
             Vector3 fwd = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
             Vector3 p = transform.position + fwd * instantDistance;
-            if (placement.GroundAt(transform, p, out Vector3 point, out Vector3 normal) && normal.y >= placement.minGroundNormalY)
+            if (placement.GroundAt(transform, p, out Vector3 point, out Vector3 normal) && normal.y >= placement.minGroundNormalY
+                && !WindowSillCheck.IsSillTop(point)) // 창틀 위에는 놓지 않는다
                 AddNote(point);
         }
 

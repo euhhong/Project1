@@ -13,6 +13,7 @@ namespace Project1.Systems
     ///   시점을 돌리는 중에 새로 고르기 시작하면 화면 가운데가 가리키는 땅, 없으면 앞쪽 defaultDistance m.
     /// - (붉은나비) 위층 바닥 끝 모서리 잡기(ledgeSnapHeight), 위로 높이차 제한(maxRiseHeight), 설 공간 검사(requireStandSpace),
     ///   벽 너머 놓기(seeThroughWalls — 보이는지는 따지지 않고 설 공간만 본다).
+    /// - 창틀(얇은 턱) 윗면에는 못 놓는다(WindowSillCheck). 벽 너머 놓기는 창틀을 지나쳐 그 너머 바닥을 찾는다.
     /// </summary>
     [Serializable]
     public class GroundPlacementPreview
@@ -139,7 +140,7 @@ namespace Project1.Systems
 
         /// <summary>땅(위를 향함)이고 설 공간이 있는지. 벽에 붙어 공간이 모자라면 point를 빈 곳으로 살짝 옮긴다.</summary>
         private bool Placeable(Transform owner, ref Vector3 point, Vector3 normal)
-            => normal.y >= minGroundNormalY && FindStandSpot(owner, ref point);
+            => normal.y >= minGroundNormalY && FindStandSpot(owner, ref point) && !WindowSillCheck.IsSillTop(point);
 
         [Tooltip("벽 너머 놓기: 이보다 두꺼운 벽(m)은 뒷면을 찾지 않는다.")]
         [Min(0.1f)] public float seeThroughMaxWall = 3f;
@@ -195,6 +196,7 @@ namespace Project1.Systems
             if (n.y < minGroundNormalY) return false;
             if (maxRiseHeight > 0f && p.y - owner.position.y > maxRiseHeight) return false;
             if (!FindStandSpot(owner, ref point)) return false;
+            if (WindowSillCheck.IsSillTop(point)) return false; // 창틀 위는 지나쳐 그 너머 바닥을 찾는다
             return true;
         }
 
@@ -278,7 +280,8 @@ namespace Project1.Systems
             set = true;
             Cancels = flat.magnitude <= cancelRadius;
             bool tooHigh = maxRiseHeight > 0f && point.y - owner.position.y > maxRiseHeight;
-            Valid = !Cancels && space && flat.magnitude <= maxPlaceDistance && !tooHigh;
+            bool sill = space && WindowSillCheck.IsSillTop(point); // 창틀(얇은 턱) 위에는 못 놓는다
+            Valid = !Cancels && space && flat.magnitude <= maxPlaceDistance && !tooHigh && !sill;
         }
 
         /// <summary>
@@ -305,6 +308,7 @@ namespace Project1.Systems
                 Vector3 outside = point - inward * (underside ? ledgeSnapInset : 0.25f) + Vector3.down * 0.02f;
                 if (Probe(owner, outside, Vector3.up, gp.y - outside.y + 0.1f, out _, out _)) return false;
                 if (!FindStandSpot(owner, ref gp)) continue;
+                if (WindowSillCheck.IsSillTop(gp)) continue; // 창틀 윗면에는 붙이지 않는다
                 point = gp; normal = gn;
                 return true;
             }
