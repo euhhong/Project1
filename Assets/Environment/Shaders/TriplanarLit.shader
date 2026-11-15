@@ -9,6 +9,9 @@ Shader "Project1/Environment/TriplanarLit"
         _Tiling ("Meters Per Tile", Float) = 3
         _Smoothness ("Smoothness", Range(0, 1)) = 0.1
         _Blend ("Blend Sharpness", Range(1, 16)) = 6
+        [Normal] _BumpMap ("Normal Map", 2D) = "bump" {}
+        _BumpScale ("Normal Strength", Range(0, 4)) = 1
+        _CavityStrength ("Cavity (dark grooves)", Range(0, 1)) = 0
     }
 
     SubShader
@@ -43,6 +46,7 @@ Shader "Project1/Environment/TriplanarLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -50,6 +54,8 @@ Shader "Project1/Environment/TriplanarLit"
                 float _Tiling;
                 half _Smoothness;
                 half _Blend;
+                half _BumpScale;
+                half _CavityStrength;
             CBUFFER_END
 
             struct Attributes
@@ -88,10 +94,28 @@ Shader "Project1/Environment/TriplanarLit"
                 float3 w = pow(abs(n), _Blend);
                 w /= max(w.x + w.y + w.z, 1e-4);
                 float3 uvw = i.positionWS / max(_Tiling, 0.01);
-                half3 cx = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvw.zy).rgb;
-                half3 cy = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvw.xz).rgb;
-                half3 cz = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvw.xy).rgb;
+                // 면 방향 부호로 u를 뒤집어 반대쪽 면도 텍스처·노멀이 거울상이 되지 않게(Ben Golus 화이트아웃 방식)
+                float3 sgn = float3(n.x < 0 ? -1 : 1, n.y < 0 ? -1 : 1, n.z < 0 ? -1 : 1);
+                float2 uvX = float2(uvw.z * sgn.x, uvw.y);
+                float2 uvY = float2(uvw.x * sgn.y, uvw.z);
+                float2 uvZ = float2(-uvw.x * sgn.z, uvw.y);
+                half3 cx = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvX).rgb;
+                half3 cy = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvY).rgb;
+                half3 cz = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvZ).rgb;
                 half3 albedo = (cx * w.x + cy * w.y + cz * w.z) * _BaseColor.rgb;
+
+                half3 tx = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvX), _BumpScale);
+                half3 ty = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvY), _BumpScale);
+                half3 tz = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvZ), _BumpScale);
+                tx.x *= sgn.x; ty.x *= sgn.y; tz.x *= -sgn.z;
+                tx = half3(tx.xy + n.zy, abs(tx.z) * n.x);
+                ty = half3(ty.xy + n.xz, abs(ty.z) * n.y);
+                tz = half3(tz.xy + n.xy, abs(tz.z) * n.z);
+                float3 bentN = normalize(tx.zyx * w.x + ty.xzy * w.y + tz.xyz * w.z);
+                // 홈(노멀이 많이 기운 곳)을 어둡게 — 줄눈·틈이 그림자 진 것처럼
+                half cavity = saturate(dot(bentN, n));
+                albedo *= lerp(1, cavity * cavity, _CavityStrength);
+                n = bentN;
 
                 InputData d = (InputData)0;
                 d.positionWS = i.positionWS;
