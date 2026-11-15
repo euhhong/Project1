@@ -23,6 +23,7 @@ namespace Project1.UI
             var traversal = Ensure<CharacterTraversal>(player);
             traversal.SetHunterStyle(entry.role == CharacterRole.Hunter); // 창틀 넘기·올라서기·매달리기·낙하·착지(BE, 감시자는 창틀을 감시자 모션으로) — 이동이 알도록 아래 RefreshSpeedLimits 전에
             traversal.SetWindowPassThrough(entry.id == "Hunter_Geisha");  // 붉은나비: 창틀 넘기 모션 없이 창틀을 뚫고 곧게 지나감(하스터처럼)
+            traversal.SetWindowJumpHang(entry.id == "Hunter_Luchino");    // 루키노: 점프 중 창틀에서 앞(W)을 누르고 있으면 짚고 넘지 않고 매달림
             Ensure<CharacterPush>(player);              // 상자 등 밀기(BE) — 모션은 CharacterTraversalAnimator
             var stamina = Ensure<CharacterStamina>(player); // 스태미나: 달리면 줄고 안 달리면 계속 회복, 다 쓰면 25까지 회복할 때까지 걷기(BE) — 이동이 알도록 아래 RefreshSpeedLimits 전에
             stamina.SetDrainPerSecond(CharacterStamina.DrainFor(entry.role == CharacterRole.Hunter)); // 생존자는 감시자보다 덜 빠르게 소모

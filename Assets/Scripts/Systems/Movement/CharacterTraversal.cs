@@ -200,6 +200,12 @@ namespace Project1.Systems
         /// <summary>창틀을 모션 없이 뚫고 지나갈지 정한다(캐릭터를 고를 때).</summary>
         public void SetWindowPassThrough(bool pass) => windowPassThrough = pass;
 
+        [Tooltip("점프 중 창틀에서 매달리기(루키노): 점프 중 날아가는 앞에 창틀이 있어도 앞(W)을 누르고 있고 손이 닿는 턱이 있으면 짚고 넘지 않고 매달린다. 앞을 안 누르면 평소처럼 짚고 넘는다. 캐릭터를 고를 때 SetWindowJumpHang으로 정한다.")]
+        [SerializeField] private bool windowJumpHang;
+
+        /// <summary>점프 중 창틀에서 앞(W)을 누르면 매달릴지 정한다(캐릭터를 고를 때, 루키노).</summary>
+        public void SetWindowJumpHang(bool on) => windowJumpHang = on;
+
         /// <summary>창틀 넘기를 감시자 길(곧게 Jump 시간)로 하는지 — 감시자 또는 창틀 뚫고 지나가기.</summary>
         private bool HunterPath => hunterStyle || windowPassThrough;
         public bool LocksActions => IsScripted(action) || action == TraversalAction.HangGrab || action == TraversalAction.Hang || action == TraversalAction.HangHop || action == TraversalAction.LandRoll || action == TraversalAction.Ladder
@@ -296,6 +302,8 @@ namespace Project1.Systems
             if (dead || stunned || IsBusy()) return;
 
             Vector3 dir = MoveDirection(input);
+            // 루키노(windowJumpHang): 점프 중 앞(W)을 누르고 있으면 창틀을 짚고 넘기 전에 먼저 매달리기를 해 본다(손이 닿는 턱이 없으면 아래 짚고 넘기).
+            if (windowJumpHang && !grounded && airborne && jumped && action == TraversalAction.None && regrab <= 0f && input.Move.y > 0.5f && dir != Vector3.zero && TryStartHang(dir)) return;
             // 점프 중 창틀을 넘어가려 하면(날아가는 방향 앞에 창틀) 반드시 짚고 넘는다 — 방향키를 놓아도 날아가던 방향으로.
             if (!grounded && airborne && jumped && action == TraversalAction.None && TryStartWindowJump(FlightDirection(dir))) return;
             // 공중(점프·낙하 중): 방향키를 안 눌러도 사다리 판정에 닿으면 잡는다(사다리 반대쪽으로 누를 때만 안 잡음).
