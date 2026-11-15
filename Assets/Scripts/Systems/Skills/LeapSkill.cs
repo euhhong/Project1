@@ -10,7 +10,7 @@ namespace Project1.Systems
     /// - 공중에서 공격 키를 누르면 바로 아래 착지 지점에 공격 범위(slamRadius)가 뜨고, 빠르게 내리꽂는다.
     ///   땅에 닿는 순간 범위 안의 다른 캐릭터를 모두 맞힌다(HitEvents, 부위는 몸통). 맞은 상대는 slamStun초 경직(CharacterStun). 그 뒤 slamRecovery 동안 못 움직인다.
     /// - 공중에서 E를 한 번 더 누르면 공격 없이 그 자리에서 바로 빠르게 떨어진다(모션은 내려찍기와 같음).
-    /// - 아무것도 안 누르면 그냥 착지하고 끝난다.
+    /// - 아무것도 안 누르면 그냥 착지하고 끝난다. 떠오르거나 떨어지는 동안 앞(W)을 누르고 있으면 손이 닿는 턱(창틀·난간)에 매달린다(도약은 끝 — 재사용 대기 시작).
     /// - 높이 떨어지는 중(발밑 땅까지 minAirHeight 이상 — 스페이스바 낮은 점프는 해당 없음)에도 쓸 수 있다:
     ///   E = 위의 '빠르게 떨어지기', 공격 키 = 위의 '내려찍기'(같은 범위·판정·피해·경직·모션)가 그 자리에서 바로 시작된다(StartsOnAirAttack).
     /// 땅에서는 도약, 낮은 공중에서는 못 쓴다. 시전 중 일반 공격·점프는 못 한다(공격 키는 내려찍기에 쓴다).
@@ -129,6 +129,10 @@ namespace Project1.Systems
             recovery = 0f;
             var motor = ctx.GetComponent<CharacterMotor>();
             if (motor == null) return true;
+
+            // 도약 중(떠오르는 동안·빠르게 떨어지는 동안) 앞(W)을 누르고 있고 손이 닿는 턱(창틀·난간)이 앞에 있으면 매달린다 — 도약은 끝나고 재사용 대기가 시작된다.
+            if ((ctx.Phase == Rising || ctx.Phase == Dropping) && input.Move.y > 0.5f && ctx.TryGetComponent(out CharacterTraversal traversal)
+                && traversal.TryHangFromSkill(ctx.transform.forward)) return true;
 
             if (ctx.Phase == Rising)
             {

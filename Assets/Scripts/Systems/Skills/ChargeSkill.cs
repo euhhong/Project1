@@ -111,7 +111,7 @@ namespace Project1.Systems
                 return true;
             }
 
-            if (!CrashPenalty) return true; // 벽 충돌 페널티가 없는 돌진(광대 로켓): 그냥 멈춘다
+            if (!CrashPenalty) { recovery = CrashStiffness; return true; } // 벽 기절 페널티가 없는 돌진(광대 로켓): 멈추고 잠깐 경직만(넘어지는 모션 없음)
             // 벽·장애물: 넘어지지 않고 일반 기절(기절 모션). 짧게 달렸으면 잠깐, 길게 달렸으면 달린 거리에 비례해 오래.
             float run = elapsed * chargeSpeed;
             float stunTime = Mathf.Lerp(minCrashStun, crashRecovery, Mathf.InverseLerp(0f, fullCrashDistance, run)); // 짧게 달릴수록 짧게
@@ -161,6 +161,12 @@ namespace Project1.Systems
 
         /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(전위 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
         protected virtual bool CrashPenalty => true;
+
+        /// <summary>CrashPenalty가 없을 때 벽에 박으면 잠깐 못 움직이는 경직(초, 기절 아님 — Recovering). 기본 0.</summary>
+        protected virtual float CrashStiffness => 0f;
+
+        /// <summary>HUD: 돌진하는 동안 남은 시간 막대(시전 진행).</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
 
         /// <summary>박치기 판정을 몸보다 옆으로 넓게 볼지(전위 = 예). 아니오면 몸이 실제로 닿아야 박는다(광대 로켓 옛 판정).</summary>
         protected virtual bool UsesRamZone => true;

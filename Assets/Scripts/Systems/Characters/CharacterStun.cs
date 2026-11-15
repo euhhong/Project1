@@ -96,10 +96,14 @@ namespace Project1.Systems
             return IsStunned;
         }
 
+        /// <summary>기절이 풀리는 빠르기 배율(1 = 보통). 예: 리퍼가 안개 위에 있으면 1.3(MistTrailField가 매 틱 정함).</summary>
+        public float RecoveryRate { get; set; } = 1f;
+
         private void FixedUpdate()
         {
+            float rate = RecoveryRate; RecoveryRate = 1f; // 매 틱 정해 주는 쪽이 없으면 보통 빠르기
             if (!IsStunned) return;
-            StunRemaining = Mathf.Max(0f, StunRemaining - Time.fixedDeltaTime);
+            StunRemaining = Mathf.Max(0f, StunRemaining - Time.fixedDeltaTime * Mathf.Max(0f, rate));
             if (!IsStunned) { StunnedFromBehind = false; Breakable = false; Recovered?.Invoke(); }
         }
 

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: SmileyFace_RocketCharge
   displayName: "\uB85C\uCF13 \uB3CC\uC9C4"
   castTime: 12
-  cooldown: 0
+  cooldown: 6
   castMoveSpeed: 3.6
   chargeSpeed: 8
   obstacleGrace: 0.1

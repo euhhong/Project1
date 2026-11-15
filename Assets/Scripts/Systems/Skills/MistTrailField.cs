@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// 리퍼 안개 칼날이 지나간 자리에 안개 구역을 남긴다(BE).
     /// - 칼날(MistCharge.LaunchBlade)이 날아가는 동안 spacing마다 안개 한 덩이를 놓는다(끝난 자리에도 하나).
     /// - 덩이마다 lifetime(7초)이 지나면 사라진다.
-    /// - 리퍼가 안개 위(덩이에서 수평 radius 안, 칼날 높이 아래 땅 ~ 조금 위)에서 움직이면 이동 속도 speedBoost배(1.3 = 30% 빠름, IMoveSpeedBoost).
+    /// - 리퍼가 안개 위(덩이에서 수평 radius 안, 칼날 높이 아래 땅 ~ 조금 위)에서 움직이면 이동 속도 speedBoost배(1.5 = 50% 빠름, IMoveSpeedBoost). 안개 위에서는 기절도 30% 빨리 풀린다(stunRecoveryBonus).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 리퍼만). 그리기는 FE(MistTrailVisual).
     /// </summary>
     [DisallowMultipleComponent]
@@ -21,7 +21,9 @@ namespace Project1.Systems
         [Tooltip("안개 한 덩이의 반지름(m, 수평).")]
         [SerializeField, Min(0.1f)] private float radius = 1.3f;
         [Tooltip("안개 위에서 움직일 때 이동 속도 배율.")]
-        [SerializeField, Min(1f)] private float speedBoost = 1.3f;
+        [SerializeField, Min(1f)] private float speedBoost = 1.5f;
+        [Tooltip("안개 위에 있는 동안 기절이 풀리는 빠르기를 이만큼 더(0.3 = 30% 빨리).")]
+        [SerializeField, Min(0f)] private float stunRecoveryBonus = 0.3f;
         [Tooltip("칼날 높이보다 이만큼(m) 아래까지 안개 위로 본다(칼날은 허리 높이로 날아간다).")]
         [SerializeField, Min(0f)] private float depthBelow = 3f;
 
@@ -52,6 +54,7 @@ namespace Project1.Systems
         private void FixedUpdate()
         {
             float now = Time.time;
+            if (stunRecoveryBonus > 0f && points.Count > 0 && InMist && TryGetComponent(out CharacterStun stun)) stun.RecoveryRate = 1f + stunRecoveryBonus; // 안개 위: 기절이 빨리 풀림
             while (points.Count > 0 && now - points[0].Born >= lifetime) points.RemoveAt(0); // 오래된 것부터 사라진다
 
             for (int i = tracked.Count - 1; i >= 0; i--)

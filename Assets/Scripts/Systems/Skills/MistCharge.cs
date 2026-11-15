@@ -32,7 +32,7 @@ namespace Project1.Systems
         [Tooltip("날아가는 최대 거리(m) — 맵 끝까지.")]
         [SerializeField, Min(1f)] private float maxRange = 200f;
         [Tooltip("상대를 맞히는 굵기(반지름, m) — 2칸 공격 / E(1칸). 벽·바닥에 닿는 굵기.")]
-        [SerializeField, Min(0.05f)] private float fullHitRadius = 0.6f, weakHitRadius = 0.45f, wallRadius = 0.12f;
+        [SerializeField, Min(0.05f)] private float fullHitRadius = 0.85f, weakHitRadius = 0.45f, wallRadius = 0.12f; // 2칸 공격 칼날은 폭을 넓게(0.6 → 0.85)
         [Tooltip("세기 배율(HitResult.Power) — 2칸 공격 / E(1칸, 약함).")]
         [SerializeField, Min(0.01f)] private float fullPower = 1f, weakPower = 0.5f;
         [Tooltip("날아가기 시작하는 자리(캐릭터 키 대비 높이 / 몸 앞 m).")]

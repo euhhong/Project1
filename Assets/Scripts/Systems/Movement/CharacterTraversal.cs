@@ -541,6 +541,14 @@ namespace Project1.Systems
 
         // ───────────────────── 매달리기 ─────────────────────
 
+        /// <summary>스킬 도중(예: 루키노 도약 중 앞(W)을 누름) dir 쪽으로 손이 닿는 턱(창틀·난간·바닥 끝)이 있으면 바로 매달린다. 매달렸으면 true(스킬은 끝내면 된다).</summary>
+        public bool TryHangFromSkill(Vector3 dir)
+        {
+            if (regrab > 0f || !(action == TraversalAction.None || action == TraversalAction.Fall)) return false;
+            dir = Vector3.ProjectOnPlane(dir, Vector3.up);
+            return dir.sqrMagnitude > 1e-4f && TryStartHang(dir.normalized);
+        }
+
         private bool TryStartHang(Vector3 dir)
         {
             if (!FindHang(transform.position, dir, out var l, out bool wall, out var hp)) return false;

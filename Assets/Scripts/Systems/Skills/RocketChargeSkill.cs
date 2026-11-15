@@ -64,9 +64,16 @@ namespace Project1.Systems
 
         // 들고 다님 = ID_Raise(상체만, 다리는 걷기), 돌진 = ID(전신), 넘어짐 = ID_End
         public override string AnimationState(CharacterSkill ctx) =>
-            ctx.State == SkillState.Recovering ? id + "_End" : ctx.Phase == Charging ? id : id + "_Raise";
+            ctx.State == SkillState.Recovering ? string.Empty : ctx.Phase == Charging ? id : id + "_Raise"; // 벽 경직(Recovering)은 넘어지는 모션 없이 제자리
 
-        protected override bool CrashPenalty => false; // 로켓 돌진은 벽에 박아도 기절 페널티 없이 그냥 멈춘다
+        protected override bool CrashPenalty => false; // 로켓 돌진은 벽에 박아도 기절 페널티 없이 멈춘다 — 대신 잠깐 경직
+
+        [Tooltip("벽에 박으면 이 시간(초) 동안 못 움직이는 경직(기절 아님, 넘어지는 모션 없이 제자리).")]
+        [Min(0f)] public float wallStiffness = 1f;
+        protected override float CrashStiffness => wallStiffness;
+
+        /// <summary>HUD: 돌진하는 동안만 남은 시간 막대(들고 다니는 동안은 없음).</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => ctx.Phase == Charging ? float.NaN : -1f;
 
         [Header("옛 박치기 판정 — 몸에 닿으면 바로 기절(넉백 없음)")]
         [Tooltip("돌진한 거리 1m마다 상대 기절 시간(초) / 최소 / 최대.")]

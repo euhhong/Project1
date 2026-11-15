@@ -107,7 +107,7 @@ namespace Project1.UI
                 if (player.TryGetComponent(out AttackHitDetector reachDetector))
                 {
                     // 붉은나비 평타: 앞 리치 +0.75m(감시자 보정 0.5m 위에), 좌우 폭도 조금(±0.15m)
-                    reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.75f : 0f);
+                    reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.75f : entry.id == "Hunter_Luchino" ? 0.5f : 0f); // 루키노 평타: 앞 리치 +0.5m
                     reachDetector.SetExtraWidth(entry.id == "Hunter_Geisha" ? 0.15f : 0f);
                 }
                 // 사냥터지기 강공격(좌클릭 꾹): 공격 전 자세로 1초 모은 뒤 저절로 내려침, 모으는 동안 이동 속도가 걷기의 2배(+100%)까지 점점 빨라짐, 대신 치고 나면 후딜레이 +0.6초 동안 제자리
