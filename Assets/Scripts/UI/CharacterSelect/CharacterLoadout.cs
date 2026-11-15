@@ -61,6 +61,7 @@ namespace Project1.UI
             SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 하스터: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
             SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 하스터: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
             SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 하스터: 다리 촉수 다섯 가닥 꿈틀거림(FE)
+            SetProp<HasturBowPose>(player, entry.id == "Hunter_Hastur");      // 하스터: 촉수를 내려찍는 동안 허리를 숙여 인사하는 자세(FE) — 그동안 평타·촉수 세우기 잠김(BE TentacleField)
             SetProp<LuchinoTailSway>(player, entry.id == "Hunter_Luchino");   // 루키노: 꼬리 흔들기·관성(돌면 처졌다 따라옴, 착지하면 탁 침)(FE)
             SetProp<WeaponHitboxPad>(player, entry.id == "Hunter_Luchino");   // 루키노: 마체테 판정을 두껍고 조금 길게(빠른 가로 베기가 틱 사이에 빗나가지 않게)(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)

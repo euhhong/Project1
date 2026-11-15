@@ -62,6 +62,10 @@ namespace Project1.Systems
         [Min(0f)] public float towStopReach = 0.1f;
         [Tooltip("벽에 도착하면 주변에 퍼지는 충격파 반지름(m, 루키노 내려찍기처럼 — 아주 작게). 데미지 없음, 맞으면 감속 + 휘청이는 모션. 0 = 없음.")]
         [Min(0f)] public float wallShockRadius = 1.8f;
+        [Tooltip("맞힌 상대에게 그랩 자체 피해를 줄지(끄면 맞힘·끌어오기만 — 사냥터지기). 끄면 끌어오기를 마친 뒤 followUpTime초 안의 타격이 피해 × followUpDamageScale.")]
+        public bool grabDealsDamage = true;
+        [Min(0f)] public float followUpTime = 1f;
+        [Min(1f)] public float followUpDamageScale = 1.5f;
         [Tooltip("충격파에 맞은 상대가 느려지는 시간(초) / 최대 속도(상대 달리기 속도 대비).")]
         [Min(0f)] public float wallShockSlowTime = 1.5f;
         [Range(0.05f, 1f)] public float wallShockSlowRatio = 0.4f;
@@ -116,6 +120,7 @@ namespace Project1.Systems
 
         private struct Vault { public Vector3 Hook, Land; public float AirTime, Speed, LaunchSpeed, Gravity; public CharacterController Victim; }
         private static readonly System.Collections.Generic.Dictionary<CharacterSkill, Vault> vaults = new();
+        private static readonly System.Collections.Generic.Dictionary<CharacterSkill, int> dragVictimId = new(); // 지금 끌어오는 상대(끌어오기를 마치면 후속 타격 보너스)
 
         public override bool CanStart(GameObject owner, out string reason)
         {
@@ -267,7 +272,8 @@ namespace Project1.Systems
                     {
                         ctx.Reach = charAt;
                         Vector3 hookPoint = ctx.ReachOrigin + ctx.Direction * charAt;
-                        RaiseHit(ctx, victim, hookPoint);
+                        if (grabDealsDamage || vaultOverVictim) RaiseHit(ctx, victim, hookPoint); // 사냥터지기: 그랩 자체는 피해 없음(끌어온 뒤 타격이 세짐)
+                        dragVictimId[ctx] = victim.Owner.Id;
                         if (vaultOverVictim) { BeginVault(ctx, victim, hookPoint); return false; }
                         // 문 상대를 끌어온다(되감는 동안 + 놓인 뒤 잠깐 기절).
                         GrabPull.Begin(victim.Owner.gameObject, ctx, this, hookPoint, charAt / dragSpeed + dragReleaseStun);
@@ -289,7 +295,12 @@ namespace Project1.Systems
 
                 case Dragging:
                     ctx.Reach = Mathf.Max(0f, ctx.Reach - dragSpeed * dt);
-                    if (ctx.Reach <= 0f) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
+                    if (ctx.Reach <= 0f)
+                    {
+                        ctx.Reach = 0f; ctx.SetPhase(FollowThrough);
+                        // 끌어오기를 마침: 그랩 피해가 없는 사냥터지기는 이 상대를 followUpTime초 안에 때리면 더 아프다
+                        if (!grabDealsDamage && dragVictimId.TryGetValue(ctx, out int vid)) GrabFollowUpBonus.Mark(ctx.gameObject, vid, followUpTime, followUpDamageScale);
+                    }
                     return false;
 
                 case Vaulting:

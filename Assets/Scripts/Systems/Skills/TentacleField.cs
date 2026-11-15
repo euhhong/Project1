@@ -16,7 +16,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint
+    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock
     {
         [Tooltip("촉수를 세울 자리 고르기(땅 위만, 몸 근처 = 취소).")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false, maxPlaceDistance = 25f, defaultDistance = 8f, clampToMax = true };
@@ -71,6 +71,19 @@ namespace Project1.Systems
         public float SlamRadius => slamRadius;
         public float SlamHalfAngle => slamHalfAngle;
         public float SlamInnerRadius => slamInnerRadius;
+
+        /// <summary>촉수가 내려찍는 중(말아 올림·내리침) — 그동안 하스터는 허리를 숙여 인사하는 자세(FE HasturBowPose)이고 평타·촉수 세우기가 잠긴다.</summary>
+        public bool Slamming
+        {
+            get
+            {
+                foreach (var t in tentacles) if (t.State == TentacleState.SlamWindup || t.State == TentacleState.SlamActive) return true;
+                return false;
+            }
+        }
+
+        /// <summary>내려찍는 동안 평타(공격)를 막는다(보이는 표시 없음 — CharacterAttack이 본다).</summary>
+        public bool ActionsLocked => isActiveAndEnabled && Slamming;
         public float SlamReach => tentacleHeight + slamReachExtra;
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
@@ -102,7 +115,7 @@ namespace Project1.Systems
             {
                 if (!input.HeavyCharging) waitRelease = false;
             }
-            else if (input.HeavyCharging && !blocked)
+            else if (input.HeavyCharging && !blocked && !Slamming) // 내려찍는 동안은 세우기 잠김
             {
                 if (!Placing) placement.Begin();
                 Placing = true;

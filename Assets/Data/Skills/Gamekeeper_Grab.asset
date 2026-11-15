@@ -35,9 +35,12 @@ MonoBehaviour:
   wallProbeRadius: 0.12
   wallMaxNormalY: 0.6
   towStopReach: 0.1
-  wallShockRadius: 2.4
+  wallShockRadius: 3
   wallShockSlowTime: 1.5
   wallShockSlowRatio: 0.4
+  grabDealsDamage: 0
+  followUpTime: 1
+  followUpDamageScale: 1.5
   towToWalls: 1
   vaultOverVictim: 0
   vaultHeight: 2.6
