@@ -16,7 +16,7 @@ namespace Project1.Systems
         {
             var health = owner.GetComponent<CharacterHealth>();
             if (health == null) { reason = "체력 없음"; return false; }
-            if (health.IsFull) { reason = "체력이 가득 참"; return false; }
+            if (health.IsFull) { reason = "체력 가득"; return false; }
             reason = null;
             return true;
         }

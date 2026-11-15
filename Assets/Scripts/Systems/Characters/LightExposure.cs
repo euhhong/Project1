@@ -38,7 +38,7 @@ namespace Project1.Systems
         public bool Lit => SimulationTick.Current - litTick <= 1;
         public bool LitFront => SimulationTick.Current - frontTick <= 1;
         public bool SkillLocked => isActiveAndEnabled && sealedSkill;
-        public string LockReason => "손전등에 지져짐";
+        public string LockReason => "손전등 봉인";
 
         private void OnEnable() => all.Add(this);
         private void OnDisable() { all.Remove(this); Exposure = 0f; FrontExposure = 0f; sealedSkill = false; }

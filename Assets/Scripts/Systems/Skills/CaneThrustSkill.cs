@@ -91,7 +91,7 @@ namespace Project1.Systems
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 
-        public override string StatusText(CharacterSkill ctx) => ctx.Phase == Windup ? "준비" : "찌르기!";
+        public override string StatusText(CharacterSkill ctx) => string.Empty;
 
         public override void Complete(GameObject owner) { }
 

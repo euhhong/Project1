@@ -131,7 +131,7 @@ namespace Project1.Systems
         public override bool CanStart(GameObject owner, out string reason)
         {
             var state = owner.GetComponent<ICharacterState>();
-            if (state != null && !state.IsGrounded) { reason = "공중에서는 못 씀"; return false; }
+            if (state != null && !state.IsGrounded) { reason = "공중 불가"; return false; }
             reason = null;
             return true;
         }
@@ -399,16 +399,16 @@ namespace Project1.Systems
             : ctx.Phase == Vaulting ? id + "_Vault" : ctx.Phase == VaultLanding ? id + "_Land" : id;
 
         /// <summary>HUD: 벽을 물고 도착한 뒤 재사용 대기 없이 다시 쏠 수 있는 남은 시간.</summary>
-        public override string IdleStatusText(CharacterSkill ctx) => ctx.FreeRecastLeft > 0f ? "다시 쏘기!" : null; // 남은 시간은 오른쪽 아래 게이지로
+        public override string IdleStatusText(CharacterSkill ctx) => ctx.FreeRecastLeft > 0f ? "다시 쏘기" : null; // 남은 시간은 오른쪽 아래 게이지로
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {
-            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "취소: 좌클릭" : "준비",
-            Cancelled => "취소",
-            Dragging => "끌어오기!",
-            Towing => "벽으로!",
-            Vaulting => "뛰어넘기!",
-            _ => "그랩!",
+            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "취소: 좌클릭" : string.Empty,
+            Cancelled => string.Empty,
+            Dragging => string.Empty,
+            Towing => string.Empty,
+            Vaulting => string.Empty,
+            _ => string.Empty,
         };
 
         public override void Complete(GameObject owner)

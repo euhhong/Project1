@@ -98,9 +98,9 @@ namespace Project1.UI
                 GUI.color = Color.white;
                 string status = skill.State switch
                 {
-                    SkillState.Casting => "사용 중",
+                    SkillState.Casting => string.Empty,
                     SkillState.Recovering => "넘어짐",
-                    SkillState.Cooldown => "재사용 대기", // 남은 시간은 오른쪽 아래 게이지로
+                    SkillState.Cooldown => "대기", // 남은 시간은 오른쪽 아래 게이지로
                     _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
                 };
                 if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 = 재사용 대기 남은 초만)

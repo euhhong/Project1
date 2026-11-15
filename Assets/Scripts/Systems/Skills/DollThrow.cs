@@ -125,7 +125,7 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
         public bool SafeFall => safeFall;
         public bool GentleDrop => safeFall; // 자리를 바꿔 공중에 나타난 뒤 다음 착지까지: 서 있는 자세로 그냥 툭 떨어지고 착지 동작 없음(CharacterTraversal)
-        public string ChargeCancelHint => !Aiming ? null : "E 취소";
+        public string ChargeCancelHint => !Aiming ? null : "취소: E";
         private bool waitRelease;
         /// <summary>차징을 E로 취소한 틱 / 취소한 뒤 좌클릭을 아직 떼지 않음. 이 동안 E 스킬(분신·자리 바꾸기)은 나가지 않는다.</summary>
         public int CancelTick { get; private set; } = int.MinValue;

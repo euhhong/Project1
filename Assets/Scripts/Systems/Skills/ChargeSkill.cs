@@ -52,7 +52,7 @@ namespace Project1.Systems
         public override bool CanStart(GameObject owner, out string reason)
         {
             var state = owner.GetComponent<ICharacterState>();
-            if (state != null && !state.IsGrounded) { reason = "공중에서는 못 씀"; return false; }
+            if (state != null && !state.IsGrounded) { reason = "공중 불가"; return false; }
             reason = null;
             return true;
         }
@@ -157,7 +157,7 @@ namespace Project1.Systems
         }
 
         /// <summary>HUD: 돌진 중 멈추는 방법.</summary>
-        public override string StatusText(CharacterSkill ctx) => "돌진 중 — E로 멈춤";
+        public override string StatusText(CharacterSkill ctx) => "멈춤: E";
 
         /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(전위 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
         protected virtual bool CrashPenalty => true;

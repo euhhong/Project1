@@ -104,6 +104,6 @@ namespace Project1.Systems
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 
-        public override string StatusText(CharacterSkill ctx) => "비추는 중 — E로 넣기";
+        public override string StatusText(CharacterSkill ctx) => "넣기: E";
     }
 }

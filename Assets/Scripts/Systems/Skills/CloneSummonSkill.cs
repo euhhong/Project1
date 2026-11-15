@@ -62,7 +62,7 @@ namespace Project1.Systems
             current[id.Id] = Summon(ctx, id);
         }
 
-        public override string StatusText(CharacterSkill ctx) => "꾹 = 분신";
+        public override string StatusText(CharacterSkill ctx) => "꾹: 분신";
 
         public override string IdleStatusText(CharacterSkill ctx)
         {
@@ -70,7 +70,7 @@ namespace Project1.Systems
             // 인형과 자리 바꾸기(E 짧게) 재사용 대기
             string swap = null; // 자리 바꾸기 재사용 대기는 오른쪽 아래 게이지로(DollThrow)
             string clone = owner != null && current.TryGetValue(owner.Id, out var c) && c != null
-                ? $"분신 — {(c.Target != null ? (c.InRange ? "공격 중" : "쫓는 중") : "목표 없음")}" : null;
+                ? (c.Target != null ? (c.InRange ? "분신 공격" : "분신 추적") : "분신 대기") : null;
             return swap != null && clone != null ? $"{swap} · {clone}" : swap ?? clone;
         }
 

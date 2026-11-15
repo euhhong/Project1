@@ -204,7 +204,7 @@ namespace Project1.Systems
         public override bool Afterimage(CharacterSkill ctx) => ctx.Phase == Dashing;
 
         // 상태 글자: 도약 재사용 대기 남은 시간만(설명은 없음). 준비되면 빈칸.
-        public override string StatusText(CharacterSkill ctx) => DashCooldownRemaining(ctx) > 0f ? $"{DashCooldownRemaining(ctx):0.0}초" : string.Empty;
+        public override string StatusText(CharacterSkill ctx) => string.Empty; // 도약 재사용 대기는 막대로만(초는 쓰지 않음)
 
         // HUD 막대: 재사용 대기 중이면 차오르는 막대, 준비되면 없음.
         public override float StatusBarFill(CharacterSkill ctx)

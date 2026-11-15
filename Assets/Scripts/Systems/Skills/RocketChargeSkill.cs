@@ -92,7 +92,7 @@ namespace Project1.Systems
         public override bool CanStart(GameObject owner, out string reason)
         {
             if (!base.CanStart(owner, out reason)) return false;
-            if (LookingAtEnemy(owner)) { reason = "상대를 보고 있음"; return false; }
+            if (LookingAtEnemy(owner)) { reason = "상대가 보임"; return false; }
             return true;
         }
 
@@ -116,6 +116,6 @@ namespace Project1.Systems
             return false;
         }
 
-        public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "로켓 돌진! — E로 멈춤" :"로켓 들기 — E를 떼면 돌진(좌클릭 취소)";
+        public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "멈춤: E" : "취소: 좌클릭";
     }
 }

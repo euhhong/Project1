@@ -28,7 +28,7 @@ namespace Project1.Systems
 
         public override bool CanStart(GameObject owner, out string reason)
         {
-            if (!owner.TryGetComponent(out MistCharge mist) || mist.Charges < cost) { reason = "안개가 없음"; return false; }
+            if (!owner.TryGetComponent(out MistCharge mist) || mist.Charges < cost) { reason = "안개 부족"; return false; }
             reason = null;
             return true;
         }
@@ -79,14 +79,14 @@ namespace Project1.Systems
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 
-        public override string StatusText(CharacterSkill ctx) => "안개 칼날!";
+        public override string StatusText(CharacterSkill ctx) => string.Empty;
 
         /// <summary>HUD: 안개 칸(●○)과 다음 칸까지 남은 시간.</summary>
         public override string IdleStatusText(CharacterSkill ctx)
         {
             if (!ctx.TryGetComponent(out MistCharge mist)) return null;
             string pips = new string('●', mist.Charges) + new string('○', Mathf.Max(0, mist.MaxCharges - mist.Charges));
-            if (mist.Charges >= mist.MaxCharges) return $"안개 {pips}  공격 = 칼날";
+            if (mist.Charges >= mist.MaxCharges) return $"안개 {pips}";
             return $"안개 {pips}"; // 다음 칸까지는 오른쪽 아래 게이지로
         }
 

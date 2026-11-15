@@ -70,7 +70,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
-        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기";
+        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E";
         public bool Selecting { get; private set; }
         public int TargetIndex { get; private set; } = -1;
         public IReadOnlyList<TentacleInfo> Tentacles => tentacles;

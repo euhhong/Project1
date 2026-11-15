@@ -106,7 +106,7 @@ namespace Project1.UI
             if (result != null)
             {
                 GUI.Label(new Rect(0, Screen.height * 0.35f, w, 120f * u), result, big);
-                GUI.Label(new Rect(0, Screen.height * 0.35f + 120f * u, w, 40f * u), "R  다시 하기(캐릭터 선택으로)", small);
+                GUI.Label(new Rect(0, Screen.height * 0.35f + 120f * u, w, 40f * u), "R  다시 하기", small);
             }
         }
     }

@@ -242,7 +242,7 @@ namespace Project1.Systems
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 
-        public override string StatusText(CharacterSkill ctx) => "나비에게!";
+        public override string StatusText(CharacterSkill ctx) => string.Empty; // 하는 일을 다시 말하는 글은 쓰지 않는다
 
         /// <summary>HUD: 손에 쥔 나비 칸(●○)과 다음 한 마리까지 남은 시간.</summary>
         public override string IdleStatusText(CharacterSkill ctx)

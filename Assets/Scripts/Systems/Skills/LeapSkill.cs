@@ -58,11 +58,11 @@ namespace Project1.Systems
             if (state != null && !state.IsGrounded)
             {
                 // 높이 떨어지는 중: 바로 내리꽂기(E = 빠르게 떨어지기, 공격 = 내려찍기). 낮은 점프에서는 못 쓴다.
-                if (HeightAboveGround(owner.transform.position) < minAirHeight) { reason = "공중에서는 못 씀"; return false; }
+                if (HeightAboveGround(owner.transform.position) < minAirHeight) { reason = "공중 불가"; return false; }
                 reason = null;
                 return true;
             }
-            if (HasCeiling(owner)) { reason = "천장이 막혀 못 뜀"; return false; }
+            if (HasCeiling(owner)) { reason = "천장 막힘"; return false; }
             reason = null;
             return true;
         }
