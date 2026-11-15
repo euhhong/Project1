@@ -6,10 +6,11 @@ namespace Project1.Systems
     /// <summary>
     /// 돌진(전위 럭비공): 쓰면 바라보는 방향으로 계속 달려 나간다.
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
-    /// - 옆으로 벽·장애물에 닿으면 멈춘다. 짧게(shortCrashDistance 5m 미만) 달렸으면 넘어지지 않고 잠깐(0.4초) 멈칫,
-    ///   그보다 길게 달렸으면 넘어져 달린 거리에 비례해 minFallRecovery(1초) ~ crashRecovery(1.8초, 12m 이상) 동안 못 움직인다.
-    /// - 다른 캐릭터에 닿으면(박치기) 멈추고, 상대는 돌진한 거리에 비례한 세기로 밀려난다(knockSpeedPerMeter, 밀리는 동안 기절). 나는 넘어지지 않는다.
-    ///   밀려나다 벽에 박히면 wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond 기절(최대 wallStunMax 5초).
+    /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
+    ///   짧게(shortCrashDistance 5m 미만) 달렸으면 shortCrashRecovery(0.4초), 그보다 길면 달린 거리에 비례해 minFallRecovery(1초) ~ crashRecovery(1.8초, 12m 이상).
+    /// - 다른 캐릭터에 닿으면(박치기) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
+    ///   상대가 밀려나다 벽에 박혀야만 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
     /// - 시야(마우스 우클릭)로 방향은 틀 수 있다(몸이 시야 방향을 보기 때문).
     /// - 돌진 중 E를 한 번 더 누르면 그 자리에서 멈춘다(넘어지지 않음, cancelGrace 뒤부터).
@@ -24,15 +25,14 @@ namespace Project1.Systems
         [Tooltip("시작 직후 이 시간(초) 동안은 장애물에 닿아도 멈추지 않는다(벽에 붙어 시작할 때 바로 끝나지 않게).")]
         [Min(0f)] public float obstacleGrace = 0.1f;
 
-        [Tooltip("장애물에 부딪혀 멈추면 넘어져서 못 움직이는 시간(초) — 멀리(fullCrashDistance 이상) 달려 부딪혔을 때. 넘어지기 모션(Fall_1, 1.77초)에 맞춘다.")]
+        [Tooltip("벽·장애물에 부딪혀 걸리는 기절 시간(초, 일반 기절 모션) — 멀리(fullCrashDistance 이상) 달려 부딪혔을 때.")]
         [Min(0f)] public float crashRecovery = 1.8f;
-        [Tooltip("짧게 달려 부딪힘: 달린 거리(m)가 이보다 짧으면 넘어지지 않고 shortCrashRecovery초만 멈칫한다.")]
+        [Tooltip("짧게 달려 부딪힘: 달린 거리(m)가 이보다 짧으면 shortCrashRecovery초만 기절한다.")]
         [Min(0f)] public float shortCrashDistance = 5f;
         [Min(0f)] public float shortCrashRecovery = 0.4f;
-        [Tooltip("그보다 길게 달려 부딪히면 넘어진다: 넘어진 시간 = minFallRecovery(shortCrashDistance에서) ~ crashRecovery(이 거리 m 이상에서), 달린 거리에 비례.")]
+        [Tooltip("그보다 길게 달려 부딪히면: 기절 시간 = minFallRecovery(shortCrashDistance에서) ~ crashRecovery(이 거리 m 이상에서), 달린 거리에 비례.")]
         [Min(0f)] public float fullCrashDistance = 12f;
         [Min(0f)] public float minFallRecovery = 1f;
-        private const int ShortCrash = 1; // ctx.Phase: 짧게 부딪혀 멈칫(넘어지는 모션 없음)
 
         [Header("캐릭터에 부딪힘(박치기) → 상대 넉백")]
         [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
@@ -72,14 +72,8 @@ namespace Project1.Systems
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
             if (input.Skill && elapsed > cancelGrace) { recovery = 0f; return true; } // E를 한 번 더 → 돌진 취소
-            bool end = ShouldEndEarly(ctx.gameObject, elapsed, out recovery);
-            if (end && recovery > 0f && elapsed * chargeSpeed < shortCrashDistance) ctx.SetPhase(ShortCrash); // 짧게 부딪힘: 넘어지지 않음
-            return end;
+            return ShouldEndEarly(ctx.gameObject, elapsed, out recovery);
         }
-
-        /// <summary>짧게 부딪혀 멈칫할 때는 넘어지는 모션(_End)을 틀지 않는다(제자리에 잠깐 멈춤).</summary>
-        public override string AnimationState(CharacterSkill ctx) =>
-            ctx.State == SkillState.Recovering && ctx.Phase == ShortCrash ? string.Empty : base.AnimationState(ctx);
 
         public override bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery)
         {
@@ -88,7 +82,7 @@ namespace Project1.Systems
             var motor = owner.GetComponent<CharacterMotor>();
             if (motor == null || !motor.HitObstacle) return false;
 
-            // 부딪힌 것이 다른 캐릭터면(박치기): 돌진한 거리만큼 세게 밀어내고, 나는 넘어지지 않고 멈춘다.
+            // 부딪힌 것이 다른 캐릭터면(박치기): 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
             // 같은 팀·면역(예: 나비에게 날아가는 붉은나비)이면 밀지 않고 멈추기만 한다.
             var victim = motor.LastObstacle != null ? motor.LastObstacle.GetComponentInParent<CharacterIdentity>() : null;
             if (victim != null && victim.gameObject != owner)
@@ -100,15 +94,17 @@ namespace Project1.Systems
                 dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
                 float speed = Mathf.Clamp(distance * knockSpeedPerMeter, minKnockSpeed, maxKnockSpeed);
                 float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5초)
-                Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: true, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true);
+                Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true);
                 return true;
             }
 
-            // 벽·장애물: 짧게 달렸으면 잠깐 멈칫, 길게 달렸으면 달린 거리에 비례해 오래 넘어진다.
+            // 벽·장애물: 넘어지지 않고 일반 기절(기절 모션). 짧게 달렸으면 잠깐, 길게 달렸으면 달린 거리에 비례해 오래.
             float run = elapsed * chargeSpeed;
-            recovery = run < shortCrashDistance
+            float stunTime = run < shortCrashDistance
                 ? shortCrashRecovery
                 : Mathf.Lerp(minFallRecovery, crashRecovery, Mathf.InverseLerp(shortCrashDistance, fullCrashDistance, run));
+            CharacterStun.Apply(owner, stunTime, Vector3.zero); // 방향 없음 = 앞으로 숙이는 일반 기절(뒤로 쓰러지는 모션 아님)
+            recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
             return true;
         }
 
