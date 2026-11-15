@@ -177,7 +177,7 @@ namespace Project1.Systems
             }
 
             // 조준 보조: 누르지 않을 때도 지금 꾹 눌렀다 떼면 나비가 갈 자리를 미리 계산한다(FE가 고리로 보여 줌).
-            AimShown = !Placing && !blocked && Charges > 0;
+            AimShown = !Placing && !blocked && Charges > 0 && !waitRelease; // 취소한 뒤 좌클릭을 뗄 때까지는 보조 고리도 숨긴다(마우스를 따라다니지 않게)
             if (AimShown) { aim.Begin(); aim.Update(transform, input); }
 
             UpdateTarget(input);
