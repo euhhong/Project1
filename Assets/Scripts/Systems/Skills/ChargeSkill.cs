@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   짧게(shortCrashDistance 5m 미만) 달렸으면 shortCrashRecovery(0.4초), 그보다 길면 달린 거리에 비례해 minFallRecovery(1초) ~ crashRecovery(1.8초, 12m 이상).
-    /// - 다른 캐릭터에 닿으면(박치기) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 몸보다 ramExtraRadius만큼 넓은 앞쪽 범위) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
@@ -35,9 +35,11 @@ namespace Project1.Systems
         [Min(0f)] public float minFallRecovery = 1f;
 
         [Header("캐릭터에 부딪힘(박치기) → 상대 넉백")]
+        [Tooltip("돌진하는 동안 박치기 판정을 몸(CharacterController)보다 이만큼(m) 더 넓게 본다 — 몸 앞쪽 반원 안의 상대는 닿기 전이라도 박는다.")]
+        [Min(0f)] public float ramExtraRadius = 0.4f;
         [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
-        [Min(0f)] public float knockSpeedPerMeter = 0.8f;
-        [Min(0f)] public float minKnockSpeed = 4f, maxKnockSpeed = 20f;
+        [Min(0f)] public float knockSpeedPerMeter = 1f;
+        [Min(0f)] public float minKnockSpeed = 5f, maxKnockSpeed = 25f;
         [Tooltip("넉백 시간(초). 밀리는 동안 상대는 기절(못 움직임).")]
         [Min(0.05f)] public float knockTime = 0.5f;
         [Header("넉백으로 벽에 박힘 → 기절")]
@@ -78,17 +80,27 @@ namespace Project1.Systems
         public override bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery)
         {
             recovery = 0f;
-            if (elapsed < obstacleGrace) return false;
             var motor = owner.GetComponent<CharacterMotor>();
-            if (motor == null || !motor.HitObstacle) return false;
+            if (motor == null) return false;
+            var self = owner.GetComponent<CharacterIdentity>();
 
-            // 부딪힌 것이 다른 캐릭터면(박치기): 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
-            // 같은 팀·면역(예: 나비에게 날아가는 붉은나비)이면 밀지 않고 멈추기만 한다.
-            var victim = motor.LastObstacle != null ? motor.LastObstacle.GetComponentInParent<CharacterIdentity>() : null;
-            if (victim != null && victim.gameObject != owner)
+            // 박치기 판정: 몸보다 조금 큰 앞쪽 범위(ramExtraRadius) 안의 상대 — 몸이 닿기 전이라도 박는다.
+            var victim = FindRamVictim(owner, self);
+            if (victim == null)
             {
-                var self = owner.GetComponent<CharacterIdentity>();
-                if (self != null && !self.CanHit(victim)) return true;
+                if (elapsed < obstacleGrace || !motor.HitObstacle) return false;
+                // 몸이 실제로 닿은 것이 캐릭터인데 박을 수 없는 상대(같은 팀·면역 — 예: 나비에게 날아가는 붉은나비)면 밀지 않고 멈추기만 한다.
+                var touched = motor.LastObstacle != null ? motor.LastObstacle.GetComponentInParent<CharacterIdentity>() : null;
+                if (touched != null && touched.gameObject != owner)
+                {
+                    if (self != null && !self.CanHit(touched)) return true;
+                    victim = touched;
+                }
+            }
+
+            // 박치기: 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
+            if (victim != null)
+            {
                 float distance = elapsed * chargeSpeed;
                 Vector3 dir = Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up);
                 dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
@@ -106,6 +118,31 @@ namespace Project1.Systems
             CharacterStun.Apply(owner, stunTime, Vector3.zero); // 방향 없음 = 앞으로 숙이는 일반 기절(뒤로 쓰러지는 모션 아님)
             recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
             return true;
+        }
+
+        private static readonly Collider[] RamHits = new Collider[32];
+
+        /// <summary>몸보다 ramExtraRadius 넓은 캡슐(몸 앞쪽 반원) 안에서 박을 수 있는 가장 가까운 상대. 없으면 null.</summary>
+        private CharacterIdentity FindRamVictim(GameObject owner, CharacterIdentity self)
+        {
+            if (ramExtraRadius <= 0f || !owner.TryGetComponent(out CharacterController cc)) return null;
+            Vector3 fwd = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
+            float r = cc.radius * owner.transform.lossyScale.x + ramExtraRadius;
+            float h = cc.height * owner.transform.lossyScale.y;
+            Vector3 basePos = owner.transform.position;
+            Vector3 a = basePos + Vector3.up * r, b = basePos + Vector3.up * Mathf.Max(r, h - r);
+            int n = Physics.OverlapCapsuleNonAlloc(a, b, r, RamHits, ~0, QueryTriggerInteraction.Collide);
+            CharacterIdentity best = null; float bestD = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var c = RamHits[i].GetComponentInParent<CharacterIdentity>();
+                if (c == null || c.gameObject == owner || (self != null && !self.CanHit(c))) continue;
+                Vector3 to = Vector3.ProjectOnPlane(c.transform.position - basePos, Vector3.up);
+                if (Vector3.Dot(to, fwd) <= 0f) continue; // 앞쪽만(옆·뒤로 스친 상대는 아님)
+                float d = to.sqrMagnitude;
+                if (d < bestD) { bestD = d; best = c; }
+            }
+            return best;
         }
 
         public override void Complete(GameObject owner) { }
