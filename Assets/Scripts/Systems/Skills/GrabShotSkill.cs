@@ -281,6 +281,8 @@ namespace Project1.Systems
                             ctx.AreaCenter = ctx.ReachOrigin + ctx.Direction * wallAt;
                             ctx.AreaRadius = wallAt;
                             ctx.SetPhase(Towing);
+                            // 벽을 물기만 하면 한 번 더 던질 수 있다(이 시전이 끝난 뒤 wallRecastWindow초 안, 재사용 대기 없이). 그 한 번으로 또 벽을 물어도 더 주지 않는다.
+                            if (!ctx.CastIsFreeRecast) ctx.GrantFreeRecast(wallRecastWindow);
                         }
                         else ctx.SetPhase(Retracting);
                     }
@@ -347,7 +349,7 @@ namespace Project1.Systems
                     bool arrived = ctx.Reach <= towStopReach + 0.01f;
                     bool blocked = ctx.PhaseTime > 0.05f && ctx.TryGetComponent(out CharacterMotor motor) && motor.HitObstacle; // 가는 길에 다른 것에 막힘
                     bool timeout = ctx.PhaseTime > ctx.AreaRadius / towSpeed + 0.3f;
-                    if (arrived) { WallShock(ctx); ctx.GrantFreeRecast(wallRecastWindow); } // 벽에 도착: 주변에 충격파 + wallRecastWindow초 안에 재사용 대기 없이 다시 쏠 수 있음
+                    if (arrived) WallShock(ctx); // 벽에 도착: 주변에 충격파
                     if (arrived || blocked || timeout) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
                     return false;
                 }

@@ -159,7 +159,7 @@ namespace Project1.Systems
             if (notes.Count == 1 && !Linked)
             {
                 PendingTimeLeft -= dt;
-                if (PendingTimeLeft <= 0f) { notes.Clear(); PendingTimeLeft = 0f; }
+                if (PendingTimeLeft <= 0f) { notes.Clear(); PendingTimeLeft = 0f; CooldownLeft = relinkCooldown; } // 둘째를 못 놓았다 → 첫 음표가 사라지고 이어졌을 때와 똑같이 재사용 대기
             }
 
             if (Linked && notes.Count == 2) SlowCrossers();

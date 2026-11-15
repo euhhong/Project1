@@ -259,6 +259,7 @@ namespace Project1.Systems
 
         private void StartCast()
         {
+            CastIsFreeRecast = FreeRecastLeft > 0f; // 바로 다시 쓰기 시간 안에 쓴 시전인지
             FreeRecastLeft = 0f; freeRecastPending = 0f; // 바로 다시 쓰기를 썼다(또는 새 시전)
             State = SkillState.Casting;
             castTime = 0f;
@@ -311,6 +312,9 @@ namespace Project1.Systems
             if (State == SkillState.Ready && FreeRecastLeft > 0f) { label = SkillName + " 다시"; fill = FreeRecastLeft / Mathf.Max(freeRecastDuration, 0.01f); draining = true; return true; }
             return false;
         }
+
+        /// <summary>지금 시전이 "바로 다시 쓰기"로 한 것인지(예: 그랩 벽 보너스로 한 번 더 — 이 시전으로는 또 주지 않는다).</summary>
+        public bool CastIsFreeRecast { get; private set; }
 
         /// <summary>재사용 대기 없이 다시 쓸 수 있는 남은 시간(초). 0이면 없음.</summary>
         public float FreeRecastLeft { get; private set; }
