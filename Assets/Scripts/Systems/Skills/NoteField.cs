@@ -12,8 +12,8 @@ namespace Project1.Systems
     /// - E를 누르면 바로 앞(instantDistance)에 즉시 음표를 놓는다. 좌클릭을 꾹 눌러 놓을 자리를 고르는 중이면 E = 고르기 취소(음표를 놓지 않고, 좌클릭을 뗄 때까지 무시).
     /// - 음표는 두 개가 한 쌍이다: 첫 음표를 놓고 linkWindow(5초) 안에 둘째를 놓아야 한다. 못 놓으면 끊기고 첫 음표는 사라진다.
     ///   둘째를 놓으면 두 음표가 붉은 전류선으로 이어진다. 다시 음표를 놓으면 지난 쌍은 사라지고 새 첫 음표가 된다.
-    /// - 이어진 동안 전류선(두 음표 사이, 음표까지 포함 — 후한 굵기 wireRadius)에 닿은 상대는 맞는다(HitEvents).
-    ///   계속 닿아 있으면 rehitInterval마다 다시 맞는다. 체력·데미지는 다루지 않는다.
+    /// - 전류선이 이어지는 순간 선(두 음표 사이, 음표까지 포함 — 후한 굵기 wireRadius)에 닿아 있던 상대는 한 번 맞는다(HitEvents — 피해만, 넉백 없음, 감속 없음).
+    ///   이어진 뒤에는 선을 지나가면 피해 없이 crossSlowTime(7초) 동안 crossSlowScale(0.9배) 감속(TimedSpeedScale, 닿아 있는 동안 계속 새로 걸림). 이어질 때 맞은 상대는 선에서 나갔다 다시 들어와야 걸린다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 그리기는 FE(NoteVisual).
     /// </summary>
     [DisallowMultipleComponent]
@@ -29,14 +29,13 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float noteHeight = 1.0f;
         [Tooltip("전류선 판정 굵기(반지름, m) — 후하게. 양 끝(음표)까지 포함한다.")]
         [SerializeField, Min(0.05f)] private float wireRadius = 0.75f;
-        [Tooltip("계속 닿아 있을 때 다시 맞는 간격(초).")]
-        [SerializeField, Min(0.05f)] private float rehitInterval = 1f;
+        [Tooltip("이어진 뒤 전류선을 지나가면: 이동 속도 배율(0.9 = 10% 감속) / 지속 시간(초). 피해는 없다.")]
+        [SerializeField, Range(0.1f, 1f)] private float crossSlowScale = 0.9f;
+        [SerializeField, Min(0f)] private float crossSlowTime = 7f;
         public HitboxSlot slot = HitboxSlot.Weapon;
 
         private readonly List<Vector3> notes = new();
         private readonly Collider[] overlaps = new Collider[32];
-        private readonly Dictionary<int, float> lastHitAt = new();
-        private readonly HashSet<int> hitThisTick = new();
         private ICharacterInputSource inputSource;
         private ICharacterSkillState skillState;
         private ICharacterStun stun;
@@ -142,7 +141,7 @@ namespace Project1.Systems
                 if (PendingTimeLeft <= 0f) { notes.Clear(); PendingTimeLeft = 0f; }
             }
 
-            if (Linked && notes.Count == 2) CheckWireHits();
+            if (Linked && notes.Count == 2) SlowCrossers();
         }
 
         private void PlaceInFront()
@@ -163,47 +162,75 @@ namespace Project1.Systems
                 notes.Clear(); Linked = false;
                 notes.Add(point);
                 PendingTimeLeft = linkWindow;
-                lastHitAt.Clear();
+                exempt.Clear();
             }
             else
             {
-                // 둘째 음표 → 전류선으로 이어진다
+                // 둘째 음표 → 전류선으로 이어진다. 이어지는 순간 선에 닿아 있던 상대만 한 번 맞는다(피해만, 넉백 없음).
                 notes.Add(point);
                 Linked = true;
                 PendingTimeLeft = 0f;
+                LinkHit();
             }
         }
 
-        /// <summary>두 음표 사이(양 끝 음표 포함) 굵은 캡슐에 닿은 상대 Hurtbox → 맞힘. 상대마다 rehitInterval에 한 번.</summary>
-        private void CheckWireHits()
+        private readonly Dictionary<int, (CharacterIdentity Who, Hurtbox Hurt, Vector3 OnWire)> touching = new();
+        private readonly HashSet<int> exempt = new();   // 이어질 때 맞은 상대 — 선에서 나갈 때까지 감속 안 걸림
+        private readonly HashSet<int> stillIn = new();
+
+        /// <summary>지금 전류선(두 음표 사이, 양 끝 음표 포함 굵은 캡슐)에 닿은 상대들(상대마다 한 부위).</summary>
+        private void FindTouching()
         {
-            Vector3 a = notes[0] + Vector3.up * noteHeight, b = notes[1] + Vector3.up * noteHeight;
+            touching.Clear();
+            Vector3 a = notes[0] + Vector3.up * noteHeight, b = notes[1] + Vector3.up * noteHeight, ab = b - a;
             int n = Physics.OverlapCapsuleNonAlloc(a, b, wireRadius, overlaps, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
-            hitThisTick.Clear();
             for (int i = 0; i < n; i++)
             {
                 if (!overlaps[i].TryGetComponent(out Hurtbox hurt) || !hurt.isActiveAndEnabled) continue;
                 var victim = hurt.Owner;
-                if (victim == null || (self != null && !self.CanHit(victim)) || hitThisTick.Contains(victim.Id)) continue;
-                if (lastHitAt.TryGetValue(victim.Id, out float t) && Time.time - t < rehitInterval) continue;
-                hitThisTick.Add(victim.Id);
-                lastHitAt[victim.Id] = Time.time;
+                if (victim == null || (self != null && !self.CanHit(victim)) || touching.ContainsKey(victim.Id)) continue;
                 Vector3 c = overlaps[i].bounds.center;
-                Vector3 ab = b - a;
-                Vector3 onWire = a + ab * Mathf.Clamp01(Vector3.Dot(c - a, ab) / Mathf.Max(ab.sqrMagnitude, 1e-6f));
-                LastHitPoint = onWire; LastHitTime = Time.time;
+                touching[victim.Id] = (victim, hurt, a + ab * Mathf.Clamp01(Vector3.Dot(c - a, ab) / Mathf.Max(ab.sqrMagnitude, 1e-6f)));
+            }
+        }
+
+        /// <summary>전류선이 이어지는 순간: 닿아 있던 상대를 한 번 맞힌다 — 피해만(넉백 없음), 이 일로 감속은 걸리지 않는다.</summary>
+        private void LinkHit()
+        {
+            exempt.Clear();
+            if (notes.Count != 2) return;
+            FindTouching();
+            foreach (var (id, t) in touching)
+            {
+                exempt.Add(id);
+                LastHitPoint = t.OnWire; LastHitTime = Time.time;
                 HitEvents.Raise(new HitResult
                 {
                     AttackerId = self != null ? self.Id : 0,
-                    VictimId = victim.Id,
-                    Part = hurt.Part,
+                    VictimId = id,
+                    Part = t.Hurt.Part,
                     Slot = slot,
                     AttackId = -(200000 + ++hitCounter),
                     Tick = SimulationTick.Current,
-                    Point = onWire,
-                    BaseDamage = DamageRules.NoteWireDamage, // 전류선 한 번 닿을 때 피해
+                    Point = t.OnWire,
+                    BaseDamage = DamageRules.NoteWireDamage, // 이어지는 순간 한 번 피해
+                    NoKnockback = true,                       // 밀지 않는다(피해만)
                 });
             }
+        }
+
+        /// <summary>이어진 뒤: 전류선을 지나가는 상대는 crossSlowTime초 동안 crossSlowScale배로 느려진다(닿아 있는 동안 계속 새로 걸림). 피해는 없다.
+        /// 이어질 때 맞은 상대는 선에서 한 번 나갔다 다시 들어와야 걸린다.</summary>
+        private void SlowCrossers()
+        {
+            FindTouching();
+            stillIn.Clear();
+            foreach (var (id, t) in touching)
+            {
+                if (exempt.Contains(id)) { stillIn.Add(id); continue; }
+                TimedSpeedScale.Give(t.Who.gameObject, crossSlowScale, crossSlowTime);
+            }
+            exempt.IntersectWith(stillIn); // 선에서 나간 상대는 다음에 들어오면 감속
         }
     }
 }
