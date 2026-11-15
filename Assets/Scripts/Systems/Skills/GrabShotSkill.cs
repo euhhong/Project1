@@ -5,7 +5,7 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 그랩 쏘기(사냥터지기): E를 누르면 몸이 바로 시야(카메라) 방향을 보고,
-    /// 1) 오른손을 귀 옆으로 들어 겨눴다가 던지는 준비(windup, 공중에서는 못 씀). E를 꾹 누르고 있으면 던질 자세로 조준한 채 걸어 다닐 수 있고(걷는 동안은 걷기 모션), E를 떼면 던진다. 짧게 누르면 자세를 잡자마자 던진다 → 2) 몸을 앞으로 기울이며 던진 자세로 멈춘 채 그랩이 앞으로 뻗은 오른손에서 용수철처럼 앞으로 곧게 뻗어 나간다(extendSpeed, 최대 range).
+    /// 1) 오른손을 귀 옆으로 들어 겨눴다가 던지는 준비(windup, 공중에서는 못 씀). E를 꾹 누르고 있으면 던질 자세로 조준한 채 걸어 다닐 수 있고(걷는 동안은 걷기 모션), E를 떼면 던진다(조준 중 좌클릭 = 던지지 않고 취소). 짧게 누르면 자세를 잡자마자 던진다 → 2) 몸을 앞으로 기울이며 던진 자세로 멈춘 채 그랩이 앞으로 뻗은 오른손에서 용수철처럼 앞으로 곧게 뻗어 나간다(extendSpeed, 최대 range).
     ///    - 길 위에서 처음 닿는 상대를 맞히고(HitEvents) 그 상대를 물고 되감는다(Dragging, dragSpeed): 상대는 그랩 머리를 따라 사냥터지기 앞까지 끌려온다(GrabPull, 그동안 기절).
     ///    - 상대보다 먼저 벽(옆을 보는 면)에 닿으면 그랩이 벽을 문 채 사냥터지기가 벽 쪽으로 끌려간다(Towing, towSpeed). 그랩 머리는 벽에 박힌 채 사슬만 줄어든다.
     ///    - 아무것도 못 맞히거나 바닥 같은 면에 닿으면 그냥 되감긴다(retractSpeed).
@@ -20,7 +20,7 @@ namespace Project1.Systems
     [CreateAssetMenu(menuName = "Project1/Skills/Grab Shot")]
     public class GrabShotSkill : SkillDefinition
     {
-        private const int Windup = 0, Extending = 1, Retracting = 2, FollowThrough = 3, Dragging = 4, Towing = 5, Vaulting = 6, VaultLanding = 7;
+        private const int Windup = 0, Extending = 1, Retracting = 2, FollowThrough = 3, Dragging = 4, Towing = 5, Vaulting = 6, VaultLanding = 7, Cancelled = 8;
 
         [Tooltip("뻗기 전 준비(팔을 뒤로 당겼다 앞으로 내지르기) 시간(초).")]
         [Min(0f)] public float windup = 0.3f;
@@ -225,6 +225,15 @@ namespace Project1.Systems
                     ctx.ReachOrigin = Origin(ctx);
                     // E를 꾹 누르는 동안은 조준(차징): 걸어 다닐 수 있다. 걷기 입력은 AreaCenter(x = 우, z = 앞)에 적어 두고 TryGetMoveOverride가 쓴다.
                     bool held = input.SkillHeld;
+                    if (held && (input.LightAttack || input.AttackPressed || input.HeavyCharging || input.HeavyRelease))
+                    {
+                        // E를 꾹 눌러 조준하는 중 좌클릭 → 던지지 않고 취소(로켓 들기와 같음). 그 클릭은 공격으로 쓰지 않는다(뗄 때까지 공격 입력 무시).
+                        bool released = input.LightAttack || input.HeavyRelease;
+                        if (!released && ctx.TryGetComponent(out CharacterAttack attack)) attack.IgnoreAttackUntilRelease();
+                        ctx.AreaCenter = Vector3.zero;
+                        ctx.SetPhase(Cancelled);
+                        return false;
+                    }
                     Vector2 move = held ? Vector2.ClampMagnitude(input.Move, 1f) : Vector2.zero;
                     ctx.AreaCenter = new Vector3(move.x, 0f, move.y);
                     if (move.sqrMagnitude > 0.01f) ctx.PhaseTime = 0f; // 걷는 동안은 던질 자세를 풀고 걷는다(멈추면 다시 자세를 잡는다)
@@ -340,6 +349,10 @@ namespace Project1.Systems
                     return false;
                 }
 
+                case Cancelled:
+                    ctx.Reach = 0f;
+                    return true; // 취소한 다음 틱에 끝낸다(취소한 틱에는 아직 시전 중이라 공격이 나가지 않는다)
+
                 default: // 마무리
                     return ctx.PhaseTime >= followThrough;
             }
@@ -384,7 +397,8 @@ namespace Project1.Systems
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {
-            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "조준 — E를 떼면 던짐" : "준비",
+            Windup => ctx.PhaseTime >= windup || ctx.AreaCenter.sqrMagnitude > 0.0001f ? "조준 — E를 떼면 던짐(좌클릭 취소)" : "준비",
+            Cancelled => "취소",
             Dragging => "끌어오기!",
             Towing => "벽으로!",
             Vaulting => "뛰어넘기!",
