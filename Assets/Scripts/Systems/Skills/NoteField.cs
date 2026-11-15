@@ -52,7 +52,7 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
-        public string ChargeCancelHint => Placing ? (placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기")
+        public string ChargeCancelHint => Placing ? (placement.Cancels ? "떼면 취소" : "취소: E")
                                         : CooldownLeft > 0f ? $"새 음표 {CooldownLeft:0.0}초 뒤" : null; // E 스킬 칸이 없어 이 자리(HUD)에 재사용 대기도 띄운다
         public IReadOnlyList<Vector3> Notes => notes;
         public bool Linked { get; private set; }
