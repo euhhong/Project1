@@ -11,7 +11,7 @@ namespace Project1.Systems
     ///   나비와 달리 벽 너머 안 보이는 곳에는 놓지 않는다.
     /// - E를 누르면 바로 앞(instantDistance)에 즉시 음표를 놓는다. 좌클릭을 꾹 눌러 놓을 자리를 고르는 중이면 E = 고르기 취소(음표를 놓지 않고, 좌클릭을 뗄 때까지 무시).
     /// - 음표는 두 개가 한 쌍이다: 첫 음표를 놓고 linkWindow(5초) 안에 둘째를 놓아야 한다. 못 놓으면 끊기고 첫 음표는 사라진다.
-    ///   둘째를 놓으면 두 음표가 붉은 전류선으로 이어진다. 다시 음표를 놓으면 지난 쌍은 사라지고 새 첫 음표가 된다.
+    ///   둘째를 놓으면 두 음표가 붉은 전류선으로 이어진다. 이어진 뒤 relinkCooldown(7초)이 지나야 새 음표를 놓을 수 있고(HUD에 남은 초), 놓으면 지난 쌍은 사라지고 새 첫 음표가 된다.
     /// - 전류선이 이어지는 순간 선(두 음표 사이, 음표까지 포함 — 후한 굵기 wireRadius)에 닿아 있던 상대는 한 번 맞는다(HitEvents — 피해만, 넉백 없음, 감속 없음).
     ///   이어진 뒤에는 선을 지나가면 피해 없이 crossSlowTime(7초) 동안 crossSlowScale(0.9배) 감속(TimedSpeedScale, 닿아 있는 동안 계속 새로 걸림). 이어질 때 맞은 상대는 선에서 나갔다 다시 들어와야 걸린다.
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 그리기는 FE(NoteVisual).
@@ -32,6 +32,11 @@ namespace Project1.Systems
         [Tooltip("이어진 뒤 전류선을 지나가면: 이동 속도 배율(0.9 = 10% 감속) / 지속 시간(초). 피해는 없다.")]
         [SerializeField, Range(0.1f, 1f)] private float crossSlowScale = 0.9f;
         [SerializeField, Min(0f)] private float crossSlowTime = 7f;
+        [Tooltip("전류선이 이어진 뒤 새 음표를 놓을 수 있기까지(초) — 좌클릭 꾹·E 모두.")]
+        [SerializeField, Min(0f)] private float relinkCooldown = 7f;
+
+        /// <summary>새 음표를 놓을 수 있기까지 남은 시간(초). 전류선이 이어지면 relinkCooldown부터 줄어든다.</summary>
+        public float CooldownLeft { get; private set; }
         public HitboxSlot slot = HitboxSlot.Weapon;
 
         private readonly List<Vector3> notes = new();
@@ -47,7 +52,8 @@ namespace Project1.Systems
         public Vector3 PreviewPoint => placement.Point;
         public bool PreviewValid => Placing && placement.Valid;
         public bool PreviewCancels => Placing && placement.Cancels;
-        public string ChargeCancelHint => !Placing ? null : placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기";
+        public string ChargeCancelHint => Placing ? (placement.Cancels ? "떼면 취소" : "취소: E  또는  몸 쪽으로 끌고 떼기")
+                                        : CooldownLeft > 0f ? $"새 음표 {CooldownLeft:0.0}초 뒤" : null; // E 스킬 칸이 없어 이 자리(HUD)에 재사용 대기도 띄운다
         public IReadOnlyList<Vector3> Notes => notes;
         public bool Linked { get; private set; }
         public float PendingTimeLeft { get; private set; }
@@ -97,7 +103,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Placing = false; placement.Clear(); waitRelease = false;
-            notes.Clear(); Linked = false; PendingTimeLeft = 0f;
+            notes.Clear(); Linked = false; PendingTimeLeft = 0f; CooldownLeft = 0f;
         }
 
         private void FixedUpdate()
@@ -109,19 +115,21 @@ namespace Project1.Systems
             if (stun == null) TryGetComponent(out stun);
             bool blocked = (skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned);
             float dt = Time.fixedDeltaTime;
+            if (CooldownLeft > 0f) CooldownLeft = Mathf.Max(0f, CooldownLeft - dt);
+            bool ready = CooldownLeft <= 0f; // 전류선이 이어진 뒤 재사용 대기 중이면 새 음표를 못 놓는다
 
             if (input.Skill && !blocked)
             {
                 // 좌클릭을 꾹 눌러 놓을 자리를 고르는 중(차징)이면 E = 고르기 취소(음표를 놓지 않는다, 뗄 때까지 무시).
                 // 고르는 중이 아니면 E = 바로 앞에 즉시.
                 if (Placing) { Placing = false; placement.Clear(); waitRelease = true; }
-                else PlaceInFront();
+                else if (ready) PlaceInFront();
             }
             else if (waitRelease)
             {
                 if (!input.HeavyCharging) waitRelease = false;
             }
-            else if (input.HeavyCharging && !blocked)
+            else if (input.HeavyCharging && !blocked && (Placing || ready))
             {
                 if (!Placing) placement.Begin();
                 Placing = true;
@@ -170,6 +178,7 @@ namespace Project1.Systems
                 notes.Add(point);
                 Linked = true;
                 PendingTimeLeft = 0f;
+                CooldownLeft = relinkCooldown; // 이어진 뒤 relinkCooldown초 지나야 새 음표
                 LinkHit();
             }
         }
