@@ -17,7 +17,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock
+    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock, ISkillSlotInfo
     {
         [Tooltip("촉수를 세울 자리 고르기(땅 위만, 몸 근처 = 취소).")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false, maxPlaceDistance = 25f, defaultDistance = 8f, clampToMax = true };
@@ -93,6 +93,19 @@ namespace Project1.Systems
         public bool ActionsLocked => isActiveAndEnabled && Slamming;
         public float SlamReach => tentacleHeight + slamReachExtra;
         public bool OverridesHeavyHold => isActiveAndEnabled;
+
+        // HUD 가운데 아래 스킬 칸(E = 고른 촉수 내려찍기): 서 있는 촉수 수(●○), 고르는 동안 할 일.
+        public string SlotName => "촉수";
+        public string SlotStatus
+        {
+            get
+            {
+                if (Selecting) return TargetIndex >= 0 ? "떼면: 내려찍기" : "고를 촉수 없음";
+                int up = 0; foreach (var t in tentacles) if (t.State == TentacleState.Idle) up++;
+                return up > 0 ? new string('●', up) + new string('○', Mathf.Max(0, maxTentacles - up)) : "촉수 없음";
+            }
+        }
+        public bool SlotReady { get { foreach (var t in tentacles) if (t.State == TentacleState.Idle) return true; return false; } }
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
 
         private void Awake()

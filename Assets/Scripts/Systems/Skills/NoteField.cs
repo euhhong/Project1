@@ -17,7 +17,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 안토니오만). 그리기는 FE(NoteVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, ICooldownGauge
+    public class NoteField : MonoBehaviour, INoteField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, ICooldownGauge, ISkillSlotInfo
     {
         [Tooltip("놓을 자리 고르기(땅 위만, 몸 근처 = 취소). 시점을 돌리는 동안에도 붉은나비처럼 거리를 지키지 않고 화면 가운데가 가리키는 땅을 자유롭게 따라간다.")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false };
@@ -71,6 +71,11 @@ namespace Project1.Systems
         public float LastHitTime { get; private set; } = -1f;
         public float LastPlaceTime { get; private set; } = -1f;
         public bool OverridesHeavyHold => isActiveAndEnabled;
+
+        // HUD 가운데 아래 스킬 칸(E = 바로 앞에 음표): 첫 음표만 놓았으면 둘째를 놓으라는 안내, 쓸 수 있으면 준비(재사용 대기는 게이지가 보여 줌).
+        public string SlotName => "음표";
+        public string SlotStatus => CooldownLeft > 0f ? null : notes.Count == 1 && !Linked ? "둘째 음표" : "준비";
+        public bool SlotReady => CooldownLeft <= 0f;
 
         [Tooltip("시점을 돌리는 중에 음표 자리를 고르기 시작했을 때 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다). 좌클릭을 먼저 누르고 돌리면 그대로.")]
         [SerializeField, Range(0f, 1f)] private float placingPitchScale = 0.1f;

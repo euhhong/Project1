@@ -69,62 +69,69 @@ namespace Project1.UI
                     stamina.IsExhausted ? new Color(0.95f, 0.55f, 0.15f) : new Color(0.95f, 0.85f, 0.3f));
             }
 
-            // E 스킬 칸이 없는 캐릭터(예: 하스터 — 촉수가 E를 직접 받는다)도 꾹 눌러 고르는 중이면 같은 자리에 취소 방법을 띄운다.
-            bool hasSkillBox = skill != null && !string.IsNullOrEmpty(skill.SkillId);
-            if (!hasSkillBox)
-            {
-                string hint = CancelHint();
-                if (hint != null)
-                {
-                    float w = 300 * u, h = 40 * u;
-                    var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);
-                    GUI.color = new Color(0f, 0f, 0f, 0.55f);
-                    GUI.DrawTexture(box, Texture2D.whiteTexture);
-                    GUI.color = Color.white;
-                    small.normal.textColor = new Color(1f, 0.6f, 0.5f);
-                    GUI.Label(box, hint, small);
-                }
-            }
-
             DrawCooldowns(u); // 오른쪽 아래 재사용 대기 게이지
+            DrawSkillBox(u);  // 가운데 아래 스킬 칸
+        }
 
-            // 고유 스킬
-            if (hasSkillBox)
+        /// <summary>
+        /// 가운데 아래 스킬 칸 — 모든 캐릭터에 늘 뜬다. 첫 줄 [E] 이름(쓸 수 있으면 금색), 둘째 줄은 필요한 것만:
+        /// 차징 중 취소 방법 &gt; 스킬이 정한 안내(예: 멈춤: E, 나비 ●●○) &gt; 막힌 이유 &gt; 준비. 재사용 대기 진행은 오른쪽 아래 게이지가 보여 주므로 쓰지 않는다.
+        /// 보통 스킬(CharacterSkill)이 없고 E를 직접 받는 캐릭터(하스터 촉수·안토니오 음표)는 ISkillSlotInfo로 채운다.
+        /// </summary>
+        private void DrawSkillBox(float u)
+        {
+            bool hasSkill = skill != null && !string.IsNullOrEmpty(skill.SkillId);
+            ISkillSlotInfo slot = null;
+            if (!hasSkill && target != null) target.TryGetComponent(out slot);
+            if (!hasSkill && slot == null) return;
+
+            string name, status; bool ready;
+            if (hasSkill)
             {
-                float w = 300 * u, h = 70 * u;
-                var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);
-                GUI.color = new Color(0f, 0f, 0f, 0.55f);
-                GUI.DrawTexture(box, Texture2D.whiteTexture);
-                GUI.color = Color.white;
-                string status = skill.State switch
+                name = skill.SkillName;
+                ready = skill.State == SkillState.Ready && skill.CanUse;
+                status = skill.State switch
                 {
-                    SkillState.Casting => string.Empty,
                     SkillState.Recovering => "넘어짐",
-                    SkillState.Cooldown => "대기", // 남은 시간은 오른쪽 아래 게이지로
-                    _ => skill.CanUse ? "준비" : (skill.BlockedReason ?? ""),
+                    SkillState.Ready => skill.CanUse ? "준비" : skill.BlockedReason,
+                    _ => null, // 시전 중·재사용 대기: 따로 안내가 없으면 비움(진행은 막대·게이지)
                 };
-                if (skill.StatusText != null) status = skill.StatusText; // 스킬이 정한 글(예: 용병 아대 = 재사용 대기 남은 초만)
-                string cancelHint = CancelHint(); // 꾹 눌러 자리를 고르는 중이면 이 줄에 취소 방법(따로 창을 띄우지 않는다)
-                if (cancelHint != null) status = cancelHint;
-                small.normal.textColor = skill.State == SkillState.Ready && skill.CanUse ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
-                GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {skill.SkillName}", small);
+                string own = skill.StatusText; // 스킬이 정한 안내(예: 멈춤: E, 나비 ●●○, 다시 쏘기) — 있으면 그것
+                if (!string.IsNullOrEmpty(own)) status = own;
+            }
+            else
+            {
+                name = slot.SlotName; ready = slot.SlotReady; status = slot.SlotStatus;
+            }
+            string cancelHint = CancelHint(); // 꾹 눌러 자리를 고르는 중이면 그 취소 방법이 먼저
+            if (cancelHint != null) status = cancelHint;
+
+            float w = 300 * u, h = 70 * u;
+            var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(box, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            small.normal.textColor = ready ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
+            GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {name}", small);
+            if (!string.IsNullOrEmpty(status))
+            {
                 small.normal.textColor = cancelHint != null ? new Color(1f, 0.6f, 0.5f) : Color.white;
                 GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), status, small);
+            }
 
+            // 시전 진행 막대만(재사용 대기 막대는 오른쪽 아래 게이지와 겹쳐 쓰지 않는다)
+            if (hasSkill && skill.State == SkillState.Casting)
+            {
                 var bar = new Rect(box.x, box.yMax - 6 * u, w, 6 * u);
-                if (skill.State == SkillState.Casting)
-                {
-                    float fill = skill.StatusBarFill; // 스킬이 정한 막대(예: 용병 아대 = 도약 재사용 대기, 준비되면 없음)
-                    if (float.IsNaN(fill)) Bar(bar, skill.CastProgress, new Color(0.4f, 0.9f, 0.5f));
-                    else if (fill >= 0f) Bar(bar, fill, new Color(0.5f, 0.6f, 0.9f));
-                }
-                else if (skill.State == SkillState.Cooldown) Bar(bar, 1f - skill.CooldownRemaining / Mathf.Max(skill.CooldownDuration, 0.01f), new Color(0.5f, 0.6f, 0.9f));
+                float fill = skill.StatusBarFill;
+                if (float.IsNaN(fill)) Bar(bar, skill.CastProgress, new Color(0.4f, 0.9f, 0.5f));
+                else if (fill >= 0f) Bar(bar, fill, new Color(0.5f, 0.6f, 0.9f));
+            }
 
-                if (Time.time < blockedMessageUntil)
-                {
-                    small.normal.textColor = new Color(1f, 0.5f, 0.4f);
-                    GUI.Label(new Rect(box.x, box.y - 40 * u, w, 36 * u), blockedMessage, small);
-                }
+            if (Time.time < blockedMessageUntil)
+            {
+                small.normal.textColor = new Color(1f, 0.5f, 0.4f);
+                GUI.Label(new Rect(box.x, box.y - 40 * u, w, 36 * u), blockedMessage, small);
             }
         }
 
