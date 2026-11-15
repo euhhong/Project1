@@ -76,26 +76,39 @@ namespace Project1.Map.EditorTools
 
         private static void LoadMaterials()
         {
-            // 돌벽: 줄눈·요철이 빛을 받게 노멀 맵(색 텍스처 밝기를 뒤집은 높이 맵 → Unity가 노멀로 변환) + 홈 어둡게
-            wallMat = GetMat("M_Env_StoneWall", "T_StoneWall", 3f, 0.18f, "T_StoneWall_Height.png", 1.6f, 0.6f);
+            // 돌벽 = 튀어나온 거친 돌 블록: 높이 맵(T_StoneWall_Height — 색 텍스처에서 줄눈 직선만 찾아 깊게 파고 블록 모서리를 둥글게, 표면 잔결)
+            //   → 노멀(세기 2.2) + 잔결(0.7) + 줄눈 어둡게(0.9) + 시차(0.045) + 매끈함 거의 0(번들거림 없음)
+            wallMat = GetMat("M_Env_StoneWall", "T_StoneWall", 2.6f, 0.02f, "T_StoneWall_Height.png", 2.2f, 0.9f, 0.7f, "T_StoneWall_Parallax.png", 0.045f);
             woodMat = GetMat("M_Env_WoodFloor", "T_WoodFloor", 3f, 0.25f);
             stoneFloorMat = GetMat("M_Env_StoneFloor", "T_StoneFloor", 4f, 0.1f);
             roofMat = GetMat("M_Env_RoofSlate", "T_RoofSlate", 3f, 0.15f);
             accentMat = GetMat("M_Env_Accent", "T_Accent", 2f, 0.12f);
         }
 
-        private static Material GetMat(string name, string tex, float meters, float smooth, string normalFile = null, float bump = 1f, float cavity = 0f)
+        private static Material GetMat(string name, string tex, float meters, float smooth, string normalFile = null, float bump = 1f, float cavity = 0f, float grit = 0f, string heightFile = null, float parallax = 0f)
         {
+            Texture2D height = null;
+            if (heightFile != null)
+            {
+                string hp = $"{TexFolder}/{heightFile}";
+                if (AssetImporter.GetAtPath(hp) is TextureImporter hi && (hi.sRGBTexture || hi.maxTextureSize != 1024))
+                {
+                    hi.sRGBTexture = false; // 높이 값 그대로
+                    hi.maxTextureSize = 1024;
+                    hi.SaveAndReimport();
+                }
+                height = AssetDatabase.LoadAssetAtPath<Texture2D>(hp);
+            }
             Texture2D normal = null;
             if (normalFile != null)
             {
                 string np = $"{TexFolder}/{normalFile}";
                 if (AssetImporter.GetAtPath(np) is TextureImporter ti &&
-                    (ti.textureType != TextureImporterType.NormalMap || !ti.convertToNormalmap || !Mathf.Approximately(ti.heightmapScale, 0.12f)))
+                    (ti.textureType != TextureImporterType.NormalMap || !ti.convertToNormalmap || !Mathf.Approximately(ti.heightmapScale, 0.2f)))
                 {
                     ti.textureType = TextureImporterType.NormalMap;
                     ti.convertToNormalmap = true;       // 회색 높이 맵 → 노멀 맵
-                    ti.heightmapScale = 0.12f;
+                    ti.heightmapScale = 0.2f;
                     ti.normalmapFilter = TextureImporterNormalFilter.Sobel;
                     ti.maxTextureSize = 1024;
                     ti.SaveAndReimport();
@@ -118,6 +131,9 @@ namespace Project1.Map.EditorTools
             m.SetTexture("_BumpMap", normal);
             m.SetFloat("_BumpScale", bump);
             m.SetFloat("_CavityStrength", cavity);
+            m.SetFloat("_DetailBump", grit);
+            m.SetTexture("_HeightMap", height);
+            m.SetFloat("_Parallax", height != null ? parallax : 0f);
             EditorUtility.SetDirty(m);
             AssetDatabase.SaveAssetIfDirty(m);
             return m;

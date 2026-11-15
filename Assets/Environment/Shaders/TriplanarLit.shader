@@ -12,6 +12,10 @@ Shader "Project1/Environment/TriplanarLit"
         [Normal] _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Strength", Range(0, 4)) = 1
         _CavityStrength ("Cavity (dark grooves)", Range(0, 1)) = 0
+        _DetailBump ("Fine Grit Strength", Range(0, 4)) = 0
+        _DetailTiling ("Fine Grit Repeat", Float) = 4.3
+        _HeightMap ("Height Map (grayscale)", 2D) = "gray" {}
+        _Parallax ("Parallax", Range(0, 0.08)) = 0
     }
 
     SubShader
@@ -47,6 +51,7 @@ Shader "Project1/Environment/TriplanarLit"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
+            TEXTURE2D(_HeightMap); SAMPLER(sampler_HeightMap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
@@ -56,6 +61,9 @@ Shader "Project1/Environment/TriplanarLit"
                 half _Blend;
                 half _BumpScale;
                 half _CavityStrength;
+                half _DetailBump;
+                float _DetailTiling;
+                half _Parallax;
             CBUFFER_END
 
             struct Attributes
@@ -99,6 +107,17 @@ Shader "Project1/Environment/TriplanarLit"
                 float2 uvX = float2(uvw.z * sgn.x, uvw.y);
                 float2 uvY = float2(uvw.x * sgn.y, uvw.z);
                 float2 uvZ = float2(-uvw.x * sgn.z, uvw.y);
+                // 시차(패럴랙스): 높이 맵만큼 보는 방향으로 UV를 밀어 튀어나온 돌이 비스듬히 볼 때 앞으로 나와 보이게
+                float3 V = GetWorldSpaceNormalizeViewDir(i.positionWS);
+                if (_Parallax > 0)
+                {
+                    half hx = SAMPLE_TEXTURE2D(_HeightMap, sampler_HeightMap, uvX).r - 0.5;
+                    half hy = SAMPLE_TEXTURE2D(_HeightMap, sampler_HeightMap, uvY).r - 0.5;
+                    half hz = SAMPLE_TEXTURE2D(_HeightMap, sampler_HeightMap, uvZ).r - 0.5;
+                    uvX += float2(V.z * sgn.x, V.y) / max(abs(V.x), 0.35) * hx * _Parallax;
+                    uvY += float2(V.x * sgn.y, V.z) / max(abs(V.y), 0.35) * hy * _Parallax;
+                    uvZ += float2(-V.x * sgn.z, V.y) / max(abs(V.z), 0.35) * hz * _Parallax;
+                }
                 half3 cx = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvX).rgb;
                 half3 cy = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvY).rgb;
                 half3 cz = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uvZ).rgb;
@@ -107,6 +126,11 @@ Shader "Project1/Environment/TriplanarLit"
                 half3 tx = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvX), _BumpScale);
                 half3 ty = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvY), _BumpScale);
                 half3 tz = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvZ), _BumpScale);
+                // 잔결: 같은 노멀을 더 촘촘히(돌 표면의 거친 알갱이) 겹친다
+                float dt = _DetailTiling;
+                tx.xy += UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvX * dt + 0.37), _DetailBump).xy;
+                ty.xy += UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvY * dt + 0.37), _DetailBump).xy;
+                tz.xy += UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uvZ * dt + 0.37), _DetailBump).xy;
                 tx.x *= sgn.x; ty.x *= sgn.y; tz.x *= -sgn.z;
                 tx = half3(tx.xy + n.zy, abs(tx.z) * n.x);
                 ty = half3(ty.xy + n.xz, abs(ty.z) * n.y);
@@ -114,7 +138,8 @@ Shader "Project1/Environment/TriplanarLit"
                 float3 bentN = normalize(tx.zyx * w.x + ty.xzy * w.y + tz.xyz * w.z);
                 // 홈(노멀이 많이 기운 곳)을 어둡게 — 줄눈·틈이 그림자 진 것처럼
                 half cavity = saturate(dot(bentN, n));
-                albedo *= lerp(1, cavity * cavity, _CavityStrength);
+                cavity = cavity * cavity * cavity;
+                albedo *= lerp(1, cavity, _CavityStrength);
                 n = bentN;
 
                 InputData d = (InputData)0;
