@@ -14,6 +14,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만).
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(110)] // 다리 흔들림(HasturLegWriggle — 매 프레임 쉬는 자세로 되돌림)·걷기 팔 뒤에: 꽈배기·팔 자세가 그 위에 덮인다
     public class HasturKnockdownPose : MonoBehaviour
     {
         [Header("날아감·떠 있음")]
@@ -37,7 +38,7 @@ namespace Project1.Presentation
 
         private static readonly string[] ArmNames = { "biped R UpperArm", "biped R Forearm", "biped R Hand", "biped L UpperArm", "biped L Forearm", "biped L Hand" };
 
-        private class Bone { public Transform T; public Quaternion Base, Written; public bool Has; }
+        private class Bone { public Transform T; }
         private class Chain { public List<Bone> Bones = new(); public float Angle; } // Angle: 몸 둘레 어느 쪽 다리인지(위에서 본 각도)
 
         private CharacterIdentity identity;
@@ -172,14 +173,10 @@ namespace Project1.Presentation
         }
 
         // 지난 프레임에 우리가 쓴 그대로면 모션이 안 쓰는 뼈 → 바탕 자세로 되돌린 뒤 더한다(매 프레임 쌓이지 않음)
+        // 뼈 회전 바탕은 걷기 팔·다리 흔들림과 같은 뼈를 쓰므로 공용(SharedBonePose).
         private void Rebase()
         {
-            foreach (var b in AllBones())
-            {
-                if (b.T == null) continue;
-                if (b.Has && Quaternion.Dot(b.T.localRotation, b.Written) > 0.999999f) b.T.localRotation = b.Base;
-                else b.Base = b.T.localRotation;
-            }
+            foreach (var b in AllBones()) SharedBonePose.Begin(b.T);
             if (skeletonRoot != null)
             {
                 if (rootHas && (skeletonRoot.localPosition - rootWrittenPos).sqrMagnitude < 1e-10f) skeletonRoot.localPosition = rootBasePos;
@@ -189,13 +186,13 @@ namespace Project1.Presentation
 
         private void Mark()
         {
-            foreach (var b in AllBones()) { if (b.T == null) continue; b.Written = b.T.localRotation; b.Has = true; }
+            foreach (var b in AllBones()) SharedBonePose.End(b.T);
             if (skeletonRoot != null) { rootWrittenPos = skeletonRoot.localPosition; rootHas = true; }
         }
 
         private void Restore()
         {
-            foreach (var b in AllBones()) if (b.T != null && b.Has) { b.T.localRotation = b.Base; b.Has = false; }
+            foreach (var b in AllBones()) SharedBonePose.Restore(b.T);
             if (skeletonRoot != null && rootHas) { skeletonRoot.localPosition = rootBasePos; rootHas = false; }
         }
 

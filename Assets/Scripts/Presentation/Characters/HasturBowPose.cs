@@ -14,6 +14,7 @@ namespace Project1.Presentation
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만).
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(100)] // 걷기 팔(HasturArmWalk) 뒤에: 인사 자세가 걷기 흔들림 위에 덮여 오른팔이 몸 앞으로 내려온다
     public class HasturBowPose : MonoBehaviour
     {
         private static readonly string[] BowBoneNames = { "biped Head", "biped HeadNub" };
@@ -31,7 +32,7 @@ namespace Project1.Presentation
         [Tooltip("숙이고 펴는 시간(초).")]
         [SerializeField, Min(0.01f)] private float bowIn = 0.15f, bowOut = 0.3f;
 
-        private class Bone { public Transform T; public Quaternion Base, Written; public bool Has; }
+        private class Bone { public Transform T; }
         private ITentacleField field;
         private Animator animator;
         private Bone[] bow, arm;
@@ -90,19 +91,10 @@ namespace Project1.Presentation
             bone.T.rotation = Quaternion.Slerp(Quaternion.identity, delta, w) * bone.T.rotation;
         }
 
-        private static void Rebase(Bone b)
-        {
-            if (b == null || b.T == null) return;
-            // 지난 프레임에 우리가 쓴 그대로면 모션이 안 쓰는 뼈 → 바탕 자세로 되돌린 뒤 더한다
-            if (b.Has && Quaternion.Dot(b.T.localRotation, b.Written) > 0.999999f) b.T.localRotation = b.Base;
-            else b.Base = b.T.localRotation;
-        }
+        // 바탕 자세는 걷기 팔(HasturArmWalk)과 같은 뼈를 쓰므로 공용(SharedBonePose) — 이 프레임 앞 스크립트가 더한 자세 위에 더한다.
+        private static void Rebase(Bone b) { if (b != null) SharedBonePose.Begin(b.T); }
 
-        private static void Mark(Bone b)
-        {
-            if (b == null || b.T == null) return;
-            b.Written = b.T.localRotation; b.Has = true;
-        }
+        private static void Mark(Bone b) { if (b != null) SharedBonePose.End(b.T); }
 
         private void Resolve()
         {
@@ -127,7 +119,7 @@ namespace Project1.Presentation
             foreach (var set in new[] { bow, arm })
             {
                 if (set == null) continue;
-                foreach (var b in set) if (b != null && b.T != null && b.Has) { b.T.localRotation = b.Base; b.Has = false; }
+                foreach (var b in set) if (b != null) SharedBonePose.Restore(b.T);
             }
             weight = 0f;
         }

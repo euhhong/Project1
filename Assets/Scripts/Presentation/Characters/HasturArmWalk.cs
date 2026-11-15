@@ -8,7 +8,9 @@ namespace Project1.Presentation
     /// 모델(Hunter_Hastur, Generic 리그 — Blender로 확인): 팔 = 소매(biped L/R UpperArm·Forearm) 아래로 땅까지 닿는 검은 촉수 팔
     /// (왼쪽 biped_bone_00→01→02→03, 오른쪽 biped_bone_27→26→24→23, 아래팔에 붙음, 마디마다 무게가 따로 잡혀 있다). 어깨 = biped L/R Clavicle.
     /// 매 프레임 모션이 끝난 뒤:
-    /// - 대시하듯 두 팔을 함께 뒤로 젖힌다(빠를수록 많이, 멈추면 부드럽게 내려옴). 걸음마다 두 팔이 같이 살짝 들썩인다.
+    /// - 앞으로 갈 때만 대시하듯 두 팔을 함께 뒤로 젖힌다(빠를수록 많이, 멈추면 부드럽게 내려옴). 걸음마다 두 팔이 같이 살짝 들썩인다.
+    ///   뒤로·옆으로 걸을 때는 젖히지 않고 보통 걷듯 두 팔을 번갈아 앞뒤로 흔든다(walkSwing).
+    /// - 촉수를 내려찍는(인사) 동안 오른팔은 걷기 흔들림·대시를 끄고 오른 촉수 팔을 몸 앞 아래로 늘어뜨린다(위팔·아래팔은 HasturBowPose가 이 뒤에 앞으로 내린다).
     /// - 촉수 팔은 뒤로 끌리며 들리고(끝으로 갈수록 크게), 밑동에서 끝으로 흐르는 물결로 굽는다(끝으로 갈수록 크게, 늦게 따라옴 + 살짝 좌우).
     /// - 어깨는 걸음마다 두 어깨가 같이 들썩이고(조금 번갈아), 공격(두 손 모아 머리 위 → 내려치기)을 시작하면 이 자세는 빠르게 꺼진다.
     /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때는 아주 조금 숨 쉬듯). 공격 중에는 공격 모션을 그대로 둔다(부드럽게 꺼짐).
@@ -42,6 +44,13 @@ namespace Project1.Presentation
         [SerializeField, Range(0f, 1f)] private float idleRatio = 0.12f;
         [Tooltip("이 빠르기(m/s)에서 가장 크게 움직인다.")]
         [SerializeField, Min(0.1f)] private float fullSpeed = 5f;
+        [Header("뒤·옆으로 걸을 때 (대시 자세 대신)")]
+        [Tooltip("뒤로·옆으로 걸을 때는 두 팔을 뒤로 젖히지 않고 보통 걷듯 번갈아 앞뒤로 흔든다 — 위팔 / 아래팔 흔드는 각도(도, 가장 빠를 때).")]
+        [SerializeField, Range(0f, 60f)] private float walkSwing = 22f, walkForearmSwing = 10f;
+        [Header("촉수 내려찍기 (인사) 중")]
+        [Tooltip("촉수를 내려찍는 동안 오른 촉수 팔을 몸 앞 아래로 늘어뜨리는 정도(0~1) — 걸어도 몸 뒤로 끌리지 않게(오른 위팔·아래팔은 HasturBowPose가 앞으로 내린다).")]
+        [SerializeField, Range(0f, 1f)] private float bowHangFront = 0.8f;
+        [SerializeField, Min(0.1f)] private float bowBlend = 8f;
         [Header("촉수 겨누기 (좌클릭 꾹 = 세울 자리 / E 꾹 = 내려찍을 촉수)")]
         [Tooltip("겨누는 동안 오른팔(위팔·아래팔)을 몸 정면으로 뻗어 들고(겨눈 곳을 따라가지 않음) 촉수 팔도 앞으로 뻗되 끝 마디(손목)만 위로 꺾는다(STOP). 뻗는 방향을 수평보다 이만큼(도) 위로.")]
         [SerializeField, Range(-30f, 60f)] private float aimLift = 0f;
@@ -54,18 +63,13 @@ namespace Project1.Presentation
         [Tooltip("팔을 뻗고 내리는 빠르기(초당 비율).")]
         [SerializeField, Min(0.1f)] private float aimBlend = 6f;
 
-        // 한 뼈: 모션이 이번 프레임에 쓴 자세(없으면 쉬는 자세)를 바탕으로 더한다.
+        // 한 뼈: 모션이 이번 프레임에 쓴 자세(없으면 쉬는 자세)를 바탕으로 더한다. 인사·나가떨어짐 연출과 같은 뼈를 쓰므로 바탕은 공용(SharedBonePose).
         private class Bone
         {
-            public Transform T; public Quaternion Base, Written; public bool Has;
-            public void Begin()
-            {
-                // 지난 프레임에 우리가 쓴 그대로면 모션이 안 쓰는 뼈 → 바탕 자세로 되돌림. 바뀌었으면 모션이 새로 쓴 자세가 바탕.
-                if (Has && Quaternion.Dot(T.localRotation, Written) > 0.999999f) T.localRotation = Base;
-                else Base = T.localRotation;
-            }
-            public void End() { Written = T.localRotation; Has = true; }
-            public void Restore() { if (T != null && Has) T.localRotation = Base; Has = false; }
+            public Transform T;
+            public void Begin() => SharedBonePose.Begin(T);
+            public void End() => SharedBonePose.End(T);
+            public void Restore() => SharedBonePose.Restore(T);
         }
 
         private class Arm { public Bone Clavicle, UpperArm, Forearm; public Transform Hand; public Bone[] Chain; public float Offset, Side; } // Side: 왼쪽 -1 / 오른쪽 +1
@@ -76,7 +80,9 @@ namespace Project1.Presentation
         private Arm left, right;
         private ICharacterState state;
         private ICharacterAttackState attack;
-        private float phase, amount, dash; // dash: 뒤로 젖히는 자세 크기(멈추면 0, 가장 빠를 때 1)
+        private float phase, amount, dash; // dash: 뒤로 젖히는 자세 크기(멈추면 0, 앞으로 가장 빠를 때 1)
+        private float swing;               // 뒤·옆으로 걸을 때 보통 걷듯 번갈아 흔드는 크기(0~1)
+        private float bow;                 // 촉수를 내려찍는(인사하는) 중인 정도(0~1)
         private ITentacleField tentacles;
         private float aim;          // 오른팔을 앞으로 뻗어 든 정도(0~1)
         private Vector3 bodyForward; // 모델 몸의 앞(두 어깨를 잇는 선에 수직, 수평)
@@ -92,20 +98,35 @@ namespace Project1.Presentation
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             attack ??= GetComponent<ICharacterAttackState>();
-            float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
+            Vector2 v = state != null ? state.LocalPlanarVelocity : Vector2.zero; // x = 오른쪽, y = 앞
+            float speed = v.magnitude;
             float move = Mathf.Clamp01(speed / fullSpeed);
+            // 대시 자세(두 팔 뒤로)는 앞으로 갈 때만. 뒤·옆으로 가는 만큼은 보통 걷듯 번갈아 흔든다.
+            float forwardMove = Mathf.Clamp01(Mathf.Max(0f, v.y) / fullSpeed);
+            float otherMove = Mathf.Clamp01(Mathf.Sqrt(Mathf.Max(0f, speed * speed - Mathf.Max(0f, v.y) * Mathf.Max(0f, v.y))) / fullSpeed);
             if (hang == null) TryGetComponent(out hang);
             // 공격 중·턱에 매달린 동안은 걷기 팔 움직임을 끈다(공격 모션 / 매달리기 자세가 대신).
             bool attacking = (attack != null && attack.AttackState != CharacterAttackState.None) || (hang != null && hang.Weight > 0f);
             float target = attacking ? 0f : Mathf.Lerp(idleRatio, 1f, move);
             amount = Mathf.MoveTowards(amount, target, Time.deltaTime * (attacking ? 6f : 3f));
-            dash = Mathf.MoveTowards(dash, attacking ? 0f : Mathf.SmoothStep(0f, 1f, move), Time.deltaTime * (attacking ? 6f : dashBlend));
+            dash = Mathf.MoveTowards(dash, attacking ? 0f : Mathf.SmoothStep(0f, 1f, forwardMove), Time.deltaTime * (attacking ? 6f : dashBlend));
+            swing = Mathf.MoveTowards(swing, attacking ? 0f : Mathf.SmoothStep(0f, 1f, otherMove), Time.deltaTime * (attacking ? 6f : dashBlend));
+            bow = Mathf.MoveTowards(bow, Bowing() ? 1f : 0f, Time.deltaTime * bowBlend);
             phase += Time.deltaTime * Mathf.Lerp(idleFrequency, moveFrequency, move) * Mathf.PI * 2f;
             UpdateAim(attacking);
             bodyForward = BodyForward(); // 팔을 움직이기 전 모델 몸의 앞(두 어깨 기준)
 
             Pose(left);
             Pose(right);
+        }
+
+        /// <summary>촉수가 내려찍는 중(말아 올림·내리침)인지 — 그동안 하스터는 오른 어깨로 인사한다(HasturBowPose).</summary>
+        private bool Bowing()
+        {
+            tentacles ??= GetComponent<ITentacleField>();
+            if (tentacles == null) return false;
+            foreach (var t in tentacles.Tentacles) if (t.State == TentacleState.SlamWindup || t.State == TentacleState.SlamActive) return true;
+            return false;
         }
 
         /// <summary>촉수를 세울 자리를 고르거나(좌클릭 꾹) 내려찍을 촉수를 고르는 동안(E 꾹) 오른팔을 정면으로 든다.</summary>
@@ -160,10 +181,11 @@ namespace Project1.Presentation
         }
 
         /// <summary>미리보기·확인용(에디터): 걸음 위상 cyclePhase(라디안)·크기 strength(0~1)로 한 번 자세를 잡는다. RestorePose로 되돌린다.</summary>
-        public bool PoseAt(float cyclePhase, float strength)
+        public bool PoseAt(float cyclePhase, float strength, float backSwing = 0f, float bowing = 0f)
         {
             if (animator == null && !Resolve()) return false;
-            phase = cyclePhase; amount = strength; dash = strength;
+            phase = cyclePhase; amount = Mathf.Max(strength, backSwing); dash = strength; swing = backSwing; bow = bowing;
+            bodyForward = BodyForward();
             Pose(left); Pose(right);
             return true;
         }
@@ -177,6 +199,8 @@ namespace Project1.Presentation
             Vector3 up = transform.up, fwd = transform.forward;
             float p = phase + a.Offset;
             float s = Mathf.Sin(p);
+            float keep = a == right ? 1f - bow : 1f; // 인사(촉수 내려찍기) 중 오른팔은 걷기 흔들림·대시를 끈다(몸 앞으로 내림)
+            float armDash = dash * keep, armSwing = swing * keep;
 
             // 어깨: 팔을 앞으로 뻗는 쪽이 들리고(번갈아), 걸음마다 두 어깨가 같이 한 번 더 들썩.
             if (a.Clavicle != null && a.UpperArm != null)
@@ -192,14 +216,17 @@ namespace Project1.Presentation
             {
                 a.UpperArm.Begin();
                 Vector3 upperAlong = a.Forearm.T.position - a.UpperArm.T.position;
-                Rotate(a.UpperArm.T, Raise(upperAlong, -fwd), dashBack * dash + upperArmSwing * flap * amount);
-                Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, transform.right * -a.Side), dashTuck * dash); // 몸 쪽으로
+                Rotate(a.UpperArm.T, Raise(upperAlong, -fwd), dashBack * armDash + upperArmSwing * flap * amount * armDash);
+                Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, transform.right * -a.Side), dashTuck * armDash); // 몸 쪽으로
+                // 뒤·옆으로 걸을 때: 보통 걷듯 두 팔을 번갈아 앞뒤로 흔든다(왼팔·오른팔 반대 박자)
+                Rotate(a.UpperArm.T, Raise(a.Forearm.T.position - a.UpperArm.T.position, fwd), walkSwing * s * armSwing);
             }
             if (a.Forearm != null && a.Chain.Length > 0)
             {
                 a.Forearm.Begin();
                 Vector3 along = a.Chain[^1].T.position - a.Forearm.T.position;
-                Rotate(a.Forearm.T, Raise(along, -fwd), dashForearm * dash + forearmSwing * Mathf.Sin(phase * 2f - 0.6f) * amount);
+                Rotate(a.Forearm.T, Raise(along, -fwd), dashForearm * armDash + forearmSwing * Mathf.Sin(phase * 2f - 0.6f) * amount * armDash);
+                Rotate(a.Forearm.T, Raise(a.Chain[^1].T.position - a.Forearm.T.position, fwd), walkForearmSwing * Mathf.Sin(p - 0.6f) * armSwing);
             }
             // 촉수 팔: 뒤로 끌리며 들리고(끝으로 갈수록 크게), 밑동에서 끝으로 흐르는 물결(끝으로 갈수록 크게, 늦게) + 살짝 좌우.
             int n = a.Chain.Length;
@@ -210,12 +237,24 @@ namespace Project1.Presentation
                 Vector3 along = i + 1 < n ? a.Chain[i + 1].T.position - b.T.position : b.T.position - a.Chain[i - 1].T.position;
                 float weight = (i + 1f) / n;
                 float w = p - 0.9f - i * phasePerBone;
-                Rotate(b.T, Raise(along, fwd), tentacleCurl * weight * Mathf.Sin(w) * amount - dashTrail * weight * dash);
-                b.T.rotation = Quaternion.AngleAxis(tentacleSway * weight * Mathf.Sin(w * 0.8f + 1.1f) * amount, up) * b.T.rotation;
+                Rotate(b.T, Raise(along, fwd), tentacleCurl * weight * Mathf.Sin(w) * amount * keep - dashTrail * weight * armDash);
+                b.T.rotation = Quaternion.AngleAxis(tentacleSway * weight * Mathf.Sin(w * 0.8f + 1.1f) * amount * keep, up) * b.T.rotation;
             }
 
             // 촉수 겨누기: 오른팔만 앞으로 뻗어 든다(걷기 흔들림 위에 덮음).
             if (a == right) AimArm(a);
+
+            // 인사(촉수 내려찍기) 중: 오른 촉수 팔을 몸 앞 아래로 늘어뜨린다 — 걸어도 몸 뒤로 끌리지 않게.
+            if (a == right && bow > 0f)
+            {
+                Vector3 front = Vector3.ProjectOnPlane(bodyForward, Vector3.up).normalized;
+                Vector3 hangDir = (front * 0.35f - Vector3.up).normalized;
+                for (int i = 0; i < n; i++)
+                {
+                    Vector3 next = i + 1 < n ? a.Chain[i + 1].T.position : a.Chain[i].T.position + (a.Chain[i].T.position - a.Chain[Mathf.Max(i - 1, 0)].T.position);
+                    Point(a.Chain[i].T, next, hangDir, bow * bowHangFront);
+                }
+            }
 
             // 턱에 매달림: 소매를 턱 쪽으로 뻗고 촉수 팔로 턱을 넘어 감아 쥔다(HasturHangPose). 이 뼈들은 여기서만 쓴다.
             if (hang != null && hang.Weight > 0f)
