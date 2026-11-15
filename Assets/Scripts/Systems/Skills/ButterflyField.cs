@@ -13,7 +13,8 @@ namespace Project1.Systems
     ///   취소: 누른 채 E를 누르거나(뗄 때까지 무시), 몸 근처로 끌어다 놓으면 놓지 않는다 — 취소는 재사용 대기가 생기지 않는다.
     ///   누른 채 우클릭으로 시점을 돌리면: 캐릭터를 원의 가운데로, 나비까지 거리를 반지름으로 두고 시야 기준 방향을 지켜 시점을 따라 돈다.
     ///   우클릭으로 시점을 돌리는 중에 좌클릭을 꾹 눌러도 꺼낼 수 있다(화면 가운데가 가리키는 땅, 없으면 앞쪽).
-    /// - 나비는 최대 maxButterflies마리, 넘으면 가장 오래된 것이 사라진다.
+    /// - 손에 쥔 나비(Charges): 처음엔 maxCharges(3)마리, 놓을 때마다 한 마리씩 쓰고 chargeTime(7초)마다 한 마리씩 다시 찬다(최대 3). 0마리면 놓지 못한다.
+    /// - 놓아 둔 나비는 butterflyLifetime(21초) 뒤 사라지고, 최대 maxButterflies마리 — 넘으면 가장 오래된 것이 사라진다.
     ///   캐릭터가 설 공간(몸 크기 캡슐 빈 곳 + 바닥)만 있으면 벽 너머 안 보이는 곳에도 놓는다(가리킨 벽 너머로 광선을 이어 찾음, placeBeyondWalls).
     /// - 늘 바라보는 방향(시야)에 가장 맞는 나비를 겨눈다(TargetIndex). 벽 등에 가려 안 보이는 나비는 겨누지 않는다(targetNeedsSight — 도약 표적만 안 뜸).
     ///   단 나비를 놓은 직후 followJustThrownTime(0.5초) 안에는 방금 날린 나비가 무조건 표적(벽 너머여도 E로 따라감, 벽에 막히면 그대로 멈춤). E를 누르면 ButterflyGlideSkill이 그 나비로 간다.
@@ -36,6 +37,20 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float eyeHeight = 1.7f;
         [Tooltip("나비를 놓은 뒤 다음 나비를 놓기까지 재사용 대기(초). 테스트 단계 0초. 취소하면 생기지 않는다.")]
         [SerializeField, Min(0f)] private float placeCooldown = 0f;
+        [Tooltip("손에 쥘 수 있는 나비 수(처음엔 가득) / 한 마리가 차는 시간(초). 놓을 때 한 마리씩 쓰고, 0마리면 놓을 수 없다.")]
+        [SerializeField, Min(1)] private int maxCharges = 3;
+        [SerializeField, Min(0.1f)] private float chargeTime = 7f;
+
+        /// <summary>지금 손에 쥔(놓을 수 있는) 나비 수.</summary>
+        public int Charges { get; private set; } = -1; // -1 = 아직 채우지 않음(처음 FixedUpdate에서 가득)
+        public int MaxCharges => maxCharges;
+        public float ChargeTime => chargeTime;
+        /// <summary>다음 한 마리가 차는 진행도(0~1). 가득이면 0.</summary>
+        public float ChargeProgress => Charges >= maxCharges ? 0f : Mathf.Clamp01(chargeTimer / chargeTime);
+        private float chargeTimer;
+        [Tooltip("놓아 둔 나비가 사라지기까지(초).")]
+        [SerializeField, Min(0.1f)] private float butterflyLifetime = 21f;
+        private readonly List<float> placedTimes = new(); // butterflies와 같은 순서로 놓은 시각
 
         private readonly List<Vector3> butterflies = new();
         private ICharacterInputSource inputSource;
@@ -111,6 +126,7 @@ namespace Project1.Systems
         private void OnDisable()
         {
             Placing = false; placement.Clear(); waitRelease = false; AimShown = false;
+            Charges = -1; // 다시 켜지면(캐릭터를 다시 고름) 가득 차서 시작
         }
 
         private void FixedUpdate()
@@ -122,12 +138,15 @@ namespace Project1.Systems
             if (stun == null) TryGetComponent(out stun);
             bool blocked = (skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned);
             if (PlaceCooldownRemaining > 0f) PlaceCooldownRemaining = Mathf.Max(0f, PlaceCooldownRemaining - Time.fixedDeltaTime);
+            TickCharges(Time.fixedDeltaTime);
+            // 놓은 지 butterflyLifetime초가 지난 나비는 사라진다(모두 같은 수명이라 늘 가장 오래된 것부터)
+            while (placedTimes.Count > 0 && Time.time - placedTimes[0] >= butterflyLifetime) { placedTimes.RemoveAt(0); butterflies.RemoveAt(0); }
 
             if (waitRelease)
             {
                 if (!input.HeavyCharging) waitRelease = false; // 취소한 뒤 키를 뗄 때까지 무시
             }
-            else if (input.HeavyCharging && !blocked && (Placing || PlaceCooldownRemaining <= 0f))
+            else if (input.HeavyCharging && !blocked && (Placing || (PlaceCooldownRemaining <= 0f && Charges > 0)))
             {
                 if (!Placing) placement.Begin(); // 새로 누르기 시작: 지난 자리는 버린다
                 Placing = true;
@@ -142,26 +161,38 @@ namespace Project1.Systems
             else if (Placing)
             {
                 // 뗐다(또는 막힘) → 몸 근처면 취소(재사용 대기 없음), 놓을 수 있는 자리면 놓고 재사용 대기
-                if (!placement.Cancels && placement.Valid && !blocked)
+                if (!placement.Cancels && placement.Valid && !blocked && Charges > 0)
                 {
                     Place(placement.Point);
                     PlaceCooldownRemaining = placeCooldown;
+                    Charges--; // 쥔 나비 한 마리를 쓴다
                 }
                 Placing = false; placement.Clear();
             }
 
             // 조준 보조: 누르지 않을 때도 지금 꾹 눌렀다 떼면 나비가 갈 자리를 미리 계산한다(FE가 고리로 보여 줌).
-            AimShown = !Placing && !blocked;
+            AimShown = !Placing && !blocked && Charges > 0;
             if (AimShown) { aim.Begin(); aim.Update(transform, input); }
 
             UpdateTarget(input);
+        }
+
+        /// <summary>쥔 나비가 maxCharges보다 적으면 chargeTime초마다 한 마리씩 찬다(처음엔 가득).</summary>
+        private void TickCharges(float dt)
+        {
+            if (Charges < 0) { Charges = maxCharges; chargeTimer = 0f; }
+            if (Charges >= maxCharges) { Charges = maxCharges; chargeTimer = 0f; return; }
+            chargeTimer += dt;
+            while (chargeTimer >= chargeTime && Charges < maxCharges) { chargeTimer -= chargeTime; Charges++; }
+            if (Charges >= maxCharges) chargeTimer = 0f;
         }
 
         private void Place(Vector3 point)
         {
             PlacedCount++;
             butterflies.Add(point);
-            while (butterflies.Count > maxButterflies) butterflies.RemoveAt(0);
+            placedTimes.Add(Time.time);
+            while (butterflies.Count > maxButterflies) { butterflies.RemoveAt(0); placedTimes.RemoveAt(0); }
             justThrownLeft = followJustThrown ? followJustThrownTime : 0f; // 방금 날린 나비(맨 끝)는 잠깐 무조건 표적
         }
 
