@@ -165,10 +165,23 @@ namespace Project1.Presentation
                             animator.Play(LightId, groundLayer, Normalized(SlotTiming("Attack_Light")));
                         break;
                     case CharacterAttackState.Heavy:
-                        animator.Play(HeavyId, groundLayer, Normalized(SlotTiming("Attack_Heavy")));
+                        if (LightForHeavy())
+                        {
+                            // 모으기 = 평타 앞부분(준비 끝 자세)이었으니, 강공격은 그 자세에서 이어 평타 모션의 나머지(내려치기 → 거두기)를 재생한다.
+                            Vector2 lt = SlotTiming("Attack_Light");
+                            animator.Play(LightId, groundLayer, attack.AttackPhase == AttackPhase.Windup ? lt.x : Normalized(lt));
+                        }
+                        else animator.Play(HeavyId, groundLayer, Normalized(SlotTiming("Attack_Heavy")));
                         break;
                     case CharacterAttackState.HeavyCharge:
-                        if (shown != state || shownAir) animator.CrossFadeInFixedTime(ChargeId, 0.12f, groundLayer);
+                        if (LightForHeavy())
+                        {
+                            // 모으기 자세 = 그 캐릭터 평타 모션의 앞부분과 똑같이: 준비 구간을 chargePoseTime초에 지나 준비 끝(때리기 직전) 자세로 멈춰 모은다.
+                            Vector2 lt = SlotTiming("Attack_Light");
+                            float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(attack.ChargeTime / chargePoseTime));
+                            animator.Play(LightId, groundLayer, lt.x * k);
+                        }
+                        else if (shown != state || shownAir) animator.CrossFadeInFixedTime(ChargeId, 0.12f, groundLayer);
                         break;
                 }
             }
@@ -194,6 +207,38 @@ namespace Project1.Presentation
             }
             slotTiming[slot] = t;
             return t;
+        }
+
+        [Tooltip("땅에서 강공격을 모을 때 평타 준비 구간(팔을 드는 앞부분)을 지나 준비 끝 자세에 이르는 시간(초).")]
+        [SerializeField, Min(0.01f)] private float chargePoseTime = 0.25f;
+        private RuntimeAnimatorController lightHeavyFor;
+        private bool lightHeavy;
+
+        /// <summary>
+        /// 강공격 모으기·강공격을 평타 모션으로 보여 줄지: 생존자(발차기 격투)가 아니고, 강공격 자리에 그 캐릭터 전용 모션이 없을 때(기본 임시 Attack_Heavy 그대로 — 사냥터지기·안토니오·루키노 등).
+        /// 전용 강공격 모션이 있는 캐릭터(리퍼·광대·하스터)는 그대로 둔다.
+        /// </summary>
+        private bool LightForHeavy()
+        {
+            if (HeavyKick) return false;
+            var rc = animator.runtimeAnimatorController;
+            if (lightHeavyFor == rc) return lightHeavy;
+            lightHeavyFor = rc;
+            lightHeavy = false;
+            if (rc is AnimatorOverrideController aoc)
+            {
+                overridePairs.Clear();
+                aoc.GetOverrides(overridePairs);
+                bool heavyOverridden = false, lightOverridden = false;
+                foreach (var p in overridePairs)
+                {
+                    if (p.Key == null || p.Value == null) continue;
+                    if (p.Key.name == "Attack_Heavy") heavyOverridden = true;
+                    if (p.Key.name == "Attack_Light") lightOverridden = true;
+                }
+                lightHeavy = lightOverridden && !heavyOverridden; // 평타는 그 캐릭터 모션, 강공격은 기본 임시 모션
+            }
+            return lightHeavy;
         }
 
         private static readonly List<KeyValuePair<AnimationClip, AnimationClip>> overridePairs = new();
