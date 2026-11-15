@@ -15,11 +15,12 @@ namespace Project1.Systems
     ///   (달리기 점프 공격에 이어 가는 두 번째 날아 차기, 맹인 후리기 잇기는 예외)
     /// - 공격 중에는 새 공격을 받지 않는다. 공중에서도 공격할 수 있고(IsAirAttack), 도중에 착지해도 공격은 끝까지 이어진다.
     /// - 땅에서 강공격을 모으는 동안에는 걷기 속도로 제한한다(IMoveSpeedLimit). 공중에서는 점프 궤적을 건드리지 않는다.
+    ///   캐릭터별 모으기 방식(SetChargeStyle, 예: 사냥터지기): 정한 시간을 다 모으면 떼지 않아도 강공격, 모으는 동안 점점 빨라짐(IMoveSpeedBoost).
     /// 공격 방향은 몸 방향(= 시야 Yaw, CharacterMotor가 맞춘다)이다. 데미지는 다루지 않는다.
     /// </summary>
     [RequireComponent(typeof(AttackHitDetector))]
     [DisallowMultipleComponent]
-    public class CharacterAttack : MonoBehaviour, ICharacterAttackState, IMoveSpeedLimit, IAttackCancel
+    public class CharacterAttack : MonoBehaviour, ICharacterAttackState, IMoveSpeedLimit, IMoveSpeedBoost, IAttackCancel
     {
         [SerializeField] private AttackSpec lightAttack = new(0.1f, 0.1f, 0.25f, HitboxSlot.RightHand);
         [SerializeField] private AttackSpec heavyAttack = new(0.25f, 0.15f, 0.5f, HitboxSlot.RightHand | HitboxSlot.Weapon);
@@ -163,6 +164,28 @@ namespace Project1.Systems
         public void IgnoreAttackUntilRelease() => waitAirRelease = true;
 
         private float extraWindup;
+        private float autoChargeTime, chargeSpeedBoost = 1f;
+
+        /// <summary>
+        /// 강공격 모으기(좌클릭 꾹) 방식 — 캐릭터를 고를 때 정한다(예: 사냥터지기).
+        /// autoSeconds > 0: 그만큼 모으면 키를 떼지 않아도 바로 강공격(공격 전 자세로 선딜레이 기다림). 그 전에 떼면 예전처럼 바로 강공격.
+        /// speedBoostAtFull > 1: 모으는 동안 이동 속도가 1배 → 이 배율까지 점점 빨라진다(걷기 속도 제한 위에 곱함, 다 모았을 때 최대). 0·1이면 끔.
+        /// </summary>
+        public void SetChargeStyle(float autoSeconds, float speedBoostAtFull)
+        {
+            autoChargeTime = Mathf.Max(0f, autoSeconds);
+            chargeSpeedBoost = Mathf.Max(1f, speedBoostAtFull);
+        }
+
+        /// <summary>모으는 동안 점점 빨라지기(IMoveSpeedBoost — SetChargeStyle).</summary>
+        public bool TryGetSpeedBoost(out float multiplier)
+        {
+            multiplier = 1f;
+            if (chargeSpeedBoost <= 1f || AttackState != CharacterAttackState.HeavyCharge) return false;
+            float full = autoChargeTime > 0f ? autoChargeTime : 1f;
+            multiplier = Mathf.Lerp(1f, chargeSpeedBoost, Mathf.Clamp01(ChargeTime / full));
+            return multiplier > 1f;
+        }
 
         /// <summary>평타(약·강·달리기 점프 공격)의 준비 시간(선딜레이)에 더하는 초 — 캐릭터를 고를 때 정한다(예: 하스터 0.1초). 두 번째 날아 차기·스킬은 그대로.</summary>
         public void SetExtraWindup(float seconds) => extraWindup = Mathf.Max(0f, seconds);
@@ -312,6 +335,13 @@ namespace Project1.Systems
                     if (input.HeavyRelease || !input.HeavyCharging)
                     {
                         ChargeTime = 0f;
+                        StartAttack(CharacterAttackState.Heavy);
+                    }
+                    else if (autoChargeTime > 0f && ChargeTime >= autoChargeTime)
+                    {
+                        // 다 모았다(예: 사냥터지기 1초) → 키를 누르고 있어도 바로 강공격. 그 키를 뗄 때 약공격이 나가지 않게 뗄 때까지 무시.
+                        ChargeTime = 0f;
+                        waitAirRelease = true;
                         StartAttack(CharacterAttackState.Heavy);
                     }
                     break;

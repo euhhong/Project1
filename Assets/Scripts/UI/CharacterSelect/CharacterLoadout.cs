@@ -103,6 +103,8 @@ namespace Project1.UI
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
                 attack.SetExtraWindup(entry.id == "Hunter_Hastur" ? 0.1f : 0f); // 하스터 평타: 선딜레이를 조금 더(0.1 → 0.2초) — 촉수 스킬은 그대로
+                // 사냥터지기 강공격(좌클릭 꾹): 공격 전 자세로 1초 모은 뒤 저절로 내려침, 모으는 동안 이동 속도가 걷기의 1.6배까지 점점 빨라짐
+                if (entry.id == "Hunter_Gamekeeper") attack.SetChargeStyle(1f, 1.6f); else attack.SetChargeStyle(0f, 1f);
                 // 감시자 달리기 점프 공격 = 무기 내려치기(Run Jump Attack) → 발이 아니라 약공격 부위(무기·손) + 몸 앞 긴 판정(RunJumpReach). 생존자는 처음 값(양발 플라잉킥).
                 bool hunter = entry.role == CharacterRole.Hunter;
                 attack.SetRunJumpSlots(hunter ? attack.LightAttack.Slots | Project1.Core.HitboxSlot.RunJumpReach : Project1.Core.HitboxSlot.None);
