@@ -4,25 +4,36 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 촉수를 내려찍는 동안(TentacleState.SlamWindup·SlamActive) 허리를 숙여 인사하는 자세(연출 전용 — Generic 리그라 런타임으로 뼈를 돌린다).
-    /// 등뼈(biped Spine·Spine1)와 목(biped Neck)을 몸 앞쪽으로 숙인다. 그동안 평타·촉수 세우기는 BE(TentacleField — IActionLock)가 막는다.
+    /// 하스터가 촉수를 내려찍는 동안(TentacleState.SlamWindup·SlamActive) 에스코트하듯 정중하게 인사하는 자세(연출 전용 — Generic 리그라 런타임으로 뼈를 돌린다).
+    /// - 등뼈(biped Spine·Spine1)·목(biped Neck)·머리(biped Head)를 몸 앞쪽으로 숙여 고개 숙여 인사한다.
+    /// - 오른 촉수팔(biped R UpperArm·R Forearm)을 젠틀하게 내린다: 위팔은 아래·살짝 앞으로, 아래팔은 허리 앞을 가로질러 안쪽으로(집사가 인사하듯).
+    ///   뼈 축 방향을 몰라도 되게 "뼈가 가리키는 방향"을 캐릭터 기준 목표 방향으로 돌린다(armUpperDir·armLowerDir).
+    /// 그동안 평타·촉수 세우기는 BE(TentacleField — IActionLock)가 막는다.
     /// 모션이 쓰는 뼈면 모션 자세 위에 더하고, 쓰지 않는 뼈면 쉬는 자세에서 더한다(매 프레임 쌓이지 않음).
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만).
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturBowPose : MonoBehaviour
     {
-        private static readonly string[] BoneNames = { "biped Spine", "biped Spine1", "biped Neck" };
+        private static readonly string[] BowBoneNames = { "biped Spine", "biped Spine1", "biped Neck", "biped Head" };
+        private static readonly string[] ArmBoneNames = { "biped R UpperArm", "biped R Forearm", "biped R Hand" };
+        private static readonly string[] LeftArmBoneNames = { "biped L UpperArm", "biped L Forearm", "biped L Hand" };
 
-        [Tooltip("숙이는 각도(도) — 등뼈 아래 / 위 / 목.")]
-        [SerializeField] private float[] angles = { 22f, 20f, 12f };
+        [Tooltip("숙이는 각도(도) — 등뼈 아래 / 위 / 목 / 머리.")]
+        [SerializeField] private float[] angles = { 22f, 20f, 12f, 14f };
+        [Tooltip("오른 위팔이 가리킬 방향(캐릭터 기준 x = 오른쪽, y = 위, z = 앞) — 아래로 내리고 살짝 앞·안쪽.")]
+        [SerializeField] private Vector3 armUpperDir = new(0.05f, -0.95f, 0.3f);
+        [Tooltip("오른 아래팔이 가리킬 방향(캐릭터 기준) — 허리 앞에서 안쪽(왼쪽)·아래로 비스듬히 접는다(촉수팔이 길어 너무 가로지르지 않게).")]
+        [SerializeField] private Vector3 armLowerDir = new(-0.5f, -0.7f, 0.5f);
+        [Tooltip("왼팔은 허리를 숙여도 앞으로 들리지 않고 아래로 늘어지게(캐릭터 기준 방향) — 오른팔만 인사 동작을 한다.")]
+        [SerializeField] private Vector3 leftArmHangDir = new(0f, -1f, 0.1f);
         [Tooltip("숙이고 펴는 시간(초).")]
         [SerializeField, Min(0.01f)] private float bowIn = 0.15f, bowOut = 0.3f;
 
         private class Bone { public Transform T; public Quaternion Base, Written; public bool Has; }
         private ITentacleField field;
         private Animator animator;
-        private Bone[] bones;
+        private Bone[] bow, arm, leftArm;
         private float weight;
 
         private void OnDisable() => Restore();
@@ -32,40 +43,100 @@ namespace Project1.Presentation
             field ??= GetComponent<ITentacleField>();
             if (field == null) return;
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); Resolve(); }
-            if (bones == null) return;
+            if (bow == null) return;
 
             bool slamming = false;
             foreach (var t in field.Tentacles) if (t.State == TentacleState.SlamWindup || t.State == TentacleState.SlamActive) { slamming = true; break; }
             weight = Mathf.MoveTowards(weight, slamming ? 1f : 0f, Time.deltaTime / (slamming ? bowIn : bowOut));
+            Apply(Mathf.SmoothStep(0f, 1f, weight));
+        }
 
+        /// <summary>에디터 미리보기용: 지금 자세에 인사 자세를 w(0~1)만큼 바로 더한다(뼈를 다시 찾는다).</summary>
+        public void PreviewPose(float w)
+        {
+            Resolve();
+            if (bow != null) Apply(Mathf.Clamp01(w));
+        }
+
+        /// <summary>w(0~1)만큼 인사 자세를 더한다. 모션이 안 쓰는 뼈는 바탕 자세로 되돌린 뒤 더한다.</summary>
+        private void Apply(float w)
+        {
+            foreach (var b in bow) Rebase(b);
+            foreach (var b in arm) Rebase(b);
+            foreach (var b in leftArm) Rebase(b);
+
+            // 1) 고개 숙여 인사: 등뼈 → 목 → 머리 순으로 몸 앞쪽으로 숙인다.
             Vector3 right = transform.right;
-            for (int i = 0; i < bones.Length; i++)
+            for (int i = 0; i < bow.Length; i++)
             {
-                var b = bones[i];
-                if (b == null || b.T == null) continue;
-                // 지난 프레임에 우리가 쓴 그대로면 모션이 안 쓰는 뼈 → 바탕 자세로 되돌린 뒤 더한다
-                if (b.Has && Quaternion.Dot(b.T.localRotation, b.Written) > 0.999999f) b.T.localRotation = b.Base;
-                else b.Base = b.T.localRotation;
-                if (weight > 0f) b.T.rotation = Quaternion.AngleAxis(angles[Mathf.Min(i, angles.Length - 1)] * Mathf.SmoothStep(0f, 1f, weight), right) * b.T.rotation; // 몸 앞쪽으로 숙임
-                b.Written = b.T.localRotation; b.Has = true;
+                var b = bow[i];
+                if (b == null || b.T == null || w <= 0f) continue;
+                b.T.rotation = Quaternion.AngleAxis(angles[Mathf.Min(i, angles.Length - 1)] * w, right) * b.T.rotation;
             }
+
+            // 2) 오른 촉수팔을 젠틀하게 내림: 위팔(→ 아래팔)·아래팔(→ 손)이 가리키는 방향을 목표 방향 쪽으로 w만큼 돌린다.
+            if (w > 0f)
+            {
+                Aim(arm[0], arm[1], armUpperDir, w);
+                Aim(arm[1], arm[2], armLowerDir, w);
+                Aim(leftArm[0], leftArm[1], leftArmHangDir, w); // 왼팔은 그냥 늘어뜨림
+            }
+
+            foreach (var b in bow) Mark(b);
+            foreach (var b in arm) Mark(b);
+            foreach (var b in leftArm) Mark(b);
+        }
+
+        private void Aim(Bone bone, Bone child, Vector3 localDir, float w)
+        {
+            if (bone == null || bone.T == null || child == null || child.T == null) return;
+            Vector3 cur = child.T.position - bone.T.position;
+            Vector3 target = transform.TransformDirection(localDir.normalized);
+            if (cur.sqrMagnitude < 1e-8f) return;
+            Quaternion delta = Quaternion.FromToRotation(cur.normalized, target);
+            bone.T.rotation = Quaternion.Slerp(Quaternion.identity, delta, w) * bone.T.rotation;
+        }
+
+        private static void Rebase(Bone b)
+        {
+            if (b == null || b.T == null) return;
+            // 지난 프레임에 우리가 쓴 그대로면 모션이 안 쓰는 뼈 → 바탕 자세로 되돌린 뒤 더한다
+            if (b.Has && Quaternion.Dot(b.T.localRotation, b.Written) > 0.999999f) b.T.localRotation = b.Base;
+            else b.Base = b.T.localRotation;
+        }
+
+        private static void Mark(Bone b)
+        {
+            if (b == null || b.T == null) return;
+            b.Written = b.T.localRotation; b.Has = true;
         }
 
         private void Resolve()
         {
-            bones = null;
+            bow = arm = leftArm = null;
             animator = GetComponentInChildren<Animator>();
             if (animator == null) return;
             var all = animator.GetComponentsInChildren<Transform>(true);
-            bones = new Bone[BoneNames.Length];
-            for (int i = 0; i < BoneNames.Length; i++)
-                foreach (var t in all) if (t.name == BoneNames[i]) { bones[i] = new Bone { T = t }; break; }
+            bow = Find(all, BowBoneNames);
+            arm = Find(all, ArmBoneNames);
+            leftArm = Find(all, LeftArmBoneNames);
+        }
+
+        private static Bone[] Find(Transform[] all, string[] names)
+        {
+            var result = new Bone[names.Length];
+            for (int i = 0; i < names.Length; i++)
+                foreach (var t in all) if (t.name == names[i]) { result[i] = new Bone { T = t }; break; }
+            return result;
         }
 
         private void Restore()
         {
-            if (bones == null) return;
-            foreach (var b in bones) if (b != null && b.T != null && b.Has) { b.T.localRotation = b.Base; b.Has = false; }
+            foreach (var set in new[] { bow, arm, leftArm })
+            {
+                if (set == null) continue;
+                foreach (var b in set) if (b != null && b.T != null && b.Has) { b.T.localRotation = b.Base; b.Has = false; }
+            }
             weight = 0f;
         }
     }
