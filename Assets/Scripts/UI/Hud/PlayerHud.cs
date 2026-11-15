@@ -74,8 +74,11 @@ namespace Project1.UI
         }
 
         /// <summary>
-        /// 가운데 아래 스킬 칸 — 모든 캐릭터에 늘 뜬다. 첫 줄 [E] 이름(쓸 수 있으면 금색), 둘째 줄은 필요한 것만:
-        /// 차징 중 취소 방법 &gt; 스킬이 정한 안내(예: 멈춤: E, 나비 ●●○) &gt; 막힌 이유 &gt; 준비. 재사용 대기 진행은 오른쪽 아래 게이지가 보여 주므로 쓰지 않는다.
+        /// 가운데 아래 스킬 칸 — 모든 캐릭터에 늘 뜬다(칸은 늘 남음). 규칙:
+        /// - E를 쓸 수 있으면 "[E] 이름"만(준비·개수 같은 글은 없음).
+        /// - 못 쓰면(재사용 대기·막힘·이미 씀) 글이 하나도 없다(재사용 대기 진행은 오른쪽 아래 원 게이지).
+        /// - 시간이 가는 단계(스킬 시전 진행, 안토니오 둘째 음표까지 5초 등)는 칸 안에 차오르는 막대.
+        /// - 꾹 눌러 고르는·쓰는 동안의 조작 안내(취소: E, 멈춤: E 등)만 둘째 줄에.
         /// 보통 스킬(CharacterSkill)이 없고 E를 직접 받는 캐릭터(하스터 촉수·안토니오 음표)는 ISkillSlotInfo로 채운다.
         /// </summary>
         private void DrawSkillBox(float u)
@@ -85,48 +88,44 @@ namespace Project1.UI
             if (!hasSkill && target != null) target.TryGetComponent(out slot);
             if (!hasSkill && slot == null) return;
 
-            string name, status; bool ready;
+            string name; bool ready; string hint = null; float fill = -1f; Color fillColor = new(0.4f, 0.9f, 0.5f);
             if (hasSkill)
             {
                 name = skill.SkillName;
                 ready = skill.State == SkillState.Ready && skill.CanUse;
-                status = skill.State switch
+                if (skill.State == SkillState.Casting)
                 {
-                    SkillState.Recovering => "넘어짐",
-                    SkillState.Ready => skill.CanUse ? "준비" : skill.BlockedReason,
-                    _ => null, // 시전 중·재사용 대기: 따로 안내가 없으면 비움(진행은 막대·게이지)
-                };
-                string own = skill.StatusText; // 스킬이 정한 안내(예: 멈춤: E, 나비 ●●○, 다시 쏘기) — 있으면 그것
-                if (!string.IsNullOrEmpty(own)) status = own;
+                    if (!string.IsNullOrEmpty(skill.StatusText)) hint = skill.StatusText; // 쓰는 동안 조작 안내(예: 멈춤: E, 넣기: E)
+                    float own = skill.StatusBarFill;
+                    if (float.IsNaN(own)) fill = skill.CastProgress;
+                    else if (own >= 0f) { fill = own; fillColor = new Color(0.5f, 0.6f, 0.9f); }
+                }
             }
             else
             {
-                name = slot.SlotName; ready = slot.SlotReady; status = slot.SlotStatus;
+                name = slot.SlotName; ready = slot.SlotReady; fill = slot.SlotFill;
             }
-            string cancelHint = CancelHint(); // 꾹 눌러 자리를 고르는 중이면 그 취소 방법이 먼저
-            if (cancelHint != null) status = cancelHint;
+            string cancelHint = CancelHint(); // 꾹 눌러 자리를 고르는 중이면 그 취소 방법
+            if (cancelHint != null) hint = cancelHint;
 
             float w = 300 * u, h = 70 * u;
             var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(box, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            small.normal.textColor = ready ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 1f, 1f, 0.7f);
-            GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {name}", small);
-            if (!string.IsNullOrEmpty(status))
+            if (ready)
             {
-                small.normal.textColor = cancelHint != null ? new Color(1f, 0.6f, 0.5f) : Color.white;
-                GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), status, small);
+                small.normal.textColor = new Color(1f, 0.85f, 0.3f);
+                GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {name}", small);
+            }
+            if (!string.IsNullOrEmpty(hint))
+            {
+                small.normal.textColor = new Color(1f, 0.6f, 0.5f);
+                GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), hint, small);
             }
 
-            // 시전 진행 막대만(재사용 대기 막대는 오른쪽 아래 게이지와 겹쳐 쓰지 않는다)
-            if (hasSkill && skill.State == SkillState.Casting)
-            {
-                var bar = new Rect(box.x, box.yMax - 6 * u, w, 6 * u);
-                float fill = skill.StatusBarFill;
-                if (float.IsNaN(fill)) Bar(bar, skill.CastProgress, new Color(0.4f, 0.9f, 0.5f));
-                else if (fill >= 0f) Bar(bar, fill, new Color(0.5f, 0.6f, 0.9f));
-            }
+            // 시간이 가는 단계: 칸 안 아래쪽에 차오르는 막대
+            if (fill >= 0f) Bar(new Rect(box.x + 12 * u, box.yMax - 18 * u, w - 24 * u, 10 * u), Mathf.Clamp01(fill), fillColor);
 
             if (Time.time < blockedMessageUntil)
             {

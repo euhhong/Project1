@@ -72,10 +72,10 @@ namespace Project1.Systems
         public float LastPlaceTime { get; private set; } = -1f;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
-        // HUD 가운데 아래 스킬 칸(E = 바로 앞에 음표): 첫 음표만 놓았으면 둘째를 놓으라는 안내, 쓸 수 있으면 준비(재사용 대기는 게이지가 보여 줌).
+        // HUD 가운데 아래 스킬 칸(E = 바로 앞에 음표): 놓을 수 있으면 이름만, 첫 음표를 놓으면 둘째까지 남은 시간(linkWindow)이 칸 안 막대로 차오름, 이어진 뒤 재사용 대기 중엔 글 없음.
         public string SlotName => "음표";
-        public string SlotStatus => CooldownLeft > 0f ? null : notes.Count == 1 && !Linked ? "둘째 음표" : "준비";
         public bool SlotReady => CooldownLeft <= 0f;
+        public float SlotFill => notes.Count == 1 && !Linked && linkWindow > 0f ? 1f - PendingTimeLeft / linkWindow : -1f;
 
         [Tooltip("시점을 돌리는 중에 음표 자리를 고르기 시작했을 때 카메라 상하 감도 배율(아주 작게 — 마우스 위·아래는 음표를 멀리·가까이 미는 데 쓴다). 좌클릭을 먼저 누르고 돌리면 그대로.")]
         [SerializeField, Range(0f, 1f)] private float placingPitchScale = 0.1f;

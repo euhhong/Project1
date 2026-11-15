@@ -94,18 +94,10 @@ namespace Project1.Systems
         public float SlamReach => tentacleHeight + slamReachExtra;
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
-        // HUD 가운데 아래 스킬 칸(E = 고른 촉수 내려찍기): 서 있는 촉수 수(●○), 고르는 동안 할 일.
+        // HUD 가운데 아래 스킬 칸(E = 고른 촉수 내려찍기): 서 있는 촉수가 있으면 쓸 수 있음.
         public string SlotName => "촉수";
-        public string SlotStatus
-        {
-            get
-            {
-                if (Selecting) return TargetIndex >= 0 ? "떼면: 내려찍기" : "고를 촉수 없음";
-                int up = 0; foreach (var t in tentacles) if (t.State == TentacleState.Idle) up++;
-                return up > 0 ? new string('●', up) + new string('○', Mathf.Max(0, maxTentacles - up)) : "촉수 없음";
-            }
-        }
         public bool SlotReady { get { foreach (var t in tentacles) if (t.State == TentacleState.Idle) return true; return false; } }
+        public float SlotFill => -1f;
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;
 
         private void Awake()
