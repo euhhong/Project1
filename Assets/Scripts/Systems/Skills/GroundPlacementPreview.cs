@@ -48,6 +48,8 @@ namespace Project1.Systems
         [Tooltip("켜면 가리킨 곳이 놓을 수 없는 면(벽 등)일 때 그 광선을 벽 너머로 이어 처음으로 설 공간이 있는 바닥에 놓는다(보이지 않는 곳도 된다). 입력에 광선 출발점(HasAimRay)이 있어야 한다.")]
         public bool seeThroughWalls;
         [Min(1f)] public float seeThroughDistance = 150f;
+        [Tooltip("켜면 다른 캐릭터 몸은 고르지 않는다 — 마우스가 몸을 가리켜도 그 뒤(발밑) 땅을 고르고, 바닥을 찾을 때도 몸을 지나친다(하스터 촉수). 상대가 서 있는 자리도 고를 수 있다.")]
+        public bool ignoreCharacters;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];
         private static readonly RaycastHit[] BeyondHits = new RaycastHit[64];
@@ -129,6 +131,7 @@ namespace Project1.Systems
         private void EvaluateAim(Transform owner, in CharacterInputFrame input)
         {
             Vector3 point = input.AimPoint, normal = input.AimNormal;
+            if (ignoreCharacters && input.HasAimRay) AimPastCharacters(owner, input.AimRayOrigin, input.AimPoint, ref point, ref normal);
             if (!Placeable(owner, ref point, normal))
             {
                 Vector3 sp = point, sn = normal;
@@ -136,6 +139,23 @@ namespace Project1.Systems
                 else if (seeThroughWalls && input.HasAimRay && FindBeyond(owner, input.AimRayOrigin, input.AimPoint, out Vector3 bp, out Vector3 bn)) { point = bp; normal = bn; }
             }
             Evaluate(owner, point, normal);
+        }
+
+        /// <summary>광선(origin → aimPoint)을 캐릭터 몸을 지나쳐 다시 쏴 처음 닿는 캐릭터가 아닌 면으로 바꾼다(없으면 그대로).</summary>
+        private void AimPastCharacters(Transform owner, Vector3 origin, Vector3 aimPoint, ref Vector3 point, ref Vector3 normal)
+        {
+            Vector3 dir = aimPoint - origin;
+            float toAim = dir.magnitude;
+            if (toAim < 1e-3f) return;
+            dir /= toAim;
+            int n = Physics.RaycastNonAlloc(origin, dir, BeyondHits, toAim + seeThroughDistance, ~0, QueryTriggerInteraction.Ignore);
+            float best = float.MaxValue;
+            for (int i = 0; i < n; i++)
+            {
+                var h = BeyondHits[i];
+                if (h.distance >= best || h.collider.transform.IsChildOf(owner) || IsCharacter(h.collider)) continue;
+                best = h.distance; point = h.point; normal = h.normal;
+            }
         }
 
         /// <summary>땅(위를 향함)이고 설 공간이 있는지. 벽에 붙어 공간이 모자라면 point를 빈 곳으로 살짝 옮긴다.</summary>
@@ -350,8 +370,8 @@ namespace Project1.Systems
         public bool GroundAt(Transform owner, Vector3 p, out Vector3 point, out Vector3 normal)
             => Probe(owner, p + Vector3.up * groundProbeUp, Vector3.down, groundProbeUp + groundProbeDown, out point, out normal);
 
-        /// <summary>origin에서 dir로 distance만큼 쏴 처음 닿는 면(owner 몸·트리거 제외).</summary>
-        private static bool Probe(Transform owner, Vector3 origin, Vector3 dir, float distance, out Vector3 point, out Vector3 normal)
+        /// <summary>origin에서 dir로 distance만큼 쏴 처음 닿는 면(owner 몸·트리거 제외, ignoreCharacters면 다른 캐릭터 몸도 제외).</summary>
+        private bool Probe(Transform owner, Vector3 origin, Vector3 dir, float distance, out Vector3 point, out Vector3 normal)
         {
             point = origin; normal = Vector3.up;
             int n = Physics.RaycastNonAlloc(origin, dir, Hits, distance, ~0, QueryTriggerInteraction.Ignore);
@@ -360,6 +380,7 @@ namespace Project1.Systems
             {
                 var h = Hits[i];
                 if (h.collider.transform.IsChildOf(owner) || h.distance >= best) continue;
+                if (ignoreCharacters && IsCharacter(h.collider)) continue;
                 best = h.distance; point = h.point; normal = h.normal; found = true;
             }
             return found;

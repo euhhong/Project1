@@ -8,6 +8,7 @@ namespace Project1.Systems
     /// 하스터의 소환 촉수(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 마우스가 가리키는 땅에 촉수를 세울 자리를 원으로 고르고(GroundPlacementPreview), 떼면 그 자리에서 촉수가 솟아오른다.
     ///   몸 근처로 끌어다 떼거나, 누른 채 E를 누르면 취소(좌클릭을 뗄 때까지 무시).
+    ///   자리는 땅만 고른다 — 상대 몸을 가리켜도 그 발밑 땅(상대가 서 있는 자리에도 세울 수 있음). 솟을 때 밑동 risePushRadius 안의 상대는 바깥으로 살짝 밀려난다(이펙트 없음).
     /// - 촉수는 최대 maxTentacles개, 넘으면 가장 오래된 것이 땅속으로 들어간다. 세운 뒤 lifetime초가 지나도 들어간다.
     /// - E를 꾹 누르면 바라보는 방향(시야)에 가장 맞는 서 있는 촉수를 고른다(TargetIndex). E를 떼면 그 촉수가 내려찍는다:
     ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 펼친 부채꼴 안의 상대를 한 번씩 맞힘 — 바짝 붙은 곳은 안전) → 다시 섬(slamRecovery) → 땅속으로(sink).
@@ -38,6 +39,12 @@ namespace Project1.Systems
         [SerializeField, Min(0.1f)] private float slamHitHeight = 2.2f;
         [Header("시간(초) — 모션(HasturTentacle.fbx)과 맞춘다")]
         [SerializeField, Min(0.05f)] private float riseTime = 0.6f;
+        [Header("솟아오를 때 밀어내기")]
+        [Tooltip("촉수가 솟는 자리(밑동)에서 이 거리(m, 수평) 안에 서 있던 상대를 밀어낸다(이펙트·피해·경직 없음).")]
+        [SerializeField, Min(0f)] private float risePushRadius = 1f;
+        [Tooltip("밀어내는 처음 속도(m/s) / 시간(초). 밀리는 거리 ≈ 속도 × 시간 ÷ 2.")]
+        [SerializeField, Min(0f)] private float risePushSpeed = 6f;
+        [SerializeField, Min(0.05f)] private float risePushTime = 0.3f;
         [SerializeField, Min(0.05f)] private float slamWindup = 0.4f;
         [SerializeField, Min(0.05f)] private float slamActive = 0.17f;
         [SerializeField, Min(0.05f)] private float slamRecovery = 0.43f;
@@ -92,6 +99,7 @@ namespace Project1.Systems
         {
             inputSource = GetComponent<ICharacterInputSource>();
             self = GetComponent<CharacterIdentity>();
+            if (placement != null) placement.ignoreCharacters = true; // 자리 고르기는 땅만 — 상대 몸은 고르지 않고 그 발밑 땅을 고른다
         }
 
         private void OnDisable()
@@ -152,6 +160,23 @@ namespace Project1.Systems
                 Id = nextId++, Position = point, State = TentacleState.Rising, StateTime = 0f, StateDuration = riseTime,
                 Direction = away.sqrMagnitude > 1e-4f ? away.normalized : Flat(transform.forward).normalized,
             });
+            PushAwayFrom(point, away.sqrMagnitude > 1e-4f ? away.normalized : Flat(transform.forward).normalized);
+        }
+
+        /// <summary>솟는 자리에 서 있던 상대를 밑동에서 바깥으로 살짝 밀어낸다(넉백만 — 피해·경직·피격 모션·이펙트 없음).</summary>
+        private void PushAwayFrom(Vector3 basePoint, Vector3 fallback)
+        {
+            if (risePushRadius <= 0f || risePushSpeed <= 0f) return;
+            foreach (var c in FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == null || c == self || (self != null && !self.CanHit(c))) continue;
+                Vector3 to = c.transform.position - basePoint;
+                if (Mathf.Abs(to.y) > 1.5f) continue; // 다른 층
+                to.y = 0f;
+                if (to.sqrMagnitude > risePushRadius * risePushRadius) continue;
+                Vector3 dir = to.sqrMagnitude > 1e-4f ? to.normalized : fallback;
+                Knockback.Push(c.gameObject, dir * risePushSpeed, risePushTime, stun: false, impactDamage: false);
+            }
         }
 
         private void StartSlam(int index, in CharacterInputFrame input)
