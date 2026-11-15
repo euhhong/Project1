@@ -239,8 +239,7 @@ namespace Project1.Systems
         {
             if (!ctx.TryGetComponent(out ButterflyField field) || field.Charges < 0) return null;
             string pips = new string('●', field.Charges) + new string('○', Mathf.Max(0, field.MaxCharges - field.Charges));
-            if (field.Charges >= field.MaxCharges) return $"나비 {pips}";
-            return $"나비 {pips}  다음 {(1f - field.ChargeProgress) * field.ChargeTime:0.0}초";
+            return $"나비 {pips}"; // 다음 한 마리까지는 오른쪽 아래 게이지로
         }
 
         public override void Complete(GameObject owner) { }

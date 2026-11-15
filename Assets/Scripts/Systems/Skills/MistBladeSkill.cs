@@ -87,7 +87,7 @@ namespace Project1.Systems
             if (!ctx.TryGetComponent(out MistCharge mist)) return null;
             string pips = new string('●', mist.Charges) + new string('○', Mathf.Max(0, mist.MaxCharges - mist.Charges));
             if (mist.Charges >= mist.MaxCharges) return $"안개 {pips}  공격 = 칼날";
-            return $"안개 {pips}  다음 {(1f - mist.NextProgress) * mist.ChargeInterval:0.0}초";
+            return $"안개 {pips}"; // 다음 칸까지는 오른쪽 아래 게이지로
         }
 
         public override void Complete(GameObject owner) { }

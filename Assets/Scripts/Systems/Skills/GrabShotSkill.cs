@@ -398,7 +398,7 @@ namespace Project1.Systems
             : ctx.Phase == Vaulting ? id + "_Vault" : ctx.Phase == VaultLanding ? id + "_Land" : id;
 
         /// <summary>HUD: 벽을 물고 도착한 뒤 재사용 대기 없이 다시 쏠 수 있는 남은 시간.</summary>
-        public override string IdleStatusText(CharacterSkill ctx) => ctx.FreeRecastLeft > 0f ? $"다시 쏘기 {ctx.FreeRecastLeft:0.0}초" : null;
+        public override string IdleStatusText(CharacterSkill ctx) => ctx.FreeRecastLeft > 0f ? "다시 쏘기!" : null; // 남은 시간은 오른쪽 아래 게이지로
 
         public override string StatusText(CharacterSkill ctx) => ctx.Phase switch
         {

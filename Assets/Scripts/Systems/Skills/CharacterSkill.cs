@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveSpeedScale, IAttackImmunity, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveSpeedScale, IAttackImmunity, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride, ICooldownGauge
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -299,7 +299,18 @@ namespace Project1.Systems
         /// 이번 시전이 끝나면 재사용 대기 없이 바로 다시 쓸 수 있는 시간(초)을 준다(스킬이 시전 중에 부른다, 예: 사냥터지기 그랩이 벽을 물면 3초).
         /// 그 안에 다시 쓰면 재사용 대기 없음, 안 쓰고 지나가면 그때 재사용 대기가 시작된다.
         /// </summary>
-        public void GrantFreeRecast(float seconds) => freeRecastPending = Mathf.Max(freeRecastPending, seconds);
+        public void GrantFreeRecast(float seconds) { freeRecastPending = Mathf.Max(freeRecastPending, seconds); freeRecastDuration = freeRecastPending; }
+        private float freeRecastDuration = 1f;
+
+        /// <summary>HUD 게이지: 재사용 대기 중이면 차오름, 바로 다시 쓰기 시간(예: 그랩 벽)이면 줄어듦.</summary>
+        public bool TryGetCooldown(out string label, out float fill, out bool draining)
+        {
+            label = SkillName; fill = 0f; draining = false;
+            if (skill == null) return false;
+            if (State == SkillState.Cooldown && CooldownDuration > 0f) { fill = 1f - CooldownRemaining / CooldownDuration; return true; }
+            if (State == SkillState.Ready && FreeRecastLeft > 0f) { label = SkillName + " 다시"; fill = FreeRecastLeft / Mathf.Max(freeRecastDuration, 0.01f); draining = true; return true; }
+            return false;
+        }
 
         /// <summary>재사용 대기 없이 다시 쓸 수 있는 남은 시간(초). 0이면 없음.</summary>
         public float FreeRecastLeft { get; private set; }

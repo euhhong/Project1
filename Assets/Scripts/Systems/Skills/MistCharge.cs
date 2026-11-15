@@ -17,7 +17,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 리퍼만). 그리기는 FE(MistClawVisual, MistBladeTrail). 체력·데미지는 다루지 않는다(세기 배율만 HitResult.Power로 알린다).
     /// </summary>
     [DisallowMultipleComponent]
-    public class MistCharge : MonoBehaviour, IMistCharge
+    public class MistCharge : MonoBehaviour, IMistCharge, ICooldownGauge
     {
         public const string BladeKind = "MistBlade";
 
@@ -62,6 +62,13 @@ namespace Project1.Systems
         public int MaxCharges => maxCharges;
         public float NextProgress { get; private set; }
         public float ChargeInterval => chargeInterval;
+
+        /// <summary>HUD 게이지: 안개 칸이 덜 찼으면 다음 칸까지(차오름).</summary>
+        public bool TryGetCooldown(out string label, out float fill, out bool draining)
+        {
+            label = $"안개 {Charges}/{MaxCharges}"; fill = NextProgress; draining = false;
+            return Charges < MaxCharges;
+        }
         public Vector3 LastSwingAxis { get; private set; } = Vector3.up;
         public float WeakPower => weakPower;
         public bool LastBladeThroughWall { get; private set; }

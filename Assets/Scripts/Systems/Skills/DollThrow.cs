@@ -22,7 +22,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 공장장만). 그리기는 FE(DollThrowVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit, IActionLock, IMoveSpeedBoost
+    public class DollThrow : MonoBehaviour, IDollThrow, IAttackHoldOverride, ISafeFallSource, IChargeCancelHint, IGentleDropSource, IChargeLook, IMoveSpeedLimit, IActionLock, IMoveSpeedBoost, ICooldownGauge
     {
         [Tooltip("좌클릭을 꾹 누르는 동안 마우스로 시점(= 포물선)을 움직이는 감도 배율(우클릭 시점 돌리기 감도 기준). 우클릭 없이 좌클릭만으로 겨눈다.")]
         [SerializeField, Min(0.1f)] private float aimLookScale = 1f;
@@ -44,6 +44,14 @@ namespace Project1.Systems
         private float swapCooldownLeft;
         /// <summary>다음 자리 바꾸기까지 남은 재사용 대기(초).</summary>
         public float SwapCooldownRemaining => swapCooldownLeft;
+
+        /// <summary>HUD 게이지: 인형과 자리 바꾸기 재사용 대기(차오름).</summary>
+        public bool TryGetCooldown(out string label, out float fill, out bool draining)
+        {
+            label = "자리 바꾸기"; draining = false;
+            fill = swapCooldown > 0f ? 1f - swapCooldownLeft / swapCooldown : 1f;
+            return swapCooldownLeft > 0f;
+        }
         [Tooltip("인형 회수: 공장장이 자기 평타(Light, 판정 구간)로 인형을 맞히면 인형을 거둔다. 인형 판정 = 멈춘 인형은 발밑부터 키(공장장 키 × dollHitHeightScale) 높이의 기둥(반지름 dollHitRadius), 날아가는 인형은 구체.")]
         [SerializeField, Min(0.1f)] private float dollHitRadius = 0.6f;
         [SerializeField, Min(0.1f)] private float dollHitHeightScale = 1.25f;

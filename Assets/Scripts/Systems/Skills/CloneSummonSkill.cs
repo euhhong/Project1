@@ -68,7 +68,7 @@ namespace Project1.Systems
         {
             var owner = ctx.GetComponent<CharacterIdentity>();
             // 인형과 자리 바꾸기(E 짧게) 재사용 대기
-            string swap = ctx.TryGetComponent(out DollThrow doll) && doll.SwapCooldownRemaining > 0f ? $"교체 {Mathf.CeilToInt(doll.SwapCooldownRemaining)}초" : null;
+            string swap = null; // 자리 바꾸기 재사용 대기는 오른쪽 아래 게이지로(DollThrow)
             string clone = owner != null && current.TryGetValue(owner.Id, out var c) && c != null
                 ? $"분신 — {(c.Target != null ? (c.InRange ? "공격 중" : "쫓는 중") : "목표 없음")}" : null;
             return swap != null && clone != null ? $"{swap} · {clone}" : swap ?? clone;
