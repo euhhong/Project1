@@ -184,8 +184,21 @@ namespace Project1.Systems
             chargedRecovery = Mathf.Max(0f, extraRecovery);
         }
 
-        /// <summary>모은 강공격(땅)의 후딜레이 중인지(SetChargeStyle의 extraRecovery를 쓰는 캐릭터만) — 그동안 제자리.</summary>
-        private bool InChargedRecovery => chargedRecovery > 0f && AttackState == CharacterAttackState.Heavy && !IsAirAttack && !IsRunJumpAttack && AttackPhase == AttackPhase.Recovery;
+        /// <summary>모은 강공격(땅, SetChargeStyle의 extraRecovery를 쓰는 캐릭터만 — 예: 사냥터지기)인지.</summary>
+        private bool ChargedHeavyGround => chargedRecovery > 0f && AttackState == CharacterAttackState.Heavy && !IsAirAttack && !IsRunJumpAttack;
+
+        /// <summary>이번 모은 강공격이 상대를 맞혔는지 — 맞히면 후딜레이가 없다(AttackHitDetector.Hit).</summary>
+        private bool chargedHit;
+        [Tooltip("모은 강공격(SetChargeStyle extraRecovery)이 상대를 맞혔을 때 후딜레이(초) — 거의 없음.")]
+        [SerializeField, Min(0f)] private float chargedHitRecovery = 0.05f;
+
+        /// <summary>모은 강공격(땅)의 후딜레이 중이고 빗맞았는지 — 그동안 제자리(맞혔으면 바로 끝남).</summary>
+        private bool InChargedRecovery => ChargedHeavyGround && !chargedHit && AttackPhase == AttackPhase.Recovery;
+
+        private void OnAttackHit(HitResult hit)
+        {
+            if (ChargedHeavyGround) chargedHit = true; // 모은 강공격에 상대가 맞음 → 후딜레이 삭제
+        }
 
         /// <summary>모으는 동안 점점 빨라지기(IMoveSpeedBoost — SetChargeStyle).</summary>
         public bool TryGetSpeedBoost(out float multiplier)
@@ -225,7 +238,7 @@ namespace Project1.Systems
             inputSource = GetComponent<ICharacterInputSource>();
             characterState = GetComponent<ICharacterState>();
             hitDetector = GetComponent<AttackHitDetector>();
-            if (hitDetector != null) { hitDetector.WallStruck -= OnWallStruck; hitDetector.WallStruck += OnWallStruck; }
+            if (hitDetector != null) { hitDetector.WallStruck -= OnWallStruck; hitDetector.WallStruck += OnWallStruck; hitDetector.Hit -= OnAttackHit; hitDetector.Hit += OnAttackHit; }
         }
 
         /// <summary>판정이 벽을 정면으로 쳤다: 판정을 끄고 바로 후딜레이로(+wallBounceRecovery) — 모션은 되감기듯 튕겨 나온다(FE).</summary>
@@ -471,6 +484,7 @@ namespace Project1.Systems
 
         private void StartAttack(CharacterAttackState state)
         {
+            chargedHit = false; // 새 공격: 맞혔는지 다시 센다
             IsRunJumpAttack = IsAirAttack && IsRunningForward();
             if (IsRunJumpAttack) runJumpAirborne = true;
             WallBounced = false;
@@ -493,6 +507,7 @@ namespace Project1.Systems
                 float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f)
                              + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f) // 캐릭터별 평타 선딜레이 더하기(예: 하스터)
                              + (InChargedRecovery ? chargedRecovery : 0f);                              // 모은 강공격 후딜레이 더하기(예: 사냥터지기)
+                if (ChargedHeavyGround && chargedHit && AttackPhase == AttackPhase.Recovery) length = chargedHitRecovery; // 맞혔으면 후딜레이 없이 바로 끝
                 if (phaseTime < length)
                 {
                     PhaseProgress = length > 0f ? phaseTime / length : 1f;
