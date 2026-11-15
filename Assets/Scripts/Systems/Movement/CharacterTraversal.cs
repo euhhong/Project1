@@ -223,7 +223,11 @@ namespace Project1.Systems
 
         private static bool IsLanding(TraversalAction a) => a == TraversalAction.Land || a == TraversalAction.LandHigh || a == TraversalAction.LandRoll || a == TraversalAction.LandHard;
 
-        private void Awake() => Init();
+        private void Awake()
+        {
+            Init();
+            if (!TryGetComponent(out TraversalHurtboxAssist _)) gameObject.AddComponent<TraversalHurtboxAssist>(); // 창틀 넘기·매달리기 중 맞는 판정 보정
+        }
 
         private void Init()
         {

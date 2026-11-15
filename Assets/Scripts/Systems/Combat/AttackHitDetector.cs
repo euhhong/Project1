@@ -147,6 +147,7 @@ namespace Project1.Systems
                     if (!CombatLineOfSight.Clear(gameObject, victim.gameObject, point)) continue; // 벽 너머: 무기·팔다리가 벽을 뚫어도 맞지 않는다
                     float distSq = (point - origin).sqrMagnitude;
                     if (hitbox.PrefersHead && hurtbox.Part == BodyPart.Head) distSq = -1f; // 머리를 노리는 판정(발차기): 머리가 겹치면 머리
+                    if (hurtbox.Assist) distSq += 1000f; // 보정 판정(창틀·매달리기 중 넓힘): 진짜 부위가 같이 겹치면 그쪽
                     if (!bestThisTick.TryGetValue(victim.Id, out Candidate best) || distSq < best.DistSq)
                     {
                         bestThisTick[victim.Id] = new Candidate(hurtbox.Part, hitbox.Slot, point, distSq, victim.gameObject);
