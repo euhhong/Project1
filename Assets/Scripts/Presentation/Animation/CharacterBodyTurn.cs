@@ -5,7 +5,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 좌우로 움직일 때 몸(모델)을 이동 방향으로 틀고, 상체·목·머리는 원래 보던 방향(시야)으로 일부 되돌린다.
-    /// 좌우 이동이 잠시 없으면 몸과 고개를 천천히 원래 각도로 되돌린다.
+    /// 좌우 이동이 잠시 없으면 몸과 고개를 천천히 원래 각도로 되돌린다. 평타를 시작하면 틀어 둔 몸을 짧게 부드럽게 화면 가운데(시야)로 돌려 가운데를 친다(attackTurnSmoothTime).
     /// 연출 전용이다. 캐릭터 루트의 회전·이동(BE)은 건드리지 않고 자식 모델만 돌린다.
     /// 캐릭터 루트에 붙인다. 모델(Animator)은 자식에서 자동으로 찾는다.
     /// </summary>
@@ -39,6 +39,9 @@ namespace Project1.Presentation
         private ICharacterSkillState skill;
         private ICharacterTraversalState traversal;
         private ICharacterPushState push;
+        private ICharacterAttackState attack;
+        [Tooltip("평타를 시작하면 틀어 둔 몸을 화면 가운데로 돌리는 감쇠 시간(초) — 짧게, 그래도 한 번에 꺾이지 않게.")]
+        [SerializeField, Min(0.01f)] private float attackTurnSmoothTime = 0.06f;
         private Animator animator;
         private Transform model;
         private Quaternion modelBaseRotation;
@@ -108,6 +111,17 @@ namespace Project1.Presentation
             {
                 yaw = Mathf.SmoothDampAngle(yaw, 0f, ref yawVelocity, catchUpSmoothTime);
                 if (Mathf.Abs(yaw) < 0.5f) { yaw = 0f; catchingUp = false; }
+                model.localRotation = Quaternion.Euler(0f, yaw, 0f) * modelBaseRotation;
+                return;
+            }
+
+            // 평타 중: 틀어 둔 몸을 바로 꺾지 않고 짧게 부드럽게 화면 가운데(시야 = 루트 방향)로 돌린다 — 판정이 나가기 전에 가운데를 향해 가운데를 친다.
+            if (attack == null) TryGetComponent(out attack);
+            if (attack != null && attack.AttackState != CharacterAttackState.None)
+            {
+                targetYaw = 0f;
+                lastLateralTime = -999f; // 끝나면 다시 옆으로 걸을 때만 튼다
+                yaw = Mathf.SmoothDampAngle(yaw, 0f, ref yawVelocity, attackTurnSmoothTime);
                 model.localRotation = Quaternion.Euler(0f, yaw, 0f) * modelBaseRotation;
                 return;
             }
