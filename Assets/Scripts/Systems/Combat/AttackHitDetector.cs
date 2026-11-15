@@ -28,6 +28,10 @@ namespace Project1.Systems
         [SerializeField, Min(0f)] private float moveLeadTime = 0.25f;
         [Tooltip("감시자 평타(약·강·공중·달리기 점프 등 기본 공격) 사거리 보정(m): 판정을 몸 정면으로만 이만큼까지 밀어 한 번 더 훑는다(앞 리치만 늘고 좌우 폭은 그대로, 모델·판정 크기도 그대로). 스킬 판정은 아님.")]
         [SerializeField, Min(0f)] private float hunterReachBonus = 0.5f;
+        private float extraReach;
+
+        /// <summary>캐릭터별 평타 앞 리치 더하기(m) — 캐릭터를 고를 때 정한다(예: 붉은나비 0.5). 감시자 보정 위에 더하고, 정면으로만 늘린다(좌우 폭은 그대로).</summary>
+        public void SetExtraReach(float meters) => extraReach = Mathf.Max(0f, meters);
         [Tooltip("맨주먹으로 치는 캐릭터인지(생존자 주먹 기본 공격). 켜면 무기 없는 공격의 손 판정 히트가 주먹(HitResult.Fist)이 되어 주먹 막기(FistParry)에 막힌다. 캐릭터를 고를 때 SetUnarmed로 정한다.")]
         [SerializeField] private bool unarmed;
         private ICharacterAttackState attackState;
@@ -119,9 +123,10 @@ namespace Project1.Systems
             }
             // 감시자 평타: 판정을 몸 정면으로 hunterReachBonus까지 밀어 더 훑는다(지금·가운데·끝) — 사거리만 조금 길게.
             Vector3 reach = Vector3.zero; int reachSamples = 1;
-            if (hunterReachBonus > 0f && attackState != null && attackState.AttackState != CharacterAttackState.None && DamageRules.IsHunter(gameObject))
+            float reachLength = (DamageRules.IsHunter(gameObject) ? hunterReachBonus : 0f) + extraReach;
+            if (reachLength > 0f && attackState != null && attackState.AttackState != CharacterAttackState.None)
             {
-                reach = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized * hunterReachBonus;
+                reach = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized * reachLength;
                 reachSamples = 3;
             }
             int mask = CombatLayers.HurtboxMask;

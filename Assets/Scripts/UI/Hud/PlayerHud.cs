@@ -77,7 +77,7 @@ namespace Project1.UI
         /// - E를 쓸 수 있으면 "[E] 이름"만(준비·개수 같은 글은 없음).
         /// - 못 쓰면(재사용 대기·막힘·이미 씀) 글이 하나도 없다(재사용 대기 진행은 오른쪽 아래 원 게이지).
         /// - 시간이 가는 단계(스킬 시전 진행, 안토니오 둘째 음표까지 5초 등)는 칸 안에 차오르는 막대.
-        /// - 꾹 눌러 고르는·쓰는 동안의 조작 안내(취소: E, 멈춤: E 등)만 둘째 줄에.
+        /// - 꾹 눌러 고르는·쓰는 동안의 조작 안내(취소: E, 멈춤: E 등)는 이름 대신 칸 가운데에.
         /// 보통 스킬(CharacterSkill)이 없고 E를 직접 받는 캐릭터(하스터 촉수·안토니오 음표)는 ISkillSlotInfo로 채운다.
         /// </summary>
         private void DrawSkillBox(float u)
@@ -112,17 +112,18 @@ namespace Project1.UI
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(box, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            if (ready)
+            if (!string.IsNullOrEmpty(hint))
+            {
+                // 조작 안내(꾹 눌러 고르는 중 취소: E, 쓰는 중 멈춤: E 등): 이름 대신 칸 가운데에
+                small.normal.textColor = new Color(1f, 0.6f, 0.5f);
+                GUI.Label(new Rect(box.x, box.y, w, box.height), hint, small);
+            }
+            else if (ready)
             {
                 small.normal.textColor = new Color(1f, 0.85f, 0.3f);
                 GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {name}", small);
             }
-            if (!string.IsNullOrEmpty(hint))
-            {
-                small.normal.textColor = new Color(1f, 0.6f, 0.5f);
-                GUI.Label(new Rect(box.x, box.y + 34 * u, w, 30 * u), hint, small);
-            }
-            else if (target != null && target.TryGetComponent(out IHudChargeIcons icons) && icons.IconMax > 0)
+            if (string.IsNullOrEmpty(hint) && target != null && target.TryGetComponent(out IHudChargeIcons icons) && icons.IconMax > 0)
                 DrawChargeIcons(icons, new Rect(box.x, box.y + 36 * u, w, 28 * u), u); // 예: 붉은나비 — 쥔 나비를 나비 그림으로
 
             // 시간이 가는 단계: 칸 안 아래쪽에 차오르는 막대

@@ -105,5 +105,8 @@ namespace Project1.Systems
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 
         public override string StatusText(CharacterSkill ctx) => "넣기: E";
+
+        /// <summary>HUD: 비출 수 있는 남은 시간(시전 진행 막대).</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
     }
 }

@@ -9,6 +9,9 @@ namespace Project1.Systems
     [CreateAssetMenu(menuName = "Project1/Skills/Self Heal")]
     public class SelfHealSkill : SkillDefinition
     {
+        /// <summary>HUD: 치료가 차오르는 진행(시전 진행 막대).</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
+
         [Tooltip("회복량(최대 체력 대비 비율).")]
         [Range(0f, 1f)] public float healFraction = 0.4f;
 
