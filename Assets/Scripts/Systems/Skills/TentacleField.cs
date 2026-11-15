@@ -95,7 +95,7 @@ namespace Project1.Systems
         public bool OverridesHeavyHold => isActiveAndEnabled;
 
         // HUD 가운데 아래 스킬 칸(E = 고른 촉수 내려찍기): 서 있는 촉수가 있으면 쓸 수 있음.
-        public string SlotName => "촉수";
+        public string SlotName => "내리기";
         public bool SlotReady { get { foreach (var t in tentacles) if (t.State == TentacleState.Idle) return true; return false; } }
         public float SlotFill => -1f;
         public float PitchScale => Placing && placement.StartedWhileTurning ? placingPitchScale : 1f;

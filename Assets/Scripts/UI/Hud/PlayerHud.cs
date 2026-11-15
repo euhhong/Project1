@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.UI
 {
     /// <summary>
-    /// 게임 중 HUD(임시): 왼쪽 아래 체력 막대, 가운데 아래 고유 스킬 칸([E] 이름 / 시전 막대 / 재사용 대기), 오른쪽 아래 재사용 대기 게이지(ICooldownGauge — 기술마다 돌면서 채워지는 원).
+    /// 게임 중 HUD(임시): 왼쪽 아래 체력 막대, 가운데 아래 고유 스킬 칸(E 이름 / 칸 안 막대 — 줄은 위아래 가운데 정렬), 오른쪽 아래 재사용 대기 게이지(ICooldownGauge — 기술마다 돌면서 채워지는 원).
     /// 캐릭터를 고르면 CharacterLoadout이 만든다. 나중에 UI 디자인이 정해지면 이 화면만 바꾼다.
     /// </summary>
     public class PlayerHud : MonoBehaviour
@@ -74,7 +74,7 @@ namespace Project1.UI
 
         /// <summary>
         /// 가운데 아래 스킬 칸 — 모든 캐릭터에 늘 뜬다(칸은 늘 남음). 규칙:
-        /// - E를 쓸 수 있으면 "[E] 이름"만(준비·개수 같은 글은 없음).
+        /// - E를 쓸 수 있으면 "E 이름"만(준비·개수 같은 글은 없음). 칸 안 줄(글·그림·막대)은 위아래 가운데에 맞춰 쌓는다.
         /// - 못 쓰면(재사용 대기·막힘·이미 씀) 글이 하나도 없다(재사용 대기 진행은 오른쪽 아래 원 게이지).
         /// - 시간이 가는 단계(스킬 시전 진행, 안토니오 둘째 음표까지 5초 등)는 칸 안에 차오르는 막대.
         /// - 꾹 눌러 고르는·쓰는 동안의 조작 안내(취소: E, 멈춤: E 등)는 이름 대신 칸 가운데에.
@@ -112,22 +112,28 @@ namespace Project1.UI
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(box, Texture2D.whiteTexture);
             GUI.color = Color.white;
-            if (!string.IsNullOrEmpty(hint))
-            {
-                // 조작 안내(꾹 눌러 고르는 중 취소: E, 쓰는 중 멈춤: E 등): 이름 대신 칸 가운데에
-                small.normal.textColor = new Color(1f, 0.6f, 0.5f);
-                GUI.Label(new Rect(box.x, box.y, w, box.height), hint, small);
-            }
-            else if (ready)
-            {
-                small.normal.textColor = new Color(1f, 0.85f, 0.3f);
-                GUI.Label(new Rect(box.x, box.y + 4 * u, w, 34 * u), $"[E]  {name}", small);
-            }
-            if (string.IsNullOrEmpty(hint) && target != null && target.TryGetComponent(out IHudChargeIcons icons) && icons.IconMax > 0)
-                DrawChargeIcons(icons, new Rect(box.x, box.y + 36 * u, w, 28 * u), u); // 예: 붉은나비 — 쥔 나비를 나비 그림으로
 
-            // 시간이 가는 단계: 칸 안 아래쪽에 차오르는 막대
-            if (fill >= 0f) Bar(new Rect(box.x + 12 * u, box.yMax - 18 * u, w - 24 * u, 10 * u), Mathf.Clamp01(fill), fillColor);
+            // 칸 안에 들어갈 줄(있는 것만): 글(조작 안내 또는 "E 이름") / 쥔 개수 그림 / 시간이 가는 막대 — 줄들을 칸 위아래 가운데에 맞춰 쌓는다.
+            bool hasHint = !string.IsNullOrEmpty(hint);
+            string text = hasHint ? hint : ready ? $"E  {name}" : null;
+            IHudChargeIcons icons = null;
+            bool hasIcons = !hasHint && target != null && target.TryGetComponent(out icons) && icons.IconMax > 0;
+            bool hasBar = fill >= 0f;
+            float textH = 30 * u, iconH = 26 * u, barH = 10 * u, gap = 6 * u;
+            float stack = 0f; int rows = 0;
+            if (text != null) { stack += textH; rows++; }
+            if (hasIcons) { stack += iconH; rows++; }
+            if (hasBar) { stack += barH; rows++; }
+            stack += Mathf.Max(0, rows - 1) * gap;
+            float y = box.center.y - stack * 0.5f;
+            if (text != null)
+            {
+                small.normal.textColor = hasHint ? new Color(1f, 0.6f, 0.5f) : new Color(1f, 0.85f, 0.3f);
+                GUI.Label(new Rect(box.x, y, w, textH), text, small);
+                y += textH + gap;
+            }
+            if (hasIcons) { DrawChargeIcons(icons, new Rect(box.x, y, w, iconH), u); y += iconH + gap; } // 예: 붉은나비 — 쥔 나비를 나비 그림으로
+            if (hasBar) Bar(new Rect(box.x + 16 * u, y, w - 32 * u, barH), Mathf.Clamp01(fill), fillColor); // 시간이 가는 단계
 
             if (Time.time < blockedMessageUntil)
             {
