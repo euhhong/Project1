@@ -65,6 +65,6 @@ namespace Project1.Systems
         public override string AnimationState(CharacterSkill ctx) =>
             ctx.State == SkillState.Recovering ? id + "_End" : ctx.Phase == Charging ? id : id + "_Raise";
 
-        public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "로켓 돌진!" : "로켓 들기 — E를 떼면 돌진(좌클릭 취소)";
+        public override string StatusText(CharacterSkill ctx) => ctx.Phase == Charging ? "로켓 돌진! — E로 멈춤" :"로켓 들기 — E를 떼면 돌진(좌클릭 취소)";
     }
 }

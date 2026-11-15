@@ -68,8 +68,25 @@ namespace Project1.UI
                     stamina.IsExhausted ? new Color(0.95f, 0.55f, 0.15f) : new Color(0.95f, 0.85f, 0.3f));
             }
 
+            // E 스킬 칸이 없는 캐릭터(예: 하스터 — 촉수가 E를 직접 받는다)도 꾹 눌러 고르는 중이면 같은 자리에 취소 방법을 띄운다.
+            bool hasSkillBox = skill != null && !string.IsNullOrEmpty(skill.SkillId);
+            if (!hasSkillBox)
+            {
+                string hint = CancelHint();
+                if (hint != null)
+                {
+                    float w = 300 * u, h = 40 * u;
+                    var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);
+                    GUI.color = new Color(0f, 0f, 0f, 0.55f);
+                    GUI.DrawTexture(box, Texture2D.whiteTexture);
+                    GUI.color = Color.white;
+                    small.normal.textColor = new Color(1f, 0.6f, 0.5f);
+                    GUI.Label(box, hint, small);
+                }
+            }
+
             // 고유 스킬
-            if (skill != null && !string.IsNullOrEmpty(skill.SkillId))
+            if (hasSkillBox)
             {
                 float w = 300 * u, h = 70 * u;
                 var box = new Rect((Screen.width - w) * 0.5f, Screen.height - h - 30 * u, w, h);

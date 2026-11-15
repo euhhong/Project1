@@ -156,6 +156,9 @@ namespace Project1.Systems
             return best;
         }
 
+        /// <summary>HUD: 돌진 중 멈추는 방법.</summary>
+        public override string StatusText(CharacterSkill ctx) => "돌진 중 — E로 멈춤";
+
         public override void Complete(GameObject owner) { }
     }
 }
