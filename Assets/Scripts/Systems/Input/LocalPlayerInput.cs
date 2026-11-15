@@ -127,6 +127,16 @@ namespace Project1.Systems
             SnapCount++;
         }
 
+        [Tooltip("시야 따라가기(TrackLook) 동안 직접 돌리는 마우스가 먹는 비율(0 = 안 돌아감, 1 = 그대로).")]
+        [SerializeField, Range(0f, 1f)] private float trackInputScale = 0.15f;
+        private Transform trackTarget; private float trackLeft, trackOffset;
+
+        /// <summary>seconds초 동안 시야가 target 쪽을 계속 따라 돈다(카메라도 바로). 그동안 직접 돌리기는 잘 안 된다(trackInputScale).</summary>
+        public void TrackLook(Transform target, float seconds)
+        {
+            trackTarget = target; trackLeft = Mathf.Max(0f, seconds); trackOffset = 0f;
+        }
+
         private void Awake()
         {
             lookYaw = transform.eulerAngles.y;
@@ -292,7 +302,16 @@ namespace Project1.Systems
                 deltaDegrees = look * (gamepadLookSpeed * Time.deltaTime);
             }
 
-            lookYaw = Mathf.Repeat(lookYaw + deltaDegrees.x, 360f);
+            if (trackLeft > 0f && trackTarget != null)
+            {
+                // 시야 따라가기(TrackLook — 예: 붉은나비 도약 끝): 상대 쪽을 계속 보게 맞추고, 직접 돌리는 마우스는 trackInputScale만큼만 먹는다.
+                trackLeft -= Time.deltaTime;
+                trackOffset += deltaDegrees.x * trackInputScale;
+                Vector3 to = trackTarget.position - transform.position; to.y = 0f;
+                if (to.sqrMagnitude > 1e-4f) lookYaw = Mathf.Repeat(Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg + trackOffset, 360f);
+                SnapYaw = lookYaw; SnapCount++; // 카메라도 부드럽게 따라가지 않고 그대로
+            }
+            else lookYaw = Mathf.Repeat(lookYaw + deltaDegrees.x, 360f);
             float pitchDelta = invertY ? deltaDegrees.y : -deltaDegrees.y; // 마우스를 올리면 위를 본다(pitch 감소)
 
             if (chargeLook)

@@ -9,7 +9,10 @@ namespace Project1.Core
         /// <summary>시야 좌우 각도(도, 월드)를 바로 이 값으로.</summary>
         void SnapLook(float yaw);
 
-        /// <summary>SnapLook을 부를 때마다 1씩 늘어난다(카메라가 바뀐 것을 알아챈다).</summary>
+        /// <summary>seconds초 동안 시야가 target 쪽을 계속 따라 돈다(카메라도 바로). 그동안 직접 돌리기는 잘 안 된다.</summary>
+        void TrackLook(UnityEngine.Transform target, float seconds);
+
+        /// <summary>SnapLook을 부를 때마다(따라가는 동안엔 매 프레임) 1씩 늘어난다(카메라가 바뀐 것을 알아챈다).</summary>
         int SnapCount { get; }
 
         /// <summary>마지막 SnapLook 각도(도).</summary>

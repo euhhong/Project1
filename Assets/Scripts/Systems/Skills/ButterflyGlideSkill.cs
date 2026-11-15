@@ -25,6 +25,11 @@ namespace Project1.Systems
         [Min(0f)] public float bumpRecovery = 0.35f;
         [Tooltip("도착했을 때 이 거리(m, 수평 — 사냥터지기 벽 충격파 범위와 같음) 안에 상대가 있으면 가장 가까운 상대 쪽으로 화면(시야)을 바로 돌린다. 0 = 끔.")]
         [Min(0f)] public float arrivalFaceRadius = 6f;
+        [Tooltip("그 뒤 이 시간(초) 동안 화면이 그 상대 움직임을 따라 돈다(직접 돌리기는 잘 안 됨 — LocalPlayerInput.trackInputScale).")]
+        [Min(0f)] public float arrivalTrackTime = 0.5f;
+        [Tooltip("도착한 뒤 이 시간(초) 동안 받는 피해 배율(0.7 = 30% 덜 아픔, 화면 표시 없음 — TimedCombatBuff).")]
+        [Min(0f)] public float arrivalGuardTime = 1f;
+        [Range(0f, 1f)] public float arrivalDamageTakenScale = 0.7f;
 
         public override bool LocksActions => true;
         public override bool SyncAnimationToCast => false;
@@ -218,6 +223,7 @@ namespace Project1.Systems
                 if (ctx.TryGetComponent(out CharacterMotor stopMotor) && stopMotor.VerticalSpeed > 0f) stopMotor.Launch(0f); // 위로 치솟던 속도는 멈춘다
                 if (ctx.TryGetComponent(out ColliderPassThrough arrivePass)) arrivePass.RestoreClear(); // 도착한 바닥은 바로 다시 밟는다
                 FaceNearestEnemy(ctx); // 도착: 가까운 상대가 있으면 그쪽으로 화면을 바로 돌린다
+                TimedCombatBuff.Give(ctx.gameObject, 1f, arrivalDamageTakenScale, arrivalGuardTime); // 도착 후 잠깐 방어력 증가(받는 피해 줄임)
                 return true;
             }
             if (to.magnitude > 0.05f) PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
@@ -264,6 +270,7 @@ namespace Project1.Systems
             if (best == null) return;
             Vector3 dir = best.transform.position - me; dir.y = 0f;
             look.SnapLook(Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg);
+            look.TrackLook(best.transform, arrivalTrackTime); // 이후 잠깐 상대 움직임을 따라 화면이 돈다(직접 돌리기는 잘 안 됨)
         }
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
