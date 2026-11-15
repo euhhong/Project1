@@ -40,6 +40,9 @@ namespace Project1.Core
         /// <summary>맞은 쪽을 밀어내는 속도(m/s, 월드, 수평). 0이면 밀지 않는다(예: 맹인 지팡이 = 넉백).</summary>
         public Vector3 Knockback;
 
+        /// <summary>맞아도 밀려나지 않는 공격인지(예: 하스터 촉수 내려찍기). 기본 피격 넉백(DefaultHitKnockback)이 건너뛴다. 피해·경직은 그대로.</summary>
+        public bool NoKnockback;
+
         /// <summary>데미지 없이 밀어내기만 하는 공격인지(예: 맹인 지팡이). 데미지 규칙을 만들 때 이걸 보고 건너뛴다.</summary>
         public bool NoDamage;
 

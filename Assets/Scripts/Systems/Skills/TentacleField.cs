@@ -268,6 +268,7 @@ namespace Project1.Systems
                     AttackId = -1000 - t.Id,
                     Tick = SimulationTick.Current,
                     Point = point,
+                    NoKnockback = true, // 촉수에 맞아도 밀려나지 않는다(피해·경직은 그대로)
                 });
             }
         }
