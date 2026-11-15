@@ -84,6 +84,7 @@ namespace Project1.Presentation
         private Vector3 pivot;
         private Vector3 pivotVelocity;
         private float yaw, pitch, yawVelocity, pitchVelocity;
+        private ILookSnap lookSnap; private Transform lookSnapFor; private int lastSnapCount;
         private float currentDistance, distanceVelocity;
         private float crane, craneVelocity;
         private bool snapCrane;
@@ -101,6 +102,14 @@ namespace Project1.Presentation
 
             // BE-5가 있으면 시야 값을, 없으면 캐릭터 회전을 쓴다(임시 연결).
             float targetYaw = state != null ? state.LookYaw : target.eulerAngles.y;
+            // 게임 코드가 시야를 바로 돌렸으면(ILookSnap — 예: 붉은나비 도약 끝, 가까운 상대 쪽) 부드럽게 따라가지 않고 그 각도로 바로.
+            if (lookSnap == null || (lookSnap is Object lo && lo == null) || lookSnapFor != target) { lookSnapFor = target; lookSnap = target.GetComponent<ILookSnap>(); lastSnapCount = lookSnap != null ? lookSnap.SnapCount : 0; }
+            if (lookSnap != null && lookSnap.SnapCount != lastSnapCount)
+            {
+                lastSnapCount = lookSnap.SnapCount;
+                targetYaw = lookSnap.SnapYaw;
+                yaw = targetYaw; yawVelocity = 0f;
+            }
             float lookPitch = state != null ? state.LookPitch : fallbackPitch;
             // 야외 구도와 실내 구도를 섞는다.
             float indoor = SenseIndoor(!initialized);

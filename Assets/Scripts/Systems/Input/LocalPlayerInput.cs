@@ -12,7 +12,7 @@ namespace Project1.Systems
     /// - 고유 스킬: E(게임패드 Y). 캐릭터마다 다른 스킬은 CharacterSkill이 정한다.
     /// 나중에 네트워크/AI 입력은 ICharacterInputSource를 구현한 다른 스크립트로 바꾸면 된다.
     /// </summary>
-    public class LocalPlayerInput : MonoBehaviour, ICharacterInputSource
+    public class LocalPlayerInput : MonoBehaviour, ICharacterInputSource, ILookSnap
     {
         [Header("시점")]
         [SerializeField, Min(0f)] private float mouseSensitivity = 0.25f; // 픽셀당 도
@@ -114,6 +114,17 @@ namespace Project1.Systems
             lookDeltaQueued = Vector2.zero;
             skillQueued = false;
             return cachedFrame;
+        }
+
+        public int SnapCount { get; private set; }
+        public float SnapYaw { get; private set; }
+
+        /// <summary>시야 좌우를 바로 yaw로(예: 붉은나비 도약 끝 — 가까운 상대 쪽). 카메라도 바로 따라 돈다(ILookSnap).</summary>
+        public void SnapLook(float yaw)
+        {
+            lookYaw = Mathf.Repeat(yaw, 360f);
+            SnapYaw = lookYaw;
+            SnapCount++;
         }
 
         private void Awake()
