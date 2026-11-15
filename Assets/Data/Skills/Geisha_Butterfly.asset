@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Geisha_Butterfly
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.ButterflyGlideSkill
   id: Geisha_Butterfly
-  displayName: "\uB098\uBE44\uC5D0\uAC8C"
+  displayName: 이동
   castTime: 3
   cooldown: 5
   castMoveSpeed: 0

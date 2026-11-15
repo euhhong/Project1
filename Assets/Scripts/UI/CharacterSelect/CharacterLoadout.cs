@@ -103,7 +103,12 @@ namespace Project1.UI
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
                 attack.SetExtraWindup(entry.id == "Hunter_Hastur" ? 0.1f : 0f); // 하스터 평타: 선딜레이를 조금 더(0.1 → 0.2초) — 촉수 스킬은 그대로
-                if (player.TryGetComponent(out AttackHitDetector reachDetector)) reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.5f : 0f); // 붉은나비 평타: 앞 리치 +0.5m(감시자 보정 0.5m 위에 — 정면으로만)
+                if (player.TryGetComponent(out AttackHitDetector reachDetector))
+                {
+                    // 붉은나비 평타: 앞 리치 +0.75m(감시자 보정 0.5m 위에), 좌우 폭도 조금(±0.15m)
+                    reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.75f : 0f);
+                    reachDetector.SetExtraWidth(entry.id == "Hunter_Geisha" ? 0.15f : 0f);
+                }
                 // 사냥터지기 강공격(좌클릭 꾹): 공격 전 자세로 1초 모은 뒤 저절로 내려침, 모으는 동안 이동 속도가 걷기의 2배(+100%)까지 점점 빨라짐, 대신 치고 나면 후딜레이 +0.6초 동안 제자리
                 if (entry.id == "Hunter_Gamekeeper") attack.SetChargeStyle(1f, 2f, 0.6f); else attack.SetChargeStyle(0f, 1f);
                 // 감시자 달리기 점프 공격 = 무기 내려치기(Run Jump Attack) → 발이 아니라 약공격 부위(무기·손) + 몸 앞 긴 판정(RunJumpReach). 생존자는 처음 값(양발 플라잉킥).

@@ -32,6 +32,11 @@ namespace Project1.Systems
 
         /// <summary>캐릭터별 평타 앞 리치 더하기(m) — 캐릭터를 고를 때 정한다(예: 붉은나비 0.5). 감시자 보정 위에 더하고, 정면으로만 늘린다(좌우 폭은 그대로).</summary>
         public void SetExtraReach(float meters) => extraReach = Mathf.Max(0f, meters);
+
+        private float extraWidth;
+
+        /// <summary>캐릭터별 평타 좌우 폭 더하기(m) — 판정을 몸 좌우로 이만큼 밀어서도 훑는다. 캐릭터를 고를 때 정한다(예: 붉은나비 0.15 — 기본은 0, 감시자 보정은 앞 리치로만).</summary>
+        public void SetExtraWidth(float meters) => extraWidth = Mathf.Max(0f, meters);
         [Tooltip("맨주먹으로 치는 캐릭터인지(생존자 주먹 기본 공격). 켜면 무기 없는 공격의 손 판정 히트가 주먹(HitResult.Fist)이 되어 주먹 막기(FistParry)에 막힌다. 캐릭터를 고를 때 SetUnarmed로 정한다.")]
         [SerializeField] private bool unarmed;
         private ICharacterAttackState attackState;
@@ -129,6 +134,13 @@ namespace Project1.Systems
                 reach = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized * reachLength;
                 reachSamples = 3;
             }
+            // 캐릭터별 좌우 폭 보정(예: 붉은나비): 판정을 몸 오른쪽·왼쪽으로 extraWidth만큼 밀어서도 훑는다.
+            Vector3 side = Vector3.zero; int widthSamples = 1;
+            if (extraWidth > 0f && attackState != null && attackState.AttackState != CharacterAttackState.None)
+            {
+                side = Vector3.Cross(Vector3.up, Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized) * extraWidth;
+                widthSamples = 3;
+            }
             int mask = CombatLayers.HurtboxMask;
 
             foreach (Hitbox hitbox in hitboxes)
@@ -139,11 +151,12 @@ namespace Project1.Systems
                 }
 
                 Vector3 origin = hitbox.Collider.bounds.center;
-                for (int sample = 0; sample < leadSamples * reachSamples; sample++)
+                for (int sample = 0; sample < leadSamples * reachSamples * widthSamples; sample++)
                 {
-                int s = sample / reachSamples, k = sample % reachSamples;
+                int s = sample / (reachSamples * widthSamples), k = sample / widthSamples % reachSamples, sw = sample % widthSamples;
                 Vector3 offset = (leadSamples > 1 ? lead * (s / (float)(leadSamples - 1)) : Vector3.zero)
-                               + (reachSamples > 1 ? reach * (k / (float)(reachSamples - 1)) : Vector3.zero);
+                               + (reachSamples > 1 ? reach * (k / (float)(reachSamples - 1)) : Vector3.zero)
+                               + (widthSamples > 1 ? side * (sw - 1) : Vector3.zero); // -1 왼쪽, 0 가운데, +1 오른쪽
                 int count = hitbox.Overlap(overlapBuffer, mask, offset);
                 for (int i = 0; i < count; i++)
                 {
