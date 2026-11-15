@@ -33,7 +33,8 @@ namespace Project1.Systems
         public float CastProgress { get; private set; }
         public float RecoveryProgress { get; private set; }
         public float CooldownRemaining { get; private set; }
-        public float CooldownDuration => skill != null ? skill.cooldown : 0f;
+        public float CooldownDuration => cooldownDuration > 0f ? cooldownDuration : (skill != null ? skill.cooldown : 0f);
+        private float cooldownDuration; // 이번 재사용 대기 길이(SkillDefinition.CooldownFor)
         public string BlockedReason { get; private set; }
 
         // 스킬 데이터(SkillDefinition)가 이 캐릭터의 진행 상태를 적어 두는 칸. 시전을 시작할 때 비운다.
@@ -338,10 +339,12 @@ namespace Project1.Systems
                 State = SkillState.Ready;
                 return;
             }
-            if (skill != null && skill.cooldown > 0f)
+            float cd = skill != null ? skill.CooldownFor(this) : 0f;
+            cooldownDuration = cd;
+            if (cd > 0f)
             {
                 State = SkillState.Cooldown;
-                CooldownRemaining = skill.cooldown;
+                CooldownRemaining = cd;
             }
             else
             {

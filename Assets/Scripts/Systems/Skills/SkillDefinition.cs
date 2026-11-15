@@ -51,6 +51,9 @@ namespace Project1.Systems
         /// <summary>시전 중 걷기·달리기 속도에 곱하는 배율(1 = 그대로). 달리기를 막지 않고 조금만 느리게 할 때(예: 도둑 손전등).</summary>
         public virtual float CastSpeedScale => 1f;
 
+        /// <summary>이번 시전이 끝난 뒤 재사용 대기(초). 기본은 cooldown. 시작한 방식에 따라 다르게 줄 때(예: 루키노 — 땅에서 뛰어오른 도약만 7초, 공중에서 바로 내려찍기·떨어지기는 0).</summary>
+        public virtual float CooldownFor(CharacterSkill ctx) => cooldown;
+
         /// <summary>시전 중 이 공격(attacker, 모르면 null)에 면역인지(예: 붉은나비 나비에게 — 맹인 밀기만 받음). CharacterSkill이 IAttackImmunity로 알린다.</summary>
         public virtual bool ImmuneTo(CharacterSkill ctx, GameObject attacker) => false;
 

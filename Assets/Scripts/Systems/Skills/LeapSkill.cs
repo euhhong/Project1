@@ -87,10 +87,17 @@ namespace Project1.Systems
             return false;
         }
 
+        // 이번 시전이 땅에서 E로 뛰어오른 도약인지(공중에서 바로 내려찍기·떨어지기는 아님) — 그때만 재사용 대기.
+        private static readonly System.Collections.Generic.HashSet<CharacterSkill> groundLeaps = new();
+
+        /// <summary>땅에서 E로 뛰어오른 도약만, 내려찍기·떨어지기가 끝난 뒤 cooldown(7초). 높이 떨어지는 중에 바로 쓴 내려찍기·떨어지기는 재사용 대기 없음.</summary>
+        public override float CooldownFor(CharacterSkill ctx) => groundLeaps.Contains(ctx) ? cooldown : 0f;
+
         public override void OnStart(CharacterSkill ctx)
         {
             var motor = ctx.GetComponent<CharacterMotor>();
             if (motor == null) return;
+            groundLeaps.Remove(ctx);
             if (!motor.IsGrounded)
             {
                 // 높이 떨어지는 중에 시작: 떠오르기 없이 바로 내리꽂는다(공격 키 = 내려찍기, E = 빠르게 떨어지기).
@@ -106,6 +113,7 @@ namespace Project1.Systems
                 return;
             }
             motor.Launch(Mathf.Sqrt(2f * leapHeight * Mathf.Abs(motor.Gravity)));
+            groundLeaps.Add(ctx); // E로 땅에서 뛰어오른 도약 → 끝나면 재사용 대기(CooldownFor)
         }
 
         public override bool TryGetMoveOverride(CharacterSkill ctx, out Vector2 localMove, out float speed, out bool allowJump)
