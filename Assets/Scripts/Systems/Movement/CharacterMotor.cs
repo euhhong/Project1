@@ -192,6 +192,20 @@ namespace Project1.Systems
             return any;
         }
 
+        private readonly System.Collections.Generic.List<IMoveSpeedScale> scaleBuffer = new();
+
+        private float GetSpeedScale()
+        {
+            float multiplier = 1f;
+            GetComponents(scaleBuffer);
+            foreach (var s in scaleBuffer)
+            {
+                if (s is Behaviour { isActiveAndEnabled: false }) continue;
+                if (s.TryGetSpeedScale(out float m)) multiplier *= Mathf.Clamp01(m);
+            }
+            return multiplier;
+        }
+
         private bool TryGetSpeedLimit(out float maxSpeed)
         {
             maxSpeed = float.MaxValue;
@@ -264,6 +278,7 @@ namespace Project1.Systems
                     running = speed > walkSpeed;
                 }
                 if (moving && TryGetSpeedBoost(out float boost)) speed *= boost; // 예: 리퍼가 안개 위에서 30% 빠름
+                if (moving) speed *= GetSpeedScale(); // 예: 도둑 손전등을 비추는 동안 조금 느림(달리기는 됨)
             }
             Vector2 localPlanar = move * speed;
             Vector3 worldPlanar = transform.rotation * new Vector3(localPlanar.x, 0f, localPlanar.y);

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르거나 castTime(최대)이 지나면 넣는다. 비추는 동안 걷기 속도.
+    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르거나 castTime(최대)이 지나면 넣는다. 비추는 동안에도 달릴 수 있고, 걷기·달리기 속도만 moveSpeedScale배로 조금 느려진다.
     /// - 빛(원뿔: range m, 반각 halfAngle도, 벽에 가리면 안 닿음)에 든 상대는 LightExposure로 지져진다:
     ///   지져짐 게이지가 차서 일정 이상이면 그 상대의 E가 잠기고, 정면(얼굴 쪽)으로 받으면 따로 정면 게이지도 차서 다 차면 기절.
     ///   비추지 않으면 두 게이지는 계속 떨어진다(LightExposure).
@@ -27,7 +27,12 @@ namespace Project1.Systems
         [Tooltip("켠 직후 이 시간(초) 동안은 E를 다시 눌러도 끄지 않는다(누른 키가 두 번 읽히지 않게).")]
         [Min(0f)] public float toggleGrace = 0.15f;
 
+        [Tooltip("비추는 동안 걷기·달리기 속도 배율(달리기는 그대로 됨, 조금만 느려짐).")]
+        [Range(0.1f, 1f)] public float moveSpeedScale = 0.85f;
+
         public override bool SyncAnimationToCast => false;
+        public override bool LimitsMoveSpeed => false; // 걷기 속도로 묶지 않는다
+        public override float CastSpeedScale => moveSpeedScale;
 
         public override void OnStart(CharacterSkill ctx)
         {

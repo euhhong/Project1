@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveSpeedScale, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -143,6 +143,12 @@ namespace Project1.Systems
         {
             maxSpeed = skill != null ? skill.castMoveSpeed : 0f;
             return State == SkillState.Casting && skill != null && skill.LimitsMoveSpeed && !TryGetMoveOverride(out _, out _, out _);
+        }
+
+        public bool TryGetSpeedScale(out float multiplier)
+        {
+            multiplier = skill != null ? skill.CastSpeedScale : 1f;
+            return State == SkillState.Casting && skill != null && multiplier < 1f;
         }
 
         public bool TryGetMoveOverride(out Vector2 localMove, out float speed, out bool allowJump)

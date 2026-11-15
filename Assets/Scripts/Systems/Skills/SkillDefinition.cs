@@ -48,6 +48,9 @@ namespace Project1.Systems
         /// <summary>시전 중 castMoveSpeed로 이동 속도를 제한할지. 켜 두는 스킬(용병 아대)은 false.</summary>
         public virtual bool LimitsMoveSpeed => true;
 
+        /// <summary>시전 중 걷기·달리기 속도에 곱하는 배율(1 = 그대로). 달리기를 막지 않고 조금만 느리게 할 때(예: 도둑 손전등).</summary>
+        public virtual float CastSpeedScale => 1f;
+
         /// <summary>켜져(시전 중) 있어도 창틀 넘기·턱 오르기·매달리기를 막지 않는지(예: 용병 아대 — 켠 채 다님). 기본 false.</summary>
         public virtual bool AllowsTraversal(CharacterSkill ctx) => false;
 
