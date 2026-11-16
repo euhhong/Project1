@@ -10,7 +10,7 @@ namespace Project1.Systems
     ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
     /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
-    ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
+    ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5.5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
     /// - 시야(마우스 우클릭)로 방향은 틀 수 있다(몸이 시야 방향을 보기 때문).
     /// - 돌진 중 E를 한 번 더 누르면 그 자리에서 멈춘다(넘어지지 않음, cancelGrace 뒤부터).
@@ -45,7 +45,7 @@ namespace Project1.Systems
         [Tooltip("기절 시간 = wallStunBase + 돌진한 시간(초) × wallStunPerSecond, 최대 wallStunMax(초).")]
         [Min(0f)] public float wallStunBase = 2f;
         [Min(0f)] public float wallStunPerSecond = 1f;
-        [Min(0f)] public float wallStunMax = 5f;
+        [Min(0f)] public float wallStunMax = 5.5f; // 감시자가 벽에 박혀 걸리는 기절 최대(초)
         [Tooltip("벽을 이만큼(m) 두껍게 본다: 밀려나는 쪽으로 벽·장애물이 이 거리 안에 들어오면 완전히 닿지 않아도 벽에 박힌 것으로 쳐서 기절.")]
         [Min(0f)] public float ramWallMargin = 0.6f;
 
@@ -111,7 +111,7 @@ namespace Project1.Systems
                 Vector3 dir = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up);
                 dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up).normalized;
                 float speed = Mathf.Clamp(distance * knockSpeedPerMeter, minKnockSpeed, maxKnockSpeed);
-                float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5초)
+                float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5.5초)
                 Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin);
                 return true;
             }

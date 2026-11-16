@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.ChargeSkill
   id: Forward_Charge
   displayName: "\uB7ED\uBE44\uACF5 \uB3CC\uC9C4"
-  castTime: 6
+  castTime: 8
   cooldown: 7
   castMoveSpeed: 0
   chargeSpeed: 16
