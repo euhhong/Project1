@@ -115,6 +115,7 @@ namespace Project1.UI
         private void Activate(int i)
         {
             if (fadeStart >= 0f) return;
+            Project1.Presentation.SfxPlayer.PlayUi("ui_confirm", 1f, 0.03f); // 고름 완료: 슁~
             switch (i)
             {
                 case 0: // 어두워진 뒤 캐릭터 선택으로(열리면 밝아짐)

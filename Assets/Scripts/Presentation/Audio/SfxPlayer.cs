@@ -42,7 +42,7 @@ namespace Project1.Presentation
             if (instance == null) return;
             var listener = FindAnyObjectByType<AudioListener>();
             Vector3 at = listener != null ? listener.transform.position : Vector3.zero;
-            instance.PlayAt(name, at, volume, pitch * (1f + Random.Range(-pitchJitter, pitchJitter)));
+            instance.PlayAt(name, at, volume, pitch * (1f + Random.Range(-pitchJitter, pitchJitter)), 0f);
         }
 
         private void Awake()
@@ -81,12 +81,13 @@ namespace Project1.Presentation
                 if (!c.TryGetComponent(out CharacterSfx _)) c.gameObject.AddComponent<CharacterSfx>();
         }
 
-        private void PlayAt(string name, Vector3 pos, float volume, float pitch)
+        private void PlayAt(string name, Vector3 pos, float volume, float pitch, float spatial = 0.85f)
         {
             var clip = Load(name);
             if (clip == null) return;
             var s = pool[next]; next = (next + 1) % pool.Count;
             s.transform.position = pos;
+            s.spatialBlend = spatial; // 화면(UI) 소리는 0 = 어디서든 같은 크기(씬이 바뀌어도 끝까지 들림)
             s.pitch = pitch;
             s.volume = Mathf.Clamp01(volume) * AudioVolume.Sfx; // 환경설정의 효과음 음량
             s.clip = clip;

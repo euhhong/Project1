@@ -33,8 +33,9 @@ namespace Project1.Presentation.EditorTools
             Write("mirror_out", Shimmer(0.6f, false));
             Write("ui_page", Page());
             Write("ui_flip", Flip());
+            Write("ui_confirm", Confirm());
             AssetDatabase.Refresh();
-            Debug.Log($"[FE] 효과음 15개를 {Folder}에 만들었습니다.");
+            Debug.Log($"[FE] 효과음 16개를 {Folder}에 만들었습니다.");
         }
 
         // ───────────── 소리 ─────────────
@@ -245,6 +246,26 @@ namespace Project1.Presentation.EditorTools
                 float tt = t - 0.2f; // 넘어간 카드가 닿는 툭
                 float tap = tt > 0f ? Mathf.Sin(2f * Mathf.PI * 105f * tt) * Mathf.Exp(-tt * 38f) * 0.45f : 0f;
                 s[i] = Soft(whoosh * 1.8f + tap);
+            }
+            return s;
+        }
+
+        /// <summary>메뉴 고름 완료(타이틀 버튼 누름): 칼을 뽑듯 '슁~' — 위로 쓸려 올라가는 띠 잡음 바람 + 맑게 울리는 쇳소리 배음(살짝 떨림)이 길게 사라진다.</summary>
+        private static float[] Confirm()
+        {
+            float len = 0.55f; var s = Buf(len); var r = new System.Random(23);
+            var bp = new Biquad(); var hp = new Biquad(); hp.SetHigh(900f, 0.7f);
+            float[] partials = { 2350f, 3710f, 5230f, 6890f };
+            float[] amps = { 0.5f, 0.32f, 0.22f, 0.12f };
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = i / (float)Rate, k = t / len;
+                bp.SetBand(Mathf.Lerp(1200f, 7000f, Mathf.Sqrt(Mathf.Min(k * 2.2f, 1f))), 1.4f); // 슁: 아래에서 위로 쓸려 올라감
+                float whoosh = hp.Run(bp.Run(Noise(r))) * Env(k, 0.12f, 6f) * 1.6f;
+                float ring = 0f, vib = 1f + 0.004f * Mathf.Sin(2f * Mathf.PI * 7f * t);
+                for (int p = 0; p < partials.Length; p++) ring += Mathf.Sin(2f * Mathf.PI * partials[p] * vib * t) * amps[p] * Mathf.Exp(-t * (5f + p * 2.5f));
+                ring *= Mathf.Min(1f, t / 0.03f); // 바람이 먼저, 쇳소리는 살짝 뒤따라 울림
+                s[i] = Soft(whoosh + ring * 0.9f);
             }
             return s;
         }
