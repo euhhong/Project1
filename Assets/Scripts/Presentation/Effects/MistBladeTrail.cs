@@ -44,18 +44,29 @@ namespace Project1.Presentation
             t.swingAxis = a.sqrMagnitude > 1e-4f ? a.normalized : Vector3.up;
             float power = p.Power > 0f ? p.Power : 1f;
             t.strength = Mathf.Clamp01(power);
-            t.scale = Mathf.Lerp(0.6f, 1f, t.strength); // 약한 칼날(0.5)은 0.8배
-            if (t.strength >= 0.99f) // 2칸(세기 1) 칼날만: 손톱 다섯 줄기 + 줄기도 굵게, 좌우(수평)로 더 넓적하게
-            {
-                t.Claws = ClawsStrong;
-                // 칼날 몸 좌표: Y = 휘두른 방향, X = 줄기가 나란히 놓이는 쪽. 둘 중 수평에 가까운 쪽을 넓힌다.
-                Vector3 xAxis = Vector3.Cross(t.swingAxis, p.Direction);
-                bool xHorizontal = Mathf.Abs(Vector3.Dot(xAxis.normalized, Vector3.up)) < Mathf.Abs(Vector3.Dot(t.swingAxis, Vector3.up));
-                float f = 2.0f; // 다섯 줄기라 줄기 사이만으로도 넓다 — 전체 폭 ≈ BE 판정 폭(좌우 반폭 0.9m)
-                if (xHorizontal) t.wideX = f; else t.wideY = f;
-            }
+            BladeShape(power, p.Direction, t.swingAxis, out t.Claws, out _, out t.scale, out t.wideX, out t.wideY);
             t.Build();
             return t;
+        }
+
+        /// <summary>
+        /// 세기에 따른 칼날 모양(날아가는 칼날과 지나간 자리의 안개 자국 MistTrailVisual이 같이 쓴다 — 자국이 칼날과 같은 크기로 남게).
+        /// 약한 칼날(E, 0.5) = 손톱 세 줄기 0.8배, 2칸(세기 1) 칼날 = 다섯 줄기 + 줄기 굵게 + 좌우(수평)로 2배 넓적.
+        /// 칼날 몸 좌표: Z = 날아가는 방향, Y = 휘두른 방향, X = 줄기가 나란히 놓이는 쪽. 크기는 (scale·wideX, scale·wideY, scale).
+        /// </summary>
+        internal static void BladeShape(float power, Vector3 direction, Vector3 swingAxis, out int claws, out float width, out float scale, out float wideX, out float wideY)
+        {
+            float strength = Mathf.Clamp01(power > 0f ? power : 1f);
+            scale = Mathf.Lerp(0.6f, 1f, strength); // 약한 칼날(0.5)은 0.8배
+            claws = ClawsWeak; width = 0.09f; wideX = 1f; wideY = 1f;
+            if (strength < 0.99f) return;
+            claws = ClawsStrong; width = 0.14f; // 다섯 줄기 + 줄기도 굵게
+            // X·Y 중 수평에 가까운 쪽을 넓힌다(다섯 줄기라 줄기 사이만으로도 넓다 — 전체 폭 ≈ BE 판정 폭, 좌우 반폭 0.9m)
+            Vector3 a = Vector3.ProjectOnPlane(swingAxis, direction);
+            Vector3 y = a.sqrMagnitude > 1e-4f ? a.normalized : Vector3.up;
+            Vector3 xAxis = Vector3.Cross(y, direction);
+            bool xHorizontal = Mathf.Abs(Vector3.Dot(xAxis.normalized, Vector3.up)) < Mathf.Abs(Vector3.Dot(y, Vector3.up));
+            if (xHorizontal) wideX = 2f; else wideY = 2f;
         }
 
         private void Build()
@@ -65,7 +76,8 @@ namespace Project1.Presentation
             bgo.transform.SetParent(transform, false);
             bgo.transform.rotation = Quaternion.LookRotation(projectile.Direction, swingAxis);
             bgo.transform.localScale = new Vector3(scale * wideX, scale * wideY, scale);
-            mesh = BuildClawMesh(Claws, Claws == ClawsStrong ? 0.14f : 0.09f); // 2칸 칼날은 줄기도 굵게
+            BladeShape(strength, projectile.Direction, swingAxis, out _, out float clawWidth, out _, out _, out _);
+            mesh = BuildClawMesh(Claws, clawWidth); // 2칸 칼날은 줄기도 굵게
             bgo.AddComponent<MeshFilter>().sharedMesh = mesh;
             bladeRenderer = bgo.AddComponent<MeshRenderer>();
             bladeMat = new Material(Shader.Find("Sprites/Default")) { name = "MistBlade" }; // 꼭짓점 색(가장자리 투명), 양면
