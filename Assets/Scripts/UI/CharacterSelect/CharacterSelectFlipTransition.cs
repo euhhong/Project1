@@ -5,7 +5,7 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터를 넘길 때 "파라락" 연출: 비스듬한 띠 여러 장이 화면 아래에서 위로 차례차례 휙 지나간다(넘긴 방향 쪽 띠부터).
-    /// 띠는 진영 색·검정·진한 진영 색을 번갈아 쓰고, 앞쪽 끝에 흰 선이 있다. 화면을 다 덮는 순간쯤 새 캐릭터로 바뀐다(CoverTime).
+    /// 띠는 적갈색·검정·어두운 적갈색을 번갈아 쓰고, 앞쪽 끝에 흰 선이 있다. 화면을 다 덮는 순간쯤 새 캐릭터로 바뀐다(CoverTime).
     /// </summary>
     public class CharacterSelectFlipTransition
     {
@@ -53,10 +53,9 @@ namespace Project1.UI
         public void Play(Color accent, int direction)
         {
             dir = direction >= 0 ? 1 : -1;
-            var dark = new Color(accent.r * 0.45f, accent.g * 0.45f, accent.b * 0.45f, 1f);
-            var black = new Color(0.02f, 0.02f, 0.025f, 1f);
+            // 배경과 같은 색만: 적갈색·검정·어두운 적갈색(앞쪽 끝은 흰 선)
             for (int i = 0; i < Strips; i++)
-                strips[i].style.backgroundColor = (i % 3) switch { 0 => accent, 1 => black, _ => dark };
+                strips[i].style.backgroundColor = (i % 3) switch { 0 => CharacterSelectBackdrop.Maroon, 1 => CharacterSelectBackdrop.Black, _ => CharacterSelectBackdrop.MaroonDark };
             time = 0f;
             Root.style.display = DisplayStyle.Flex;
             Root.BringToFront();

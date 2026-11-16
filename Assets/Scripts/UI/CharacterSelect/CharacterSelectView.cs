@@ -20,8 +20,8 @@ namespace Project1.UI
         /// <summary>3D 모델 그림 크기(기준 픽셀). 무대 RenderTexture도 이 비율로 만든다.</summary>
         public static readonly Vector2 ModelPanelSize = new(300f, 630f);
         private const float ModelLeft = 20f, ModelTop = 1080f - 630f; // 왼쪽 아래 구석에 작게 — 일러스트는 가리지 않는다
-        private const float IllusLeft = 170f, IllusRight = 690f, IllusTop = 16f, IllusBottom = 175f; // 화면에 꽉 차게(가운데 왼쪽), 아래 175는 이름 자리
-        private const float ColumnLeft = 1240f, ColumnWidth = 540f;
+        private const float IllusLeft = -30f, IllusRight = 630f, IllusTop = 0f, IllusBottom = 24f; // 일러스트가 화면 위 끝에서 아래 끝 거의까지(이름은 그 아래쪽 위에 얹음)
+        private const float ColumnLeft = 1300f, ColumnWidth = 520f; // 일러스트 오른쪽 끝(약 1290)을 가리지 않게
         private const float SwitchTime = 0.34f;
 
         private static readonly Color Ink = new(0.9f, 0.92f, 0.95f);
@@ -73,12 +73,13 @@ namespace Project1.UI
 
         private void BuildIllustration(VisualElement root)
         {
-            // 일러스트 뒤 진영 색 빛(웅장하게)
-            glow = Abs(root, left: IllusLeft + 60f, top: IllusTop + 40f, right: IllusRight + 60f, bottom: IllusBottom - 120f);
+            // 일러스트 뒤 적갈색 빛(웅장하게)
+            glow = Abs(root, left: IllusLeft + 140f, top: 60f, right: IllusRight + 140f, bottom: 60f);
             glow.style.backgroundImage = new StyleBackground(radial);
             glow.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+            glow.style.unityBackgroundImageTintColor = new Color(CharacterSelectBackdrop.Maroon.r, CharacterSelectBackdrop.Maroon.g, CharacterSelectBackdrop.Maroon.b, 0.55f);
 
-            illusLayer = Abs(root, left: IllusLeft, top: 0f, right: IllusRight, bottom: IllusBottom - 30f);
+            illusLayer = Abs(root, left: IllusLeft, top: 0f, right: IllusRight, bottom: 0f);
             illusLayer.style.overflow = Overflow.Hidden;
 
             watermark = Text(illusLayer, "", titleFont, 380, new Color(1f, 1f, 1f, 0.045f));
@@ -87,7 +88,7 @@ namespace Project1.UI
             watermark.style.unityTextAlign = TextAnchor.MiddleCenter;
             watermark.style.whiteSpace = WhiteSpace.NoWrap;
 
-            illus = Abs(illusLayer, left: 0f, top: IllusTop, right: 0f, bottom: 30f);
+            illus = Abs(illusLayer, left: 0f, top: IllusTop, right: 0f, bottom: IllusBottom);
             illus.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             illus.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
             illus.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Bottom);
@@ -101,22 +102,29 @@ namespace Project1.UI
 
         private void BuildName(VisualElement root)
         {
-            // 일러스트 바로 아래: 큰 이름 + 진영 색 선 + 진영
-            nameBlock = Abs(root, left: IllusLeft, top: 1080f - IllusBottom - 30f, right: IllusRight, bottom: float.NaN);
+            // 일러스트 아래쪽 위에 얹는다: 비스듬한 검은 판 위 큰 이름 + 진영 색 선 + 진영
+            nameBlock = Abs(root, left: IllusLeft, top: float.NaN, right: IllusRight, bottom: 22f);
             nameBlock.style.alignItems = Align.Center;
 
-            nameLabel = Text(nameBlock, "", titleFont, 108, Ink);
+            var plate = new VisualElement { pickingMode = PickingMode.Ignore };
+            plate.style.backgroundColor = new Color(0.02f, 0.015f, 0.015f, 0.88f);
+            plate.style.borderLeftWidth = 6f; plate.style.borderLeftColor = Color.white;
+            plate.style.paddingLeft = 46f; plate.style.paddingRight = 46f;
+            plate.style.rotate = new Rotate(Angle.Degrees(-4f));
+            nameBlock.Add(plate);
+            nameLabel = Text(plate, "", titleFont, 108, Ink);
             nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
             nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             nameLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 5f), blurRadius = 14f, color = new Color(0f, 0f, 0f, 0.75f) };
 
             nameRule = new VisualElement { pickingMode = PickingMode.Ignore };
             nameRule.style.width = 260f; nameRule.style.height = 3f;
-            nameRule.style.marginTop = -8f;
+            nameRule.style.marginTop = 10f;
             nameBlock.Add(nameRule);
 
             subLabel = Text(nameBlock, "", bodyFont, 24, InkDim);
-            subLabel.style.marginTop = 10f;
+            subLabel.style.marginTop = 6f;
+            subLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 2f), blurRadius = 4f, color = new Color(0f, 0f, 0f, 0.9f) };
             subLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
         }
 
@@ -242,8 +250,6 @@ namespace Project1.UI
             accent = role == CharacterRole.Hunter ? HunterAccent : SurvivorAccent;
             nameRule.style.backgroundColor = accent;
             subLabel.style.color = accent;
-            glow.style.unityBackgroundImageTintColor = new Color(accent.r, accent.g, accent.b, 0.22f);
-            backdrop.SetAccent(accent);
             Restyle();
         }
 
