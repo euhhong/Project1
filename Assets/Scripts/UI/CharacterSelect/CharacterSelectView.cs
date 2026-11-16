@@ -18,9 +18,9 @@ namespace Project1.UI
         public event Action<float> ModelDragged;         // 모델을 가로로 끈 거리(기준 픽셀)
 
         /// <summary>3D 모델 그림 크기(기준 픽셀). 무대 RenderTexture도 이 비율로 만든다.</summary>
-        public static readonly Vector2 ModelPanelSize = new(420f, 880f);
-        private const float ModelLeft = 110f, ModelTop = 200f; // 왼쪽 아래 — 일러스트 왼쪽 아래 끝에만 살짝 겹치고 일러스트는 가리지 않는다
-        private const float IllusLeft = 330f, IllusRight = 630f, IllusTop = 30f, IllusBottom = 205f;
+        public static readonly Vector2 ModelPanelSize = new(300f, 630f);
+        private const float ModelLeft = 20f, ModelTop = 1080f - 630f; // 왼쪽 아래 구석에 작게 — 일러스트는 가리지 않는다
+        private const float IllusLeft = 170f, IllusRight = 640f, IllusTop = 16f, IllusBottom = 175f; // 화면에 꽉 차게(가운데 왼쪽), 아래 175는 이름 자리
         private const float ColumnLeft = 1270f, ColumnWidth = 490f;
         private const float SwitchTime = 0.34f, WipeTime = 0.26f;
 
@@ -112,7 +112,7 @@ namespace Project1.UI
             nameBlock = Abs(root, left: IllusLeft, top: 1080f - IllusBottom - 30f, right: IllusRight, bottom: float.NaN);
             nameBlock.style.alignItems = Align.Center;
 
-            nameLabel = Text(nameBlock, "", titleFont, 120, Ink);
+            nameLabel = Text(nameBlock, "", titleFont, 108, Ink);
             nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
             nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             nameLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 5f), blurRadius = 14f, color = new Color(0f, 0f, 0f, 0.75f) };
@@ -136,8 +136,8 @@ namespace Project1.UI
             root.Add(area);
 
             // 발밑 그림자(모델 그림보다 먼저 = 뒤에)
-            var shadow = Abs(area, left: ModelPanelSize.x * 0.5f - 150f, top: ModelPanelSize.y * CharacterSelectStage.FeetFromTop - 26f, right: float.NaN, bottom: float.NaN);
-            shadow.style.width = 300f; shadow.style.height = 52f;
+            var shadow = Abs(area, left: ModelPanelSize.x * 0.5f - 110f, top: ModelPanelSize.y * CharacterSelectStage.FeetFromTop - 20f, right: float.NaN, bottom: float.NaN);
+            shadow.style.width = 220f; shadow.style.height = 40f;
             shadow.style.backgroundImage = new StyleBackground(radial);
             shadow.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
             shadow.style.unityBackgroundImageTintColor = new Color(0f, 0f, 0f, 0.75f);
