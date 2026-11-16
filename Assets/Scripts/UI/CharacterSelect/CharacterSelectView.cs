@@ -20,8 +20,8 @@ namespace Project1.UI
         /// <summary>3D 모델 그림 크기(기준 픽셀). 무대 RenderTexture도 이 비율로 만든다.</summary>
         public static readonly Vector2 ModelPanelSize = new(300f, 630f);
         private const float ModelLeft = 20f, ModelTop = 1080f - 630f; // 왼쪽 아래 구석에 작게 — 일러스트는 가리지 않는다
-        private const float IllusLeft = 170f, IllusRight = 640f, IllusTop = 16f, IllusBottom = 175f; // 화면에 꽉 차게(가운데 왼쪽), 아래 175는 이름 자리
-        private const float ColumnLeft = 1270f, ColumnWidth = 490f;
+        private const float IllusLeft = 170f, IllusRight = 690f, IllusTop = 16f, IllusBottom = 175f; // 화면에 꽉 차게(가운데 왼쪽), 아래 175는 이름 자리
+        private const float ColumnLeft = 1240f, ColumnWidth = 540f;
         private const float SwitchTime = 0.34f;
 
         private static readonly Color Ink = new(0.9f, 0.92f, 0.95f);
@@ -42,7 +42,8 @@ namespace Project1.UI
         private CharacterSelectFlipTransition flip;
         private CharacterControlsPanel controls;
         private Label watermark, missing, nameLabel, subLabel;
-        private Button hunterTab, survivorTab, startButton, practiceButton, prevArrow, nextArrow;
+        private Button hunterTab, survivorTab, prevArrow, nextArrow;
+        private SlantedButton startButton, practiceButton;
         private CharacterRole role;
         private Color accent = SurvivorAccent;
         private float animTime = 99f;
@@ -155,15 +156,16 @@ namespace Project1.UI
             // 게임 시작·연습 버튼: 화면 오른쪽 위 끝
             var buttons = new VisualElement();
             buttons.style.position = Position.Absolute;
-            buttons.style.right = 36f; buttons.style.top = 32f;
-            buttons.style.width = 320f;
+            buttons.style.right = 48f; buttons.style.top = 40f;
+            buttons.style.alignItems = Align.FlexEnd;
             root.Add(buttons);
-            startButton = MakeButton(buttons, "게임 시작", 58, 88f, () => StartRequested?.Invoke(true));
-            practiceButton = MakeButton(buttons, "연습", 46, 66f, () => StartRequested?.Invoke(false));
-            practiceButton.style.marginTop = 12f;
+            startButton = new SlantedButton(buttons, "게임 시작", titleFont, 70, 380f, 104f, primary: true, () => StartRequested?.Invoke(true));
+            practiceButton = new SlantedButton(buttons, "연습", titleFont, 50, 300f, 74f, primary: false, () => StartRequested?.Invoke(false));
+            practiceButton.Root.style.marginTop = 22f;
+            practiceButton.Root.style.marginRight = 10f;
 
             // 정보 칸: 오른쪽, 버튼 아래 — 조작만(CharacterControlsPanel)
-            controls = new CharacterControlsPanel(root, titleFont, bodyFont, ColumnLeft, 266f, ColumnWidth, 110f);
+            controls = new CharacterControlsPanel(root, titleFont, bodyFont, ColumnLeft, 286f, ColumnWidth, 46f);
         }
 
         private void BuildTabs(VisualElement root)
@@ -281,14 +283,8 @@ namespace Project1.UI
         {
             StyleTab(hunterTab, role == CharacterRole.Hunter, HunterAccent);
             StyleTab(survivorTab, role == CharacterRole.Survivor, SurvivorAccent);
-            bool startHot = hovered.Contains(startButton);
-            startButton.style.backgroundColor = startHot ? Color.Lerp(accent, Color.white, 0.18f) : accent;
-            Border(startButton, 2f, new Color(1f, 1f, 1f, startHot ? 0.8f : 0.35f));
-            startButton.style.color = Color.white;
-            bool practiceHot = hovered.Contains(practiceButton);
-            practiceButton.style.backgroundColor = practiceHot ? Color.Lerp(ButtonFill, accent, 0.35f) : ButtonFill;
-            Border(practiceButton, 2f, practiceHot ? accent : Line);
-            practiceButton.style.color = Ink;
+            startButton?.SetAccent(accent);
+            practiceButton?.SetAccent(accent);
             foreach (var a in new[] { prevArrow, nextArrow })
             {
                 a.style.backgroundColor = Color.clear;

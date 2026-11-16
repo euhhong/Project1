@@ -10,7 +10,7 @@ namespace Project1.UI
     public class CharacterControlsPanel
     {
         private static readonly Color Ink = new(0.9f, 0.92f, 0.95f);
-        private static readonly Color InkDim = new(0.62f, 0.68f, 0.76f);
+        private static readonly Color InkDim = new(0.82f, 0.86f, 0.92f); // 설명 글자 — 어두운 판 위에서 잘 보이게 밝게
         private static readonly Color Line = new(0.78f, 0.84f, 0.92f, 0.4f);
 
         private readonly Font titleFont, bodyFont;
@@ -26,18 +26,18 @@ namespace Project1.UI
             panel = new VisualElement();
             panel.style.position = Position.Absolute;
             panel.style.left = left; panel.style.top = top; panel.style.width = width; panel.style.bottom = bottom;
-            panel.style.backgroundColor = new Color(0.03f, 0.045f, 0.07f, 0.62f);
-            SetBorder(panel, 1f, Line, 0f);
-            panel.style.paddingLeft = panel.style.paddingRight = 30f;
-            panel.style.paddingTop = 22f; panel.style.paddingBottom = 22f;
+            panel.style.backgroundColor = new Color(0.015f, 0.02f, 0.03f, 0.93f); // 거의 불투명한 어두운 판(배경 무늬가 글자 뒤로 비치지 않게)
+            SetBorder(panel, 2f, Line, 0f);
+            panel.style.paddingLeft = panel.style.paddingRight = 28f;
+            panel.style.paddingTop = 20f; panel.style.paddingBottom = 20f;
             parent.Add(panel);
 
             header = new VisualElement { pickingMode = PickingMode.Ignore };
             panel.Add(header);
-            headerLabel = Text(header, "조작", titleFont, 46, Ink);
+            headerLabel = Text(header, "조작", titleFont, 56, Ink);
             var rule = new VisualElement { pickingMode = PickingMode.Ignore };
             rule.style.height = 2f; rule.style.width = 120f;
-            rule.style.marginTop = 2f; rule.style.marginBottom = 26f;
+            rule.style.marginTop = 2f; rule.style.marginBottom = 22f;
             rule.name = "rule";
             header.Add(rule);
 
@@ -52,7 +52,7 @@ namespace Project1.UI
             tooltip.style.paddingTop = tooltip.style.paddingBottom = 12f;
             tooltip.style.display = DisplayStyle.None;
             panel.Add(tooltip);
-            tooltipLabel = Text(tooltip, "", bodyFont, 19, Ink);
+            tooltipLabel = Text(tooltip, "", bodyFont, 25, Ink);
             tooltipLabel.style.whiteSpace = WhiteSpace.Normal;
         }
 
@@ -72,8 +72,8 @@ namespace Project1.UI
             if (survivor) Row(Mouse(true), "차징 · " + CharacterControlsText.SurvivorCharge, null, CharacterControlsText.ParryTooltip);
             else Row(Mouse(true), "차징", c.Charge, null);
             string skillName = entry.skill != null && !string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.displayName : "스킬";
-            Row(Key("E", 44f), skillName, c.Skill, null);
-            if (survivor) Row(Key("SPACE", 92f), CharacterControlsText.PalletDrop, CharacterControlsText.PalletDropDesc, null);
+            Row(Key("E", 56f), skillName, c.Skill, null);
+            if (survivor) Row(Key("SPACE", 116f), CharacterControlsText.PalletDrop, CharacterControlsText.PalletDropDesc, null);
         }
 
         public void ShowEmpty()
@@ -89,11 +89,11 @@ namespace Project1.UI
             var row = new VisualElement { pickingMode = tip != null ? PickingMode.Position : PickingMode.Ignore };
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
-            row.style.marginBottom = 24f;
+            row.style.marginBottom = 22f;
             list.Add(row);
 
             var iconBox = new VisualElement { pickingMode = PickingMode.Ignore };
-            iconBox.style.width = 104f;
+            iconBox.style.width = 124f;
             iconBox.style.flexShrink = 0f;
             iconBox.style.flexDirection = FlexDirection.Row;
             iconBox.style.alignItems = Align.Center;
@@ -110,12 +110,12 @@ namespace Project1.UI
             titleRow.style.flexDirection = FlexDirection.Row;
             titleRow.style.alignItems = Align.Center;
             col.Add(titleRow);
-            Text(titleRow, title, titleFont, 36, Ink);
+            Shadow(Text(titleRow, title, titleFont, 46, Ink));
             if (tip != null) titleRow.Add(Badge());
 
             if (!string.IsNullOrEmpty(desc))
             {
-                var d = Text(col, desc, bodyFont, 20, InkDim);
+                var d = Shadow(Text(col, desc, bodyFont, 27, InkDim));
                 d.style.whiteSpace = WhiteSpace.Normal;
                 d.style.marginTop = 2f;
             }
@@ -141,8 +141,8 @@ namespace Project1.UI
             box.style.alignItems = Align.Center;
 
             var body = new VisualElement { pickingMode = PickingMode.Ignore };
-            body.style.width = 32f; body.style.height = 46f;
-            SetBorder(body, 2f, Ink, 16f);
+            body.style.width = 40f; body.style.height = 58f;
+            SetBorder(body, 3f, Ink, 20f);
             body.style.overflow = Overflow.Hidden;
             box.Add(body);
 
@@ -153,19 +153,19 @@ namespace Project1.UI
             body.Add(left);
             var split = new VisualElement { pickingMode = PickingMode.Ignore };
             split.style.position = Position.Absolute;
-            split.style.left = Length.Percent(50); split.style.top = 0; split.style.width = 2f; split.style.height = Length.Percent(44);
+            split.style.left = Length.Percent(50); split.style.top = 0; split.style.width = 3f; split.style.height = Length.Percent(44);
             split.style.translate = new Translate(-1f, 0f);
             split.style.backgroundColor = Ink;
             body.Add(split);
             var waist = new VisualElement { pickingMode = PickingMode.Ignore };
             waist.style.position = Position.Absolute;
-            waist.style.left = 0; waist.style.right = 0; waist.style.top = Length.Percent(44); waist.style.height = 2f;
+            waist.style.left = 0; waist.style.right = 0; waist.style.top = Length.Percent(44); waist.style.height = 3f;
             waist.style.backgroundColor = Ink;
             body.Add(waist);
 
             if (hold)
             {
-                var h = Text(box, "꾹", titleFont, 28, accent);
+                var h = Text(box, "꾹", titleFont, 36, accent);
                 h.style.marginLeft = 8f;
             }
             return box;
@@ -175,13 +175,13 @@ namespace Project1.UI
         private VisualElement Key(string label, float width)
         {
             var key = new VisualElement { pickingMode = PickingMode.Ignore };
-            key.style.width = width; key.style.height = 42f;
-            SetBorder(key, 2f, Ink, 7f);
-            key.style.borderBottomWidth = 5f;
+            key.style.width = width; key.style.height = 54f;
+            SetBorder(key, 3f, Ink, 8f);
+            key.style.borderBottomWidth = 7f;
             key.style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
             key.style.justifyContent = Justify.Center;
             key.style.alignItems = Align.Center;
-            var l = Text(key, label, bodyFont, label.Length > 1 ? 16 : 22, Ink);
+            var l = Text(key, label, bodyFont, label.Length > 1 ? 20 : 28, Ink);
             l.style.unityFontStyleAndWeight = FontStyle.Bold;
             return key;
         }
@@ -190,12 +190,12 @@ namespace Project1.UI
         private VisualElement Badge()
         {
             var b = new VisualElement { pickingMode = PickingMode.Ignore };
-            b.style.width = 26f; b.style.height = 26f;
+            b.style.width = 32f; b.style.height = 32f;
             b.style.marginLeft = 10f;
-            SetBorder(b, 2f, accent, 13f);
+            SetBorder(b, 3f, accent, 16f);
             b.style.justifyContent = Justify.Center;
             b.style.alignItems = Align.Center;
-            var q = Text(b, "?", bodyFont, 17, accent);
+            var q = Text(b, "?", bodyFont, 21, accent);
             q.style.unityFontStyleAndWeight = FontStyle.Bold;
             return b;
         }
@@ -211,6 +211,13 @@ namespace Project1.UI
             l.style.marginLeft = l.style.marginRight = l.style.marginTop = l.style.marginBottom = 0f;
             l.style.paddingLeft = l.style.paddingRight = l.style.paddingTop = l.style.paddingBottom = 0f;
             parent.Add(l);
+            return l;
+        }
+
+        /// <summary>글자 뒤 그림자(배경 위에서도 또렷하게).</summary>
+        private static Label Shadow(Label l)
+        {
+            l.style.textShadow = new TextShadow { offset = new Vector2(0f, 2f), blurRadius = 4f, color = new Color(0f, 0f, 0f, 0.9f) };
             return l;
         }
 
