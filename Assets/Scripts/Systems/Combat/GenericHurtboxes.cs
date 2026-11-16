@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 맞는 판정(Hurtbox)이 하나도 없는 모델(Generic 리그 — 하스터 등)에 실행 중에 판정 상자를 만든다.
+    /// 맞는 판정(Hurtbox)이 하나도 없는 모델(Generic 리그 — 노란옷의 왕 등)에 실행 중에 판정 상자를 만든다.
     /// Humanoid 모델은 임포트할 때 BodyPartColliderPostprocessor가 뼈마다 상자를 넣지만 Generic은 빠져서 그랩·평타 등 어떤 공격에도 맞지 않았다.
     /// - 메시 정점을 가장 크게 묶인 뼈별로 모아, 정점이 많은 뼈(전체의 minShare 이상)마다 그 뼈 아래 상자 하나(바인드 자세 기준, 뼈를 따라 움직임).
     ///   정점이 적은 뼈는 위로 올라가 처음 만나는 상자 뼈에 합친다(촉수 끝 마디 등).
@@ -98,7 +98,7 @@ namespace Project1.Systems
             }
             if (!anyHead && highest != null)
                 foreach (var (bone, hurt) in made) if (bone == highest) hurt.SetPart(BodyPart.Head);
-            // 팔 뼈 아래에 달린 상자(하스터 아래팔 끝 촉수 팔 등)도 팔.
+            // 팔 뼈 아래에 달린 상자(노란옷의 왕 아래팔 끝 촉수 팔 등)도 팔.
             foreach (var (bone, hurt) in made)
                 if (hurt.Part == BodyPart.Body && UnderArm(bone, made, model.transform)) hurt.SetPart(BodyPart.Arms);
 
@@ -107,7 +107,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 때리는 판정(손)이 없으면: 왼쪽·오른쪽 팔 상자(뼈 이름의 L/R, 가장 끝 마디 — 손 마디가 합쳐진 아래팔 등)를 HitboxScale배 크게 해서 손 Hitbox로.
-        /// 공격이 손 자리(RightHand·LeftHand)로 맞히는 캐릭터(하스터 두 손 내려찍기)가 실제로 맞힐 수 있게. AttackHitDetector가 다시 모으게 한다.
+        /// 공격이 손 자리(RightHand·LeftHand)로 맞히는 캐릭터(노란옷의 왕 두 손 내려찍기)가 실제로 맞힐 수 있게. AttackHitDetector가 다시 모으게 한다.
         /// </summary>
         private static void AddHandHitboxes(GameObject model, List<(Transform bone, Hurtbox hurt)> made)
         {

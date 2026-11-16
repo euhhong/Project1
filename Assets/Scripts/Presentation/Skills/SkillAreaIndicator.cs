@@ -5,7 +5,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 스킬 공격 범위를 땅에 빨간 원으로 보여 준다(ICharacterSkillState.ShowArea / AreaCenter / AreaRadius).
-    /// 예: 루키노 도약 중 공격 키 → 착지 지점에 원이 뜨고, 내려찍어 착지하면 잠깐 밝게 남았다가 사라진다.
+    /// 예: 재앙의 도마뱀 도약 중 공격 키 → 착지 지점에 원이 뜨고, 내려찍어 착지하면 잠깐 밝게 남았다가 사라진다.
     /// 캐릭터 루트에 붙인다. 원은 캐릭터를 따라 움직이지 않는다(월드 위치).
     /// </summary>
     [DisallowMultipleComponent]

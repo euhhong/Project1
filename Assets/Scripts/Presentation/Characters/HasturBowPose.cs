@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 촉수를 내려찍는 동안(TentacleState.SlamWindup·SlamActive) 에스코트하듯 정중하게 인사하는 자세(연출 전용 — Generic 리그라 런타임으로 뼈를 돌린다).
+    /// 노란옷의 왕이 촉수를 내려찍는 동안(TentacleState.SlamWindup·SlamActive) 에스코트하듯 정중하게 인사하는 자세(연출 전용 — Generic 리그라 런타임으로 뼈를 돌린다).
     /// - 움직이는 것은 오른 어깨 라인뿐: 오른 어깨(biped R Clavicle)를 앞·아래로 살짝 떨구고, 오른 촉수팔(R UpperArm·R Forearm)을 젠틀하게 내린다
     ///   (위팔은 아래·살짝 앞으로, 아래팔은 허리 앞에서 안쪽으로 — 집사가 인사하듯). 고개는 인사하듯 앞으로 확실히 숙인다(biped Head, 정면에서도 보이게 — headDir). 오른 어깨가 앞으로 말려 인사를 이끈다.
     /// - 등·목은 숙이지 않는다(두 어깨가 목에 달려 있어 숙이면 왼팔도 따라 움직이므로). 왼팔·왼손은 모션 그대로 고정.
     ///   뼈 축 방향을 몰라도 되게 "뼈가 가리키는 방향"을 캐릭터 기준 목표 방향으로 돌린다(shoulderDir·armUpperDir·armLowerDir).
     /// 그동안 평타·촉수 세우기는 BE(TentacleField — IActionLock)가 막는다.
     /// 모션이 쓰는 뼈면 모션 자세 위에 더하고, 쓰지 않는 뼈면 쉬는 자세에서 더한다(매 프레임 쌓이지 않음).
-    /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만).
+    /// 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만).
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(100)] // 걷기 팔(HasturArmWalk) 뒤에: 인사 자세가 걷기 흔들림 위에 덮여 오른팔이 몸 앞으로 내려온다

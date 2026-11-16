@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 감시자가 손에 든 무기(공장장 상어, 루키노 마체테, 사냥터지기 그랩 등)가 공격으로 휘두를 때 자기 몸을 뚫고 지나가 보이지 않게 한다(연출 전용, 공격 중에만 — 끝나면 부드럽게 원래대로).
+    /// 감시자가 손에 든 무기(공장장 상어, 재앙의 도마뱀 마체테, 사냥터지기 그랩 등)가 공격으로 휘두를 때 자기 몸을 뚫고 지나가 보이지 않게 한다(연출 전용, 공격 중에만 — 끝나면 부드럽게 원래대로).
     /// - 몸 = 캐릭터 루트의 CharacterController 캡슐(조금 여유 margin). 무기 = 쥔 곳(손)에서 양 끝까지의 긴 축.
     /// - 무기 위 점들 중 몸 속으로 가장 깊이 들어간 곳을 찾아, 쥔 곳을 중심으로 몸 밖으로 나오는 만큼만 무기를 돌린다(몇 번 되풀이).
     ///   매 프레임 원래 자리(손 아래)에서 다시 계산하고, 바뀌는 각도는 부드럽게 따라가 튀지 않게 한다.
@@ -139,7 +139,7 @@ namespace Project1.Presentation
                 if (hand == null) continue;
                 foreach (var r in hand.GetComponentsInChildren<MeshRenderer>(true))
                 {
-                    if (!r.enabled || r.name.EndsWith("_Chain") || r.GetComponentInParent<ToyRocket>() != null) continue; // 감춘 원래 무기(루키노 → 마체테로 바꿈)·손목 사슬·로켓 제외
+                    if (!r.enabled || r.name.EndsWith("_Chain") || r.GetComponentInParent<ToyRocket>() != null) continue; // 감춘 원래 무기(재앙의 도마뱀 → 마체테로 바꿈)·손목 사슬·로켓 제외
                     if (weapons.Exists(x => r.transform.IsChildOf(x.t))) continue; // 이미 모은 무기의 조각
                     Bounds b = r.localBounds;
                     Vector3 e = b.extents;

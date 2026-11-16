@@ -77,7 +77,7 @@ namespace Project1.Core
         /// <summary>HUD에 보여 줄 스킬 상태 글. null이면 HUD가 기본 글(준비/사용 중/재사용 대기)을 쓴다.</summary>
         string StatusText { get; }
 
-        /// <summary>공격 범위를 보여 줄지(예: 루키노 내려찍기 착지 지점).</summary>
+        /// <summary>공격 범위를 보여 줄지(예: 재앙의 도마뱀 내려찍기 착지 지점).</summary>
         bool ShowArea { get; }
 
         UnityEngine.Vector3 AreaCenter { get; }

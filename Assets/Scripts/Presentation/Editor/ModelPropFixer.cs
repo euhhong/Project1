@@ -12,14 +12,14 @@ namespace Project1.Presentation.EditorTools
     ///   → 그랩만 떼어 오른손 뼈에 붙이고, 손잡이 끝(가는 쪽)이 손바닥 가운데에 오게 옮긴다. 사슬 팔찌는 왼 손목에 그대로 둔다.
     ///   그랩 이름은 Gamekeeper_Grab_Weapon(무기 판정 Hitbox_Weapon이 그랩에 붙는다), 사슬은 Gamekeeper_Chain.
     /// - 공장장: 상어 모양 무기(HellEmber_Weapon)가 손에서 조금 떨어져 있어 손바닥 쪽으로 붙인다(FixHellEmber).
-    /// - 루키노: 무기를 사용자 모델 톱날 마체테로 바꿔 보이게 한다(FixLuchino → PropModelOverride).
+    /// - 재앙의 도마뱀: 무기를 사용자 모델 톱날 마체테로 바꿔 보이게 한다(FixLuchino → PropModelOverride).
     /// - 카우보이: 손에 든 소품(Cowboy_Prop)을 없앤다(빈손, 무기 판정 상자도 생기지 않음).
     /// - 공군: 신호총(Coordinator_Prop)이 앞뒤가 바뀌어 총구가 뒤(얼굴 쪽)를 보고 있어, 손잡이 축을 중심으로 180도 돌린다(FixCoordinator).
     /// 판정 상자(BodyPartColliderPostprocessor)보다 먼저 돈다.
     /// </summary>
     public class ModelPropFixer : AssetPostprocessor
     {
-        public override uint GetVersion() => 10; // 10: 카우보이 소품 없앰, 9: 루키노 무기를 마체테로, 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
+        public override uint GetVersion() => 10; // 10: 카우보이 소품 없앰, 9: 재앙의 도마뱀 무기를 마체테로, 2: 그랩을 몸 앞쪽으로 돌림, 3: 공장장 상어 무기를 손바닥에 붙임, 4: 공군 신호총 앞뒤를 돌림
         public override int GetPostprocessOrder() => -5;
 
         private void OnPostprocessModel(GameObject root)
@@ -79,7 +79,7 @@ namespace Project1.Presentation.EditorTools
         /// → 무기의 긴 축이 손바닥 가운데를 지나도록 축에 수직인 방향으로만 옮긴다(쥔 자리·방향은 그대로, 주먹이 몸통을 감싼다).
         /// </summary>
         /// <summary>
-        /// 루키노: 무기(Luchino_Weapon)를 사용자 모델 톱날 마체테(Resources SerratedMachete)로 바꿔 보이게 한다(PropModelOverride).
+        /// 재앙의 도마뱀: 무기(Luchino_Weapon)를 사용자 모델 톱날 마체테(Resources SerratedMachete)로 바꿔 보이게 한다(PropModelOverride).
         /// 원래 무기는 감추기만 해서 판정 상자(Hitbox_Weapon)는 그대로. 마체테는 손잡이를 손바닥 가운데에, 날 끝을 원래 무기 끝 쪽으로,
         /// 날(베는 쪽)을 손가락 쪽(주먹의 손가락 마디 줄)으로, 길이는 원래 무기와 같게 둔다.
         /// </summary>
@@ -125,7 +125,7 @@ namespace Project1.Presentation.EditorTools
             float localScale = length / (MacheteLength * parent.lossyScale.x);
             var over = weapon.gameObject.AddComponent<PropModelOverride>();
             over.Set(LuchinoWeaponResource, localPos, localRot, localScale);
-            Debug.Log($"[FE] 루키노 무기를 마체테로 바꿔 보이게 했습니다(길이 {length:0.000}, 손바닥 → 날 끝).");
+            Debug.Log($"[FE] 재앙의 도마뱀 무기를 마체테로 바꿔 보이게 했습니다(길이 {length:0.000}, 손바닥 → 날 끝).");
         }
 
         private static void FixHellEmber(GameObject root, ModelImporter importer)

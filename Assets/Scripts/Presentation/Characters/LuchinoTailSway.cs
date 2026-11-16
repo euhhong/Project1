@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 루키노 꼬리 움직임. 모델(Hunter_Luchino)의 꼬리는 골반 아래 뼈 사슬 6마디(Bone004 → 005 → 006 → 007 → 060 → 080, 끝 Bonenub019)에
+    /// 재앙의 도마뱀 꼬리 움직임. 모델(Hunter_Luchino)의 꼬리는 골반 아래 뼈 사슬 6마디(Bone004 → 005 → 006 → 007 → 060 → 080, 끝 Bonenub019)에
     /// 무게가 고르게 잡혀 있지만(Blender로 확인), 사람 모양(Humanoid) 모션은 이 뼈들을 움직이지 않아 꼬리가 뻣뻣하게 굳어 있다.
     /// 그래서 매 프레임 모션이 끝난 뒤 꼬리를 쉬는 자세로 되돌리고 아래를 더해 굽힌다:
     /// - 물결: 밑동에서 끝으로 흐르는 좌우 흔들기(도마뱀 꼬리처럼) + 살짝 위아래. 움직이면 커지고 빨라진다.
@@ -12,7 +12,7 @@ namespace Project1.Presentation
     ///   착지하면 아래로 탁 쳤다 튀어 오른다. 마디마다 따로 된 스프링이라 끝 마디일수록 늦게·크게 따라온다(채찍처럼).
     /// - 무게: 꼬리가 제 무게로 엉덩이에서 아래로 늘어지고, 땅에 닿은 부분은 땅(발 높이) 아래로 안 들어가고 땅을 따라 눕는다.
     /// - 달리면 꼬리를 조금 들어 몸 균형을 잡는다. 기절하면 작게, 쓰러지면(체력 0) 흔들지 않고 축 늘어진다.
-    /// 캐릭터 루트에 붙인다(CharacterLoadout, 루키노만). 연출 전용.
+    /// 캐릭터 루트에 붙인다(CharacterLoadout, 재앙의 도마뱀만). 연출 전용.
     /// </summary>
     [DisallowMultipleComponent]
     public class LuchinoTailSway : MonoBehaviour

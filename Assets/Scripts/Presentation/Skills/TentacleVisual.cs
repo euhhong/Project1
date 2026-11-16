@@ -7,13 +7,13 @@ using UnityEngine.Playables;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터 촉수 연출(판정은 BE TentacleField).
+    /// 노란옷의 왕 촉수 연출(판정은 BE TentacleField).
     /// - 촉수마다 지렁이처럼 리깅한 모델(Resources HasturTentacle — Tools/Blender/rig_tentacle.py)을 세우고, 단계에 맞춰 모션을 재생한다:
     ///   솟아오름(Rise) → 꿈틀거림(Idle, 반복) → 내려찍기(Slam: 젖힘 0~0.4 / 내리침 0.4~0.57 / 섬 0.57~1.0) → 들어감(Sink).
     ///   모델의 앞(+Z)이 내려찍는 방향을 본다. 키는 TentacleHeight(모델 키 1).
     /// - 좌클릭을 꾹 눌러 자리를 고르는 동안 그 자리에 원(촉수가 솟을 자리, 내려찍으면 닿는 거리 원도 옅게)을 그린다. 몸 근처(취소) = 회색, 못 놓는 곳 = 빨강.
-    /// - E를 꾹 눌러 고르는 동안 고른 촉수 밑동에 밝은 고리 + 내려찍을 쪽(하스터가 바라보는 쪽) 표시.
-    /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 연출 전용.
+    /// - E를 꾹 눌러 고르는 동안 고른 촉수 밑동에 밝은 고리 + 내려찍을 쪽(노란옷의 왕이 바라보는 쪽) 표시.
+    /// 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만). 연출 전용.
     /// </summary>
     [DisallowMultipleComponent]
     public class TentacleVisual : MonoBehaviour

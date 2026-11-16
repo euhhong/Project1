@@ -52,7 +52,7 @@ namespace Project1.UI
         private float animTime = 99f;
         private int animDir;
         private float illusWidthScale = 1f;
-        // 일러스트 가로 압축(캐릭터별). 루키노: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
+        // 일러스트 가로 압축(캐릭터별). 재앙의 도마뱀: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
         private static readonly Dictionary<string, float> IllustrationWidthScale = new() { ["Hunter_Luchino"] = 0.85f };
 
         /// <param name="document">캐릭터 선택 씬의 UIDocument(CharacterSelectUI). 없으면 실행 중에 만든다.</param>

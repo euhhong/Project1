@@ -29,7 +29,7 @@ namespace Project1.Presentation
             ["Attack_Light_Luchino"] = new Vector2(18f / 56f, 25f / 56f),   // Melee Attack Horizontal(원본 4~60): 가로 베기 22~29
             ["Attack_Light_Geisha"] = new Vector2(19f / 54f, 31f / 54f),    // Torch Melee Attack Stab 좌우 뒤집음(7~61): 오른팔 길게 찌르기 26~38
             ["Attack_Light_Hastur"] = new Vector2(22f / 45f, 30f / 45f),    // Zombie Attack(원본 19~64): 두 손 내려찍기 41~49
-            ["Attack_Light_HasturSlam"] = new Vector2(0.47f, 0.6f),         // 하스터(Generic, HasturSlamMotionBuilder 0~1): 두 손 모아 머리 위(~0.42)를 준비 동안 빠르게 지나 → 앞으로 내려치는 구간(0.47~0.6, 맞는 순간 0.53)만 판정(머리 위·뒤에서 맞지 않게) → 거두기
+            ["Attack_Light_HasturSlam"] = new Vector2(0.47f, 0.6f),         // 노란옷의 왕(Generic, HasturSlamMotionBuilder 0~1): 두 손 모아 머리 위(~0.42)를 준비 동안 빠르게 지나 → 앞으로 내려치는 구간(0.47~0.6, 맞는 순간 0.53)만 판정(머리 위·뒤에서 맞지 않게) → 거두기
             ["Attack_Light_MindsEye"] = new Vector2(14f / 38f, 21f / 38f),  // Melee Combo Attack Ver. 3(원본 10~48): 첫 타 24~31
             ["Attack_SwipeL"] = new Vector2(7f / 20f, 10f / 20f),           // 맹인 왼쪽 후리기(원본 22~42): 앞 29~32
             ["Attack_SwipeR"] = new Vector2(8f / 20f, 11f / 20f),           // 맹인 오른쪽 후리기(23~43): 앞 31~34
@@ -198,7 +198,7 @@ namespace Project1.Presentation
             if (timingFor != rc) { slotTiming.Clear(); timingFor = rc; }
             if (slotTiming.TryGetValue(slot, out var t)) return t;
             t = DefaultTiming;
-            // Override Controller가 이 자리를 바꿨으면 바뀐 클립 기준(같은 클립을 여러 자리에 쓰는 경우 — 하스터 내려치기).
+            // Override Controller가 이 자리를 바꿨으면 바뀐 클립 기준(같은 클립을 여러 자리에 쓰는 경우 — 노란옷의 왕 내려치기).
             if (rc is AnimatorOverrideController aoc && TryOverrideTiming(aoc, slot, out var o)) { slotTiming[slot] = o; return o; }
             foreach (var clip in rc.animationClips)
             {
@@ -215,8 +215,8 @@ namespace Project1.Presentation
         private bool lightHeavy;
 
         /// <summary>
-        /// 강공격 모으기·강공격을 평타 모션으로 보여 줄지: 생존자(발차기 격투)가 아니고, 강공격 자리에 그 캐릭터 전용 모션이 없을 때(기본 임시 Attack_Heavy 그대로 — 사냥터지기·안토니오·루키노 등).
-        /// 전용 강공격 모션이 있는 캐릭터(리퍼·광대·하스터)는 그대로 둔다.
+        /// 강공격 모으기·강공격을 평타 모션으로 보여 줄지: 생존자(발차기 격투)가 아니고, 강공격 자리에 그 캐릭터 전용 모션이 없을 때(기본 임시 Attack_Heavy 그대로 — 사냥터지기·안토니오·재앙의 도마뱀 등).
+        /// 전용 강공격 모션이 있는 캐릭터(리퍼·광대·노란옷의 왕)는 그대로 둔다.
         /// </summary>
         private bool LightForHeavy()
         {

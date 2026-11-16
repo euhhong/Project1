@@ -60,7 +60,7 @@ namespace Project1.Systems
         [Range(0f, 1f)] public float wallMaxNormalY = 0.6f;
         [Tooltip("그랩 머리(벽)에서 이 거리(m)까지 끌려가면 멈춘다(손이 벽에 닿는 곳).")]
         [Min(0f)] public float towStopReach = 0.1f;
-        [Tooltip("벽에 도착하면 주변에 퍼지는 충격파 반지름(m, 루키노 내려찍기처럼 — 아주 작게). 데미지 없음, 맞으면 감속 + 휘청이는 모션. 0 = 없음.")]
+        [Tooltip("벽에 도착하면 주변에 퍼지는 충격파 반지름(m, 재앙의 도마뱀 내려찍기처럼 — 아주 작게). 데미지 없음, 맞으면 감속 + 휘청이는 모션. 0 = 없음.")]
         [Min(0f)] public float wallShockRadius = 1.8f;
         [Tooltip("벽을 물고 끌려가 도착하면 이 시간(초) 안에 재사용 대기 없이 그랩을 다시 쏠 수 있다(안 쏘고 지나가면 그때 재사용 대기).")]
         [Min(0f)] public float wallRecastWindow = 3f;

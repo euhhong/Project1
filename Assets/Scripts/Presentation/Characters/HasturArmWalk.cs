@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 걸을 때 두 촉수 팔을 움직이고 어깨를 들썩인다(연출 전용).
+    /// 노란옷의 왕이 걸을 때 두 촉수 팔을 움직이고 어깨를 들썩인다(연출 전용).
     /// 모델(Hunter_Hastur, Generic 리그 — Blender로 확인): 팔 = 소매(biped L/R UpperArm·Forearm) 아래로 땅까지 닿는 검은 촉수 팔
     /// (왼쪽 biped_bone_00→01→02→03, 오른쪽 biped_bone_27→26→24→23, 아래팔에 붙음, 마디마다 무게가 따로 잡혀 있다). 어깨 = biped L/R Clavicle.
     /// 매 프레임 모션이 끝난 뒤:
@@ -16,7 +16,7 @@ namespace Project1.Presentation
     /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때는 아주 조금 숨 쉬듯). 공격 중에는 공격 모션을 그대로 둔다(부드럽게 꺼짐).
     /// - 촉수 겨누기(ITentacleField: 좌클릭 꾹 = 세울 자리 고르기 Placing, E 꾹 = 내려찍을 촉수 고르기 Selecting) 동안 오른팔(위팔·아래팔·촉수 팔)을 몸 정면으로 뻗고 끝 마디(손목)만 위로 꺾어 세운다(STOP 하듯, 겨눈 곳은 따라가지 않음).
     /// 모션이 쓰는 뼈는 모션 자세 위에 더하고, 쓰지 않는 뼈(촉수 마디)는 쉬는 자세에서 더한다(매 프레임 쌓이지 않음).
-    /// HasturLegWriggle이 붙인다(하스터만) — 하스터가 아니게 되면(HasturLegWriggle이 없어지면) 스스로 원래대로 되돌리고 없어진다.
+    /// HasturLegWriggle이 붙인다(노란옷의 왕만) — 노란옷의 왕이 아니게 되면(HasturLegWriggle이 없어지면) 스스로 원래대로 되돌리고 없어진다.
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturArmWalk : MonoBehaviour
@@ -94,7 +94,7 @@ namespace Project1.Presentation
 
         private void LateUpdate()
         {
-            if (!TryGetComponent(out HasturLegWriggle _)) { Restore(); Destroy(this); return; } // 하스터가 아니게 됨
+            if (!TryGetComponent(out HasturLegWriggle _)) { Restore(); Destroy(this); return; } // 노란옷의 왕이 아니게 됨
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             attack ??= GetComponent<ICharacterAttackState>();
@@ -123,7 +123,7 @@ namespace Project1.Presentation
             Pose(right);
         }
 
-        /// <summary>촉수가 내려찍는 중(말아 올림·내리침)인지 — 그동안 하스터는 오른 어깨로 인사한다(HasturBowPose).</summary>
+        /// <summary>촉수가 내려찍는 중(말아 올림·내리침)인지 — 그동안 노란옷의 왕은 오른 어깨로 인사한다(HasturBowPose).</summary>
         private bool Bowing()
         {
             tentacles ??= GetComponent<ITentacleField>();
@@ -300,7 +300,7 @@ namespace Project1.Presentation
             for (int i = 0; i < chain.Length; i++)
             {
                 var t = Find(all, chain[i]);
-                if (t == null) return null; // 하스터 모델이 아님
+                if (t == null) return null; // 노란옷의 왕 모델이 아님
                 bones[i] = new Bone { T = t };
             }
             return new Arm

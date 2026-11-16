@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 평타 모션을 조금 얌전하게(연출 전용, 예: 루키노 가로 베기).
+    /// 평타 모션을 조금 얌전하게(연출 전용, 예: 재앙의 도마뱀 가로 베기).
     /// - 고개: 평타를 시작하기 직전의 머리 방향(몸 기준)을 공격 내내 지킨다 — 휘두를 때 고개가 돌아가지 않고 앞을 본다(headLock).
     /// - 오른팔: 휘두르는 폭을 줄인다 — 위팔·아래팔을 시작 직전 자세 쪽으로 (1 - armSwingScale)만큼 되돌린다.
     /// 모션이 쓴 자세 위에 매 프레임 덮는다(Humanoid는 Animator가 매 프레임 뼈를 다시 쓰므로 쌓이지 않음). 캐릭터 루트에 붙인다(CharacterLoadout).

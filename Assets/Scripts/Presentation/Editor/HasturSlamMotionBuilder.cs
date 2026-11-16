@@ -5,13 +5,13 @@ using UnityEngine;
 namespace Project1.Presentation.EditorTools
 {
     /// <summary>
-    /// 하스터 공격 모션(두 손을 모아 머리 위로 들었다가 위에서 아래로 내려치기)을 만든다.
-    /// 하스터 모델(Hunter_Hastur)은 사람 모양(Humanoid)이 아닌 원본 뼈대(Generic) 리그라 Mixamo 모션이 재생되지 않는다.
+    /// 노란옷의 왕 공격 모션(두 손을 모아 머리 위로 들었다가 위에서 아래로 내려치기)을 만든다.
+    /// 노란옷의 왕 모델(Hunter_Hastur)은 사람 모양(Humanoid)이 아닌 원본 뼈대(Generic) 리그라 Mixamo 모션이 재생되지 않는다.
     /// 그래서 모델 뼈(biped Spine1·Neck·Head·Clavicle·UpperArm·Forearm·Hand)에 직접 키를 넣은 Generic 모션을 만든다:
     /// 자세마다 몸통 기울기·어깨 들기·두 손 목표 위치를 정하고, 팔은 두 마디 IK(어깨 → 팔꿈치 → 손)로 손을 목표에 보낸 뒤 뼈 회전을 기록한다.
     /// 결과: `_Motions/Generic/Attack_Light_HasturSlam.anim`. HasturLocomotion의 약공격·강공격·달리기 점프 공격 자리에 들어간다
     /// (CharacterMotionControllerBuilder 표 + 이 메뉴가 바로 넣음). 판정 타이밍은 CharacterAttackAnimator 표(Attack_Light_HasturSlam).
-    /// 메뉴: Tools > FE > 하스터 내려치기 모션 만들기.
+    /// 메뉴: Tools > FE > 노란옷의 왕 내려치기 모션 만들기.
     /// </summary>
     public static class HasturSlamMotionBuilder
     {
@@ -65,7 +65,7 @@ namespace Project1.Presentation.EditorTools
         private const int LeftArm = 4, RightArm = 9; // Bones에서 각 팔(Clavicle부터 5개)이 시작하는 자리
 
 
-        [MenuItem("Tools/FE/하스터 내려치기 모션 만들기")]
+        [MenuItem("Tools/FE/노란옷의 왕 내려치기 모션 만들기")]
         public static void BuildMenu()
         {
             var clip = Build();
@@ -76,7 +76,7 @@ namespace Project1.Presentation.EditorTools
         public static AnimationClip Build()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-            if (prefab == null) { Debug.LogWarning($"[FE] 하스터 모델이 없습니다: {ModelPath}"); return null; }
+            if (prefab == null) { Debug.LogWarning($"[FE] 노란옷의 왕 모델이 없습니다: {ModelPath}"); return null; }
             var go = Object.Instantiate(prefab);
             go.hideFlags = HideFlags.HideAndDontSave;
             try
@@ -90,7 +90,7 @@ namespace Project1.Presentation.EditorTools
                 for (int i = 0; i < Bones.Length; i++)
                 {
                     foreach (var t in all) if (t.name == Bones[i]) { bones[i] = t; break; }
-                    if (bones[i] == null) { Debug.LogWarning($"[FE] 하스터 뼈 {Bones[i]}가 없습니다."); return null; }
+                    if (bones[i] == null) { Debug.LogWarning($"[FE] 노란옷의 왕 뼈 {Bones[i]}가 없습니다."); return null; }
                     rest[i] = bones[i].localRotation;
                 }
 

@@ -22,6 +22,10 @@ namespace Project1.UI.Editor
         private const float SkinMin = 0.03f;  // R이 G·B보다 이만큼 크면(분홍기 도는 살색) 배경으로 번지지 않는다
         // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
         private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
+        // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
+        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, 8000) };
+        // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
+        private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(456, 316, 124, 66), new RectInt(470, 382, 250, 66), new RectInt(426, 448, 294, 202) } };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
 
@@ -72,7 +76,9 @@ namespace Project1.UI.Editor
                 if (!tex.LoadImage(bytes)) return false;
                 var px = tex.GetPixels32();
                 if (!HasWhiteBorder(px, tex.width, tex.height)) return false;
-                RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(System.IO.Path.GetFileNameWithoutExtension(path)));
+                string id = System.IO.Path.GetFileNameWithoutExtension(path);
+                var (encMin, encMax) = EnclosedRanges.TryGetValue(id, out var range) ? range : (EnclosedMinArea, int.MaxValue);
+                RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(id), encMin, encMax, ProtectRects.TryGetValue(id, out var keep) ? keep : null);
                 tex.SetPixels32(px);
                 System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
@@ -96,7 +102,7 @@ namespace Project1.UI.Editor
         }
 
         /// <summary>테두리에 이어진 흰 배경을 투명하게(흰색 → 알파). 검사용 명령에서도 부른다.</summary>
-        public static void RemoveWhiteBackground(Color32[] px, int w, int h, bool protectSkin = false)
+        public static void RemoveWhiteBackground(Color32[] px, int w, int h, bool protectSkin = false, int enclosedMin = EnclosedMinArea, int enclosedMax = int.MaxValue, RectInt[] protect = null)
         {
             int n = w * h;
             var lum = new float[n];
@@ -109,6 +115,13 @@ namespace Project1.UI.Editor
                        || (protectSkin && c.r - Mathf.Max(c.g, c.b) >= SkinMin * 255f && lum[i] < PureWhite); // 창백한 얼굴이 흰 배경과 이어진 그림만(SkinProtectIds): 분홍기 도는 살색을 지킨다
             }
 
+            // 지킬 칸(그림 위쪽 기준 픽셀 좌표): 흰 옷처럼 흰 배경과 이어져 빠지면 안 되는 곳
+            if (protect != null)
+                foreach (var r in protect)
+                    for (int y = Mathf.Max(0, r.yMin); y < Mathf.Min(h, r.yMax); y++)
+                        for (int x = Mathf.Max(0, r.xMin); x < Mathf.Min(w, r.xMax); x++)
+                            warm[(h - 1 - y) * w + x] = true;
+
             var bg = new bool[n];
             var queue = new int[n];
             int head = 0, tail = 0;
@@ -118,7 +131,7 @@ namespace Project1.UI.Editor
             }
             for (int x = 0; x < w; x++) { Seed(x); Seed((h - 1) * w + x); }
             for (int y = 0; y < h; y++) { Seed(y * w); Seed(y * w + w - 1); }
-            SeedEnclosedWhite(lum, warm, w, h, Seed);
+            SeedEnclosedWhite(lum, warm, w, h, Seed, enclosedMin, enclosedMax);
 
             void Spread(int from, int j)
             {
@@ -164,7 +177,7 @@ namespace Project1.UI.Editor
         }
 
         /// <summary>리본 고리·팔과 몸 사이처럼 테두리와 이어지지 않은 흰 배경. 아주 흰 픽셀이 넓게 뭉친 곳만 배경으로 본다(얼굴·옷의 흰 부분은 이만큼 새하얗고 넓지 않다).</summary>
-        private static void SeedEnclosedWhite(float[] lum, bool[] warm, int w, int h, System.Action<int> seed)
+        private static void SeedEnclosedWhite(float[] lum, bool[] warm, int w, int h, System.Action<int> seed, int minArea, int maxArea)
         {
             int n = w * h;
             var seen = new bool[n];
@@ -192,7 +205,7 @@ namespace Project1.UI.Editor
                     if (y > 0) Visit(i - w);
                     if (y < h - 1) Visit(i + w);
                 }
-                if (region.Count < EnclosedMinArea) continue;
+                if (region.Count < minArea || region.Count > maxArea) continue;
                 // 둘레가 노란 빛(불꽃)이면 배경이 아니라 빛나는 심지다 — 남긴다.
                 int edge = 0, warmEdge = 0;
                 foreach (int i in region)

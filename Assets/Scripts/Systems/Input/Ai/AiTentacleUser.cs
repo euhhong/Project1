@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// AI 하스터의 촉수 쓰기(AiBotInput이 근접 AI가 만든 입력 위에 덮는다). 하스터 촉수는 고유 스킬(E 스킬 파일)이 아니라 TentacleField라
+    /// AI 노란옷의 왕의 촉수 쓰기(AiBotInput이 근접 AI가 만든 입력 위에 덮는다). 노란옷의 왕 촉수는 고유 스킬(E 스킬 파일)이 아니라 TentacleField라
     /// 근접 AI의 스킬 쓰기로는 E를 꾹 눌렀다 떼지 않아 촉수를 내려찍지 않았다.
     /// - 내려찍기: 서 있는 촉수 중 밑동에서 상대까지(수평) 내려찍기가 닿는 거리(안쪽 안전 거리 밖)인 것을 바라보고 E를 holdSeconds초 꾹 눌렀다 뗀다
     ///   (TentacleField가 바라보는 촉수를 고르고, 떼면 그 촉수가 상대 쪽으로 내려찍는다).
@@ -66,7 +66,7 @@ namespace Project1.Systems
                 return;
             }
 
-            // 4) 없으면 가끔 상대 옆에 세운다(상대에서 하스터 쪽으로 내려찍기 거리의 절반쯤 — 밑동이 바짝 붙지 않게)
+            // 4) 없으면 가끔 상대 옆에 세운다(상대에서 노란옷의 왕 쪽으로 내려찍기 거리의 절반쯤 — 밑동이 바짝 붙지 않게)
             Vector3 flat = opp - self.position; flat.y = 0f;
             float dist = flat.magnitude;
             if (now >= nextPlace && dist >= PlaceMinRange && dist <= PlaceMaxRange)

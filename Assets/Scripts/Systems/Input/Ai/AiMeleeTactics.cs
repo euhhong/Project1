@@ -215,7 +215,7 @@ namespace Project1.Systems
             CastingExtras(now, dist, prof);
         }
 
-        /// <summary>시전 중 곁가지: 루키노 공중 내려찍기, 손전등 넣기.</summary>
+        /// <summary>시전 중 곁가지: 재앙의 도마뱀 공중 내려찍기, 손전등 넣기.</summary>
         private void CastingExtras(float now, float dist, in AiSkillProfile prof)
         {
             float elapsed = selfSkillStart >= 0f ? now - selfSkillStart : 0f;

@@ -95,7 +95,7 @@ MonoBehaviour:
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 11400000, guid: 609e6ccd75d1d4446b5dd6c0ee525e87, type: 2}
   - id: Hunter_Hastur
-    displayName: "\uD558\uC2A4\uD130"
+    displayName: "\uB178\uB780\uC637\uC758 \uC655"
     role: 1
     model: {fileID: 919132149155446097, guid: 4654cc5eec1b4834197e31d2b1ec58f5, type: 3}
     scale: 4
@@ -111,7 +111,7 @@ MonoBehaviour:
     selectController: {fileID: 9100000, guid: d865bd6d62af1ff40ae77707044a54d9, type: 2}
     skill: {fileID: 11400000, guid: 6813f5acffcc3284586ad0e59ee81d26, type: 2}
   - id: Hunter_Luchino
-    displayName: "\uB8E8\uD0A4\uB178"
+    displayName: "\uC7AC\uC559\uC758 \uB3C4\uB9C8\uBC40"
     role: 1
     model: {fileID: 919132149155446097, guid: 8196fbcd52834fa4e8a67f396ee61cc6, type: 3}
     scale: 4

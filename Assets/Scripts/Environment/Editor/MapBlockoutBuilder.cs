@@ -23,7 +23,7 @@ namespace Project1.Map.EditorTools
     ///         3F 가운데 우물(로비 일부만 보임) 둘레 큰 홀(L벽·낮은 벽·병풍 엄폐), 예배실, 창고. 정문 발코니, 뒤 테라스(바깥 계단 2).
     ///   서관: 3층 높이 서재(2F·3F 벽 따라 회랑), 계단실(열람 책상). 안뜰 쪽 복도.
     ///   동관: 1F 락커룸·작업실, 2F 숙소·작업실, 옥상 테라스(본채 3F와 연결동 옥상 길로 이어짐). 안뜰 쪽 복도.
-    ///   루키노 도약: 안뜰·옥상 테라스·연결동 옥상 길·서재·로비(우물 아래 제외 천장 12m)·정원은 뜀, 복도·방은 못 뜀.
+    ///   재앙의 도마뱀 도약: 안뜰·옥상 테라스·연결동 옥상 길·서재·로비(우물 아래 제외 천장 12m)·정원은 뜀, 복도·방은 못 뜀.
     /// </summary>
     public static class MapBlockoutBuilder
     {
@@ -58,7 +58,7 @@ namespace Project1.Map.EditorTools
         private static readonly Rect2 MainWell = new(17f, 9f, 27f, 19f); // 3F 바닥의 트인 곳
         private const float ChandelierY = 9.8f;
         private const float ChapelX1 = 12f; // 3F 예배실 동쪽 벽(본채 로컬 x) — 아래층 복도 벽(x 9)보다 3m 넓게
-        private static readonly Rect2 MainCollapse = new(33.5f, 26f, 38f, 29.6f); // 북 복도 동쪽: 2F·3F 바닥·지붕까지 무너져 하늘로 트임(루키노 도약 자리)
+        private static readonly Rect2 MainCollapse = new(33.5f, 26f, 38f, 29.6f); // 북 복도 동쪽: 2F·3F 바닥·지붕까지 무너져 하늘로 트임(재앙의 도마뱀 도약 자리)
 
         private static Material floorMat, wallMat, accentMat;
 

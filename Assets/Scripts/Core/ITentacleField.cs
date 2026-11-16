@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace Project1.Core
 {
-    /// <summary>하스터 촉수 하나의 단계.</summary>
+    /// <summary>노란옷의 왕 촉수 하나의 단계.</summary>
     public enum TentacleState { Rising, Idle, SlamWindup, SlamActive, SlamRecovery, Sinking }
 
-    /// <summary>하스터 촉수 하나(읽기 전용 값).</summary>
+    /// <summary>노란옷의 왕 촉수 하나(읽기 전용 값).</summary>
     public struct TentacleInfo
     {
         /// <summary>촉수 번호(생길 때마다 1씩 늘어난다). FE가 모델을 짝지을 때 쓴다.</summary>
@@ -18,12 +18,12 @@ namespace Project1.Core
         public float StateTime;
         /// <summary>지금 단계의 길이(초). Idle은 남은 수명.</summary>
         public float StateDuration;
-        /// <summary>내려찍는 방향(수평, 월드). 내려찍기 전에는 하스터 쪽을 등진 방향.</summary>
+        /// <summary>내려찍는 방향(수평, 월드). 내려찍기 전에는 노란옷의 왕 쪽을 등진 방향.</summary>
         public Vector3 Direction;
     }
 
     /// <summary>
-    /// 하스터 촉수(읽기 전용). FE가 놓을 자리 원·촉수 모델·고른 촉수 표시를 그린다. 캐릭터 루트에서 GetComponent로 얻는다.
+    /// 노란옷의 왕 촉수(읽기 전용). FE가 놓을 자리 원·촉수 모델·고른 촉수 표시를 그린다. 캐릭터 루트에서 GetComponent로 얻는다.
     /// </summary>
     public interface ITentacleField
     {

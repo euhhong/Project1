@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 평타: 때린 쪽 분류·공격 종류별 속도·시간(감시자 = 작게, 생존자 = 크게). 생존자 평타 넉백은 벽꿍(벽·캐릭터에 박히면 피해 + 추가 경직).
     /// - 스킬: 기본 6m/s × 0.25초(약 0.75m) × 공격 세기, 벽 피해 없음.
     /// - 분신(CharacterIdentity.Summoner가 있는 캐릭터 — 공장장 분신)의 공격은 넉백하지 않는다(피해만).
-    /// - 밀지 않는 공격(HitResult.NoKnockback, 예: 하스터 촉수 내려찍기)은 건너뛴다.
+    /// - 밀지 않는 공격(HitResult.NoKnockback, 예: 노란옷의 왕 촉수 내려찍기)은 건너뛴다.
     /// - 이미 넉백을 정한 공격(HitResult.Knockback ≠ 0, 예: 맹인 지팡이)은 건너뛴다. 기절은 걸지 않는다(경직은 HitStunRules).
     /// 플레이를 시작하면 저절로 켜진다(붙일 것 없음). 끄려면 Enabled = false.
     /// </summary>
@@ -29,7 +29,7 @@ namespace Project1.Systems
 
         private static void OnHit(HitResult hit)
         {
-            if (!Enabled || hit.NoKnockback || hit.Knockback.sqrMagnitude > 1e-6f || hit.VictimId == hit.AttackerId) return; // 밀지 않는 공격(하스터 촉수 등)
+            if (!Enabled || hit.NoKnockback || hit.Knockback.sqrMagnitude > 1e-6f || hit.VictimId == hit.AttackerId) return; // 밀지 않는 공격(노란옷의 왕 촉수 등)
             var victim = DamageRules.Find(hit.VictimId);
             if (victim == null) return;
             var attacker = DamageRules.Find(hit.AttackerId);

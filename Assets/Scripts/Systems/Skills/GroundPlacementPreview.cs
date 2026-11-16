@@ -48,7 +48,7 @@ namespace Project1.Systems
         [Tooltip("켜면 가리킨 곳이 놓을 수 없는 면(벽 등)일 때 그 광선을 벽 너머로 이어 처음으로 설 공간이 있는 바닥에 놓는다(보이지 않는 곳도 된다). 입력에 광선 출발점(HasAimRay)이 있어야 한다.")]
         public bool seeThroughWalls;
         [Min(1f)] public float seeThroughDistance = 150f;
-        [Tooltip("켜면 다른 캐릭터 몸은 고르지 않는다 — 마우스가 몸을 가리켜도 그 뒤(발밑) 땅을 고르고, 바닥을 찾을 때도 몸을 지나친다(하스터 촉수). 상대가 서 있는 자리도 고를 수 있다.")]
+        [Tooltip("켜면 다른 캐릭터 몸은 고르지 않는다 — 마우스가 몸을 가리켜도 그 뒤(발밑) 땅을 고르고, 바닥을 찾을 때도 몸을 지나친다(노란옷의 왕 촉수). 상대가 서 있는 자리도 고를 수 있다.")]
         public bool ignoreCharacters;
 
         private static readonly RaycastHit[] Hits = new RaycastHit[16];

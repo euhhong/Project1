@@ -5,16 +5,16 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 하스터의 소환 촉수(BE).
+    /// 노란옷의 왕의 소환 촉수(BE).
     /// - 좌클릭을 꾹 누르면(강공격 모으기 대신) 마우스가 가리키는 땅에 촉수를 세울 자리를 원으로 고르고(GroundPlacementPreview), 떼면 그 자리에서 촉수가 솟아오른다.
     ///   몸 근처로 끌어다 떼거나, 누른 채 E를 누르면 취소(좌클릭을 뗄 때까지 무시).
     ///   자리는 땅만 고른다 — 상대 몸을 가리켜도 그 발밑 땅(상대가 서 있는 자리에도 세울 수 있음). 솟을 때 밑동 risePushRadius 안의 상대는 바깥으로 살짝 밀려난다(이펙트 없음).
     /// - 촉수는 최대 maxTentacles개, 넘으면 가장 오래된 것이 땅속으로 들어간다. 세운 뒤 lifetime초가 지나도 들어간다.
     /// - E를 꾹 누르면 바라보는 방향(시야)에 가장 맞는 서 있는 촉수를 고른다(TargetIndex). E를 떼면 그 촉수가 내려찍는다:
     ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 펼친 부채꼴 안의 상대를 한 번씩 맞힘 — 바짝 붙은 곳은 안전) → 다시 섬(slamRecovery) → 땅속으로(sink).
-    ///   내려찍는 방향 = 거리와 상관없이(닿지 않아도) 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 상대가 없으면 하스터가 바라보는 방향.
-    /// - 쓰는 동안 하스터는 자유롭게 움직인다. 맞히기만 하고 체력·데미지는 다루지 않는다(HitEvents).
-    /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 그리기는 FE(TentacleVisual).
+    ///   내려찍는 방향 = 거리와 상관없이(닿지 않아도) 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 상대가 없으면 노란옷의 왕이 바라보는 방향.
+    /// - 쓰는 동안 노란옷의 왕은 자유롭게 움직인다. 맞히기만 하고 체력·데미지는 다루지 않는다(HitEvents).
+    /// 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만). 그리기는 FE(TentacleVisual).
     /// </summary>
     [DisallowMultipleComponent]
     public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock, ISkillSlotInfo
@@ -79,7 +79,7 @@ namespace Project1.Systems
         public float SlamHalfAngle => slamHalfAngle;
         public float SlamInnerRadius => slamInnerRadius;
 
-        /// <summary>촉수가 내려찍는 중(말아 올림·내리침) — 그동안 하스터는 허리를 숙여 인사하는 자세(FE HasturBowPose)이고 평타·촉수 세우기가 잠긴다.</summary>
+        /// <summary>촉수가 내려찍는 중(말아 올림·내리침) — 그동안 노란옷의 왕은 허리를 숙여 인사하는 자세(FE HasturBowPose)이고 평타·촉수 세우기가 잠긴다.</summary>
         public bool Slamming
         {
             get
@@ -155,7 +155,7 @@ namespace Project1.Systems
         }
 
         [Header("방해물 — 서 있는 촉수는 단단한 기둥")]
-        [Tooltip("서 있는 촉수 기둥 굵기(반지름, m). 아무도 뚫고 지나가지 못한다(주인 하스터만 지나감, 붉은나비 도약은 뚫음). 그랩은 막히지만 끌려가지 않는다.")]
+        [Tooltip("서 있는 촉수 기둥 굵기(반지름, m). 아무도 뚫고 지나가지 못한다(주인 노란옷의 왕만 지나감, 붉은나비 도약은 뚫음). 그랩은 막히지만 끌려가지 않는다.")]
         [SerializeField, Min(0.05f)] private float obstacleRadius = 0.35f;
         private readonly Dictionary<int, CapsuleCollider> obstacles = new();
         private readonly List<int> obstacleScratch = new();
@@ -176,7 +176,7 @@ namespace Project1.Systems
                     col = go.AddComponent<CapsuleCollider>();
                     col.direction = 1; col.radius = obstacleRadius; col.height = tentacleHeight; col.center = Vector3.up * (tentacleHeight * 0.5f);
                     go.AddComponent<NoTowSurface>(); // 그랩: 막히기만(끌려가지 않음)
-                    if (TryGetComponent(out CharacterController ownCc)) Physics.IgnoreCollision(ownCc, col); // 주인 하스터는 지나간다
+                    if (TryGetComponent(out CharacterController ownCc)) Physics.IgnoreCollision(ownCc, col); // 주인 노란옷의 왕은 지나간다
                     obstacles[t.Id] = col;
                     SkillObstacles.Tentacles.Add(col);
                 }
@@ -242,7 +242,7 @@ namespace Project1.Systems
             hitBySlam[t.Id] = new HashSet<int>();
         }
 
-        /// <summary>거리와 상관없이 가장 가까운 상대 쪽, 없으면 하스터가 바라보는 방향(수평).</summary>
+        /// <summary>거리와 상관없이 가장 가까운 상대 쪽, 없으면 노란옷의 왕이 바라보는 방향(수평).</summary>
         private Vector3 SlamDirection(Vector3 basePoint, in CharacterInputFrame input)
         {
             if (TryNearestTarget(basePoint, out var best)) return best;

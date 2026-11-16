@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 턱(난간·바닥 끝)에 매달릴 때의 자세(연출 전용). 하스터 모델은 Generic 리그라 생존자 매달리기 모션(Mixamo)이 재생되지 않는다.
+    /// 노란옷의 왕이 턱(난간·바닥 끝)에 매달릴 때의 자세(연출 전용). 노란옷의 왕 모델은 Generic 리그라 생존자 매달리기 모션(Mixamo)이 재생되지 않는다.
     /// - 두 팔(소매)을 머리 위 턱 쪽으로 뻗고, 땅까지 닿는 두 촉수 팔은 턱 모서리를 넘어 위로 말아 감아 쥔다
     ///   (바닥이 이어지면 윗면을 따라 눕고, 얇은 난간이면 너머로 늘어진다).
     /// - 다리 대신 치마 밑 촉수 다섯 가닥은 벽 쪽으로 눕혀 벽에 붙인다(벽이 없으면 아래로 늘어진다).
     /// 매달림(ICharacterTraversalState: HangGrab·Hang)과 사다리 타기(Ladder — 잡는 자리가 몸 앞 손 높이로 몸을 따라 오르내림)에서 켜지고, 매달려 올라가는 동안(HangClimb·HangClimbRail·HangClimbOver)은
     /// 손을 턱에 둔 채 몸이 올라가다 끝 무렵 놓는다. 턱 위치는 매달리기 시작할 때 레이로 찾는다.
     /// 뼈는 그 뼈를 맡은 컴포넌트가 이 자세를 불러 적용한다(팔 = HasturArmWalk, 다리 촉수 = HasturLegWriggle) — 한 뼈를 두 곳에서 쓰지 않게.
-    /// HasturLegWriggle이 붙인다(하스터만).
+    /// HasturLegWriggle이 붙인다(노란옷의 왕만).
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturHangPose : MonoBehaviour
@@ -51,7 +51,7 @@ namespace Project1.Presentation
 
         private void Update()
         {
-            if (!TryGetComponent(out HasturLegWriggle _)) { Destroy(this); return; } // 하스터가 아니게 됨
+            if (!TryGetComponent(out HasturLegWriggle _)) { Destroy(this); return; } // 노란옷의 왕이 아니게 됨
             traversal ??= GetComponent<ICharacterTraversalState>();
             if (cc == null) TryGetComponent(out cc);
             var a = traversal != null ? traversal.Action : TraversalAction.None;

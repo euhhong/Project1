@@ -6,12 +6,12 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 헤드샷 날아 차기에 맞아 나가떨어질 때(HitResult.Knockdown) 연출(전용 — Generic 리그라 사람 모션 대신 런타임으로 뼈를 돌린다).
+    /// 노란옷의 왕이 헤드샷 날아 차기에 맞아 나가떨어질 때(HitResult.Knockdown) 연출(전용 — Generic 리그라 사람 모션 대신 런타임으로 뼈를 돌린다).
     /// - 날아감: 공중으로 떠올라(floatHeight) 맞은 쪽으로 몸이 젖혀지고(flightTilt), 촉수 다리들은 한데 모여 꽈배기처럼 꼬이며(braidTwist),
     ///   두 팔은 앞(때린 쪽)으로 뻗는다. 기절하는 동안 공중에 뜬 채 살짝 흔들린다.
     /// - 일어남(기절이 getUpTime초 남았을 때부터): 팔을 뒤로 뻗어 밀고(pushTime 비율), 용수철 튀기듯 바로 선다 — 넘어서 앞으로 조금 쏠렸다가 되돌아오고(감쇠 진동), 높이도 한 번 튀었다가 내려앉으며 꼬인 다리가 풀린다.
     /// 시간은 BE 기절(CharacterStun) 남은 시간을 따른다(FollowUpKickStun: 밀려남 0.5초 + 기절, 합 1.5초).
-    /// 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만).
+    /// 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만).
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(110)] // 다리 흔들림(HasturLegWriggle — 매 프레임 쉬는 자세로 되돌림)·걷기 팔 뒤에: 꽈배기·팔 자세가 그 위에 덮인다

@@ -14,7 +14,7 @@ namespace Project1.UI
         public static void Apply(GameObject player, CharacterRoster.Entry entry, bool isPlayer = true)
         {
             var swappedModel = CharacterModelSwapper.Swap(player, entry.model, entry.scale, entry.gameController);
-            GenericHurtboxes.EnsureFor(swappedModel); // Generic 리그(하스터 등)는 임포트 때 맞는 판정이 안 생겨 실행 중에 만든다(그랩·평타 등에 맞도록)
+            GenericHurtboxes.EnsureFor(swappedModel); // Generic 리그(노란옷의 왕 등)는 임포트 때 맞는 판정이 안 생겨 실행 중에 만든다(그랩·평타 등에 맞도록)
 
             var health = Ensure<CharacterHealth>(player);
             health.SetMax(DamageRules.MaxHealth(entry.role == CharacterRole.Hunter)); // 최대 체력: 감시자 150, 생존자 100(가득 채움)
@@ -22,8 +22,8 @@ namespace Project1.UI
             Ensure<CharacterStun>(player);
             var traversal = Ensure<CharacterTraversal>(player);
             traversal.SetHunterStyle(entry.role == CharacterRole.Hunter); // 창틀 넘기·올라서기·매달리기·낙하·착지(BE, 감시자는 창틀을 감시자 모션으로) — 이동이 알도록 아래 RefreshSpeedLimits 전에
-            traversal.SetWindowPassThrough(entry.id == "Hunter_Geisha");  // 붉은나비: 창틀 넘기 모션 없이 창틀을 뚫고 곧게 지나감(하스터처럼)
-            traversal.SetWindowJumpHang(entry.id == "Hunter_Luchino");    // 루키노: 점프 중 창틀에서 앞(W)을 누르고 있으면 짚고 넘지 않고 매달림
+            traversal.SetWindowPassThrough(entry.id == "Hunter_Geisha");  // 붉은나비: 창틀 넘기 모션 없이 창틀을 뚫고 곧게 지나감(노란옷의 왕처럼)
+            traversal.SetWindowJumpHang(entry.id == "Hunter_Luchino");    // 재앙의 도마뱀: 점프 중 창틀에서 앞(W)을 누르고 있으면 짚고 넘지 않고 매달림
             Ensure<CharacterPush>(player);              // 상자 등 밀기(BE) — 모션은 CharacterTraversalAnimator
             var stamina = Ensure<CharacterStamina>(player); // 스태미나: 달리면 줄고 안 달리면 계속 회복, 다 쓰면 25까지 회복할 때까지 걷기(BE) — 이동이 알도록 아래 RefreshSpeedLimits 전에
             stamina.SetDrainPerSecond(CharacterStamina.DrainFor(entry.role == CharacterRole.Hunter)); // 생존자는 감시자보다 덜 빠르게 소모
@@ -58,16 +58,16 @@ namespace Project1.UI
             SetProp<GrabShotVisual>(player, entry.id == "Hunter_Gamekeeper"); // 사냥터지기: 그랩 쏘기 연출
             SetProp<LassoVisual>(player, entry.id == "Survivor_Cowboy");      // 카우보이: 올가미 밧줄·고리 연출 + 조준 보조선(스킬은 사냥터지기 그랩과 같은 GrabShotSkill)
             SetProp<RopeSpinPose>(player, entry.id == "Hunter_Gamekeeper" || entry.id == "Survivor_Cowboy"); // 그랩·올가미 조준 중 오른팔을 들어 줄을 붕붕 돌리는 자세(걸어도)
-            SetProp<AttackPoseTamer>(player, entry.id == "Hunter_Luchino"); // 루키노 평타: 고개는 앞을 보고, 오른팔은 덜 크게 휘두름(FE)
+            SetProp<AttackPoseTamer>(player, entry.id == "Hunter_Luchino"); // 재앙의 도마뱀 평타: 고개는 앞을 보고, 오른팔은 덜 크게 휘두름(FE)
             SetProp<FlareShotVisual>(player, entry.id == "Survivor_Coordinator"); // 공군: 신호탄 붉은 연기 궤적
             SetProp<NoteField>(player, entry.id == "Hunter_Antonio");   // 안토니오: 좌클릭 꾹 / E = 붉은 음표, 두 개를 전류선으로 이음(BE)
-            SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 하스터: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
-            SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 하스터: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
-            SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 하스터: 다리 촉수 다섯 가닥 꿈틀거림(FE)
-            SetProp<HasturKnockdownPose>(player, entry.id == "Hunter_Hastur"); // 하스터: 헤드샷 날아 차기에 나가떨어짐 — 꽈배기 다리·팔 앞으로 뻗고 떠오름, 팔로 밀며 용수철처럼 일어남(FE)
-            SetProp<HasturBowPose>(player, entry.id == "Hunter_Hastur");      // 하스터: 촉수를 내려찍는 동안 허리를 숙여 인사하는 자세(FE) — 그동안 평타·촉수 세우기 잠김(BE TentacleField)
-            SetProp<LuchinoTailSway>(player, entry.id == "Hunter_Luchino");   // 루키노: 꼬리 흔들기·관성(돌면 처졌다 따라옴, 착지하면 탁 침)(FE)
-            SetProp<WeaponHitboxPad>(player, entry.id == "Hunter_Luchino");   // 루키노: 마체테 판정을 두껍고 조금 길게(빠른 가로 베기가 틱 사이에 빗나가지 않게)(BE)
+            SetProp<TentacleField>(player, entry.id == "Hunter_Hastur");      // 노란옷의 왕: 좌클릭 꾹 = 원 자리에 촉수 세우기, E 꾹 = 촉수 고르기 → 떼면 내려찍기(BE)
+            SetProp<TentacleVisual>(player, entry.id == "Hunter_Hastur");     // 노란옷의 왕: 촉수 모델·모션, 자리 원, 고른 촉수 표시(FE)
+            SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 노란옷의 왕: 다리 촉수 다섯 가닥 꿈틀거림(FE)
+            SetProp<HasturKnockdownPose>(player, entry.id == "Hunter_Hastur"); // 노란옷의 왕: 헤드샷 날아 차기에 나가떨어짐 — 꽈배기 다리·팔 앞으로 뻗고 떠오름, 팔로 밀며 용수철처럼 일어남(FE)
+            SetProp<HasturBowPose>(player, entry.id == "Hunter_Hastur");      // 노란옷의 왕: 촉수를 내려찍는 동안 허리를 숙여 인사하는 자세(FE) — 그동안 평타·촉수 세우기 잠김(BE TentacleField)
+            SetProp<LuchinoTailSway>(player, entry.id == "Hunter_Luchino");   // 재앙의 도마뱀: 꼬리 흔들기·관성(돌면 처졌다 따라옴, 착지하면 탁 침)(FE)
+            SetProp<WeaponHitboxPad>(player, entry.id == "Hunter_Luchino");   // 재앙의 도마뱀: 마체테 판정을 두껍고 조금 길게(빠른 가로 베기가 틱 사이에 빗나가지 않게)(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
             SetProp<AntonioViolin>(player, entry.id == "Hunter_Antonio"); // 안토니오: 바이올린·활(VARCO) — 대기 땐 켜는 자세, 움직일 땐 들고 다님(FE)
             SetProp<FlashlightVisual>(player, entry.id == "Survivor_Thief"); // 도둑: 손전등·빛·지져짐 게이지(FE)
@@ -99,16 +99,16 @@ namespace Project1.UI
             {
                 var slots = entry.id == "Hunter_Ripper" ? Project1.Core.HitboxSlot.LeftHand | Project1.Core.HitboxSlot.Weapon
                           : entry.id == "Survivor_MindsEye" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.Weapon // 맹인: 지팡이(무기)로 맞힌다
-                          : entry.id == "Hunter_Hastur" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.LeftHand  // 하스터: 두 손으로 내려찍는다
+                          : entry.id == "Hunter_Hastur" ? Project1.Core.HitboxSlot.RightHand | Project1.Core.HitboxSlot.LeftHand  // 노란옷의 왕: 두 손으로 내려찍는다
                           : Project1.Core.HitboxSlot.None;
                 // 생존자 강공격 = 머리를 노리는 왼발 돌려차기(모션은 CharacterAttackAnimator.HeavyKick) → 강공격 판정은 왼발.
                 bool survivorKick = entry.role == CharacterRole.Survivor;
                 attack.SetAttackSlots(slots, survivorKick ? Project1.Core.HitboxSlot.LeftFoot : slots);
-                attack.SetExtraWindup(entry.id == "Hunter_Hastur" ? 0.1f : 0f); // 하스터 평타: 선딜레이를 조금 더(0.1 → 0.2초) — 촉수 스킬은 그대로
+                attack.SetExtraWindup(entry.id == "Hunter_Hastur" ? 0.1f : 0f); // 노란옷의 왕 평타: 선딜레이를 조금 더(0.1 → 0.2초) — 촉수 스킬은 그대로
                 if (player.TryGetComponent(out AttackHitDetector reachDetector))
                 {
                     // 붉은나비 평타: 앞 리치 +0.75m(감시자 보정 0.5m 위에), 좌우 폭도 조금(±0.15m)
-                    reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.75f : entry.id == "Hunter_Luchino" ? 0.5f : 0f); // 루키노 평타: 앞 리치 +0.5m
+                    reachDetector.SetExtraReach(entry.id == "Hunter_Geisha" ? 0.75f : entry.id == "Hunter_Luchino" ? 0.5f : 0f); // 재앙의 도마뱀 평타: 앞 리치 +0.5m
                     reachDetector.SetExtraWidth(entry.id == "Hunter_Geisha" ? 0.15f : 0f);
                 }
                 // 사냥터지기 강공격(좌클릭 꾹): 공격 전 자세로 1초 모은 뒤 저절로 내려침, 모으는 동안 이동 속도가 걷기의 2배(+100%)까지 점점 빨라짐, 대신 치고 나면 후딜레이 +0.6초 동안 제자리

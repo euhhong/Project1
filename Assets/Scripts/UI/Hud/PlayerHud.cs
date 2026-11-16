@@ -78,7 +78,7 @@ namespace Project1.UI
         /// - 못 쓰면(재사용 대기·막힘·이미 씀) 글이 하나도 없다(재사용 대기 진행은 오른쪽 아래 원 게이지).
         /// - 시간이 가는 단계(스킬 시전 진행, 안토니오 둘째 음표까지 5초 등)는 칸 안에 차오르는 막대.
         /// - 꾹 눌러 고르는·쓰는 동안의 조작 안내(취소: E, 멈춤: E 등)는 이름 대신 칸 가운데에.
-        /// 보통 스킬(CharacterSkill)이 없고 E를 직접 받는 캐릭터(하스터 촉수·안토니오 음표)는 ISkillSlotInfo로 채운다.
+        /// 보통 스킬(CharacterSkill)이 없고 E를 직접 받는 캐릭터(노란옷의 왕 촉수·안토니오 음표)는 ISkillSlotInfo로 채운다.
         /// </summary>
         private void DrawSkillBox(float u)
         {

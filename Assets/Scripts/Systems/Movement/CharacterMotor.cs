@@ -69,7 +69,7 @@ namespace Project1.Systems
         public float Gravity => gravity;
 
         /// <summary>
-        /// 수직 속도를 바로 바꾼다(스킬용). + = 위로 띄움(예: 루키노 도약), - = 아래로 내리꽂음(내려찍기).
+        /// 수직 속도를 바로 바꾼다(스킬용). + = 위로 띄움(예: 재앙의 도마뱀 도약), - = 아래로 내리꽂음(내려찍기).
         /// 다음 틱부터 중력이 다시 붙는다. Jumped 이벤트는 내지 않는다.
         /// </summary>
         public void Launch(float verticalSpeed)

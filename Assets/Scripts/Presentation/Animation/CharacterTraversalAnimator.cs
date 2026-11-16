@@ -94,7 +94,7 @@ namespace Project1.Presentation
 
         private static string StateName(ICharacterTraversalState t) => t.Action switch
         {
-            // 창틀 뚫고 지나가기(붉은나비 — 하스터처럼): 창틀 넘기 모션 없이 걷기·달리기 모션 그대로 지나간다.
+            // 창틀 뚫고 지나가기(붉은나비 — 노란옷의 왕처럼): 창틀 넘기 모션 없이 걷기·달리기 모션 그대로 지나간다.
             TraversalAction.WindowVault or TraversalAction.WindowJump or TraversalAction.WindowDrop when t.PassesThroughWindows => null,
             TraversalAction.ClimbUp => "ClimbUp",
             TraversalAction.ClimbUpRun => "ClimbUpRun", // 달리며 낮은 턱(책상 등)에 올라 그대로 달려 나감 — 달리기 모션 그대로

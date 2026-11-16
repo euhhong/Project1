@@ -1,5 +1,5 @@
 """
-하스터 소환 촉수: Hastur_Tentacle.fbx에서 텍스처가 입혀진 촉수 하나를 꺼내 지렁이처럼 리깅하고(뼈 N개 사슬), 모션 4개를 만든다.
+노란옷의 왕 소환 촉수: Hastur_Tentacle.fbx에서 텍스처가 입혀진 촉수 하나를 꺼내 지렁이처럼 리깅하고(뼈 N개 사슬), 모션 4개를 만든다.
 사용: blender -b --python Tools/Blender/rig_tentacle.py -- <Hastur_Tentacle.fbx> <out.fbx>
 
 - 메시: 오른쪽(+X) 촉수만 남긴다(왼쪽 것은 텍스처가 없는 다른 재질). 밑동 가운데를 원점에, 끝이 +Z(위)로, 키 1(Unity에서 크기로 키운다).

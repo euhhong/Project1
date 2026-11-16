@@ -161,7 +161,7 @@ namespace Project1.Presentation.EditorTools
             var defaults = importer.defaultClipAnimations;
             if (defaults == null || defaults.Length == 0) return;
 
-            // 한 파일을 여러 클립으로 나누는 모션(예: 루키노 도약 = 떠오름 + 내려찍기)
+            // 한 파일을 여러 클립으로 나누는 모션(예: 재앙의 도마뱀 도약 = 떠오름 + 내려찍기)
             if (Splits.TryGetValue(name, out var parts))
             {
                 var clips = new ModelImporterClipAnimation[parts.Length];
@@ -198,7 +198,7 @@ namespace Project1.Presentation.EditorTools
                 ("Skill_Luchino_Leap", new Vector2(16, 30), Height.Body),
                 ("Skill_Luchino_Leap_Slam", new Vector2(39, 48), Height.Feet),
             },
-            // Hard Landing(루키노 내려찍기 착지): 발 닿음(3) → 손 짚고 웅크림(9~30) → 일어서기(~45)
+            // Hard Landing(재앙의 도마뱀 내려찍기 착지): 발 닿음(3) → 손 짚고 웅크림(9~30) → 일어서기(~45)
             ["Skill_Luchino_Leap_Land"] = new[] { ("Skill_Luchino_Leap_Land", new Vector2(2, 45), Height.Feet) },
             // Big Jump(카우보이 올가미로 상대 뛰어넘기): 도움닫기(1~14)는 빼고 발이 떨어짐(15) → 꼭대기(30) → 발 닿음(47) / 착지해 웅크렸다 일어서기(47~72)
             ["Skill_Cowboy_Lasso_Vault"] = new[]

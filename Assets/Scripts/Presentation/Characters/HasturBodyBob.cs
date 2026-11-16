@@ -4,12 +4,12 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터가 움직일 때 몸 전체(보이는 모델)를 위아래로 들썩인다(연출 전용).
+    /// 노란옷의 왕이 움직일 때 몸 전체(보이는 모델)를 위아래로 들썩인다(연출 전용).
     /// 캐릭터 루트 아래 Model(Animator가 있는 자식)의 높이만 바꾼다 — 루트·CharacterController·이동 판정은 그대로.
     /// 걸음 박자는 HasturArmWalk의 걸음 위상을 따른다(걸음 한 쌍에 두 번 들썩 = 두 어깨가 같이 들썩이는 순간에 몸이 들림).
     /// 빠를수록 크고 빠르게(빠르기는 HasturArmWalk가 속도에 맞춰 정함), 멈추거나 공중에 뜨면 부드럽게 가라앉는다.
     /// 다른 코드가 Model 위치를 바꾸면 그 위치를 바탕으로 더한다(매 프레임 쌓이지 않음).
-    /// HasturLegWriggle이 붙인다(하스터만) — 하스터가 아니게 되면 스스로 원래대로 되돌리고 없어진다.
+    /// HasturLegWriggle이 붙인다(노란옷의 왕만) — 노란옷의 왕이 아니게 되면 스스로 원래대로 되돌리고 없어진다.
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturBodyBob : MonoBehaviour
@@ -37,7 +37,7 @@ namespace Project1.Presentation
 
         private void LateUpdate()
         {
-            if (!TryGetComponent(out HasturLegWriggle _)) { Restore(); Destroy(this); return; } // 하스터가 아니게 됨
+            if (!TryGetComponent(out HasturLegWriggle _)) { Restore(); Destroy(this); return; } // 노란옷의 왕이 아니게 됨
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             if (armWalk == null) TryGetComponent(out armWalk);

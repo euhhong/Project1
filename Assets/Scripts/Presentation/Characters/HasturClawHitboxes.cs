@@ -6,12 +6,12 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터 두 촉수 팔 끝(손톱)에 때리는 판정을 붙인다. 하스터 모델은 Generic 리그라 모델을 들여올 때 판정이 자동으로 생기지 않는다
+    /// 노란옷의 왕 두 촉수 팔 끝(손톱)에 때리는 판정을 붙인다. 노란옷의 왕 모델은 Generic 리그라 모델을 들여올 때 판정이 자동으로 생기지 않는다
     /// (BodyPartColliderPostprocessor는 Humanoid만). 실제로 내려치는 부분은 소매(biped Hand)가 아니라 아래팔에 붙어 땅까지 닿는 촉수 팔이다
     /// (왼쪽 biped_bone_00 → 01 → 02 → 03 → 끝, 오른쪽 biped_bone_27 → 26 → 24 → 23 → 끝 — HasturArmWalk·HasturSlamMotionBuilder와 같은 사슬).
-    /// 둘째 마디부터 끝까지 잇는 상자(Hitbox_Claw, 왼손·오른손 자리 — CharacterLoadout이 하스터 공격 자리를 두 손으로 정함)를 둘째 마디 아래에 둬서
+    /// 둘째 마디부터 끝까지 잇는 상자(Hitbox_Claw, 왼손·오른손 자리 — CharacterLoadout이 노란옷의 왕 공격 자리를 두 손으로 정함)를 둘째 마디 아래에 둬서
     /// 공격 모션(두 손 모아 머리 위 → 아래로 내려치기)을 따라 움직인다. 판정은 AttackHitDetector가 공격 판정 구간에만 한다.
-    /// HasturLegWriggle이 붙인다(하스터만) — 하스터가 아니게 되면 상자를 지우고 없어진다. 모델이 바뀌면 다시 붙인다.
+    /// HasturLegWriggle이 붙인다(노란옷의 왕만) — 노란옷의 왕이 아니게 되면 상자를 지우고 없어진다. 모델이 바뀌면 다시 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturClawHitboxes : MonoBehaviour
@@ -32,7 +32,7 @@ namespace Project1.Presentation
 
         private void LateUpdate()
         {
-            if (!TryGetComponent(out HasturLegWriggle _)) { Destroy(this); return; } // 하스터가 아니게 됨(OnDestroy가 상자를 지움)
+            if (!TryGetComponent(out HasturLegWriggle _)) { Destroy(this); return; } // 노란옷의 왕이 아니게 됨(OnDestroy가 상자를 지움)
             var animator = GetComponentInChildren<Animator>();
             if (animator == null || animator == builtFor) return;
             Clear();
@@ -42,7 +42,7 @@ namespace Project1.Presentation
             {
                 Transform a = null;
                 foreach (var t in all) if (t.name == from) { a = t; break; }
-                if (a == null) continue; // 하스터 모델이 아님
+                if (a == null) continue; // 노란옷의 왕 모델이 아님
                 Transform tip = a;
                 while (tip.childCount > 0) tip = tip.GetChild(0);
                 Vector3 d = tip.position - a.position;

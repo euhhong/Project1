@@ -46,7 +46,7 @@ namespace Project1.Systems
         public int UseCount { get; private set; }
         /// <summary>이번 시전이 공격의 후딜레이를 끊고 이어 쓴 것인지(받아 둔 E 선입력, 예: 맹인 휘두르기 → 찌르기). 스킬이 오토에임 등을 할 때 본다.</summary>
         public bool StartedFromCombo { get; private set; }
-        /// <summary>이번 시전이 E가 아니라 공중 공격 키로 시작됐는지(SkillDefinition.StartsOnAirAttack, 예: 루키노 공중 내려찍기).</summary>
+        /// <summary>이번 시전이 E가 아니라 공중 공격 키로 시작됐는지(SkillDefinition.StartsOnAirAttack, 예: 재앙의 도마뱀 공중 내려찍기).</summary>
         public bool StartedByAttack { get; private set; }
 
         /// <summary>지금 공중에서 공격 키를 누르면 일반 공중 공격 대신 이 스킬이 시작되는지(CharacterAttack이 본다).</summary>
@@ -79,7 +79,7 @@ namespace Project1.Systems
         public string AnimationState =>
             skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);
 
-        // 넘어짐·착지 경직(Recovering)은 모션 길이를 경직 시간에 맞춘다(예: 루키노 Hard Landing, 포워드 Fall_1).
+        // 넘어짐·착지 경직(Recovering)은 모션 길이를 경직 시간에 맞춘다(예: 재앙의 도마뱀 Hard Landing, 포워드 Fall_1).
         public bool SyncAnimationToProgress => skill != null && (State == SkillState.Recovering || skill.SyncAnimationToCast);
 
         public AttackPhase MotionPhase =>
@@ -104,7 +104,7 @@ namespace Project1.Systems
         {
             get
             {
-                if (skill == null) { BlockedReason = null; return false; } // 보통 스킬이 없는 캐릭터(하스터·안토니오 — E는 다른 기능이 받음): 이유 글을 띄우지 않는다
+                if (skill == null) { BlockedReason = null; return false; } // 보통 스킬이 없는 캐릭터(노란옷의 왕·안토니오 — E는 다른 기능이 받음): 이유 글을 띄우지 않는다
                 if (State != SkillState.Ready) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
@@ -215,7 +215,7 @@ namespace Project1.Systems
                     }
                     else if (input.AttackPressed && OverridesAirAttack)
                     {
-                        // 공중 공격 키로 시작하는 스킬(루키노 공중 내려찍기). CharacterAttack은 이때 공중 공격을 내지 않는다.
+                        // 공중 공격 키로 시작하는 스킬(재앙의 도마뱀 공중 내려찍기). CharacterAttack은 이때 공중 공격을 내지 않는다.
                         StartedFromCombo = false; StartedByAttack = true; StartCast();
                     }
                     else if (skillBuffer > 0f)

@@ -10,7 +10,7 @@ namespace Project1.Systems
     /// - 창틀 넘기: 땅에서 창틀(키의 25~75% 높이, 두께 0.8m 이하, 위가 열림) 쪽으로 방향키를 누른 채 점프(감시자는 감시자 모션 Jump)
     ///   → 반대편 바닥이 같은 높이면 넘어간다(WindowVault — 점프 중 짚고 넘기와 같은 모션 Jumping (1), 빠르게). 반대편이 dropMin보다 낮으면 턱 위로 올라섰다가 뛰어내린다(WindowDrop, Jumping Down (2)).
     /// - 점프 중 날아가는 방향 앞에 창틀이 있으면 반드시 한 손으로 짚고 넘는다(WindowJump, Jumping (1)).
-    ///   창틀 뚫고 지나가기(windowPassThrough, 붉은나비): 넘기 모션 없이 감시자 넘기 길(곧게, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼).
+    ///   창틀 뚫고 지나가기(windowPassThrough, 붉은나비): 넘기 모션 없이 감시자 넘기 길(곧게, 충돌 무시)로 창틀을 뚫고 지나간다(노란옷의 왕처럼).
     /// - 올라서기: 땅에서 중간 높이 턱(키의 35~110%, 위에 설 자리) 쪽으로 방향키 + 점프 → 뛰어 올라선다(ClimbUp, Running Jump).
     /// - 매달리기: 공중에서 턱 쪽으로 방향키를 누르고 있고 손이 턱에 닿을 높이면 잡고 매달린다(HangGrab → Hang).
     ///   턱 아래가 벽이면 발로 벽을 짚고(Braced Hang), 비었으면 늘어져 매달린다(Freehang).
@@ -33,7 +33,7 @@ namespace Project1.Systems
     [RequireComponent(typeof(CharacterController))]
     public partial class CharacterTraversal : MonoBehaviour, ICharacterTraversalState, IVelocityOverride, IMoveOverride, IFacingOverride, IMoveSpeedLimit, IKnockbackReceiver
     {
-        // 모션 기준 높이(Humanoid 단위, 루트 = 모션의 바닥). 의사·루키노 모델에 모션을 입혀 잼 — 모델이 달라도 같다.
+        // 모션 기준 높이(Humanoid 단위, 루트 = 모션의 바닥). 의사·재앙의 도마뱀 모델에 모션을 입혀 잼 — 모델이 달라도 같다.
         private const float FreeHangTop = 2.05f;   // Jump To Freehang: 매달린 자세의 턱 윗면(손목 1.93 + 손가락)
         private const float BracedHangTop = 2.28f; // Idle To Braced Hang(손목 2.16)
         private const float BracedFeet = 1.0f;     // Braced Hang에서 벽을 짚는 발 높이
@@ -187,7 +187,7 @@ namespace Project1.Systems
 
         public bool PassesThroughWindows => windowPassThrough;
 
-        [Tooltip("창틀 뚫고 지나가기(붉은나비): 창틀 넘기 모션 없이 감시자 넘기 길(곧은 길, 충돌 무시)로 창틀을 뚫고 지나간다(하스터처럼). 캐릭터를 고를 때 SetWindowPassThrough로 정한다.")]
+        [Tooltip("창틀 뚫고 지나가기(붉은나비): 창틀 넘기 모션 없이 감시자 넘기 길(곧은 길, 충돌 무시)로 창틀을 뚫고 지나간다(노란옷의 왕처럼). 캐릭터를 고를 때 SetWindowPassThrough로 정한다.")]
         [SerializeField] private bool windowPassThrough;
         [Tooltip("창틀 뚫고 지나가기(붉은나비) — 판정을 후하게: 창틀을 찾는 각도(마주 보는 정도, 0.17 = 약 80도까지 비스듬히) / 더 멀리서 찾는 거리(m).")]
         [SerializeField, Range(0f, 0.64f)] private float passThroughFacing = 0.17f;
@@ -200,10 +200,10 @@ namespace Project1.Systems
         /// <summary>창틀을 모션 없이 뚫고 지나갈지 정한다(캐릭터를 고를 때).</summary>
         public void SetWindowPassThrough(bool pass) => windowPassThrough = pass;
 
-        [Tooltip("점프 중 창틀에서 매달리기(루키노): 점프 중 날아가는 앞에 창틀이 있어도 앞(W)을 누르고 있고 손이 닿는 턱이 있으면 짚고 넘지 않고 매달린다. 앞을 안 누르면 평소처럼 짚고 넘는다. 캐릭터를 고를 때 SetWindowJumpHang으로 정한다.")]
+        [Tooltip("점프 중 창틀에서 매달리기(재앙의 도마뱀): 점프 중 날아가는 앞에 창틀이 있어도 앞(W)을 누르고 있고 손이 닿는 턱이 있으면 짚고 넘지 않고 매달린다. 앞을 안 누르면 평소처럼 짚고 넘는다. 캐릭터를 고를 때 SetWindowJumpHang으로 정한다.")]
         [SerializeField] private bool windowJumpHang;
 
-        /// <summary>점프 중 창틀에서 앞(W)을 누르면 매달릴지 정한다(캐릭터를 고를 때, 루키노).</summary>
+        /// <summary>점프 중 창틀에서 앞(W)을 누르면 매달릴지 정한다(캐릭터를 고를 때, 재앙의 도마뱀).</summary>
         public void SetWindowJumpHang(bool on) => windowJumpHang = on;
 
         /// <summary>창틀 넘기를 감시자 길(곧게 Jump 시간)로 하는지 — 감시자 또는 창틀 뚫고 지나가기.</summary>
@@ -306,7 +306,7 @@ namespace Project1.Systems
             if (dead || stunned || IsBusy()) return;
 
             Vector3 dir = MoveDirection(input);
-            // 루키노(windowJumpHang): 점프 중 앞(W)을 누르고 있으면 창틀을 짚고 넘기 전에 먼저 매달리기를 해 본다(손이 닿는 턱이 없으면 아래 짚고 넘기).
+            // 재앙의 도마뱀(windowJumpHang): 점프 중 앞(W)을 누르고 있으면 창틀을 짚고 넘기 전에 먼저 매달리기를 해 본다(손이 닿는 턱이 없으면 아래 짚고 넘기).
             if (windowJumpHang && !grounded && airborne && jumped && action == TraversalAction.None && regrab <= 0f && input.Move.y > 0.5f && dir != Vector3.zero && TryStartHang(dir)) return;
             // 점프 중 창틀을 넘어가려 하면(날아가는 방향 앞에 창틀) 반드시 짚고 넘는다 — 방향키를 놓아도 날아가던 방향으로.
             if (!grounded && airborne && jumped && action == TraversalAction.None && TryStartWindowJump(FlightDirection(dir))) return;
@@ -541,7 +541,7 @@ namespace Project1.Systems
 
         // ───────────────────── 매달리기 ─────────────────────
 
-        /// <summary>스킬 도중(예: 루키노 도약 중 앞(W)을 누름) dir 쪽으로 손이 닿는 턱(창틀·난간·바닥 끝)이 있으면 바로 매달린다. 매달렸으면 true(스킬은 끝내면 된다).</summary>
+        /// <summary>스킬 도중(예: 재앙의 도마뱀 도약 중 앞(W)을 누름) dir 쪽으로 손이 닿는 턱(창틀·난간·바닥 끝)이 있으면 바로 매달린다. 매달렸으면 true(스킬은 끝내면 된다).</summary>
         public bool TryHangFromSkill(Vector3 dir)
         {
             if (regrab > 0f || !(action == TraversalAction.None || action == TraversalAction.Fall)) return false;

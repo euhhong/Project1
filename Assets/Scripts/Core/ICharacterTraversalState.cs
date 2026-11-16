@@ -64,7 +64,7 @@ namespace Project1.Core
         /// <summary>감시자인지(창틀을 감시자 모션 Jump로 뛰어넘는다).</summary>
         bool HunterStyle { get; }
 
-        /// <summary>창틀을 넘는 모션 없이 창틀을 뚫고 곧게 지나가는지(붉은나비 — 하스터처럼). 창틀 넘기 동안 Traversal 모션을 띄우지 않는다.</summary>
+        /// <summary>창틀을 넘는 모션 없이 창틀을 뚫고 곧게 지나가는지(붉은나비 — 노란옷의 왕처럼). 창틀 넘기 동안 Traversal 모션을 띄우지 않는다.</summary>
         bool PassesThroughWindows { get; }
 
         /// <summary>

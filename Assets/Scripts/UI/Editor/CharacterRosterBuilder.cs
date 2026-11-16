@@ -50,7 +50,7 @@ namespace Project1.UI.EditorTools
             ["Survivor_Forward"] = "포워드", ["Survivor_Mercenary"] = "용병", ["Survivor_MindsEye"] = "맹인",
             ["Survivor_Thief"] = "도둑",
             ["Hunter_Antonio"] = "안토니오", ["Hunter_Gamekeeper"] = "사냥터지기", ["Hunter_Geisha"] = "붉은나비",
-            ["Hunter_Hastur"] = "하스터", ["Hunter_HellEmber"] = "공장장", ["Hunter_Luchino"] = "루키노",
+            ["Hunter_Hastur"] = "노란옷의 왕", ["Hunter_HellEmber"] = "공장장", ["Hunter_Luchino"] = "재앙의 도마뱀",
             ["Hunter_Ripper"] = "리퍼", ["Hunter_SmileyFace"] = "광대",
         };
 

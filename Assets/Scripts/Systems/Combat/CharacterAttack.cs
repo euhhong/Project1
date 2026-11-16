@@ -210,7 +210,7 @@ namespace Project1.Systems
             return multiplier > 1f;
         }
 
-        /// <summary>평타(약·강·달리기 점프 공격)의 준비 시간(선딜레이)에 더하는 초 — 캐릭터를 고를 때 정한다(예: 하스터 0.1초). 두 번째 날아 차기·스킬은 그대로.</summary>
+        /// <summary>평타(약·강·달리기 점프 공격)의 준비 시간(선딜레이)에 더하는 초 — 캐릭터를 고를 때 정한다(예: 노란옷의 왕 0.1초). 두 번째 날아 차기·스킬은 그대로.</summary>
         public void SetExtraWindup(float seconds) => extraWindup = Mathf.Max(0f, seconds);
 
         public void SetAttackSlots(HitboxSlot light, HitboxSlot heavy)
@@ -303,7 +303,7 @@ namespace Project1.Systems
                         StartSwipe(input.AttackSwipe);
                         break;
                     }
-                    // 공중 공격 키를 다른 기능이 대신 쓴다(예: 루키노 — 높이 떨어지는 중 공격 = 도약 스킬의 내려찍기). 누른 키는 뗄 때까지 무시.
+                    // 공중 공격 키를 다른 기능이 대신 쓴다(예: 재앙의 도마뱀 — 높이 떨어지는 중 공격 = 도약 스킬의 내려찍기). 누른 키는 뗄 때까지 무시.
                     if (!grounded && input.AttackPressed && TryGetComponent(out IAirAttackOverride airOverride) && airOverride.OverridesAirAttack)
                     {
                         waitAirRelease = !(input.LightAttack || input.HeavyRelease);
@@ -505,7 +505,7 @@ namespace Project1.Systems
             {
                 if (IsFollowUpKick && AttackPhase == AttackPhase.Recovery) { FollowUpRecovery(dt); return; }
                 float length = PhaseLength(spec, AttackPhase) + (WallBounced && AttackPhase == AttackPhase.Recovery ? wallBounceRecovery : 0f)
-                             + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f) // 캐릭터별 평타 선딜레이 더하기(예: 하스터)
+                             + (AttackPhase == AttackPhase.Windup && !IsFollowUpKick ? extraWindup : 0f) // 캐릭터별 평타 선딜레이 더하기(예: 노란옷의 왕)
                              + (InChargedRecovery ? chargedRecovery : 0f);                              // 모은 강공격 후딜레이 더하기(예: 사냥터지기)
                 if (ChargedHeavyGround && chargedHit && AttackPhase == AttackPhase.Recovery) length = chargedHitRecovery; // 맞혔으면 후딜레이 없이 바로 끝
                 if (phaseTime < length)

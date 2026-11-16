@@ -7,7 +7,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 기절 표시: 이 캐릭터가 기절(ICharacterStun.IsStunned)한 동안 머리 위를 작은 병아리 몇 마리가 빙빙 돌고,
     /// 그 위에 작은 게이지가 기절 시간 동안 차오른다(가득 차면 풀림). 기절이 끝나면 사라진다.
-    /// 머리 위치는 Humanoid면 머리 뼈, 아니면(하스터 등 Generic) 이름에 "head"가 든 뼈, 그것도 없으면 CharacterController 꼭대기.
+    /// 머리 위치는 Humanoid면 머리 뼈, 아니면(노란옷의 왕 등 Generic) 이름에 "head"가 든 뼈, 그것도 없으면 CharacterController 꼭대기.
     /// 도형(구·큐브·쿼드)으로만 만들어 외부 에셋이 없다. 캐릭터 루트에 붙인다(CharacterLoadout / StunDizzyAttacher). 연출 전용.
     /// </summary>
     [DisallowMultipleComponent]

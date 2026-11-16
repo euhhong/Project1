@@ -16,7 +16,7 @@ namespace Project1.Systems
         public readonly bool Charge;
         /// <summary>0보다 크면 시전한 지 이만큼(초) 지나 E를 한 번 더 누른다(손전등 넣기).</summary>
         public readonly float RepressAfter;
-        /// <summary>도약 내려찍기(루키노): 공중에서 목표 위에 오면 공격 키.</summary>
+        /// <summary>도약 내려찍기(재앙의 도마뱀): 공중에서 목표 위에 오면 공격 키.</summary>
         public readonly bool AirSlam;
         /// <summary>자가치료: 체력이 줄었고 안전할 때만.</summary>
         public readonly bool SelfHeal;

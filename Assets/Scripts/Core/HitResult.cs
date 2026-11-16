@@ -40,7 +40,7 @@ namespace Project1.Core
         /// <summary>맞은 쪽을 밀어내는 속도(m/s, 월드, 수평). 0이면 밀지 않는다(예: 맹인 지팡이 = 넉백).</summary>
         public Vector3 Knockback;
 
-        /// <summary>맞아도 밀려나지 않는 공격인지(예: 하스터 촉수 내려찍기). 기본 피격 넉백(DefaultHitKnockback)이 건너뛴다. 피해·경직은 그대로.</summary>
+        /// <summary>맞아도 밀려나지 않는 공격인지(예: 노란옷의 왕 촉수 내려찍기). 기본 피격 넉백(DefaultHitKnockback)이 건너뛴다. 피해·경직은 그대로.</summary>
         public bool NoKnockback;
 
         /// <summary>데미지 없이 밀어내기만 하는 공격인지(예: 맹인 지팡이). 데미지 규칙을 만들 때 이걸 보고 건너뛴다.</summary>
@@ -58,7 +58,7 @@ namespace Project1.Core
         /// <summary>강공격을 모은 시간(초). 데미지 규칙이 강공격 피해를 늘리는 데 쓴다.</summary>
         public float Charge;
 
-        /// <summary>이 히트의 기본 피해를 직접 정한 값(스킬이 정함, 예: 루키노 내려찍기 30). 0이면 규칙 표(DamageRules)의 값.</summary>
+        /// <summary>이 히트의 기본 피해를 직접 정한 값(스킬이 정함, 예: 재앙의 도마뱀 내려찍기 30). 0이면 규칙 표(DamageRules)의 값.</summary>
         public float BaseDamage;
 
         /// <summary>세기 배율(0이면 1).</summary>

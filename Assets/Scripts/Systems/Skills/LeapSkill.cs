@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 도약 → 내려찍기(루키노).
+    /// 도약 → 내려찍기(재앙의 도마뱀).
     /// - 쓰면 앞으로 크게 포물선을 그리며 뛰어오른다(leapHeight 12m = 보통 점프의 10배). 떠 있는 동안 앞으로 forwardSpeed로 날아간다.
     /// - 공중에서 공격 키를 누르면 바로 아래 착지 지점에 공격 범위(slamRadius)가 뜨고, 빠르게 내리꽂는다.
     ///   땅에 닿는 순간 범위 안의 다른 캐릭터를 모두 맞힌다(HitEvents, 부위는 몸통). 맞은 상대는 slamStun초 경직(CharacterStun). 그 뒤 slamRecovery 동안 못 움직인다.

@@ -5,11 +5,11 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 하스터 다리(치마 밑 촉수 다섯 가닥) 꿈틀거림. 모델(Hunter_Hastur)의 다리는 사람 다리가 아니라 골반 아래 촉수 뼈 사슬 다섯 개
+    /// 노란옷의 왕 다리(치마 밑 촉수 다섯 가닥) 꿈틀거림. 모델(Hunter_Hastur)의 다리는 사람 다리가 아니라 골반 아래 촉수 뼈 사슬 다섯 개
     /// (앞 왼쪽 biped_bone_09~13, 앞 오른쪽 14~18, 뒤 19~21, 뒤 왼쪽 44·39·38·25, 뒤 오른쪽 37·36·35·29 — Blender로 확인, 가닥마다 따로 무게가 잡혀 있다)이고,
     /// 사람 모양(Humanoid) 이동 모션은 이 뼈들을 움직이지 않는다. 그래서 매 프레임 모션이 끝난 뒤 각 가닥을 밑동에서 끝으로 흐르는 물결로 굽힌다:
     /// 위아래(땅을 짚었다 듦) + 좌우. 끝으로 갈수록 크게, 가닥마다 박자를 어긋나게(지렁이처럼 차례로).
-    /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때도 아주 조금). 캐릭터 루트에 붙인다(CharacterLoadout, 하스터만). 연출 전용.
+    /// 움직이는 빠르기에 따라 커지고 빨라진다(가만히 있을 때도 아주 조금). 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만). 연출 전용.
     /// </summary>
     [DisallowMultipleComponent]
     public class HasturLegWriggle : MonoBehaviour

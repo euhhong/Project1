@@ -70,14 +70,14 @@ namespace Project1.Presentation.EditorTools
             ("Run_F", "Idle_Hunter"), ("Run_B", "Idle_Hunter"), ("Run_L", "Idle_Hunter"), ("Run_R", "Idle_Hunter"),
             ("Stairs_Up", "Idle_Hunter"), // 계단도 미끄러져 오른다
         };
-        // 하스터: 발이 없어 걷기·달리기 모두 꾸물대며 미끄러지는 모션 하나로
+        // 노란옷의 왕: 발이 없어 걷기·달리기 모두 꾸물대며 미끄러지는 모션 하나로
         private static readonly (string from, string to)[] HasturCrawl =
         {
             ("Walk_F", "Move_Hastur"), ("Walk_B", "Move_Hastur"), ("Walk_L", "Move_Hastur"), ("Walk_R", "Move_Hastur"),
             ("Run_F", "Move_Hastur"), ("Run_B", "Move_Hastur"), ("Run_L", "Move_Hastur"), ("Run_R", "Move_Hastur"),
             ("Stairs_Up", "Move_Hastur"),
         };
-        // 하스터 공격: 하스터 모델은 Humanoid가 아닌 Generic 리그라 Mixamo 모션이 재생되지 않는다 → 모델 뼈에 직접 키를 넣은 모션
+        // 노란옷의 왕 공격: 노란옷의 왕 모델은 Humanoid가 아닌 Generic 리그라 Mixamo 모션이 재생되지 않는다 → 모델 뼈에 직접 키를 넣은 모션
         // (HasturSlamMotionBuilder → _Motions/Generic/Attack_Light_HasturSlam.anim). 약·강·달리기 점프 공격 모두 이것으로.
         public static readonly string[] HasturSlamSlots = { "Attack_Light", "Attack_Heavy", "Attack_RunJump_Survivor" };
         private static readonly (string from, string to)[] HasturSlam =
@@ -87,14 +87,14 @@ namespace Project1.Presentation.EditorTools
             // 감시자 공통: 사냥터지기·안토니오
             ("Hunter", new[] { HunterOverrides }),
             // 아래는 감시자 공통 + 기본 공격만 바꾼다
-            // 루키노: 가로 베기. 대기 = 사람보다 큰 돌연변이라 상체를 편하게 앞으로 구부린 대기(Idle_Luchino, Blender make_hunched_idle.py)
+            // 재앙의 도마뱀: 가로 베기. 대기 = 사람보다 큰 돌연변이라 상체를 편하게 앞으로 구부린 대기(Idle_Luchino, Blender make_hunched_idle.py)
             ("Luchino", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Luchino"), ("Idle", "Idle_Luchino") } }),
             // 공장장: 대기 = 자연스러운 숨쉬기 대기(Mixamo Idle, 걷기처럼 몸이 굳지 않게)
             ("HellEmber", new[] { HunterOverrides, new[] { ("Idle", "Idle_HellEmber") } }),
             // 안토니오: 대기 = 바이올린 켜기(Mixamo Playing The Violin의 활 긋기 부분만, 1.5배속 — Tools/Blender/make_loop_clip.py)
             ("Antonio", new[] { HunterOverrides, new[] { ("Idle", "Idle_Antonio") } }),
             ("Geisha", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Geisha") }, GhostGlide }), // 붉은나비: 오른손 찌르기, 유령처럼 미끄러져 이동
-            // 하스터: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다.
+            // 노란옷의 왕: 발이 없어 걷기·달리기 모두 몸을 숙였다 펴며 꾸물대는 모션(Zombie Attack 앞부분 왕복, Tools/Blender/make_pingpong.py)으로 미끄러져 간다.
             // 공격 = 두 손을 모아 머리 위 → 아래로 내려치기(HasturSlam — Generic 모델 전용 모션, 뒤에 적어 이긴다)
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl, HasturSlam }),
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
@@ -119,7 +119,7 @@ namespace Project1.Presentation.EditorTools
             foreach (var slot in Slots)
             {
                 var clip = LoadFbxClip($"{MixamoMotionPostprocessor.Folder}/{slot}.fbx");
-                // Generic 모델 전용 모션(하스터 내려치기)은 _Motions/Generic/<자리>.anim
+                // Generic 모델 전용 모션(노란옷의 왕 내려치기)은 _Motions/Generic/<자리>.anim
                 if (clip == null) clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{HasturSlamMotionBuilder.Folder}/{slot}.anim");
                 // 옆·뒤 달리기 파일이 없으면 같은 방향 걷기 파일을 빠르게 돌려 쓴다(임시 모션보다 자연스럽다).
                 string walkSlot = slot.StartsWith("Run_") ? "Walk_" + slot.Substring(4) : null;

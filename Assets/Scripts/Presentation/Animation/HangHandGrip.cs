@@ -9,7 +9,7 @@ namespace Project1.Presentation
     /// - 위팔: 손목이 턱 모서리 바로 위(윗면 + wristAbove, 앞면에서 wristIn 안쪽)로 가도록 어깨에서 돌린다(최대 armMaxAngle도).
     /// - 손: 손가락(가운데 손가락 뿌리 쪽)이 턱 윗면을 넘어 벽 쪽·약간 아래를 향하게 돌린다(최대 wristMaxAngle도).
     /// 잡기 뒤 절반(HangGrab)·매달림(Hang)에서만 켜고, 옆 이동·모서리 돌기(HangHop) 동안은 부드럽게 꺼 그 모션을 그대로 둔다.
-    /// 감시자(하스터는 HasturHangPose가 따로 한다)에는 쓰지 않는다. CharacterTraversalAnimator가 캐릭터 루트에 붙인다.
+    /// 감시자(노란옷의 왕은 HasturHangPose가 따로 한다)에는 쓰지 않는다. CharacterTraversalAnimator가 캐릭터 루트에 붙인다.
     /// </summary>
     [DefaultExecutionOrder(100)] // 다른 뼈 보정(몸통 돌리기 등)이 끝난 뒤 손을 턱에 맞춘다
     [DisallowMultipleComponent]
