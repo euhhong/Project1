@@ -7,6 +7,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 게임 중 배경음악(FE): 플레이를 시작하면 저절로 생긴다(붙일 것 없음). 내 캐릭터(LocalPlayerInput)와 가장 가까운 적의 거리로 고른다:
     /// - 적이 가까이(NearRange m 안, 조우) = Resources/Bgm/Chase (실내·야외 모두)
+    /// - 3층(실내·테라스 모두, 지붕 위는 빼고) = Resources/Bgm/Floor3
     /// - 실내(카메라 CameraIndoorSensor — 머리 위 천장) = Resources/Bgm/Indoor
     /// - 야외 = Resources/Bgm/Outdoor, 야외에서 적이 완전히 멀면(FarRange m 넘게, 적이 없어도) = Resources/Bgm/OutdoorFar
     /// 적이 멀어진 뒤에도 ClearDelay초는 Chase를 이어 간다. 실내·야외는 IndoorHold초 이어져야 바꾼다(문턱에서 깜빡이지 않게).
@@ -14,7 +15,9 @@ namespace Project1.Presentation
     /// </summary>
     public class InGameBgm : MonoBehaviour
     {
-        public const string IndoorTrack = "Indoor", OutdoorTrack = "Outdoor", OutdoorFarTrack = "OutdoorFar", ChaseTrack = "Chase";
+        public const string IndoorTrack = "Indoor", OutdoorTrack = "Outdoor", OutdoorFarTrack = "OutdoorFar", ChaseTrack = "Chase", Floor3Track = "Floor3";
+        // 3층(바닥 높이 12.15m, MapBlockoutBuilder 층고 6m): 발이 Floor3Enter 위면 3층, Floor3Leave 밑으로 내려가면 풀림. 지붕(RoofHeight, RoofSunBurn과 같음) 위는 3층 아님.
+        private const float Floor3Enter = 11.5f, Floor3Leave = 10.5f, RoofHeight = 16.5f;
         private const float CheckInterval = 0.25f;
         private const float NearRange = 20f;   // 이 안에 적이 있으면 '조우'
         private const float FarRange = 40f;    // 가장 가까운 적이 이보다 멀면 '완전히 멂'(돌아올 땐 FarRange - FarMargin 안으로 와야 풀림)
@@ -29,7 +32,7 @@ namespace Project1.Presentation
         public static bool Suppressed { get; set; }
 
         private float checkAt, enemySeenAt = float.NegativeInfinity, indoorChangedAt;
-        private bool indoor, rawIndoor, far = true;
+        private bool indoor, rawIndoor, far = true, floor3;
         private string playing; // 이 스크립트가 튼 곡(null = 안 틂)
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -68,7 +71,10 @@ namespace Project1.Presentation
             if (far && d < FarRange - FarMargin) far = false;
             else if (!far && d > FarRange) far = true;
             bool calm = Time.unscaledTime - enemySeenAt >= ClearDelay;
-            string want = !calm ? ChaseTrack : indoor ? IndoorTrack : far ? OutdoorFarTrack : OutdoorTrack;
+            float y = input.transform.position.y;
+            if (!floor3 && y >= Floor3Enter && y < RoofHeight) floor3 = true;
+            else if (floor3 && (y < Floor3Leave || y >= RoofHeight)) floor3 = false;
+            string want = !calm ? ChaseTrack : floor3 ? Floor3Track : indoor ? IndoorTrack : far ? OutdoorFarTrack : OutdoorTrack;
             if (want == playing) return;
             playing = want;
             BgmPlayer.Play(want);

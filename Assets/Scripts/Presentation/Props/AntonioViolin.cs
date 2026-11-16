@@ -45,6 +45,14 @@ namespace Project1.Presentation
         private int violinLayer = -1;
         private float layerWeight;
         private float play; // 0 = 들고 다님, 1 = 켜는 자세
+
+        /// <summary>바이올린을 켜는 정도(0 = 들고 다님, 1 = 켜는 중). AntonioViolinSound가 연주 소리 크기로 쓴다.</summary>
+        public float Playing01 => isActiveAndEnabled ? play : 0f;
+
+        private void Awake()
+        {
+            if (!TryGetComponent(out AntonioViolinSound _)) gameObject.AddComponent<AntonioViolinSound>(); // 연주 소리
+        }
         private float length = 0.6f;
 
         private void OnDestroy()
