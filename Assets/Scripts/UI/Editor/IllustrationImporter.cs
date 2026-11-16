@@ -15,6 +15,8 @@ namespace Project1.UI.Editor
 
         private static float SeedMin = 0.9f;  // 테두리에서 이 정도로 흰 픽셀부터 배경으로 본다
         private static bool EraseFlooded; // true = 번진 배경을 색 없이 지움(StrongWhite 그림)
+        private static float MinKeepAlpha; // 번진 배경에서 이보다 옅게 남는 픽셀은 지움(옅은 픽셀 색 얼룩 방지, 그림별 MinAlpha)
+        private static readonly Dictionary<string, float> MinAlpha = new() { ["Hunter_Hastur"] = 0.3f };
         private static float FloodMin = 0.45f; // 배경은 이보다 밝은 픽셀로만 번진다
         private static float FullMin = 0.8f;  // 이보다 밝으면 흰색을 완전히 뺀다(그 사이는 조금만)
         private static float MaxStep = 0.12f; // 이웃과 밝기 차가 이보다 크면(외곽선) 번지지 않는다
@@ -24,9 +26,13 @@ namespace Project1.UI.Editor
         // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
         private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
         // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
-        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue), ["Survivor_Mercenary"] = (80, int.MaxValue) };
-        // 흰 배경 빼기를 더 세게(그림마다): 카우보이 — 둘레에 날리는 옅은 흰/분홍 천 조각 효과까지 배경으로 빼 버린다(사용자 요청).
-        private static readonly Dictionary<string, (float flood, float full, float step)> StrongWhite = new() { ["Survivor_Cowboy"] = (0.3f, 0.62f, 0.3f) };
+        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue), ["Survivor_Mercenary"] = (80, int.MaxValue), ["Hunter_Hastur"] = (60, int.MaxValue) };
+        // 흰 배경 빼기를 더 세게(그림마다) — 둘레에 날리는 옅은 천 조각 효과까지 배경으로 빼 버린다. 지금은 쓰는 그림 없음.
+        private static readonly Dictionary<string, (float flood, float full, float step)> StrongWhite = new();
+        // 누끼 뒤 붉은빛 중화 세기(그림마다, 0~1): 카우보이 — 너무 붉지 않게.
+        private static readonly Dictionary<string, float> RedTone = new() { ["Survivor_Cowboy"] = 1f };
+        // 누끼 뒤 캐릭터 둘레에 그리는 테두리(그림마다): 두께(픽셀)와 색. 카우보이 — 테두리 강화.
+        private static readonly Dictionary<string, (int width, Color32 color)> Outline = new() { ["Survivor_Cowboy"] = (4, new Color32(245, 236, 222, 255)) };
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
         private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) },
             // 검은 배경 그림: 배경에 붙은 검은 옷(칸 안에서는 새까만 배경만 빠짐)
@@ -98,8 +104,11 @@ namespace Project1.UI.Editor
                 var (encMin, encMax) = EnclosedRanges.TryGetValue(id, out var range) ? range : (EnclosedMinArea, int.MaxValue);
                 float flood0 = FloodMin, full0 = FullMin, step0 = MaxStep;
                 if (StrongWhite.TryGetValue(id, out var strong)) { FloodMin = strong.flood; FullMin = strong.full; MaxStep = strong.step; EraseFlooded = true; }
+                MinKeepAlpha = MinAlpha.TryGetValue(id, out var ma) ? ma : 0f;
                 try { RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(id), encMin, encMax, ProtectRects.TryGetValue(id, out var keep) ? keep : null); }
-                finally { FloodMin = flood0; FullMin = full0; MaxStep = step0; EraseFlooded = false; }
+                finally { FloodMin = flood0; FullMin = full0; MaxStep = step0; EraseFlooded = false; MinKeepAlpha = 0f; }
+                if (RedTone.TryGetValue(id, out var tone)) ToneDownRed(px, tone);
+                if (Outline.TryGetValue(id, out var line)) AddOutline(px, tex.width, tex.height, line.width, line.color);
                 tex.SetPixels32(px);
                 System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
@@ -107,6 +116,62 @@ namespace Project1.UI.Editor
                 return true;
             }
             finally { Object.DestroyImmediate(tex); }
+        }
+
+        /// <summary>붉은빛 중화: 붉은 곳일수록 채도를 낮추고 전체 색온도를 살짝 식힌다(투명도는 그대로). strength 0~1.</summary>
+        public static void ToneDownRed(Color32[] px, float strength)
+        {
+            for (int i = 0; i < px.Length; i++)
+            {
+                Color c = px[i];
+                if (c.a <= 0f) continue;
+                float lum = c.r * 0.299f + c.g * 0.587f + c.b * 0.114f;
+                float red = Mathf.Clamp01((c.r - Mathf.Max(c.g, c.b)) * 2.5f);
+                float desat = (0.18f + 0.27f * red) * strength;
+                c = Color.Lerp(c, new Color(lum, lum, lum, c.a), desat);
+                c.r *= 1f - 0.06f * strength; c.b *= 1f + 0.04f * strength;
+                px[i] = new Color(Mathf.Clamp01(c.r), Mathf.Clamp01(c.g), Mathf.Clamp01(c.b), c.a);
+            }
+        }
+
+        /// <summary>
+        /// 캐릭터 둘레 테두리: 불투명한 부분(알파 0.5 이상) 바깥으로 width 픽셀 두께의 선을 그 뒤에 깐다(가장자리 반투명 픽셀은 선 위에 겹침, 바깥 1픽셀은 부드럽게).
+        /// </summary>
+        public static void AddOutline(Color32[] px, int w, int h, int width, Color32 color)
+        {
+            int n = w * h;
+            var dist = new int[n];
+            var queue = new int[n];
+            int head = 0, tail = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (px[i].a >= 128) { dist[i] = 0; queue[tail++] = i; }
+                else dist[i] = int.MaxValue;
+            }
+            while (head < tail)
+            {
+                int i = queue[head++];
+                int d = dist[i] + 1;
+                if (d > width + 1) continue;
+                int x = i % w, y = i / w;
+                void Visit(int j) { if (dist[j] > d) { dist[j] = d; queue[tail++] = j; } }
+                if (x > 0) Visit(i - 1);
+                if (x < w - 1) Visit(i + 1);
+                if (y > 0) Visit(i - w);
+                if (y < h - 1) Visit(i + w);
+            }
+            for (int i = 0; i < n; i++)
+            {
+                if (dist[i] == 0 || dist[i] > width + 1) continue;
+                float la = dist[i] <= width ? 1f : 0.45f; // 바깥 1픽셀은 반쯤
+                var c = px[i];
+                float a = c.a / 255f;
+                // 원래 픽셀(반투명)을 선 위에 얹는다
+                float outA = a + la * (1f - a);
+                if (outA <= 0f) continue;
+                byte Mix(byte top, byte bottom) => (byte)Mathf.RoundToInt((top * a + bottom * la * (1f - a)) / outA);
+                px[i] = new Color32(Mix(c.r, color.r), Mix(c.g, color.g), Mix(c.b, color.b), (byte)Mathf.RoundToInt(outA * 255f));
+            }
         }
 
         /// <summary>테두리가 불투명한 흰색(white = true) 또는 검은색 배경인지.</summary>
@@ -205,7 +270,7 @@ namespace Project1.UI.Editor
                     px[i] = new Color32(c.r, c.g, c.b, (byte)Mathf.RoundToInt(a * c.a));
                     continue;
                 }
-                if (a <= 0.004f) { px[i] = new Color32(255, 255, 255, 0); continue; }
+                if (a <= 0.004f || a < MinKeepAlpha) { px[i] = new Color32(255, 255, 255, 0); continue; }
                 byte Un(byte v) => (byte)Mathf.RoundToInt(Mathf.Clamp01((v / 255f - (1f - a)) / a) * 255f);
                 px[i] = new Color32(Un(c.r), Un(c.g), Un(c.b), (byte)Mathf.RoundToInt(a * c.a));
             }

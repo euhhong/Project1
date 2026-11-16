@@ -15,7 +15,7 @@
 | 리퍼 | Hunter_Ripper.png | ✅ (1402×1122, 검은 배경 — 채팅 첨부본, 원본 PNG 오면 바꿈) |
 | 광대 | Hunter_SmileyFace.png | ✅ (1402×1122, 흰 배경) |
 | 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
-| 카우보이 | Survivor_Cowboy.png | ✅ (1402×1122, 흰 배경 — 둘레 흰 천 조각 효과는 뺌) |
+| 카우보이 | Survivor_Cowboy.png | ✅ (1402×1122, 흰 배경 — 붉은빛 중화 + 테두리 선) |
 | 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |
 | 포워드 | Survivor_Forward.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
 | 용병 | Survivor_Mercenary.png | ✅ (1402×1122, 흰 배경 — 붉은빛을 조금 빼고 넣음) |
