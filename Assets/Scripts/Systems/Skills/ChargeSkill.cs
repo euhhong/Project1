@@ -36,6 +36,8 @@ namespace Project1.Systems
         [Min(0f)] public float ramSideExtra = 0.2f;
         [Tooltip("상대 몸을 상대의 앞·뒤로 이만큼(m) 더 두껍게 본다(박치기 판정만). 캐릭터는 좌우로 넓고 앞뒤로 얇아서, 옆으로 선 상대(내 쪽으로 어깨를 보인 상대)를 스치면 빗나가기 쉬움 — 그 앞뒤를 채운다.")]
         [Min(0f)] public float ramDepthExtra = 0.25f;
+        [Tooltip("박는 순간 A·D를 누르고 있으면 넉백 방향을 그쪽으로 이만큼(도) 튼다.")]
+        [Range(0f, 45f)] public float ramSteerAngle = 15f;
         [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
         [Min(0f)] public float knockSpeedPerMeter = 1f;
         [Min(0f)] public float minKnockSpeed = 5f, maxKnockSpeed = 25f;
@@ -75,10 +77,13 @@ namespace Project1.Systems
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
             if (input.Skill && elapsed > cancelGrace) { recovery = 0f; return true; } // E를 한 번 더 → 돌진 취소
-            return ShouldEndEarly(ctx.gameObject, elapsed, out recovery);
+            return RamOrCrash(ctx.gameObject, elapsed, input.Move.x, out recovery); // A·D = 박는 순간 넉백 방향을 살짝 틂
         }
 
-        public override bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery)
+        public override bool ShouldEndEarly(GameObject owner, float elapsed, out float recovery) => RamOrCrash(owner, elapsed, 0f, out recovery);
+
+        /// <summary>돌진 중 매 틱: 캐릭터에 박음(넉백) / 벽에 박음(기절) / 계속. steer = 좌우 입력(-1 A ~ +1 D) — 박는 순간 넉백 방향을 그쪽으로 ramSteerAngle만큼 튼다.</summary>
+        private bool RamOrCrash(GameObject owner, float elapsed, float steer, out float recovery)
         {
             recovery = 0f;
             var motor = owner.GetComponent<CharacterMotor>();
@@ -110,6 +115,7 @@ namespace Project1.Systems
                 // 넉백 방향 = 돌진하던 쪽(내가 보던 앞). 두 몸의 중심을 잇는 방향은 옆을 스치듯 박으면 엉뚱하게 옆으로 튀어서 쓰지 않는다.
                 Vector3 dir = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up);
                 dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up).normalized;
+                if (Mathf.Abs(steer) > 0.1f) dir = Quaternion.AngleAxis(Mathf.Clamp(steer, -1f, 1f) * ramSteerAngle, Vector3.up) * dir; // A(왼쪽)·D(오른쪽)를 누르고 있으면 그쪽으로 살짝
                 float speed = Mathf.Clamp(distance * knockSpeedPerMeter, minKnockSpeed, maxKnockSpeed);
                 float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5.5초)
                 Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin);
