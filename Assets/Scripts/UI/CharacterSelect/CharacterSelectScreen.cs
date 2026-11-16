@@ -1,56 +1,66 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace Project1.UI
 {
     /// <summary>
-    /// 캐릭터 선택 화면. 게임 씬을 시작하면 먼저 뜬다(CharacterSelectBootstrap).
+    /// 캐릭터 선택 화면(캐릭터 선택 씬 Assets/Scenes/CharacterSelect.unity의 CharacterSelect 오브젝트). 씬을 열면 스스로 시작한다.
     /// - W/↑ = 감시자, S/↓ = 생존자, A·D/←·→ = 캐릭터 넘기기, 1·Space·Enter = 연습, 2·G = 게임 시작(AI 봇). 화면 버튼·화살표로도 된다.
-    /// - 선택 중에는 플레이어 캐릭터를 꺼 둔다. 화면은 CharacterSelectView(UI), 3D 모델은 CharacterSelectStage(멀리 떨어진 임시 무대)가 맡는다.
-    /// - 시작하면 화면과 무대를 지우고, 플레이어 캐릭터 루트의 모델을 고른 캐릭터로 바꾼 뒤 다시 켠다.
-    /// 씬에 모델을 늘어놓지 않는다. 무대는 실행 중에만 만든다.
+    /// - 화면은 CharacterSelectView(씬의 CharacterSelectUI), 3D 모델은 CharacterSelectStage(씬의 SelectStage 카메라·조명)가 맡는다.
+    /// - 고르면 CharacterPick에 적어 두고 게임 씬(SampleScene, 미리 불러 둠)으로 넘어간다 — 게임 씬에서 CharacterSelectBootstrap이 캐릭터를 입힌다.
+    /// 씬에 모델을 늘어놓지 않는다. 모델은 실행 중에만 늘어놓는다.
     /// </summary>
     public class CharacterSelectScreen : MonoBehaviour
     {
+        public const string SceneName = "CharacterSelect";
+        public const string GameSceneName = "SampleScene";
         private const float DragDegreesPerPixel = 0.3f; // 모델은 끌어서 조금만 돌려 볼 수 있다
 
         private CharacterRoster roster;
-        private GameObject player;
-        private Camera mainCamera;
         private CharacterSelectStage stage;
         private CharacterSelectView view;
+        private AsyncOperation preload;
         private List<CharacterRoster.Entry> shown;
         private CharacterRole role = CharacterRole.Survivor;
         private readonly Dictionary<CharacterRole, int> index = new() { [CharacterRole.Survivor] = 0, [CharacterRole.Hunter] = 0 };
         private bool started;
 
-        public void Init(CharacterRoster roster, GameObject player)
+        private void Start()
         {
-            this.roster = roster;
-            this.player = player;
-            // 지금 플레이어 모델과 같은 캐릭터를 처음에 고른 상태로 둔다.
-            var current = player.GetComponentInChildren<Animator>();
-            if (current != null && current.avatar != null)
+            roster = CharacterRoster.Load();
+            if (roster == null || roster.entries.Count == 0) { Debug.LogWarning("[UI] CharacterRoster가 없어 캐릭터 선택 화면을 띄우지 못했습니다."); return; }
+
+            // 지난번에 고른 캐릭터부터 보여 준다.
+            string lastId = CharacterPick.LastId;
+            CharacterPick.Clear();
+            if (!string.IsNullOrEmpty(lastId))
                 foreach (var r in new[] { CharacterRole.Survivor, CharacterRole.Hunter })
                 {
-                    int i = roster.Of(r).FindIndex(e => current.avatar.name.StartsWith(e.id));
+                    int i = roster.Of(r).FindIndex(e => e.id == lastId);
                     if (i >= 0) { role = r; index[r] = i; }
                 }
 
-            player.SetActive(false);
-            mainCamera = Camera.main;
-            if (mainCamera != null) mainCamera.enabled = false;
-
             float s = Mathf.Max(0.75f, Screen.height / (float)RuntimeUiPanel.ReferenceResolution.y);
             var size = CharacterSelectView.ModelCanvasSize * s; // 모델 칸보다 크게 그려 튀어나온 부분(꼬리·촉수)도 보이게
-            stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)), CharacterSelectView.ModelCanvasSize.y / CharacterSelectView.ModelPanelSize.y);
-            view = new CharacterSelectView(stage.Texture);
+            var stageRoot = GameObject.Find(CharacterSelectStage.RootName);
+            stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)),
+                CharacterSelectView.ModelCanvasSize.y / CharacterSelectView.ModelPanelSize.y, stageRoot != null ? stageRoot.transform : null);
+            view = new CharacterSelectView(stage.Texture, FindAnyObjectByType<UIDocument>());
             view.StepRequested += Step;
             view.RoleRequested += r => { if (r != role) ShowRole(r); };
             view.StartRequested += battle => StartCurrent(battle);
             view.ModelDragged += dx => stage.Rotate(-dx * DragDegreesPerPixel);
             ShowRole(role);
+
+            // 게임 씬을 미리 불러 둔다(고르면 바로 넘어감).
+            if (Application.CanStreamedLevelBeLoaded(GameSceneName))
+            {
+                preload = SceneManager.LoadSceneAsync(GameSceneName);
+                if (preload != null) preload.allowSceneActivation = false;
+            }
         }
 
         private void ShowRole(CharacterRole newRole)
@@ -111,29 +121,21 @@ namespace Project1.UI
             view.Tick(Time.unscaledDeltaTime);
         }
 
-        /// <summary>고른 캐릭터로 시작한다. battle = false: 연습 모드(지금 테스트 화면 — 훈련 상대), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
+        /// <summary>고른 캐릭터로 게임 씬을 연다. battle = false: 연습 모드(훈련 상대·쿨타임 없음), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
         public void StartGame(CharacterRoster.Entry entry, bool battle = false)
         {
             started = true;
-            Teardown();
-            if (mainCamera != null) mainCamera.enabled = true;
-            player.SetActive(true);
-            CharacterLoadout.Apply(player, entry);
-            Project1.Systems.SkillCooldowns.Disabled = !battle; // 연습 모드 = 쿨타임 없이 스킬, 게임 시작 = 쿨타임 그대로
-            if (battle) BattleMatch.Begin(roster, player, entry);
-            else PracticeExit.Begin(); // 연습 모드: ESC·오른쪽 위 버튼으로 선택 화면으로 돌아가기
-            Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
-            Destroy(gameObject);
+            CharacterPick.Set(entry, battle);
+            if (preload != null) preload.allowSceneActivation = true;
+            else SceneManager.LoadScene(GameSceneName);
         }
 
-        private void Teardown()
+        private void OnDestroy()
         {
             view?.Dispose();
             view = null;
             stage?.Dispose();
             stage = null;
         }
-
-        private void OnDestroy() => Teardown();
     }
 }

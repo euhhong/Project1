@@ -1,11 +1,13 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Project1.UI
 {
     /// <summary>
-    /// 씬을 시작하면 캐릭터 선택 화면을 자동으로 띄운다. 씬에 아무것도 붙일 필요가 없다.
-    /// 조건: Resources에 CharacterRoster가 있고 showOnStart가 켜져 있으며, 씬에 로컬 플레이어(LocalPlayerInput)가 있을 때.
-    /// 끄려면 Assets/UI/Resources/CharacterRoster의 Show On Start를 끈다.
+    /// 게임 씬(SampleScene 등 — 로컬 플레이어 LocalPlayerInput이 있는 씬)이 열리면, 캐릭터 선택 씬에서 고른 캐릭터(CharacterPick)를 입힌다:
+    /// 모델 교체(CharacterLoadout.Apply), 연습 모드 = 쿨타임 없음 + ESC 나가기(PracticeExit), 게임 시작 = AI 봇과 전투(BattleMatch).
+    /// 고른 게 없으면(에디터에서 SampleScene을 바로 Play) 캐릭터 선택 씬으로 넘어간다. 씬에 아무것도 붙일 필요가 없다.
+    /// 끄려면 Assets/UI/Resources/CharacterRoster의 Show On Start를 끈다(씬의 플레이어 그대로 시작).
     /// </summary>
     public static class CharacterSelectBootstrap
     {
@@ -14,22 +16,35 @@ namespace Project1.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Boot()
         {
-            // 씬을 다시 불러도(예: 게임 시작 모드에서 R로 다시 하기) 다시 띄운다.
-            if (!hooked) { hooked = true; UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => Show(); }
-            Show();
+            if (!hooked) { hooked = true; SceneManager.sceneLoaded += (s, m) => OnSceneLoaded(); }
+            OnSceneLoaded();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetHook() => hooked = false;
 
-        private static void Show()
+        private static void OnSceneLoaded()
         {
-            if (Object.FindAnyObjectByType<CharacterSelectScreen>() != null) return;
+            var player = Object.FindAnyObjectByType<Project1.Systems.LocalPlayerInput>();
+            if (player == null) return; // 게임 씬이 아님(예: 캐릭터 선택 씬)
             var roster = CharacterRoster.Load();
             if (roster == null || !roster.showOnStart || roster.entries.Count == 0) return;
-            var player = Object.FindAnyObjectByType<Project1.Systems.LocalPlayerInput>();
-            if (player == null) return;
-            new GameObject("CharacterSelect").AddComponent<CharacterSelectScreen>().Init(roster, player.gameObject);
+
+            var entry = CharacterPick.Has ? roster.entries.Find(e => e.id == CharacterPick.EntryId && e.model != null) : null;
+            if (entry == null)
+            {
+                // 고른 캐릭터 없이 게임 씬을 바로 열었다 → 캐릭터 선택 씬부터
+                if (Application.CanStreamedLevelBeLoaded(CharacterSelectScreen.SceneName)) SceneManager.LoadScene(CharacterSelectScreen.SceneName);
+                else Debug.LogWarning($"[UI] 캐릭터 선택 씬({CharacterSelectScreen.SceneName})이 Build Settings에 없어 씬의 플레이어 그대로 시작합니다.");
+                return;
+            }
+
+            bool battle = CharacterPick.Battle;
+            CharacterLoadout.Apply(player.gameObject, entry);
+            Project1.Systems.SkillCooldowns.Disabled = !battle; // 연습 모드 = 쿨타임 없이 스킬, 게임 시작 = 쿨타임 그대로
+            if (battle) BattleMatch.Begin(roster, player.gameObject, entry);
+            else PracticeExit.Begin(); // 연습 모드: ESC·오른쪽 위 버튼으로 선택 화면으로 돌아가기
+            Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
         }
     }
 }

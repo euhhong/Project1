@@ -48,6 +48,19 @@ namespace Project1.UI
             return panel;
         }
 
+        /// <summary>씬에 이미 있는 UIDocument(예: 캐릭터 선택 씬의 CharacterSelectUI — PanelSettings 에셋 연결)를 그대로 쓴다. EventSystem이 없으면 잠깐 만든다.</summary>
+        public static RuntimeUiPanel Attach(UIDocument document)
+        {
+            var panel = document.TryGetComponent(out RuntimeUiPanel p) ? p : document.gameObject.AddComponent<RuntimeUiPanel>();
+            panel.Document = document;
+            if (panel.ownEventSystem == null && FindAnyObjectByType<EventSystem>() == null)
+                panel.ownEventSystem = new GameObject(document.name + " EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            var root = panel.Root;
+            root.style.position = Position.Absolute;
+            root.style.left = 0; root.style.top = 0; root.style.right = 0; root.style.bottom = 0;
+            return panel;
+        }
+
         private void OnDestroy()
         {
             if (ownEventSystem != null) Destroy(ownEventSystem);

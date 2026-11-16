@@ -8,7 +8,7 @@ namespace Project1.UI
     /// <summary>
     /// 게임 시작 모드(임시, UI는 대충): 훈련 상대를 치우고 AI 봇 하나와 싸운다.
     /// - 봇 = 플레이어 캐릭터 루트를 복제(입력만 AiBotInput으로)해 상대 진영 캐릭터 중 무작위 하나를 입혀 플레이어 앞에 세운다.
-    /// - 맞으면 체력이 준다(BattleDamage, 임시 규칙). 어느 쪽이든 체력이 0이 되면 승리/패배를 보여 주고 R로 다시(씬을 다시 불러 캐릭터 선택부터).
+    /// - 맞으면 체력이 준다(BattleDamage, 임시 규칙). 어느 쪽이든 체력이 0이 되면 승리/패배를 보여 주고 R로 다시(캐릭터 선택 씬으로).
     /// - 화면 위에 봇 이름·체력 막대(플레이어 체력은 원래 HUD).
     /// </summary>
     public class BattleMatch : MonoBehaviour
@@ -74,7 +74,7 @@ namespace Project1.UI
             if (result != null && kb != null && kb.rKey.wasPressedThisFrame)
             {
                 BattleDamage.Disable();
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex >= 0 ? SceneManager.GetActiveScene().buildIndex : 0);
+                SceneManager.LoadScene(CharacterSelectScreen.SceneName); // 끝나면 R = 캐릭터 선택 화면으로
             }
         }
 

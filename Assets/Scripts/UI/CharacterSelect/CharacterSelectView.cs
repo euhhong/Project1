@@ -55,12 +55,13 @@ namespace Project1.UI
         // 일러스트 가로 압축(캐릭터별). 루키노: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
         private static readonly Dictionary<string, float> IllustrationWidthScale = new() { ["Hunter_Luchino"] = 0.85f };
 
-        public CharacterSelectView(Texture modelTexture)
+        /// <param name="document">캐릭터 선택 씬의 UIDocument(CharacterSelectUI). 없으면 실행 중에 만든다.</param>
+        public CharacterSelectView(Texture modelTexture, UIDocument document = null)
         {
             titleFont = Resources.Load<Font>("Fonts/EastSeaDokdo-Regular");
             bodyFont = Resources.Load<Font>("Fonts/GowunDodum-Regular");
             radial = MakeRadial(128);
-            panel = RuntimeUiPanel.Create("CharacterSelectUI", 100);
+            panel = document != null ? RuntimeUiPanel.Attach(document) : RuntimeUiPanel.Create("CharacterSelectUI", 100);
             var root = panel.Root;
 
             backdrop = new CharacterSelectBackdrop();

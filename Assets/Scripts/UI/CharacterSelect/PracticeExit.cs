@@ -6,9 +6,8 @@ using UnityEngine.UIElements;
 namespace Project1.UI
 {
     /// <summary>
-    /// 연습 모드에서 나가기: ESC 또는 화면 오른쪽 위 "ESC 나가기" 버튼 → 씬을 다시 불러 캐릭터 선택 화면으로 돌아간다
-    /// (CharacterSelectBootstrap이 씬을 불러올 때 선택 화면을 다시 띄운다 — 게임 시작 모드의 R 다시 하기와 같은 방식).
-    /// 연습 모드를 시작할 때(CharacterSelectScreen.StartGame) 만든다. ESC는 다른 곳에서 쓰지 않는다(커서 잠금은 우클릭·차징 때만).
+    /// 연습 모드에서 나가기: ESC 또는 화면 오른쪽 위 "ESC 나가기" 버튼 → 캐릭터 선택 씬(CharacterSelect)으로 돌아간다.
+    /// 게임 씬이 연습 모드로 시작할 때(CharacterSelectBootstrap) 만든다. ESC는 다른 곳에서 쓰지 않는다(커서 잠금은 우클릭·차징 때만).
     /// </summary>
     public class PracticeExit : MonoBehaviour
     {
@@ -44,8 +43,7 @@ namespace Project1.UI
         {
             if (leaving) return;
             leaving = true;
-            var scene = SceneManager.GetActiveScene();
-            SceneManager.LoadScene(scene.buildIndex >= 0 ? scene.buildIndex : 0);
+            SceneManager.LoadScene(CharacterSelectScreen.SceneName);
         }
 
         private void OnDestroy()
