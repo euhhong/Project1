@@ -228,6 +228,43 @@ namespace Project1.UI.Editor
             for (int i = 0; i < px.Length; i++) { var c = px[i]; px[i] = c.a == 0 ? new Color32(0, 0, 0, 0) : new Color32((byte)(255 - c.r), (byte)(255 - c.g), (byte)(255 - c.b), c.a); }
         }
 
+        /// <summary>
+        /// 어둡게 칠한 배경(무늬 있는 어두운 회갈색) 빼기: 색을 뒤집어, 테두리에서 어둡고 고른 곳으로만 번져 색 없이 지운다(밝은 효과·캐릭터는 남음).
+        /// </summary>
+        public static void RemoveDarkPaintedBackground(Color32[] px, int w, int h, float maxBright, RectInt[] protect = null)
+        {
+            for (int i = 0; i < px.Length; i++) { var c = px[i]; px[i] = new Color32((byte)(255 - c.r), (byte)(255 - c.g), (byte)(255 - c.b), c.a); }
+            float seed = SeedMin, flood = FloodMin, full = FullMin, step = MaxStep;
+            try
+            {
+                SeedMin = 1f - maxBright; FloodMin = 1f - maxBright; FullMin = 1f - maxBright * 0.5f; MaxStep = 0.06f; EraseFlooded = true;
+                RemoveWhiteBackground(px, w, h, false, int.MaxValue, int.MaxValue, protect);
+            }
+            finally { SeedMin = seed; FloodMin = flood; FullMin = full; MaxStep = step; EraseFlooded = false; }
+            for (int i = 0; i < px.Length; i++) { var c = px[i]; px[i] = c.a == 0 ? new Color32(0, 0, 0, 0) : new Color32((byte)(255 - c.r), (byte)(255 - c.g), (byte)(255 - c.b), c.a); }
+        }
+
+        /// <summary>
+        /// 배경까지 그려진 그림(누끼를 딸 수 없는 그림)용: 그림은 그대로 두고 가장자리를 둥글게 서서히 투명하게(어두운 선택 화면 배경에 스며들게).
+        /// feather = 가장자리에서 투명해지는 폭(그림 짧은 변 대비 비율). 아래쪽은 캐릭터가 잘려 있으므로 덜 지운다.
+        /// </summary>
+        public static void FadeEdges(Color32[] px, int w, int h, float feather)
+        {
+            float fw = w * feather, fh = h * feather;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    float top = h - 1 - y; // 위쪽부터 거리(텍스처 y는 아래가 0)
+                    float dx = Mathf.Min(x, w - 1 - x) / fw, dTop = top / fh, dBottom = y / (fh * 0.35f);
+                    float d = Mathf.Min(Mathf.Min(dx, dTop), dBottom);
+                    // 모서리는 둥글게: 두 변에 모두 가까우면 더 빨리 사라짐
+                    float corner = Mathf.Clamp01(dx) * Mathf.Clamp01(Mathf.Min(dTop, dBottom));
+                    float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(Mathf.Min(d, Mathf.Sqrt(corner))));
+                    int i = y * w + x; var c = px[i];
+                    px[i] = new Color32(c.r, c.g, c.b, (byte)Mathf.RoundToInt(a * c.a));
+                }
+        }
+
         /// <summary>리본 고리·팔과 몸 사이처럼 테두리와 이어지지 않은 흰 배경. 아주 흰 픽셀이 넓게 뭉친 곳만 배경으로 본다(얼굴·옷의 흰 부분은 이만큼 새하얗고 넓지 않다).</summary>
         private static void SeedEnclosedWhite(float[] lum, bool[] warm, int w, int h, System.Action<int> seed, int minArea, int maxArea)
         {
