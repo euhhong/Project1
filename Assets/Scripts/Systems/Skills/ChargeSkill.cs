@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
-    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
@@ -34,6 +34,8 @@ namespace Project1.Systems
         [Header("캐릭터에 부딪힘(박치기) → 상대 넉백")]
         [Tooltip("돌진하는 동안 박치기 판정을 옆으로만 이만큼(m) 넓힌다 — 앞으로는 넓히지 않는다(정면은 몸이 닿아야 박음). 몸 옆으로 살짝 비켜 선 상대도 박는다.")]
         [Min(0f)] public float ramSideExtra = 0.2f;
+        [Tooltip("상대 몸을 상대의 앞·뒤로 이만큼(m) 더 두껍게 본다(박치기 판정만). 캐릭터는 좌우로 넓고 앞뒤로 얇아서, 옆으로 선 상대(내 쪽으로 어깨를 보인 상대)를 스치면 빗나가기 쉬움 — 그 앞뒤를 채운다.")]
+        [Min(0f)] public float ramDepthExtra = 0.25f;
         [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
         [Min(0f)] public float knockSpeedPerMeter = 1f;
         [Min(0f)] public float minKnockSpeed = 5f, maxKnockSpeed = 25f;
@@ -124,7 +126,8 @@ namespace Project1.Systems
         private static readonly Collider[] RamHits = new Collider[32];
 
         /// <summary>
-        /// 박을 수 있는 가장 가까운 상대(없으면 null). 두 몸(수평 원)이 닿는 거리 = 내 반지름 + 상대 반지름 기준으로,
+        /// 박을 수 있는 가장 가까운 상대(없으면 null). 내 몸 = 수평 원(반지름 r), 상대 몸 = 상대 앞뒤로 ramDepthExtra만큼 긴 타원
+        /// (좌우 반지름 rv, 앞뒤 반지름 rv + ramDepthExtra — 상대가 어느 쪽을 보든 그 방향대로). 닿는 거리 = r + (그 방향 타원 두께)로,
         /// 앞쪽(몸 중심 앞, 0 ~ 닿는 거리)은 그대로, 옆쪽 거리만 ramSideExtra만큼 더 봐 준다.
         /// </summary>
         private CharacterIdentity FindRamVictim(GameObject owner, CharacterIdentity self)
@@ -135,7 +138,7 @@ namespace Project1.Systems
             float r = cc.radius * owner.transform.lossyScale.x;
             float h = cc.height * owner.transform.lossyScale.y;
             Vector3 basePos = owner.transform.position;
-            float search = r + ramSideExtra + 1f; // 넉넉히 모은 뒤 아래에서 정확히 거른다
+            float search = r + ramSideExtra + ramDepthExtra + 1f; // 넉넉히 모은 뒤 아래에서 정확히 거른다
             Vector3 a = basePos + Vector3.up * search, b = basePos + Vector3.up * Mathf.Max(search, h);
             int n = Physics.OverlapCapsuleNonAlloc(a, b, search, RamHits, ~0, QueryTriggerInteraction.Collide);
             CharacterIdentity best = null; float bestD = float.MaxValue;
@@ -147,14 +150,26 @@ namespace Project1.Systems
                 if (Mathf.Abs(c.transform.position.y - basePos.y) > h) continue; // 위·아래층
                 Vector3 to = Vector3.ProjectOnPlane(c.transform.position - basePos, Vector3.up);
                 float along = Vector3.Dot(to, fwd), side = Mathf.Abs(Vector3.Dot(to, right));
-                float touch = r + rv;
-                if (along < 0f || along > touch) continue;   // 앞으로는 넓히지 않음(몸이 닿는 거리까지만), 뒤쪽은 아님
-                if (side > touch + ramSideExtra) continue;   // 옆으로만 조금 더
-                if (along * along + Mathf.Max(0f, side - ramSideExtra) * Mathf.Max(0f, side - ramSideExtra) > touch * touch) continue; // 앞 모서리는 몸 둥근 모양 그대로
+                // 상대 타원(상대 앞뒤로 긴)의 두께: 내 앞 방향 쪽(touchAlong), 내 옆 방향 쪽(touchSide)
+                Vector3 vf = Vector3.ProjectOnPlane(c.transform.forward, Vector3.up);
+                vf = vf.sqrMagnitude > 1e-4f ? vf.normalized : fwd;
+                float depth = rv + ramDepthExtra;
+                float touchAlong = r + Extent(fwd, vf, rv, depth), touchSide = r + Extent(right, vf, rv, depth);
+                if (along < 0f || along > touchAlong) continue;  // 앞으로는 넓히지 않음(몸이 닿는 거리까지만), 뒤쪽은 아님
+                if (side > touchSide + ramSideExtra) continue;   // 옆으로만 조금 더
+                float sa = along / touchAlong, ss = Mathf.Max(0f, side - ramSideExtra) / touchSide;
+                if (sa * sa + ss * ss > 1f) continue;            // 앞 모서리는 둥근(타원) 모양 그대로
                 float d = to.sqrMagnitude;
                 if (d < bestD) { bestD = d; best = c; }
             }
             return best;
+        }
+
+        /// <summary>상대 타원(좌우 반지름 halfWidth, 앞뒤 반지름 halfDepth, 앞 = victimFwd)이 방향 u로 얼마나 두꺼운지(중심에서 끝까지).</summary>
+        private static float Extent(Vector3 u, Vector3 victimFwd, float halfWidth, float halfDepth)
+        {
+            float f = Vector3.Dot(u, victimFwd), s = Vector3.Dot(u, Vector3.Cross(Vector3.up, victimFwd));
+            return Mathf.Sqrt(halfWidth * halfWidth * s * s + halfDepth * halfDepth * f * f);
         }
 
         /// <summary>HUD: 돌진 중 멈추는 방법.</summary>
