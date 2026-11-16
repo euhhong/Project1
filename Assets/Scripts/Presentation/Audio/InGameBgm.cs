@@ -7,7 +7,8 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 게임 중 배경음악(FE): 플레이를 시작하면 저절로 생긴다(붙일 것 없음). 내 캐릭터(LocalPlayerInput)와 가장 가까운 적의 거리로 고른다:
-    /// - 적이 가까이(NearRange m 안, 조우) = Resources/Bgm/Chase (실내·야외 모두). 내가 광대이거나 가까운 적이 광대면 Resources/Bgm/Chase_SmileyFace
+    /// - 적이 가까이(NearRange m 안, 조우) = Resources/Bgm/Chase (실내·야외 모두).
+    ///   캐릭터 전용 추격 곡(CharacterChase — 광대·도둑)이 있으면 그 곡: 내 캐릭터 것 먼저, 없으면 가까운 적 것.
     /// - 3층(실내·테라스 모두, 지붕 위는 빼고) = Resources/Bgm/Floor3
     /// - 실내(카메라 CameraIndoorSensor — 머리 위 천장) = Resources/Bgm/Indoor
     /// - 야외 = Resources/Bgm/Outdoor, 야외에서 적이 완전히 멀면(FarRange m 넘게, 적이 없어도) = Resources/Bgm/OutdoorFar
@@ -17,8 +18,12 @@ namespace Project1.Presentation
     public class InGameBgm : MonoBehaviour
     {
         public const string IndoorTrack = "Indoor", OutdoorTrack = "Outdoor", OutdoorFarTrack = "OutdoorFar", ChaseTrack = "Chase", Floor3Track = "Floor3";
-        public const string ClownChaseTrack = "Chase_SmileyFace";
-        private const string ClownSkillId = "SmileyFace_RocketCharge";
+        /// <summary>캐릭터 전용 추격 곡(고유 스킬 ID → Resources/Bgm 곡 이름).</summary>
+        private static readonly System.Collections.Generic.Dictionary<string, string> CharacterChase = new()
+        {
+            ["SmileyFace_RocketCharge"] = "Chase_SmileyFace", // 광대
+            ["Thief_Flashlight"] = "Chase_Thief",             // 도둑
+        };
         // 3층(바닥 높이 12.15m, MapBlockoutBuilder 층고 6m): 발이 Floor3Enter 위면 3층, Floor3Leave 밑으로 내려가면 풀림. 지붕(RoofHeight, RoofSunBurn과 같음) 위는 3층 아님.
         private const float Floor3Enter = 11.5f, Floor3Leave = 10.5f, RoofHeight = 16.5f;
         private const float CheckInterval = 0.25f;
@@ -74,8 +79,8 @@ namespace Project1.Presentation
             if (d <= NearRange)
             {
                 enemySeenAt = Time.unscaledTime;
-                // 광대 전용 추격 음악: 내가 광대이거나 가까이 온 적이 광대
-                chaseTrack = IsClown(input.gameObject) || IsClown(enemy) ? ClownChaseTrack : ChaseTrack;
+                // 캐릭터 전용 추격 음악: 내 캐릭터 것 먼저, 없으면 가까이 온 적 것, 둘 다 없으면 일반
+                chaseTrack = CharacterChaseTrack(input.gameObject) ?? CharacterChaseTrack(enemy) ?? ChaseTrack;
             }
             if (far && d < FarRange - FarMargin) far = false;
             else if (!far && d > FarRange) far = true;
@@ -95,9 +100,9 @@ namespace Project1.Presentation
             return cam != null && cam.TryGetComponent(out CameraIndoorSensor sensor) && sensor.Indoor01 >= IndoorThreshold;
         }
 
-        /// <summary>광대(스킬 = 로켓 돌진)인지. 광대가 부른 분신은 없으니 스킬로 본다.</summary>
-        private static bool IsClown(GameObject go) =>
-            go != null && go.TryGetComponent(out ICharacterSkillState s) && s.SkillId == ClownSkillId;
+        /// <summary>이 캐릭터의 전용 추격 곡(고유 스킬로 알아본다). 없으면 null.</summary>
+        private static string CharacterChaseTrack(GameObject go) =>
+            go != null && go.TryGetComponent(out ICharacterSkillState s) && CharacterChase.TryGetValue(s.SkillId, out var t) ? t : null;
 
         /// <summary>가장 가까운 적까지 거리(m)와 그 적. 적이 없으면 무한대·null.</summary>
         private static float NearestEnemy(GameObject player, out GameObject nearest)
