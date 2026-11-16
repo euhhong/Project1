@@ -65,7 +65,7 @@ namespace Project1.Map.EditorTools
             bool modelLongZ = mr != null && mr.bounds.size.z > mr.bounds.size.x;
             var s = box.localScale;
             bool boxLongZ = s.z > s.x;
-            float len = boxLongZ ? s.z : s.x;
+            float len = (boxLongZ ? s.z : s.x) + 0.6f; // 양 끝을 0.3m씩 더 늘여 기둥·벽 속으로 파고들게(난간과 기둥 사이 틈 없음)
             int count = Mathf.Max(1, Mathf.RoundToInt(len / 2.2f));
             float seg = len / count;
             var along = box.localRotation * (boxLongZ ? Vector3.forward : Vector3.right);
@@ -185,8 +185,8 @@ namespace Project1.Map.EditorTools
             foreach (var r in rocks) OutdoorFlat(g, "FlatRock", r.x, r.z, r.w, r.h, (i++ * 53f) % 360f);
             // 풀: 흙바닥(Environment)에만, 3.5m 격자에 흩뿌림(충돌 없음)
             int grass = 0;
-            for (float x = -46f; x <= 46f; x += 3.5f)
-                for (float z = -46f; z <= 46f; z += 3.5f)
+            for (float x = -46f; x <= 46f; x += 2.6f)
+                for (float z = -46f; z <= 46f; z += 2.6f)
                 {
                     float h1 = Hash(x, z), h2 = Hash(z * 1.7f, x * 0.3f);
                     if (h1 > 0.55f) continue;
@@ -195,9 +195,11 @@ namespace Project1.Map.EditorTools
                     if (hit.collider.transform.root.name != "Environment" || hit.normal.y < 0.85f) continue; // 흙바닥만
                     if (Physics.Raycast(hit.point + Vector3.up * 0.3f, Vector3.up, 30f, ~0, QueryTriggerInteraction.Ignore)) continue; // 지붕 아래 아님
                     if (Blocked(hit.point, new Vector3(0.6f, 0.5f, 0.6f), 0f)) continue;
-                    var go = PlaceAt(g, "Grass", hit.point, h2 * 360f, 0.5f + h1 * 0.7f, collider: false);
+                    // 풀 모델 여러 개(Grass/Grass_01~NN: 흙 조각 + 실오라기 같은 풀 여러 조합) 중 하나, 크기 0.8~1.25배
+                    string variant = $"Grass/Grass_{1 + Mathf.FloorToInt(Hash(z * 0.7f, x * 1.3f) * GrassVariants):00}";
+                    var go = PlaceScaled(g, variant, hit.point, h2 * 360f, 0.8f + h1 * 0.45f);
                     if (go != null) grass++;
-                    if (grass >= 220) break;
+                    if (grass >= 420) break;
                 }
         }
 
@@ -236,6 +238,21 @@ namespace Project1.Map.EditorTools
         }
 
         // ───────────────────────────── 도우미 ─────────────────────────────
+
+        private const int GrassVariants = 16;
+
+        /// <summary>world 자리(바닥)에 모델을 원래 크기 × scale로 놓는다(충돌 없음) — 풀처럼 모델 크기가 곧 실제 크기인 것.</summary>
+        private static GameObject PlaceScaled(Transform parent, string key, Vector3 world, float yaw, float scale)
+        {
+            var prefab = LoadModel(key);
+            if (prefab == null) { missing++; return null; }
+            var go = Instantiate(prefab, parent, $"{ModelPrefix}{key.Replace('/', '_')}_{world.x:0.#}_{world.z:0.#}");
+            go.transform.localScale = Vector3.one * scale;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.transform.localPosition = parent.InverseTransformPoint(world);
+            placed++;
+            return go;
+        }
 
         /// <summary>world 자리(바닥)에 모델을 높이 height로 같은 비율로 세운다(parent 아래). collider = 모델 경계 상자.</summary>
         private static GameObject PlaceAt(Transform parent, string key, Vector3 world, float yaw, float height, bool collider)

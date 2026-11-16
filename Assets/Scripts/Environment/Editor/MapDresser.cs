@@ -294,7 +294,7 @@ namespace Project1.Map.EditorTools
         private static GameObject LoadModel(string key)
         {
             if (modelCache.TryGetValue(key, out var g)) return g;
-            g = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelFolder}/{key}/{key}.fbx");
+            g = AssetDatabase.LoadAssetAtPath<GameObject>(key.Contains('/') ? $"{ModelFolder}/{key}.fbx" : $"{ModelFolder}/{key}/{key}.fbx"); // "폴더/이름" = 한 폴더에 여러 모델(풀)
             modelCache[key] = g;
             return g;
         }
