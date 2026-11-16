@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// 돌진(포워드 럭비공): 쓰면 바라보는 방향으로 계속 달려 나간다.
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
-    ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
+    ///   기절 시간은 달린 거리에 따라 박치기 넉백과 같은 곡선(knockCurve, fullKnockRun): 거의 안 달림 minCrashStun 0.2초 ~ 45m 이상 crashRecovery 1.8초.
     /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 따라 곡선으로 확 달라지는 거리만큼 밀려나고(짧게 달리면 0.5m ~ 45m 넘게 달리면 16m, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: 달린 거리에 따라 같은 곡선으로 wallStunMin 0.5초 ~ wallStunMax 5.5초.
@@ -25,11 +25,10 @@ namespace Project1.Systems
         [Tooltip("시작 직후 이 시간(초) 동안은 장애물에 닿아도 멈추지 않는다(벽에 붙어 시작할 때 바로 끝나지 않게).")]
         [Min(0f)] public float obstacleGrace = 0.1f;
 
-        [Tooltip("벽·장애물에 부딪혀 걸리는 기절 시간(초, 일반 기절 모션) — 멀리(fullCrashDistance 이상) 달려 부딪혔을 때.")]
+        [Tooltip("벽·장애물에 부딪혀 걸리는 기절 시간(초, 일반 기절 모션) — 멀리(fullKnockRun 이상) 달려 부딪혔을 때.")]
         [Min(0f)] public float crashRecovery = 1.8f;
-        [Tooltip("거의 안 달리고 벽에 부딪혔을 때 기절 시간(초). 달린 거리에 비례해 crashRecovery(fullCrashDistance m 이상)까지 길어진다 — 짧게 달릴수록 페널티가 짧다.")]
+        [Tooltip("거의 안 달리고 벽에 부딪혔을 때 기절 시간(초). 박치기 넉백과 같은 곡선으로 crashRecovery(fullKnockRun m 이상)까지 길어진다 — 짧게 달리면 아주 짧고 길게 달릴수록 확 길어진다.")]
         [Min(0f)] public float minCrashStun = 0.2f;
-        [Min(0.1f)] public float fullCrashDistance = 12f;
 
         [Header("캐릭터에 부딪힘(박치기) → 상대 넉백")]
         [Tooltip("돌진하는 동안 박치기 판정을 옆으로만 이만큼(m) 넓힌다 — 앞으로는 넓히지 않는다(정면은 몸이 닿아야 박음). 몸 옆으로 살짝 비켜 선 상대도 박는다.")]
@@ -129,7 +128,7 @@ namespace Project1.Systems
             if (!CrashPenalty) { recovery = CrashStiffness; return true; } // 벽 기절 페널티가 없는 돌진(광대 로켓): 멈추고 잠깐 경직만(넘어지는 모션 없음)
             // 벽·장애물: 넘어지지 않고 일반 기절(기절 모션). 짧게 달렸으면 잠깐, 길게 달렸으면 달린 거리에 비례해 오래.
             float run = elapsed * chargeSpeed;
-            float stunTime = Mathf.Lerp(minCrashStun, crashRecovery, Mathf.InverseLerp(0f, fullCrashDistance, run)); // 짧게 달릴수록 짧게
+            float stunTime = Mathf.Lerp(minCrashStun, crashRecovery, Mathf.Pow(Mathf.Clamp01(run / fullKnockRun), knockCurve)); // 박치기와 같은 곡선: 5m ≈ 0.25초, 16m ≈ 0.5초, 32m ≈ 1.1초, 45m 이상 = 1.8초
             CharacterStun.ApplyBreakable(owner, stunTime); // 방향 없음 = 앞으로 숙이는 일반 기절. 깨지는 기절: 맞거나 밀리거나 충격파·다른 기절이 걸리면 바로 풀림
             recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
             return true;
