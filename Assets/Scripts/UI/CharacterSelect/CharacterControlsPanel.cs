@@ -46,13 +46,14 @@ namespace Project1.UI
 
             tooltip = new VisualElement { pickingMode = PickingMode.Ignore };
             tooltip.style.position = Position.Absolute;
-            tooltip.style.left = 24f; tooltip.style.right = 24f;
+            tooltip.style.left = -70f; tooltip.style.right = 6f; // 글자가 커서 칸보다 조금 넓게(왼쪽으로 삐져나옴)
             tooltip.style.backgroundColor = new Color(0.02f, 0.03f, 0.05f, 0.96f);
-            tooltip.style.paddingLeft = tooltip.style.paddingRight = 16f;
-            tooltip.style.paddingTop = tooltip.style.paddingBottom = 12f;
+            tooltip.style.paddingLeft = tooltip.style.paddingRight = 20f;
+            tooltip.style.paddingTop = tooltip.style.paddingBottom = 16f;
             tooltip.style.display = DisplayStyle.None;
             panel.Add(tooltip);
-            tooltipLabel = Text(tooltip, "", bodyFont, 22, Ink);
+            tooltipLabel = Text(tooltip, "", bodyFont, 29, Ink); // 설명 글자 — 잘 보이게 크게
+            tooltipLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 2f), blurRadius = 3f, color = new Color(0f, 0f, 0f, 0.9f) };
             tooltipLabel.style.whiteSpace = WhiteSpace.Normal;
         }
 

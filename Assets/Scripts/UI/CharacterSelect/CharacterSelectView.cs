@@ -55,7 +55,7 @@ namespace Project1.UI
         // 일러스트 가로 압축(캐릭터별). 재앙의 도마뱀: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
         private static readonly Dictionary<string, float> IllustrationWidthScale = new() { ["Hunter_Luchino"] = 0.85f };
         // 일러스트 전체 크기(캐릭터별, 아래 가운데 기준). 용병·재앙의 도마뱀: 조금 크게 꽉 차 보여 10% 줄임.
-        private static readonly Dictionary<string, float> IllustrationSizeScale = new() { ["Survivor_Mercenary"] = 0.9f, ["Hunter_Luchino"] = 0.9f, ["Hunter_Antonio"] = 0.9f, ["Survivor_Thief"] = 0.9f, ["Survivor_Cowboy"] = 0.9f };
+        private static readonly Dictionary<string, float> IllustrationSizeScale = new() { ["Survivor_Mercenary"] = 0.9f, ["Hunter_Luchino"] = 0.9f, ["Hunter_Antonio"] = 0.9f, ["Survivor_Thief"] = 0.9f, ["Survivor_Cowboy"] = 0.9f, ["Hunter_Hastur"] = 0.9f };
         // 일러스트를 아래로 내리는 거리(기준 픽셀, 캐릭터별). 안토니오: 조금 아래로.
         private static readonly Dictionary<string, float> IllustrationDropY = new() { ["Hunter_Antonio"] = 35f };
         private float illusDropY;
