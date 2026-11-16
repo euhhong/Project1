@@ -109,7 +109,7 @@ namespace Project1.UI
             for (int k = 0; k < buttons.Length; k++) buttons[k].Lit = k == selected;
         }
 
-        /// <summary>버튼 위로 지나갈 때: 종이 넘기는 가볍고 날카로운 셕(SfxSynth ui_page, 크게).</summary>
+        /// <summary>버튼 위로 지나갈 때: 종이 넘기는 가볍고 날카로운 셕(ui_page, VARCO Sound).</summary>
         private static void HoverSound() => Project1.Presentation.SfxPlayer.PlayUi("ui_page", 1f, 0.08f);
 
         private void Activate(int i)
