@@ -471,7 +471,7 @@ namespace Project1.Systems
             safeFall = true; groundedTicks = 0; // 다음 착지까지 다치지 않는다
             SwapCount++;
             lockLeft = postSwapLock; // 바꾼 직후 짧은 경직(보이는 표시 없음)
-            swapCooldownLeft = swapCooldown; // 다음 자리 바꾸기까지 재사용 대기
+            swapCooldownLeft = SkillCooldowns.Scale(swapCooldown); // 다음 자리 바꾸기까지 재사용 대기(연습 모드 = 0)
             airSwap = !RayCast(feet + Vector3.up * 0.1f, Vector3.down, 0.4f, out _); // 공중(발밑 0.3m 넘게 빔)으로 바꿨으면(낙하) 더 빠르게
             boostArmed = true; // 땅이든 공중이든 경직이 풀린 순간부터 빠르게
         }

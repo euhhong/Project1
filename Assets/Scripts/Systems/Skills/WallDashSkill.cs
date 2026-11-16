@@ -127,7 +127,7 @@ namespace Project1.Systems
                     if (ctx.PhaseTime >= dashTime)
                     {
                         // 도약 끝: 꺼지지 않고 켜진 채로 돌아가고, 재사용 대기 시작
-                        ReadyAt[ctx] = Time.time + dashCooldown;
+                        ReadyAt[ctx] = Time.time + SkillCooldowns.Scale(dashCooldown);
                         ctx.SetPhase(Active);
                         ctx.Direction = Vector3.zero;
                     }

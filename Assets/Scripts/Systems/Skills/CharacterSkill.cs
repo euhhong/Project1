@@ -339,7 +339,7 @@ namespace Project1.Systems
                 State = SkillState.Ready;
                 return;
             }
-            float cd = skill != null ? skill.CooldownFor(this) : 0f;
+            float cd = SkillCooldowns.Scale(skill != null ? skill.CooldownFor(this) : 0f); // 연습 모드 = 0
             cooldownDuration = cd;
             if (cd > 0f)
             {

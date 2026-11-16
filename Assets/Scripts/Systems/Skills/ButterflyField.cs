@@ -170,7 +170,7 @@ namespace Project1.Systems
                 if (!placement.Cancels && placement.Valid && !blocked && Charges > 0)
                 {
                     Place(placement.Point);
-                    PlaceCooldownRemaining = placeCooldown;
+                    PlaceCooldownRemaining = SkillCooldowns.Scale(placeCooldown);
                     Charges--; // 쥔 나비 한 마리를 쓴다
                 }
                 Placing = false; placement.Clear();

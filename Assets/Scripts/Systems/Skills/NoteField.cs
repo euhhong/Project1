@@ -159,7 +159,7 @@ namespace Project1.Systems
             if (notes.Count == 1 && !Linked)
             {
                 PendingTimeLeft -= dt;
-                if (PendingTimeLeft <= 0f) { notes.Clear(); PendingTimeLeft = 0f; CooldownLeft = relinkCooldown; } // 둘째를 못 놓았다 → 첫 음표가 사라지고 이어졌을 때와 똑같이 재사용 대기
+                if (PendingTimeLeft <= 0f) { notes.Clear(); PendingTimeLeft = 0f; CooldownLeft = SkillCooldowns.Scale(relinkCooldown); } // 둘째를 못 놓았다 → 첫 음표가 사라지고 이어졌을 때와 똑같이 재사용 대기
             }
 
             if (Linked && notes.Count == 2) SlowCrossers();
@@ -191,7 +191,7 @@ namespace Project1.Systems
                 notes.Add(point);
                 Linked = true;
                 PendingTimeLeft = 0f;
-                CooldownLeft = relinkCooldown; // 이어진 뒤 relinkCooldown초 지나야 새 음표
+                CooldownLeft = SkillCooldowns.Scale(relinkCooldown); // 이어진 뒤 relinkCooldown초 지나야 새 음표
                 LinkHit();
             }
         }
