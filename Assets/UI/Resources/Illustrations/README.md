@@ -5,7 +5,7 @@
 
 | 캐릭터 | 파일 이름 | 받음 |
 |---|---|---|
-| 붉은나비(미치코) | Hunter_Geisha.png | 대기(채팅에 붙여넣은 이미지 — 파일로 받아야 함) |
+| 붉은나비(미치코) | Hunter_Geisha.png | ✅ (1402×1122, 흰 배경) |
 | 안토니오 | Hunter_Antonio.png | |
 | 사냥터지기(노루) | Hunter_Gamekeeper.png | |
 | 하스터 | Hunter_Hastur.png | |
