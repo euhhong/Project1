@@ -97,6 +97,9 @@ namespace Project1.Systems
         [Min(0f)] public float lowObstacleHeight = 0.6f;
         [Tooltip("넘을 때 물건 윗면 위로 띄울 여유(m).")]
         [Min(0f)] public float lowObstacleClearance = 0.05f;
+        [Tooltip("넘으려고 오르는 최대 위로 속도(m/s). 너무 크면 멈출 때 위로 튀어 공중에 뜬다.")]
+        [Min(0.1f)] public float lowObstacleMaxLift = 10f;
+        private static readonly Collider[] RoomHits = new Collider[16];
 
         private static readonly RaycastHit[] LowHits = new RaycastHit[16];
         private static readonly RaycastHit[] DownHits = new RaycastHit[16];
@@ -113,7 +116,7 @@ namespace Project1.Systems
             float half = Mathf.Max(0f, h * 0.5f - cc.radius);
             float r = cc.radius * 0.95f;
             float step = glideSpeed * Time.fixedDeltaTime;
-            float look = Mathf.Min(flatDist + cc.radius, step * 3f + cc.radius);
+            float look = Mathf.Min(flatDist + cc.radius, step * 4f + cc.radius);
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
             int n = Physics.CapsuleCastNonAlloc(c + Vector3.up * half, c - Vector3.up * half, r, flatDir, LowHits, look, mask, QueryTriggerInteraction.Ignore);
             float lift = 0f;
@@ -122,19 +125,36 @@ namespace Project1.Systems
                 var col = LowHits[i].collider;
                 if (LowHits[i].distance <= 0f) continue; // 이미 닿아 있음 → 부딪힘 처리(Tick)가 맡는다
                 if (IsSill(col, LowHits[i].point, flatDir, footY, h, mask)) continue; // 창턱은 뚫고 간다(PassWindowSills)
-                if (!TryLowClutterTop(col, LowHits[i].point, flatDir, footY, mask, out float top)) continue;
+                if (!TryLowClutterTop(cc, col, LowHits[i].point, flatDir, footY, mask, out float top)) continue;
                 float rise = top + lowObstacleClearance - footY;
                 int ticks = Mathf.Max(1, Mathf.FloorToInt(LowHits[i].distance / Mathf.Max(step, 1e-4f)));
                 lift = Mathf.Max(lift, rise / (ticks * Time.fixedDeltaTime));
             }
-            return lift;
+            return Mathf.Min(lift, lowObstacleMaxLift); // 늦게 봤으면 닿은 뒤 TryPassBumpedClutter가 마저 넘긴다
         }
 
         /// <summary>
         /// col이 낮은 잡동사니인지: p(닿은 자리) 바로 안쪽을 위에서 내려 비춰 col의 윗면을 찾고, 그 높이가 발 위 lowObstacleHeight 이하면 맞다(top = 윗면 높이).
         /// 벽처럼 높은 것은 비추기 시작점이 그 안이라 윗면이 잡히지 않는다(막힘). 서 있는 바닥(발 높이)·캐릭터·촉수 기둥은 아니다.
         /// </summary>
-        private bool TryLowClutterTop(Collider col, Vector3 p, Vector3 flatDir, float footY, int mask, out float top)
+        private bool TryLowClutterTop(CharacterController cc, Collider col, Vector3 p, Vector3 flatDir, float footY, int mask, out float top)
+        {
+            if (!TryLowTop(col, p, flatDir, footY, mask, out top)) return false;
+            // 그 위에 몸이 들어갈 자리가 있어야 넘는다(벤치 등받이·탁자 밑·낮은 천장이면 넘지 않고 지금처럼 멈춘다 — 올라갔다가 공중에서 멈추지 않게).
+            float r = cc.radius * 0.9f;
+            Vector3 at = new(p.x + flatDir.x * cc.radius, top + lowObstacleClearance + 0.03f, p.z + flatDir.z * cc.radius);
+            Vector3 bottom = at + Vector3.up * cc.radius, upper = at + Vector3.up * Mathf.Max(cc.radius, cc.height - cc.radius);
+            int n = Physics.OverlapCapsuleNonAlloc(bottom, upper, r, RoomHits, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var o = RoomHits[i];
+                if (o == col || o.transform.IsChildOf(cc.transform) || o.GetComponentInParent<CharacterIdentity>() != null) continue;
+                return false;
+            }
+            return true;
+        }
+
+        private bool TryLowTop(Collider col, Vector3 p, Vector3 flatDir, float footY, int mask, out float top)
         {
             top = 0f;
             if (lowObstacleHeight <= 0f || col == null || col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) return false;
@@ -144,7 +164,7 @@ namespace Project1.Systems
             int n = Physics.RaycastNonAlloc(start, Vector3.down, DownHits, lowObstacleHeight + 0.1f, mask, QueryTriggerInteraction.Ignore);
             for (int i = 0; i < n; i++)
             {
-                if (DownHits[i].collider != col || DownHits[i].distance <= 0f || DownHits[i].normal.y < 0.5f) continue;
+                if (DownHits[i].collider != col || DownHits[i].distance <= 0f || DownHits[i].normal.y < 0.9f) continue; // 평평한 윗면만(계단 경사로는 원래대로 오른다)
                 top = DownHits[i].point.y;
                 float above = top - footY;
                 return above > 0.02f && above <= lowObstacleHeight;
@@ -159,14 +179,14 @@ namespace Project1.Systems
         private bool TryPassBumpedClutter(CharacterSkill ctx, CharacterMotor motor, Vector3 flatDir)
         {
             var col = motor.LastObstacle;
-            if (col == null || flatDir.sqrMagnitude < 1e-4f) return false;
+            if (col == null || flatDir.sqrMagnitude < 1e-4f || !ctx.TryGetComponent(out CharacterController cc)) return false;
             float footY = ctx.transform.position.y;
             Vector3 probe = ctx.transform.position + Vector3.up * (lowObstacleHeight + 0.05f);
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
-            if (!TryLowClutterTop(col, col.ClosestPoint(probe), flatDir, footY, mask, out float top)) return false;
+            if (!TryLowClutterTop(cc, col, col.ClosestPoint(probe), flatDir, footY, mask, out float top)) return false;
             Pass(ctx, col);
             float rise = top + lowObstacleClearance - footY;
-            if (rise > 0f) motor.Launch(rise / Time.fixedDeltaTime - motor.Gravity * Time.fixedDeltaTime);
+            if (rise > 0f) motor.Launch(Mathf.Min(rise / Time.fixedDeltaTime, lowObstacleMaxLift) - motor.Gravity * Time.fixedDeltaTime);
             return true;
         }
 
@@ -367,6 +387,11 @@ namespace Project1.Systems
             return $"나비 {pips}"; // 다음 한 마리까지는 오른쪽 아래 게이지로
         }
 
-        public override void Complete(GameObject owner) { }
+        /// <summary>끝날 때(도착·부딪힘·시간 다 됨) 위로 가던 속도는 없앤다 — 남으면 멈춘 자리에서 위로 더 떠올랐다가 한참 뒤에 떨어진다. 맹인에게 밀린 중이면 그대로 둔다.</summary>
+        public override void Complete(GameObject owner)
+        {
+            if (owner == null || (owner.TryGetComponent(out Knockback kb) && kb.Active)) return;
+            if (owner.TryGetComponent(out CharacterMotor motor) && motor.VerticalSpeed > 0f) motor.Launch(0f);
+        }
     }
 }
