@@ -129,6 +129,7 @@ namespace Project1.UI
             // 거울 순간이동: 모두 — 맵 구석 전신거울로 걸어 들어가면 반대 거울로 나온다(BE) + 들어가는 모션(FE)
             SetProp<MirrorTraveler>(player, true);
             SetProp<MirrorTravelAnimator>(player, true);
+            SetProp<MirrorTravelEffect>(player, true); // 들어갈 때·나올 때 보랏빛 리본
             if (player.TryGetComponent(out CharacterMotor palletMotor)) palletMotor.RefreshSpeedLimits(); // 판자 내리는 동안 제자리(IMoveOverride)를 이동에 알린다
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))
