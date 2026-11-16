@@ -9,6 +9,7 @@ namespace Project1.Systems
     /// - 겨누는 나비가 없거나 나비를 놓는 중이면(놓기를 E로 취소하고 좌클릭을 아직 안 뗀 동안 포함) 쓰지 않는다.
     /// - 가는 동안 장애물(벽·다른 캐릭터 등)에 부딪히면 거기서 멈추고 툭 떨어진다(잠깐 못 움직임, bumpRecovery).
     ///   단 창틀 아랫부분(창턱)은 뚫고 지나간다(창틀 옆·윗부분은 막힘, PassWindowSills).
+    ///   바닥의 낮은 잡동사니(발 위 lowObstacleHeight 이하 — 작은 상자·판자·돌·소품)는 그 위로 미끄러지듯 타고 넘는다(LowClutterLift, 이미 닿았으면 TryPassBumpedClutter).
     /// - 날아가는 동안은 모든 공격·스킬에 면역(IAttackImmunity — 닿지 않은 것으로 봄). 단 맹인의 밀기(지팡이 평타·찌르기)는 받아 밀려나며 날아가기가 끊긴다.
     /// - 이동·공격 불가. 날아가는 동안은 위아래 속도를 일직선에 맞춰 중력을 상쇄한다(도착하면 다시 중력).
     /// - 날아가는 동안 화면을 돌려도 몸(모델)은 시작할 때 각도를 지킨다(TryGetFacingYaw). 끝나면 다시 시야를 본다.
@@ -79,15 +80,94 @@ namespace Project1.Systems
             return true;
         }
 
-        /// <summary>나비까지 일직선의 위아래 몫만큼 위아래 속도를 준다(중력을 미리 빼 둔다 — 이동이 이번 틱에 중력을 더한다).</summary>
-        private void SteerVertical(CharacterSkill ctx, Vector3 to)
+        /// <summary>나비까지 일직선의 위아래 몫만큼 위아래 속도를 준다(중력을 미리 빼 둔다 — 이동이 이번 틱에 중력을 더한다). lift = 앞의 낮은 잡동사니를 넘으려고 필요한 위로 속도(이보다 느리게 오르지 않음).</summary>
+        private void SteerVertical(CharacterSkill ctx, Vector3 to, float lift)
         {
             if (!ctx.TryGetComponent(out CharacterMotor motor)) return;
             float total = to.magnitude;
             if (total < 1e-4f) return;
             float vy = glideSpeed * to.y / total;
             vy = Mathf.Clamp(vy, -Mathf.Abs(to.y) / Time.fixedDeltaTime, Mathf.Abs(to.y) / Time.fixedDeltaTime); // 마지막 틱에 지나치지 않게
+            vy = Mathf.Max(vy, lift); // 낮은 잡동사니 위로 타고 넘는다(넘은 뒤엔 일직선이 다시 내려 준다)
             motor.Launch(vy - motor.Gravity * Time.fixedDeltaTime);
+        }
+
+        [Header("낮은 잡동사니 타고 넘기")]
+        [Tooltip("발 기준 이 높이(m, 무릎쯤) 이하인 물건(작은 상자·판자·돌·소품·낮은 턱)은 막히지 않고 그 위로 미끄러지듯 넘어간다. 이보다 높은 벽·큰 물건에는 지금처럼 멈춘다. 0 = 끔.")]
+        [Min(0f)] public float lowObstacleHeight = 0.6f;
+        [Tooltip("넘을 때 물건 윗면 위로 띄울 여유(m).")]
+        [Min(0f)] public float lowObstacleClearance = 0.05f;
+
+        private static readonly RaycastHit[] LowHits = new RaycastHit[16];
+        private static readonly RaycastHit[] DownHits = new RaycastHit[16];
+
+        /// <summary>
+        /// 날아가는 방향 앞(이번·다음 몇 틱 거리)에 낮은 잡동사니가 있으면, 닿기 전에 발이 그 윗면 위로 오르게 할 위로 속도(m/s). 없으면 0.
+        /// </summary>
+        private float LowClutterLift(CharacterSkill ctx, Vector3 flatDir, float flatDist)
+        {
+            if (lowObstacleHeight <= 0f || flatDist < 0.05f || !ctx.TryGetComponent(out CharacterController cc)) return 0f;
+            float footY = ctx.transform.position.y;
+            float h = cc.height;
+            Vector3 c = cc.transform.TransformPoint(cc.center);
+            float half = Mathf.Max(0f, h * 0.5f - cc.radius);
+            float r = cc.radius * 0.95f;
+            float step = glideSpeed * Time.fixedDeltaTime;
+            float look = Mathf.Min(flatDist + cc.radius, step * 3f + cc.radius);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            int n = Physics.CapsuleCastNonAlloc(c + Vector3.up * half, c - Vector3.up * half, r, flatDir, LowHits, look, mask, QueryTriggerInteraction.Ignore);
+            float lift = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                var col = LowHits[i].collider;
+                if (LowHits[i].distance <= 0f) continue; // 이미 닿아 있음 → 부딪힘 처리(Tick)가 맡는다
+                if (IsSill(col, LowHits[i].point, flatDir, footY, h, mask)) continue; // 창턱은 뚫고 간다(PassWindowSills)
+                if (!TryLowClutterTop(col, LowHits[i].point, flatDir, footY, mask, out float top)) continue;
+                float rise = top + lowObstacleClearance - footY;
+                int ticks = Mathf.Max(1, Mathf.FloorToInt(LowHits[i].distance / Mathf.Max(step, 1e-4f)));
+                lift = Mathf.Max(lift, rise / (ticks * Time.fixedDeltaTime));
+            }
+            return lift;
+        }
+
+        /// <summary>
+        /// col이 낮은 잡동사니인지: p(닿은 자리) 바로 안쪽을 위에서 내려 비춰 col의 윗면을 찾고, 그 높이가 발 위 lowObstacleHeight 이하면 맞다(top = 윗면 높이).
+        /// 벽처럼 높은 것은 비추기 시작점이 그 안이라 윗면이 잡히지 않는다(막힘). 서 있는 바닥(발 높이)·캐릭터·촉수 기둥은 아니다.
+        /// </summary>
+        private bool TryLowClutterTop(Collider col, Vector3 p, Vector3 flatDir, float footY, int mask, out float top)
+        {
+            top = 0f;
+            if (lowObstacleHeight <= 0f || col == null || col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) return false;
+            if (SkillObstacles.Tentacles.Contains(col)) return false;
+            if (col.bounds.max.y < footY + 0.02f) return false;
+            Vector3 start = new(p.x + flatDir.x * 0.05f, footY + lowObstacleHeight + 0.05f, p.z + flatDir.z * 0.05f);
+            int n = Physics.RaycastNonAlloc(start, Vector3.down, DownHits, lowObstacleHeight + 0.1f, mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                if (DownHits[i].collider != col || DownHits[i].distance <= 0f || DownHits[i].normal.y < 0.5f) continue;
+                top = DownHits[i].point.y;
+                float above = top - footY;
+                return above > 0.02f && above <= lowObstacleHeight;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 부딪힌 것이 낮은 잡동사니면 멈추지 않는다: 그것만 뚫고 지나가게 하고(ColliderPassThrough — 빠져나오면 다시 막힘) 그 위로 올려 준다. 넘어갔으면 true.
+        /// (너무 가까이서 시작해 미리 오르지 못한 경우)
+        /// </summary>
+        private bool TryPassBumpedClutter(CharacterSkill ctx, CharacterMotor motor, Vector3 flatDir)
+        {
+            var col = motor.LastObstacle;
+            if (col == null || flatDir.sqrMagnitude < 1e-4f) return false;
+            float footY = ctx.transform.position.y;
+            Vector3 probe = ctx.transform.position + Vector3.up * (lowObstacleHeight + 0.05f);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            if (!TryLowClutterTop(col, col.ClosestPoint(probe), flatDir, footY, mask, out float top)) return false;
+            Pass(ctx, col);
+            float rise = top + lowObstacleClearance - footY;
+            if (rise > 0f) motor.Launch(rise / Time.fixedDeltaTime - motor.Gravity * Time.fixedDeltaTime);
+            return true;
         }
 
         [Header("높낮이 — 모서리 뚫기")]
@@ -229,9 +309,11 @@ namespace Project1.Systems
             if (to.magnitude > 0.05f) PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
             PassSkillObstacles(ctx); // 촉수 기둥·공장장 분신은 뚫고 간다
             PassEdges(ctx, to3);     // 다른 높이로 갈 때 바닥 끝 모서리는 뚫고 간다
-            SteerVertical(ctx, to3); // 나비까지 일직선(높낮이 포함)
+            Vector3 flatDir = to.magnitude > 0.05f ? to.normalized : Vector3.zero;
+            float lift = flatDir == Vector3.zero ? 0f : LowClutterLift(ctx, flatDir, to.magnitude);
+            SteerVertical(ctx, to3, lift); // 나비까지 일직선(높낮이 포함) — 앞의 낮은 잡동사니는 그 위로 타고 넘는다
             var motor = ctx.GetComponent<CharacterMotor>();
-            if (motor != null && motor.HitObstacle && elapsed > 0.04f)
+            if (motor != null && motor.HitObstacle && elapsed > 0.04f && !TryPassBumpedClutter(ctx, motor, flatDir))
             {
                 recovery = bumpRecovery; // 장애물 → 멈추고 툭 떨어짐
                 if (ctx.TryGetComponent(out ColliderPassThrough bumpPass)) bumpPass.RestoreClear();
