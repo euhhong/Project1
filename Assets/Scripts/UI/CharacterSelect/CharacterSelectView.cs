@@ -59,6 +59,9 @@ namespace Project1.UI
         // 일러스트를 아래로 내리는 거리(기준 픽셀, 캐릭터별). 안토니오: 조금 아래로.
         private static readonly Dictionary<string, float> IllustrationDropY = new() { ["Hunter_Antonio"] = 35f };
         private float illusDropY;
+        // 일러스트 세로 늘이기(캐릭터별, 아래 가운데 기준). 카우보이: 조금 세로로 길게.
+        private static readonly Dictionary<string, float> IllustrationHeightScale = new() { ["Survivor_Cowboy"] = 1.1f };
+        private float illusHeightScale = 1f;
         private float illusSizeScale = 1f;
 
         /// <param name="document">캐릭터 선택 씬의 UIDocument(CharacterSelectUI). 없으면 실행 중에 만든다.</param>
@@ -234,6 +237,7 @@ namespace Project1.UI
             illusWidthScale = IllustrationWidthScale.TryGetValue(entry.id, out var ws) ? ws : 1f;
             illusSizeScale = IllustrationSizeScale.TryGetValue(entry.id, out var ss) ? ss : 1f;
             illusDropY = IllustrationDropY.TryGetValue(entry.id, out var dy) ? dy : 0f;
+            illusHeightScale = IllustrationHeightScale.TryGetValue(entry.id, out var hs) ? hs : 1f;
             illus.style.backgroundImage = tex != null ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
             missing.style.display = tex != null ? DisplayStyle.None : DisplayStyle.Flex;
 
@@ -288,7 +292,7 @@ namespace Project1.UI
             float e = 1f - Mathf.Pow(1f - p, 3f); // 빨리 들어와서 천천히 멈춘다
             illus.style.translate = new Translate(animDir * 300f * (1f - e), illusDropY);
             float s = 1.05f - 0.05f * e;
-            illus.style.scale = new Scale(new Vector2(s * illusWidthScale * illusSizeScale, s * illusSizeScale));
+            illus.style.scale = new Scale(new Vector2(s * illusWidthScale * illusSizeScale, s * illusSizeScale * illusHeightScale));
             illus.style.opacity = e;
             nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
             nameBlock.style.opacity = e;
