@@ -57,9 +57,32 @@ namespace Project1.Map.EditorTools
             if (IsLowWall(t)) { FitSegments(t, "LowStoneWall", 2.6f, 0f); return true; }
             if (n == "Arch_Pier_N") return true; // Arch_Pier_S 쪽에서 함께 처리
             if (n == "Arch_Pier_S") { FitBridgeArch(t); return true; }
+            if (n.StartsWith("Hall3_")) { FitFacing(t); return true; } // 3F 홀 가구(이름에 모델·앞 방향)
             return false;
         }
 
+
+        // 키가 큰 쪽(높이)으로만 맞추는 작은 소품 — 가로·세로로 늘이면 찌그러진다
+        private static readonly HashSet<string> UniformHallProps = new() { "Harp", "Globe", "BustPedestal", "ArmorStand", "Easel", "PaintingStack" };
+
+        /// <summary>
+        /// 이름 Hall3_{모델}_{번호}_{앞 방향 N/E/S/W} 상자: 모델 앞(+Z)을 그 방향(N = +Z, E = +X …)으로 돌려 상자에 맞춘다.
+        /// 큰 가구는 상자 크기대로, 작은 소품(UniformHallProps)은 높이 비율로.
+        /// </summary>
+        private static void FitFacing(Transform box)
+        {
+            var parts = box.name.Split('_');
+            if (parts.Length < 4) { FitBox(box, parts.Length > 1 ? parts[1] : box.name); return; }
+            string key = parts[1];
+            float yaw = parts[^1] switch { "E" => 90f, "S" => 180f, "W" => -90f, _ => 0f };
+            var s = box.localScale;
+            bool turn = Mathf.Abs(Mathf.Abs(yaw) - 90f) < 1f;
+            var frameRot = box.localRotation * Quaternion.Euler(0f, yaw, 0f);
+            var size = turn ? new Vector3(s.z, s.y, s.x) : s;
+            var bottom = box.localPosition - box.localRotation * Vector3.up * (s.y / 2f);
+            if (Place(key, box.parent, frameRot, bottom, size, UniformHallProps.Contains(key), false, $"{ModelPrefix}{key}_{box.name}") != null)
+                Hide(box);
+        }
         /// <summary>그룹(빈 부모)째 바꿀 것: 사다리(손잡이+발판) → Ladder, 무너진 잔해 더미 → RubblePile.</summary>
         private static bool DressExtraGroup(Transform t)
         {
@@ -248,18 +271,21 @@ namespace Project1.Map.EditorTools
         private static void BuildChapel(Transform g)
         {
             const float floor = 12.15f;
+            // 예배실 = 본채 로컬 x 0..12(넓힘), 월드 x -22..-10 — 가운데 x -16
             // 맨 앞 벽(z -19.8) 가운데 큰 십자가 — 제단 위
-            WallItem(g, "Cross", new Vector3(-17.5f, floor + 3.6f, -17.5f), Vector3.back, 2.4f, 0.04f);
-            // 강단: 오른쪽 앞, 신자석 쪽을 보며 살짝 가운데로
-            PlaceAt(g, "Pulpit", new Vector3(-14.4f, floor, -16.5f), -20f, 1.35f, collider: true);
-            // 제단 양옆 큰 촛대
-            PlaceAt(g, "Candelabra", new Vector3(-21.1f, floor, -18.7f), 0f, 1.9f, collider: true);
-            PlaceAt(g, "Candelabra", new Vector3(-13.9f, floor, -18.7f), 0f, 1.9f, collider: true);
-            // 액자: 서쪽 벽 세 점, 뒷벽 두 점(벽을 찾아 붙인다)
-            foreach (float z in new[] { -14.4f, -10.8f, -7.2f })
+            WallItem(g, "Cross", new Vector3(-16f, floor + 3.6f, -17.5f), Vector3.back, 2.4f, 0.04f);
+            // 강단: 왼쪽(서) 앞, 신자석 쪽을 보며 살짝 가운데로(동쪽 앞은 복도 문)
+            PlaceAt(g, "Pulpit", new Vector3(-20.6f, floor, -16.4f), 20f, 1.35f, collider: true);
+            // 제단 단 양옆 큰 촛대
+            PlaceAt(g, "Candelabra", new Vector3(-20.3f, floor, -18.7f), 0f, 1.9f, collider: true);
+            PlaceAt(g, "Candelabra", new Vector3(-11.7f, floor, -18.7f), 0f, 1.9f, collider: true);
+            // 액자: 서쪽 벽 네 점, 뒷벽 세 점, 동쪽 벽 문 사이 두 점(벽을 찾아 붙인다)
+            foreach (float z in new[] { -14.4f, -10.8f, -7.2f, -4.2f })
                 WallItem(g, "Frame", new Vector3(-20.5f, floor + 2.3f, z), Vector3.left, 1.1f, 0.03f);
-            foreach (float x in new[] { -19.7f, -15.5f })
+            foreach (float x in new[] { -16.5f, -13.5f, -11f })
                 WallItem(g, "Frame", new Vector3(x, floor + 2.4f, -3.5f), Vector3.forward, 1.2f, 0.03f);
+            foreach (float z in new[] { -13.5f, -8.5f })
+                WallItem(g, "Frame", new Vector3(-11f, floor + 2.3f, z), Vector3.right, 1.1f, 0.03f);
         }
 
         private static void BuildNature(Transform g)

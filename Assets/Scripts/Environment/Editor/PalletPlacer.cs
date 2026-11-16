@@ -20,10 +20,10 @@ namespace Project1.Map.EditorTools
         // (기댈 면 바로 앞 바닥 x, y, z, 넘어가는 방향 x, z, 옆 잡동사니, 판자 길이 m — 0이면 기본 2.1)
         private static readonly (float x, float y, float z, float dx, float dz, string by, float len)[] Spots =
         {
-            (39.22f, -0.22f, -8.00f, -1f, 0f, "상자", 0f),
-            (-26.78f, -0.13f, 40.00f, -1f, 0f, "상자 무더기(북서)", 0f),
+            (36.22f, 0f, -12.00f, -1f, 0f, "상자(동)", 0f),
+            (-45.78f, 0f, 37.00f, -1f, 0f, "상자 무더기(북서 구석)", 0f),
             (-32.78f, -0.11f, -42.00f, -1f, 0f, "상자 무더기(서)", 0f),
-            (29.22f, -0.19f, -42.00f, -1f, 0f, "상자 무더기(동)", 0f),
+            (21.22f, 0f, -38.50f, -1f, 0f, "상자 무더기(남동)", 0f),
             (-21.98f, 0.15f, -8.90f, -1f, 0f, "부엌 찬장(방 안)", 0f),
             (-45.06f, 0.02f, -17.08f, -0.05f, -1f, "정원 바위", 0f),
             (15.93f, 0.15f, -4.20f, 1f, 0f, "무너진 잔해", 0f),
@@ -67,9 +67,9 @@ namespace Project1.Map.EditorTools
             Debug.Log($"[BG] 판자 {Spots.Length}개를 배치하고 씬을 저장했습니다.");
         }
 
-        // 긴 가구를 끊은 틈(MapBlockoutBuilder): 사물함 줄(칸 사이가 1.4m 넘게 벌어진 곳), 둘로 나눈 책장·창고 선반 사이.
+        // 긴 가구를 끊은 틈(MapBlockoutBuilder): 사물함 줄(칸 사이가 1.4m 넘게 벌어진 곳), 둘로 나눈 책장·창고 선반 사이, 예배실 장의자 사이 통로.
         private static readonly string[] LockerRows = { "Locker1F_A", "Locker1F_B", "Locker2F", "Lockers_A", "Lockers_B" };
-        private static readonly (string a, string b)[] SplitPairs = { ("Shelf_7a", "Shelf_7b"), ("Storage_Rack_A", "Storage_Rack_B") };
+        private static readonly (string a, string b)[] SplitPairs = { ("Shelf_7a", "Shelf_7b"), ("Storage_Rack_A", "Storage_Rack_B"), ("Pew_3_1.5", "Pew_3_7.1") }; // 마지막 = 예배실 가운데 통로(장의자 – 판자 – 장의자)
 
         /// <summary>긴 가구 틈마다 판자: 앞 칸 끝면에 기대 서서 틈을 가로질러 다음 칸까지 넘어간다(길이 = 틈).</summary>
         private static int PlaceInGaps(Transform root)
@@ -98,6 +98,8 @@ namespace Project1.Map.EditorTools
             foreach (var (an, bn) in SplitPairs)
             {
                 var ta = all.FirstOrDefault(t => t.name == an); var tb = all.FirstOrDefault(t => t.name == bn);
+                if (ta != null && ta.GetComponent<Collider>() == null) ta = all.FirstOrDefault(t => t.name == an + "_0"); // 서재 책장 = 그룹(층마다 _0, _1 …) — 1층 칸
+                if (tb != null && tb.GetComponent<Collider>() == null) tb = all.FirstOrDefault(t => t.name == bn + "_0");
                 if (ta == null || tb == null || ta.GetComponent<Collider>() == null || tb.GetComponent<Collider>() == null) continue;
                 var b0 = ta.GetComponent<Collider>().bounds; var b1 = tb.GetComponent<Collider>().bounds;
                 Vector3 d = b1.center - b0.center; d.y = 0f;
