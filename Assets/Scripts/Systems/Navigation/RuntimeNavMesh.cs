@@ -27,6 +27,8 @@ namespace Project1.Systems
         private static readonly List<NavMeshBuildMarkup> noMarkups = new();
 
         public static int AgentTypeId => 0;
+        /// <summary>NavMesh를 구운 몸 반지름(m) — 가장자리는 벽에서 이만큼 떨어져 있다.</summary>
+        public static float Radius => AgentRadius;
 
         /// <summary>NavMesh가 없으면 굽는다. 걸을 바닥이 하나도 없으면 false.</summary>
         public static bool Ensure()

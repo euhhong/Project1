@@ -7,7 +7,8 @@ namespace Project1.Systems
     /// 분신의 움직임 규칙(BE, 분신 캐릭터 루트의 입력 — ICharacterInputSource).
     /// - 늘 상대(불러낸 캐릭터가 맞힐 수 있는 캐릭터, 다른 분신 제외) 중 가장 가까운 하나를 목표로 잡고 끝까지 쫓는다 — 거리·시야 제한 없음.
     ///   목표가 사라지거나 쓰러지면 바로 다음 상대를 찾고, 더 가까운 상대가 생기면 가끔 바꾼다.
-    /// - 길은 NavPathFollower(런타임 NavMesh)로 찾는다 — 다른 층이면 계단으로, 벽이 있으면 돌아서 간다. 막히면 점프해 본다.
+    /// - 길은 NavPathFollower(런타임 NavMesh)로 찾는다 — 다른 층이면 계단으로, 벽이 있으면 돌아서 간다. 점프는 하지 않는다(걷기만).
+    ///   상대가 움직이면 길을 0.4초마다·1m 움직일 때마다 다시 찾고, 벽에 비비거나 막히면 감지해서 다시 찾고 벽에서 비켜 선다.
     /// - 늘 감시자의 통상 이동속도(걷기)로 다가간다 — 달리지 않는다(runDistance는 쓰지 않음).
     /// - 공격 범위(attackRange, 수평) 안이고 높이 차가 작으면 멈춰 서서 공격한다(약공격, 공격이 끝나고 attackGap초 뒤 다시).
     ///   한 번 휘두르면 swingPause초 그 자리에 멈춰 서고, 공격이 맞으면 hitStop초 짧게 멈춘다. 분신의 공격은 피해만 주고 경직·넉백은 없다(HitStunRules·DefaultHitKnockback).
@@ -91,7 +92,7 @@ namespace Project1.Systems
             var f = new CharacterInputFrame { LookYaw = transform.eulerAngles.y };
             InRange = false;
             if (despawned) return f;
-            if (follower == null) follower = GetComponent<NavPathFollower>();
+            if (follower == null) { follower = GetComponent<NavPathFollower>(); follower.SuggestJumpWhenStuck = false; }
             UpdateTarget();
             if (target == null) return f;
 
@@ -131,7 +132,7 @@ namespace Project1.Systems
                 f.LookYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
                 f.Move = new Vector2(0f, 1f);
                 f.Run = false; // 늘 감시자의 통상 이동속도(CloneSummonSkill이 걷기 = 달리기 = 감시자 걷기로 맞춤)
-                f.Jump = follower.ConsumeJump();
+                // 점프하지 않는다 — 걷기만으로 길(계단·문)을 따라간다. 막히면 NavPathFollower가 길을 다시 찾고 벽에서 비켜 선다.
             }
             else if (dist > 1e-3f) f.LookYaw = Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg;
             return f;
