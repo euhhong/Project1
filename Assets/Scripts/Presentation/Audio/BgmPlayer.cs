@@ -11,6 +11,8 @@ namespace Project1.Presentation
     public class BgmPlayer : MonoBehaviour
     {
         private const float FadeTime = 1f;
+        /// <summary>배경음악 바탕 크기(음량 100%일 때 실제 크기). 효과음·메뉴 소리보다 한발 뒤로 물러나게 적당히.</summary>
+        private const float MusicGain = 0.45f;
         private static BgmPlayer instance;
 
         private readonly AudioSource[] sources = new AudioSource[2];
@@ -92,7 +94,7 @@ namespace Project1.Presentation
                 var s = sources[i];
                 bool rising = i == current && s.clip != null;
                 levels[i] = Mathf.MoveTowards(levels[i], rising ? 1f : 0f, step);
-                s.volume = levels[i] * AudioVolume.Bgm;
+                s.volume = levels[i] * AudioVolume.Bgm * MusicGain;
                 if (!rising && levels[i] <= 0f && s.isPlaying) s.Stop();
             }
         }
