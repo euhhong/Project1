@@ -10,7 +10,7 @@
 | 안토니오 | Hunter_Antonio.png | |
 | 사냥터지기(노루) | Hunter_Gamekeeper.png | |
 | 하스터 | Hunter_Hastur.png | |
-| 공장장 | Hunter_HellEmber.png | ✅ (1402×1122, 흰 배경) |
+| 공장장 | Hunter_HellEmber.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
 | 루키노 | Hunter_Luchino.png | |
 | 리퍼 | Hunter_Ripper.png | |
 | 광대 | Hunter_SmileyFace.png | |
