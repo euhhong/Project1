@@ -52,7 +52,7 @@ namespace Project1.UI
             tooltip.style.paddingTop = tooltip.style.paddingBottom = 12f;
             tooltip.style.display = DisplayStyle.None;
             panel.Add(tooltip);
-            tooltipLabel = Text(tooltip, "", bodyFont, 25, Ink);
+            tooltipLabel = Text(tooltip, "", bodyFont, 22, Ink);
             tooltipLabel.style.whiteSpace = WhiteSpace.Normal;
         }
 
@@ -70,9 +70,9 @@ namespace Project1.UI
 
             Row(Mouse(false), "평타", null, CharacterControlsText.AttackTooltip(entry));
             if (survivor) Row(Mouse(true), "차징 · " + CharacterControlsText.SurvivorCharge, null, CharacterControlsText.ParryTooltip);
-            else Row(Mouse(true), "차징", c.Charge, null);
+            else Row(Mouse(true), "차징", c.Charge, c.ChargeTip);
             string skillName = entry.skill != null && !string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.displayName : "스킬";
-            Row(Key("E", 56f), skillName, c.Skill, null);
+            Row(Key("E", 56f), skillName, c.Skill, c.SkillTip);
             if (survivor) Row(Key("SPACE", 116f), CharacterControlsText.PalletDrop, CharacterControlsText.PalletDropDesc, null);
         }
 
@@ -124,7 +124,18 @@ namespace Project1.UI
             row.RegisterCallback<PointerEnterEvent>(_ =>
             {
                 tooltipLabel.text = tip;
-                tooltip.style.top = row.layout.yMax + list.layout.y + 2f;
+                // 아래쪽 줄(E 스킬·판자)은 설명이 길어 칸 밖으로 넘치지 않게 줄 위에 띄운다
+                bool above = row.layout.y > list.layout.height * 0.35f;
+                if (above)
+                {
+                    tooltip.style.top = StyleKeyword.Auto;
+                    tooltip.style.bottom = panel.layout.height - (row.layout.y + list.layout.y) + 2f;
+                }
+                else
+                {
+                    tooltip.style.bottom = StyleKeyword.Auto;
+                    tooltip.style.top = row.layout.yMax + list.layout.y + 2f;
+                }
                 tooltip.style.display = DisplayStyle.Flex;
                 tooltip.BringToFront();
             });
