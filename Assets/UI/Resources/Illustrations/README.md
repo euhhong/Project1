@@ -16,7 +16,7 @@
 | 광대 | Hunter_SmileyFace.png | |
 | 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
 | 카우보이 | Survivor_Cowboy.png | |
-| 의사 | Survivor_Doctor.png | |
+| 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |
 | 포워드 | Survivor_Forward.png | ✅ (1402×1122, 흰 배경) |
 | 용병 | Survivor_Mercenary.png | |
 | 맹인 | Survivor_MindsEye.png | |

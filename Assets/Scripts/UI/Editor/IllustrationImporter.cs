@@ -19,6 +19,7 @@ namespace Project1.UI.Editor
         private const float MaxStep = 0.12f;  // 이웃과 밝기 차가 이보다 크면(외곽선) 번지지 않는다
         private const int EdgeGrow = 2;       // 외곽선 둘레 밝은 테두리(헤일로)를 없애려고 배경을 몇 픽셀 더 넓힌다
         private const float WarmMin = 0.14f;  // (R+G)/2 − B가 이보다 크면 노란 빛(불꽃)으로 보고 지킨다
+        private const float SkinMin = 0.03f;  // R이 G·B보다 이만큼 크면(분홍기 도는 살색) 배경으로 번지지 않는다
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
 
@@ -102,7 +103,8 @@ namespace Project1.UI.Editor
             {
                 var c = px[i];
                 lum[i] = Mathf.Min(c.r, Mathf.Min(c.g, c.b)) / 255f;
-                warm[i] = (c.r + c.g) * 0.5f - c.b > WarmMin * 255f;
+                warm[i] = (c.r + c.g) * 0.5f - c.b > WarmMin * 255f
+                       || (c.r - Mathf.Max(c.g, c.b) >= SkinMin * 255f && lum[i] < PureWhite); // 아주 옅은 살색(창백한 얼굴)도 흰 배경과 헷갈리지 않게 지킨다
             }
 
             var bg = new bool[n];

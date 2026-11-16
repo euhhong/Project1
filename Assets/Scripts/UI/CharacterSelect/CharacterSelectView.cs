@@ -41,7 +41,7 @@ namespace Project1.UI
         private VisualElement illusLayer, illus, glow, nameBlock, nameRule;
         private CharacterSelectFlipTransition flip;
         private CharacterControlsPanel controls;
-        private Label watermark, missing, nameLabel, subLabel;
+        private Label missing, nameLabel, subLabel;
         private Button hunterTab, survivorTab, prevArrow, nextArrow;
         private SlantedButton startButton, practiceButton;
         private CharacterRole role;
@@ -82,11 +82,6 @@ namespace Project1.UI
             illusLayer = Abs(root, left: IllusLeft, top: 0f, right: IllusRight, bottom: 0f);
             illusLayer.style.overflow = Overflow.Hidden;
 
-            watermark = Text(illusLayer, "", titleFont, 380, new Color(1f, 1f, 1f, 0.045f));
-            watermark.style.position = Position.Absolute;
-            watermark.style.left = -400f; watermark.style.right = -400f; watermark.style.top = 120f;
-            watermark.style.unityTextAlign = TextAnchor.MiddleCenter;
-            watermark.style.whiteSpace = WhiteSpace.NoWrap;
 
             illus = Abs(illusLayer, left: 0f, top: IllusTop, right: 0f, bottom: IllusBottom);
             illus.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
@@ -216,7 +211,6 @@ namespace Project1.UI
         {
             SetRole(shownRole);
             nameLabel.text = entry.displayName;
-            watermark.text = entry.displayName;
             string roleName = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
             subLabel.text = roleName;
             controls.Show(entry, accent);
@@ -237,7 +231,6 @@ namespace Project1.UI
         {
             SetRole(shownRole);
             nameLabel.text = "없음";
-            watermark.text = "";
             subLabel.text = "고를 캐릭터가 없습니다";
             controls.ShowEmpty();
             illus.style.backgroundImage = new StyleBackground(StyleKeyword.None);
@@ -278,7 +271,6 @@ namespace Project1.UI
             illus.style.translate = new Translate(animDir * 300f * (1f - e), 0f);
             illus.style.scale = new Scale(Vector2.one * (1.05f - 0.05f * e));
             illus.style.opacity = e;
-            watermark.style.translate = new Translate(animDir * 140f * (1f - e), 0f);
             nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
             nameBlock.style.opacity = e;
         }
