@@ -51,6 +51,8 @@ namespace Project1.Map.EditorTools
             var root = new GameObject($"{ModelPrefix}Scatter").transform;
             root.SetParent(g, false);
             var placedAt = new List<Vector3>();
+            var windowSpots = new List<Vector3>(); // 창문 구멍 아래 가운데(MapBlockoutBuilder WinOpening_)
+            foreach (var t in g.root.GetComponentsInChildren<Transform>(true)) if (t.name.StartsWith("WinOpening_")) { windowSpots.Add(t.position); windowSpots.Add(t.position - Vector3.up * 1.0f); }
             foreach (var p in Object.FindObjectsByType<Project1.Systems.Pallet>()) placedAt.Add(p.transform.position);
             placedAt.AddRange(MirrorSpots); // 순간이동 거울과 그 앞(들어가는·나오는 자리)은 비워 둔다
             int loopIn = 0, loopOut = 0, wallIn = 0, wallOut = 0;
@@ -68,6 +70,8 @@ namespace Project1.Map.EditorTools
                         bool indoor = Physics.Raycast(p + Vector3.up * 0.3f, Vector3.up, 8f, ~0, QueryTriggerInteraction.Ignore);
                         if (!indoor && level > 1f) continue; // 지붕 위·테라스 위는 빼고 1층 바깥만 야외
                         if (Near(p, placedAt, 3f)) continue; // 판자·다른 소품 근처
+                        if (!IsFloorHit(hit)) continue;      // 진짜 바닥·땅에만(상자·작업대·난간·창틀·분수대 위 등은 아님)
+                        if (Near(p, windowSpots, 1.4f)) continue; // 창문 앞·창틀 위는 비움
                         // 1) 빙 돌 수 있는 자리(둘레가 비었음)
                         if (!Near(p, loopSpots, LoopSpacing) && Clear(p, LoopClear))
                         {
@@ -106,6 +110,15 @@ namespace Project1.Map.EditorTools
             foreach (var e in table) if (e.indoor == indoor && LoadModel(e.key) != null) list.Add((e.key, e.h));
             if (list.Count == 0) return (null, 0f);
             return list[Mathf.Clamp(Mathf.FloorToInt(Hash(p.x * 2.3f + 1f, p.z * 1.7f + 2f) * list.Count), 0, list.Count - 1)];
+        }
+
+        /// <summary>바닥·땅인지: 지형(Environment), 층 바닥판(…Floor…·Floors 아래), 옥상·지붕 테라스, 연결동 옥상 길. 가구·상자·난간·창틀·분수대 위는 아니다.</summary>
+        private static bool IsFloorHit(RaycastHit hit)
+        {
+            var t = hit.collider.transform;
+            if (t.root.name == "Environment") return true;
+            string n = t.name, p = t.parent != null ? t.parent.name : "";
+            return n.Contains("Floor") || p.Contains("Floor") || p == "Floors" || p.Contains("Roof") || n.Contains("Walkway") || p.Contains("Walkway") || n.Contains("Terrace");
         }
 
         private static bool Near(Vector3 p, List<Vector3> list, float d)
