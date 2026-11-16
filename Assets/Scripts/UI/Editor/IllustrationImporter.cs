@@ -13,10 +13,10 @@ namespace Project1.UI.Editor
     {
         private const string Folder = "Assets/UI/Resources/Illustrations/";
 
-        private const float SeedMin = 0.9f;   // 테두리에서 이 정도로 흰 픽셀부터 배경으로 본다
-        private const float FloodMin = 0.45f; // 배경은 이보다 밝은 픽셀로만 번진다
-        private const float FullMin = 0.8f;   // 이보다 밝으면 흰색을 완전히 뺀다(그 사이는 조금만)
-        private const float MaxStep = 0.12f;  // 이웃과 밝기 차가 이보다 크면(외곽선) 번지지 않는다
+        private static float SeedMin = 0.9f;  // 테두리에서 이 정도로 흰 픽셀부터 배경으로 본다
+        private static float FloodMin = 0.45f; // 배경은 이보다 밝은 픽셀로만 번진다
+        private static float FullMin = 0.8f;  // 이보다 밝으면 흰색을 완전히 뺀다(그 사이는 조금만)
+        private static float MaxStep = 0.12f; // 이웃과 밝기 차가 이보다 크면(외곽선) 번지지 않는다
         private const int EdgeGrow = 2;       // 외곽선 둘레 밝은 테두리(헤일로)를 없애려고 배경을 몇 픽셀 더 넓힌다
         private const float WarmMin = 0.14f;  // (R+G)/2 − B가 이보다 크면 노란 빛(불꽃)으로 보고 지킨다
         private const float SkinMin = 0.03f;  // R이 G·B보다 이만큼 크면(분홍기 도는 살색) 배경으로 번지지 않는다
@@ -25,10 +25,15 @@ namespace Project1.UI.Editor
         // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
         private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue) };
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
-        private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) } };
+        private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) },
+            // 검은 배경 그림: 배경에 붙은 검은 옷(칸 안에서는 새까만 배경만 빠짐)
+            ["Hunter_Ripper"] = new[] { new RectInt(340, 20, 210, 270), new RectInt(330, 230, 480, 330), new RectInt(300, 560, 600, 562), new RectInt(810, 262, 400, 150) },
+            ["Survivor_Cowboy"] = new[] { new RectInt(150, 700, 1252, 422) },
+            ["Survivor_MindsEye"] = new[] { new RectInt(420, 200, 490, 380), new RectInt(630, 540, 250, 200) }, // 머리카락·고글·목도리 매듭의 어두운 그늘
+        };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
-        private const float ProtectWhite = 0.99f; // 지킬 칸 안에서도 이만큼 새하얀 픽셀은 배경으로 본다
+        private static float ProtectWhite = 0.99f; // 지킬 칸 안에서도 이만큼 새하얀 픽셀은 배경으로 본다
 
         public override uint GetVersion() => 6;
 
@@ -76,8 +81,18 @@ namespace Project1.UI.Editor
             {
                 if (!tex.LoadImage(bytes)) return false;
                 var px = tex.GetPixels32();
-                if (!HasWhiteBorder(px, tex.width, tex.height)) return false;
+                bool white = HasPlainBorder(px, tex.width, tex.height, true), black = !white && HasPlainBorder(px, tex.width, tex.height, false);
+                if (!white && !black) return false;
                 string id = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (black)
+                {
+                    RemoveBlackBackground(px, tex.width, tex.height, ProtectRects.TryGetValue(id, out var keepDark) ? keepDark : null);
+                    tex.SetPixels32(px);
+                    System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                    Debug.Log($"[FE] 일러스트 검은 배경을 뺐습니다: {path}");
+                    return true;
+                }
                 var (encMin, encMax) = EnclosedRanges.TryGetValue(id, out var range) ? range : (EnclosedMinArea, int.MaxValue);
                 RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(id), encMin, encMax, ProtectRects.TryGetValue(id, out var keep) ? keep : null);
                 tex.SetPixels32(px);
@@ -89,13 +104,14 @@ namespace Project1.UI.Editor
             finally { Object.DestroyImmediate(tex); }
         }
 
-        private static bool HasWhiteBorder(Color32[] px, int w, int h)
+        /// <summary>테두리가 불투명한 흰색(white = true) 또는 검은색 배경인지.</summary>
+        private static bool HasPlainBorder(Color32[] px, int w, int h, bool whiteBg)
         {
             int white = 0, total = 0;
             void Check(Color32 c)
             {
                 total++;
-                if (c.a == 255 && c.r >= 230 && c.g >= 230 && c.b >= 230) white++;
+                if (c.a == 255 && (whiteBg ? c.r >= 230 && c.g >= 230 && c.b >= 230 : c.r <= 25 && c.g <= 25 && c.b <= 25)) white++;
             }
             for (int x = 0; x < w; x += 4) { Check(px[x]); Check(px[(h - 1) * w + x]); }
             for (int y = 0; y < h; y += 4) { Check(px[y * w]); Check(px[y * w + w - 1]); }
@@ -180,6 +196,23 @@ namespace Project1.UI.Editor
                 byte Un(byte v) => (byte)Mathf.RoundToInt(Mathf.Clamp01((v / 255f - (1f - a)) / a) * 255f);
                 px[i] = new Color32(Un(c.r), Un(c.g), Un(c.b), (byte)Mathf.RoundToInt(a * c.a));
             }
+        }
+
+        /// <summary>
+        /// 검은 배경 빼기: 색을 뒤집어 흰 배경 빼기와 같은 방식으로 뺀 뒤 다시 뒤집는다(검정 → 투명, 빛나는 효과는 반투명으로 남음).
+        /// 검은 옷이 배경과 섞이기 쉬워 기준을 더 엄하게: 거의 새까만 픽셀에서만 시작하고, 어두운 회색 이상은 번지지 않는다. 넓게 갇힌 새까만 틈(머리카락 사이·고리 속)도 뺀다. 배경에 붙은 검은 옷은 ProtectRects로 지킨다.
+        /// </summary>
+        public static void RemoveBlackBackground(Color32[] px, int w, int h, RectInt[] protect = null)
+        {
+            for (int i = 0; i < px.Length; i++) { var c = px[i]; px[i] = new Color32((byte)(255 - c.r), (byte)(255 - c.g), (byte)(255 - c.b), c.a); }
+            float seed = SeedMin, flood = FloodMin, full = FullMin, step = MaxStep, keep = ProtectWhite;
+            try
+            {
+                SeedMin = 0.95f; FloodMin = 0.8f; FullMin = 0.93f; MaxStep = 0.05f; ProtectWhite = 0.965f; // 압축 잡티가 낀 검은 배경(RGB 9 이하)도 칸 안에서 빠지게
+                RemoveWhiteBackground(px, w, h, false, EnclosedMinArea, int.MaxValue, protect);
+            }
+            finally { SeedMin = seed; FloodMin = flood; FullMin = full; MaxStep = step; ProtectWhite = keep; }
+            for (int i = 0; i < px.Length; i++) { var c = px[i]; px[i] = c.a == 0 ? new Color32(0, 0, 0, 0) : new Color32((byte)(255 - c.r), (byte)(255 - c.g), (byte)(255 - c.b), c.a); }
         }
 
         /// <summary>리본 고리·팔과 몸 사이처럼 테두리와 이어지지 않은 흰 배경. 아주 흰 픽셀이 넓게 뭉친 곳만 배경으로 본다(얼굴·옷의 흰 부분은 이만큼 새하얗고 넓지 않다).</summary>
