@@ -361,6 +361,72 @@ Transform:
   - {fileID: 368223531}
   m_Father: {fileID: 1477362148}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1415404
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1415405}
+  - component: {fileID: 1415407}
+  - component: {fileID: 1415406}
+  m_Layer: 0
+  m_Name: "Pallet_06 (\uB3D9\uAD00 2\uCE35 \uC548\uB730 \uCABD \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1415405
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415404}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 18, y: 6.15, z: 23}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1415406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1415407
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1415404}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1484686
 GameObject:
   m_ObjectHideFlags: 0
@@ -7761,72 +7827,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b6920a7a522b88b43addfacd39b86b1b, type: 3}
   m_PrefabInstance: {fileID: 44336620}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &44874983
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 44874984}
-  - component: {fileID: 44874986}
-  - component: {fileID: 44874985}
-  m_Layer: 0
-  m_Name: "Pallet_08 (\uBB34\uB108\uC9C4 \uC794\uD574)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &44874984
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 44874983}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 22.67, y: 0.15, z: 11.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &44874985
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 44874983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &44874986
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 44874983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &45161342
 GameObject:
   m_ObjectHideFlags: 0
@@ -11687,72 +11687,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a8a7dd18e7362e54e8636a68f02a7a6c, type: 3}
   m_PrefabInstance: {fileID: 75848914}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &75990688
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 75990689}
-  - component: {fileID: 75990691}
-  - component: {fileID: 75990690}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Locker1F_B_5 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &75990689
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 75990688}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 19, y: 0.15, z: -12.919999}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &75990690
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 75990688}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &75990691
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 75990688}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8199997
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &76634762
 GameObject:
   m_ObjectHideFlags: 0
@@ -18279,6 +18213,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cae4e55865b801e45adf0ecf99549b66, type: 3}
   m_PrefabInstance: {fileID: 127005837}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &127161481
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 127161482}
+  - component: {fileID: 127161484}
+  - component: {fileID: 127161483}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Lockers_A_2 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &127161482
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127161481}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 31, y: 0.15, z: 9.92}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &127161483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127161481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &127161484
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 127161481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8200006
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &127315039
 GameObject:
   m_ObjectHideFlags: 0
@@ -21836,72 +21836,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 146182733}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &146985593
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 146985594}
-  - component: {fileID: 146985596}
-  - component: {fileID: 146985595}
-  m_Layer: 0
-  m_Name: "Pallet_02 (\uC0C1\uC790 \uBB34\uB354\uAE30(\uBD81\uC11C \uAD6C\uC11D))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &146985594
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 146985593}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -45.78, y: -0.20750004, z: 37}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &146985595
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 146985593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &146985596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 146985593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &147217738
 GameObject:
   m_ObjectHideFlags: 0
@@ -23708,6 +23642,72 @@ Transform:
   - {fileID: 70284371}
   m_Father: {fileID: 929993014}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &160609886
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 160609887}
+  - component: {fileID: 160609889}
+  - component: {fileID: 160609888}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Pew_3_1.5 (\uAE34 \uAC00\uAD6C \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &160609887
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160609886}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -16.919998, y: 12.15, z: -9.299999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &160609888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160609886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &160609889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160609886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.1999989
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &161405576
 GameObject:
   m_ObjectHideFlags: 0
@@ -25340,72 +25340,6 @@ Transform:
   - {fileID: 1224851551}
   m_Father: {fileID: 31006433}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &177915676
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 177915677}
-  - component: {fileID: 177915679}
-  - component: {fileID: 177915678}
-  m_Layer: 0
-  m_Name: "Pallet_05 (\uBD80\uC5CC \uCC2C\uC7A5(\uBC29 \uC548))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &177915677
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 177915676}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -21.98, y: 0.15, z: -8.9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &177915678
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 177915676}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &177915679
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 177915676}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &177920959
 GameObject:
   m_ObjectHideFlags: 0
@@ -25874,72 +25808,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f45de385e31c4634fa3f12213052dd4d, type: 3}
   m_PrefabInstance: {fileID: 178854304}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &178966593
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 178966594}
-  - component: {fileID: 178966596}
-  - component: {fileID: 178966595}
-  m_Layer: 0
-  m_Name: "Pallet_11 (\uC548\uB730 \uBC1B\uCE68\uB3CC)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &178966594
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 178966593}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -10.82, y: 0.009784937, z: 10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &178966595
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 178966593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &178966596
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 178966593}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1001 &180587854
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -57227,6 +57095,72 @@ Transform:
   - {fileID: 1185772000}
   m_Father: {fileID: 96350720}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &426048476
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 426048477}
+  - component: {fileID: 426048479}
+  - component: {fileID: 426048478}
+  m_Layer: 0
+  m_Name: "Pallet_07 (3\uCE35 \uC11C\uCABD \uACC4\uB2E8\uC2E4 \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &426048477
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 426048476}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -10, y: 12.15, z: -27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &426048478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 426048476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &426048479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 426048476}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &426471862
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58487,6 +58421,72 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 435708956}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &436975295
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 436975296}
+  - component: {fileID: 436975298}
+  - component: {fileID: 436975297}
+  m_Layer: 0
+  m_Name: "Pallet_09 (1\uCE35 \uC11C\uCABD \uACC4\uB2E8\uC2E4 \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &436975296
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 436975295}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -13, y: 0.15, z: -27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &436975297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 436975295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &436975298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 436975295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &437079506
 GameObject:
   m_ObjectHideFlags: 0
@@ -59051,72 +59051,6 @@ Transform:
   - {fileID: 2043799025}
   m_Father: {fileID: 1463907257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &441114072
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 441114073}
-  - component: {fileID: 441114075}
-  - component: {fileID: 441114074}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Locker2F_4 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &441114073
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 441114072}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 17.5, y: 6.15, z: -13.840001}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &441114074
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 441114072}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &441114075
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 441114072}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8200016
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &441157675
 GameObject:
   m_ObjectHideFlags: 0
@@ -61265,6 +61199,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b93fdb16cfb36c44798b5bc13d1eac8a, type: 3}
   m_PrefabInstance: {fileID: 455472859}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &455619060
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 455619061}
+  - component: {fileID: 455619063}
+  - component: {fileID: 455619062}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Lockers_B_3 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &455619061
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455619060}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 26.5, y: 0.15, z: 10.84}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &455619062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455619060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &455619063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 455619060}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8200006
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &455787121
 GameObject:
   m_ObjectHideFlags: 0
@@ -62381,72 +62381,6 @@ Transform:
   - {fileID: 142222074}
   m_Father: {fileID: 1116758669}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &463892669
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 463892670}
-  - component: {fileID: 463892672}
-  - component: {fileID: 463892671}
-  m_Layer: 0
-  m_Name: "Pallet_14 (\uC0AC\uBB3C\uD568 \uC0AC\uC774)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &463892670
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 463892669}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 16.98, y: 0.15, z: -14}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &463892671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 463892669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &463892672
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 463892669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.9
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &463979572
 GameObject:
   m_ObjectHideFlags: 0
@@ -65928,6 +65862,60 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.513129, y: 0.9950321, z: 0.40681702}
   m_Center: {x: -0.000044852495, y: -0.0020144582, z: -0.009235784}
+--- !u!1 &487924349
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 487924350}
+  m_Layer: 0
+  m_Name: Pallets
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &487924350
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 487924349}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1853399263}
+  - {fileID: 1257276688}
+  - {fileID: 1720624075}
+  - {fileID: 1477052685}
+  - {fileID: 1206675488}
+  - {fileID: 1415405}
+  - {fileID: 426048477}
+  - {fileID: 1291477119}
+  - {fileID: 436975296}
+  - {fileID: 1546168341}
+  - {fileID: 1980000757}
+  - {fileID: 1966367347}
+  - {fileID: 2053603423}
+  - {fileID: 1175294330}
+  - {fileID: 998704791}
+  - {fileID: 512899538}
+  - {fileID: 1148131130}
+  - {fileID: 1011365865}
+  - {fileID: 127161482}
+  - {fileID: 455619061}
+  - {fileID: 790296737}
+  - {fileID: 570633352}
+  - {fileID: 160609887}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &488373947
 GameObject:
   m_ObjectHideFlags: 0
@@ -69484,6 +69472,72 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.99302715, y: 0.7041946, z: 0.46266025}
   m_Center: {x: 0.0012226086, y: -0.002663288, z: 0.0039861724}
+--- !u!1 &512899537
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 512899538}
+  - component: {fileID: 512899540}
+  - component: {fileID: 512899539}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Locker1F_A_2 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &512899538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512899537}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 16.5, y: 0.15, z: -15.68}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &512899539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512899537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &512899540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 512899537}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8200011
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &513687057
 GameObject:
   m_ObjectHideFlags: 0
@@ -76799,6 +76853,72 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 570235873}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &570633351
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 570633352}
+  - component: {fileID: 570633354}
+  - component: {fileID: 570633353}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Storage_Rack_A (\uAE34 \uAC00\uAD6C \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &570633352
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 570633351}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 15.080002, y: 12.15, z: -9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &570633353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 570633351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &570633354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 570633351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.7999973
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &570968335
 GameObject:
   m_ObjectHideFlags: 0
@@ -77089,72 +77209,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 572434778}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &572615217
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 572615218}
-  - component: {fileID: 572615220}
-  - component: {fileID: 572615219}
-  m_Layer: 0
-  m_Name: "Pallet_10 (\uC548\uB730 \uBC1B\uCE68\uB3CC)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &572615218
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 572615217}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 10.82, y: -0.0049675703, z: 26}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &572615219
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 572615217}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &572615220
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 572615217}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &572793936
 GameObject:
   m_ObjectHideFlags: 0
@@ -79715,72 +79769,6 @@ Transform:
   - {fileID: 408753782}
   m_Father: {fileID: 142879462}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &590108655
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 590108656}
-  - component: {fileID: 590108658}
-  - component: {fileID: 590108657}
-  m_Layer: 0
-  m_Name: "Pallet_13 (\uD310\uC790 \uAD6C\uC5ED \uB0A8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &590108656
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 590108655}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 32.32, y: 0.19265985, z: -26}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &590108657
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 590108655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &590108658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 590108655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &591473869
 GameObject:
   m_ObjectHideFlags: 0
@@ -87898,72 +87886,6 @@ Transform:
   - {fileID: 986584824}
   m_Father: {fileID: 625218788}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &643210344
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 643210345}
-  - component: {fileID: 643210347}
-  - component: {fileID: 643210346}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Lockers_A_2 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &643210345
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 643210344}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 31, y: 0.15, z: 9.92}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &643210346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 643210344}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &643210347
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 643210344}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8200006
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &643256607
 GameObject:
   m_ObjectHideFlags: 0
@@ -101660,72 +101582,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5976f1116cd31764899b1bdaec9af330, type: 3}
   m_PrefabInstance: {fileID: 735375593}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &735661296
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 735661297}
-  - component: {fileID: 735661299}
-  - component: {fileID: 735661298}
-  m_Layer: 0
-  m_Name: "Pallet_12 (\uD310\uC790 \uAD6C\uC5ED \uBD81)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &735661297
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 735661296}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 31.68, y: 0.16092491, z: -21}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &735661298
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 735661296}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &735661299
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 735661296}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &736181689
 GameObject:
   m_ObjectHideFlags: 0
@@ -106595,60 +106451,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 763484236}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &763794668
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 763794669}
-  m_Layer: 0
-  m_Name: Pallets
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &763794669
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 763794668}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1421629019}
-  - {fileID: 146985594}
-  - {fileID: 1905502630}
-  - {fileID: 1840646445}
-  - {fileID: 177915677}
-  - {fileID: 1996608804}
-  - {fileID: 1591233580}
-  - {fileID: 44874984}
-  - {fileID: 1668530870}
-  - {fileID: 572615218}
-  - {fileID: 178966594}
-  - {fileID: 735661297}
-  - {fileID: 590108656}
-  - {fileID: 463892670}
-  - {fileID: 1464783762}
-  - {fileID: 1164554889}
-  - {fileID: 75990689}
-  - {fileID: 441114073}
-  - {fileID: 643210345}
-  - {fileID: 1974895396}
-  - {fileID: 1812880315}
-  - {fileID: 2026413344}
-  - {fileID: 2036681424}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &764299028
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -110985,6 +110787,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 799aacc9b4a786d49a84218cb8715850, type: 3}
   m_PrefabInstance: {fileID: 789625823}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &790296736
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 790296737}
+  - component: {fileID: 790296739}
+  - component: {fileID: 790296738}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Shelf_7a (\uAE34 \uAC00\uAD6C \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &790296737
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790296736}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -29, y: 0.15, z: 8.88}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &790296738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790296736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &790296739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790296736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8000002
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &790397063
 GameObject:
   m_ObjectHideFlags: 0
@@ -140320,6 +140188,72 @@ Transform:
   - {fileID: 1908562223}
   m_Father: {fileID: 18822532}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &998704790
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 998704791}
+  - component: {fileID: 998704793}
+  - component: {fileID: 998704792}
+  m_Layer: 0
+  m_Name: "Pallet_15 (\uAC00\uC6B4\uB370 \uAE34 \uBCBD \uC0AC\uC774)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &998704791
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998704790}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -0.82, y: 0.10011923, z: 12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &998704792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998704790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &998704793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998704790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &998787764
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -142261,6 +142195,72 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1011171069}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1011365864
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1011365865}
+  - component: {fileID: 1011365867}
+  - component: {fileID: 1011365866}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Locker2F_4 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1011365865
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011365864}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 17.5, y: 6.15, z: -13.840001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1011365866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011365864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1011365867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1011365864}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8200016
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1013419639
 GameObject:
   m_ObjectHideFlags: 0
@@ -161120,6 +161120,72 @@ Transform:
   - {fileID: 1783510418}
   m_Father: {fileID: 1409302351}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1148131129
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1148131130}
+  - component: {fileID: 1148131132}
+  - component: {fileID: 1148131131}
+  m_Layer: 0
+  m_Name: "Pallet_Gap_Locker1F_B_5 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1148131130
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148131129}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 19, y: 0.15, z: -12.919999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1148131131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148131129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1148131132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1148131129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.8199997
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1148235941
 GameObject:
   m_ObjectHideFlags: 0
@@ -162938,72 +163004,6 @@ Transform:
   - {fileID: 335293161}
   m_Father: {fileID: 523847223}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1164554888
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1164554889}
-  - component: {fileID: 1164554891}
-  - component: {fileID: 1164554890}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Locker1F_A_2 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1164554889
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1164554888}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 16.5, y: 0.15, z: -15.68}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1164554890
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1164554888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1164554891
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1164554888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8200011
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1164910953
 GameObject:
   m_ObjectHideFlags: 0
@@ -164524,6 +164524,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 96117e1f26d819e4ebb098d2b6fad2af, type: 3}
   m_PrefabInstance: {fileID: 1174543453}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1175294329
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1175294330}
+  - component: {fileID: 1175294332}
+  - component: {fileID: 1175294331}
+  m_Layer: 0
+  m_Name: "Pallet_14 (\uC0AC\uBB3C\uD568 \uC0AC\uC774)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1175294330
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1175294329}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 16.98, y: 0.15, z: -14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1175294331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1175294329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1175294332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1175294329}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.9
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &1175846405
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -167631,6 +167697,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5976f1116cd31764899b1bdaec9af330, type: 3}
   m_PrefabInstance: {fileID: 1206496661}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1206675487
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1206675488}
+  - component: {fileID: 1206675490}
+  - component: {fileID: 1206675489}
+  m_Layer: 0
+  m_Name: "Pallet_05 (\uC11C\uCABD \uC5F0\uACB0\uB3D9 2\uCE35 \uC785\uAD6C)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1206675488
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206675487}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -22, y: 6.15, z: -1.6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1206675489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206675487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1206675490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1206675487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.5
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &1206995827
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -175275,6 +175407,72 @@ Transform:
   - {fileID: 750445302}
   m_Father: {fileID: 1463907257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1257276687
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1257276688}
+  - component: {fileID: 1257276690}
+  - component: {fileID: 1257276689}
+  m_Layer: 0
+  m_Name: "Pallet_02 (\uC11C\uAD00 \uBCBD \u2013 \uAD6C\uB984\uB2E4\uB9AC \uAD50\uAC01)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1257276688
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257276687}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -24, y: 0.15, z: 6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1257276689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257276687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1257276690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257276687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.2
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1257912121
 GameObject:
   m_ObjectHideFlags: 0
@@ -180632,6 +180830,72 @@ Transform:
   - {fileID: 8159787}
   m_Father: {fileID: 493884249}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1291477118
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1291477119}
+  - component: {fileID: 1291477121}
+  - component: {fileID: 1291477120}
+  m_Layer: 0
+  m_Name: "Pallet_08 (2\uCE35 \uB3D9\uCABD \uACC4\uB2E8\uC2E4 \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1291477119
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291477118}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 13, y: 6.15, z: -27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1291477120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291477118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1291477121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1291477118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &1291964843
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -200408,72 +200672,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5e613b9c6937496479342e4530c43eec, type: 3}
   m_PrefabInstance: {fileID: 1421423491}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1421629018
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1421629019}
-  - component: {fileID: 1421629021}
-  - component: {fileID: 1421629020}
-  m_Layer: 0
-  m_Name: "Pallet_01 (\uC0C1\uC790(\uB3D9))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1421629019
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421629018}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 36.22, y: -0.20966303, z: -12}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1421629020
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421629018}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1421629021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1421629018}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1001 &1422271758
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -207268,72 +207466,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.37178704, y: 0.5236126, z: 1.0050184}
   m_Center: {x: -0.003877893, y: -0.0011185706, z: -0.0019005537}
---- !u!1 &1464783761
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1464783762}
-  - component: {fileID: 1464783764}
-  - component: {fileID: 1464783763}
-  m_Layer: 0
-  m_Name: "Pallet_15 (\uAC00\uC6B4\uB370 \uAE34 \uBCBD \uC0AC\uC774)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1464783762
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1464783761}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0.82, y: 0.10011923, z: 12}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1464783763
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1464783761}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1464783764
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1464783761}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1001 &1465125355
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -209041,6 +209173,72 @@ Transform:
   - {fileID: 1516067544}
   m_Father: {fileID: 1463907257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1477052684
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1477052685}
+  - component: {fileID: 1477052687}
+  - component: {fileID: 1477052686}
+  m_Layer: 0
+  m_Name: "Pallet_04 (\uB3D9\uCABD \uC5F0\uACB0\uB3D9 2\uCE35 \uC785\uAD6C)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1477052685
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1477052684}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 22, y: 6.15, z: 4.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1477052686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1477052684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1477052687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1477052684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.5
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1477362147
 GameObject:
   m_ObjectHideFlags: 0
@@ -218010,6 +218208,72 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1545518319}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1546168340
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1546168341}
+  - component: {fileID: 1546168343}
+  - component: {fileID: 1546168342}
+  m_Layer: 0
+  m_Name: "Pallet_10 (\uC11C\uAD00 3\uCE35 \uBCF5\uB3C4 \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1546168341
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1546168340}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -22, y: 12.15, z: 9.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1546168342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1546168340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1546168343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1546168340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1546471848
 GameObject:
   m_ObjectHideFlags: 0
@@ -224750,72 +225014,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cf2dcdfc2eee34745b83b3382e606db4, type: 3}
   m_PrefabInstance: {fileID: 1590990144}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1591233579
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1591233580}
-  - component: {fileID: 1591233582}
-  - component: {fileID: 1591233581}
-  m_Layer: 0
-  m_Name: "Pallet_07 (\uBB34\uB108\uC9C4 \uC794\uD574)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1591233580
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1591233579}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 15.93, y: 0.15, z: -4.2}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1591233581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1591233579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1591233582
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1591233579}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1592058826
 GameObject:
   m_ObjectHideFlags: 0
@@ -236738,72 +236936,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: babbaaa658cbd3f4aaa93baecc2f8e71, type: 3}
   m_PrefabInstance: {fileID: 1668479957}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1668530869
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1668530870}
-  - component: {fileID: 1668530872}
-  - component: {fileID: 1668530871}
-  m_Layer: 0
-  m_Name: "Pallet_09 (\uC548\uB730 \uBC1B\uCE68\uB3CC)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1668530870
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1668530869}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -10.82, y: 0.073097944, z: 26}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1668530871
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1668530869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1668530872
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1668530869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1668795742
 GameObject:
   m_ObjectHideFlags: 0
@@ -244030,6 +244162,72 @@ Transform:
   - {fileID: 1082203822}
   m_Father: {fileID: 1864819688}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1720624074
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1720624075}
+  - component: {fileID: 1720624077}
+  - component: {fileID: 1720624076}
+  m_Layer: 0
+  m_Name: "Pallet_03 (3\uCE35 \uD558\uD504 \u2013 \uD30C\uC774\uD504 \uC624\uB974\uAC04)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1720624075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1720624074}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -3.05, y: 12.15, z: -8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1720624076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1720624074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1720624077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1720624074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.55
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1001 &1720839659
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -257688,72 +257886,6 @@ CapsuleCollider:
   m_Height: 0.5752758
   m_Direction: 1
   m_Center: {x: 0.0009704272, y: -0.19452098, z: 0.000033124463}
---- !u!1 &1812880314
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1812880315}
-  - component: {fileID: 1812880317}
-  - component: {fileID: 1812880316}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Shelf_7a (\uAE34 \uAC00\uAD6C \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1812880315
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1812880314}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -29, y: 0.15, z: 8.88}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1812880316
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1812880314}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1812880317
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1812880314}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8000002
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1813250341
 GameObject:
   m_ObjectHideFlags: 0
@@ -262487,72 +262619,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1839968050}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1840646444
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1840646445}
-  - component: {fileID: 1840646447}
-  - component: {fileID: 1840646446}
-  m_Layer: 0
-  m_Name: "Pallet_04 (\uC0C1\uC790 \uBB34\uB354\uAE30(\uB0A8\uB3D9))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1840646445
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1840646444}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 21.22, y: -0.20826882, z: -38.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1840646446
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1840646444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1840646447
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1840646444}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1001 &1840854298
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -264678,6 +264744,72 @@ Transform:
   - {fileID: 1982669832}
   m_Father: {fileID: 810177800}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1853399262
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1853399263}
+  - component: {fileID: 1853399265}
+  - component: {fileID: 1853399264}
+  m_Layer: 0
+  m_Name: "Pallet_01 (\uC601\uBB18 \uBB38(\uBB18\uC9C0))"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1853399263
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853399262}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 28.5, y: 0.15, z: 37.38}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1853399264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853399262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1853399265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853399262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 1.78
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1853850667
 GameObject:
   m_ObjectHideFlags: 0
@@ -271148,72 +271280,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f751f4ab57f963a46b7034e9dfe95707, type: 3}
   m_PrefabInstance: {fileID: 1904708149}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1905502629
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1905502630}
-  - component: {fileID: 1905502632}
-  - component: {fileID: 1905502631}
-  m_Layer: 0
-  m_Name: "Pallet_03 (\uC0C1\uC790 \uBB34\uB354\uAE30(\uC11C))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1905502630
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1905502629}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -32.78, y: -0.112161875, z: -42}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1905502631
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1905502629}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1905502632
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1905502629}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1907189825
 GameObject:
   m_ObjectHideFlags: 0
@@ -279485,6 +279551,72 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1966160201}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1966367346
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1966367347}
+  - component: {fileID: 1966367349}
+  - component: {fileID: 1966367348}
+  m_Layer: 0
+  m_Name: "Pallet_12 (\uD310\uC790 \uAD6C\uC5ED \uBD81)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1966367347
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966367346}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 31.68, y: 0.16092491, z: -21}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1966367348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966367346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1966367349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1966367346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1966557558
 GameObject:
   m_ObjectHideFlags: 0
@@ -280552,72 +280684,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb4a7e91dea36d049b46fbe6d02adc26, type: 3}
   m_PrefabInstance: {fileID: 1974668028}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1974895395
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1974895396}
-  - component: {fileID: 1974895398}
-  - component: {fileID: 1974895397}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Lockers_B_3 (\uC0AC\uBB3C\uD568 \uC904 \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1974895396
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1974895395}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 26.5, y: 0.15, z: 10.84}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1974895397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1974895395}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1974895398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1974895395}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.8200006
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1975940886
 GameObject:
   m_ObjectHideFlags: 0
@@ -280994,6 +281060,72 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.8244666, y: 1.0099504, z: 0.88585496}
   m_Center: {x: -0.0046181083, y: -0.0054354668, z: 0.006465733}
+--- !u!1 &1980000756
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1980000757}
+  - component: {fileID: 1980000759}
+  - component: {fileID: 1980000758}
+  m_Layer: 0
+  m_Name: "Pallet_11 (\uC11C\uAD00 1\uCE35 \uBCF5\uB3C4 \uBB38)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1980000757
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980000756}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -22, y: 0.15, z: 18}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1980000758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980000756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &1980000759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1980000756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2.4
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &1980319722
 GameObject:
   m_ObjectHideFlags: 0
@@ -283681,72 +283813,6 @@ Transform:
   - {fileID: 1748092243}
   m_Father: {fileID: 1463907257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1996608803
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1996608804}
-  - component: {fileID: 1996608806}
-  - component: {fileID: 1996608805}
-  m_Layer: 0
-  m_Name: "Pallet_06 (\uC815\uC6D0 \uBC14\uC704)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1996608804
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1996608803}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.999688, z: -0, w: -0.024976604}
-  m_LocalPosition: {x: -45.06, y: 0.022449255, z: -17.08}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1996608805
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1996608803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1996608806
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1996608803}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &1996648636
 GameObject:
   m_ObjectHideFlags: 0
@@ -288407,72 +288473,6 @@ Transform:
   - {fileID: 1263719907}
   m_Father: {fileID: 364123022}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2026413343
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2026413344}
-  - component: {fileID: 2026413346}
-  - component: {fileID: 2026413345}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Storage_Rack_A (\uAE34 \uAC00\uAD6C \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2026413344
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2026413343}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 15.080002, y: 12.15, z: -9}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2026413345
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2026413343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &2026413346
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2026413343}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.7999973
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1001 &2026550794
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -289989,72 +289989,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b6920a7a522b88b43addfacd39b86b1b, type: 3}
   m_PrefabInstance: {fileID: 2035760065}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &2036681423
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2036681424}
-  - component: {fileID: 2036681426}
-  - component: {fileID: 2036681425}
-  m_Layer: 0
-  m_Name: "Pallet_Gap_Pew_3_1.5 (\uAE34 \uAC00\uAD6C \uD2C8)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2036681424
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2036681423}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -16.919998, y: 12.15, z: -9.299999}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 763794669}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2036681425
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2036681423}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &2036681426
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2036681423}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1999989
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  hitFromAngle: 45
-  useRange: 1.6
 --- !u!1 &2037226971
 GameObject:
   m_ObjectHideFlags: 0
@@ -292245,6 +292179,72 @@ Transform:
   - {fileID: 1670290449}
   m_Father: {fileID: 1777475860}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2053603422
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2053603423}
+  - component: {fileID: 2053603425}
+  - component: {fileID: 2053603424}
+  m_Layer: 0
+  m_Name: "Pallet_13 (\uD310\uC790 \uAD6C\uC5ED \uB0A8)"
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2053603423
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2053603422}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 32.32, y: 0.19265985, z: -26}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 487924350}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2053603424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2053603422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
+--- !u!114 &2053603425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2053603422}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
+  height: 2
+  width: 1.5
+  thickness: 0.3
+  dropDelay: 0.3
+  fallTime: 0.32
+  bounceAngle: 6
+  bounceTime: 0.18
+  hitFromAngle: 45
+  useRange: 1.6
 --- !u!1 &2053691773
 GameObject:
   m_ObjectHideFlags: 0
@@ -307066,4 +307066,4 @@ SceneRoots:
   - {fileID: 870842351}
   - {fileID: 2070135642}
   - {fileID: 161405577}
-  - {fileID: 763794669}
+  - {fileID: 487924350}
