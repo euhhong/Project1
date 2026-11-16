@@ -6,7 +6,7 @@ Shader "Project1/Characters/Outline"
     Properties
     {
         _OutlineColor ("Color", Color) = (1, 1, 1, 1)
-        _OutlineWidth ("Width (px)", Float) = 1.6
+        _OutlineWidth ("Width (px)", Float) = 1.1
         _BaseMap ("Base (alpha for cutout)", 2D) = "white" {}
         _Cutoff ("Alpha Cutoff (0 = off)", Range(0, 1)) = 0
     }

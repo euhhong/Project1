@@ -13,7 +13,7 @@ namespace Project1.Presentation
     public class CharacterOutline : MonoBehaviour
     {
         public static Color Color = Color.white;
-        public static float WidthPixels = 1.6f;
+        public static float WidthPixels = 1.1f;
         private const string OutlineName = "~Outline";
 
         private static Shader shader;
@@ -74,6 +74,7 @@ namespace Project1.Presentation
             foreach (var (_, line) in pairs) if (line != null) Destroy(line.gameObject);
             pairs.Clear();
             builtFor = sig;
+            foreach (var t in GetComponentsInChildren<Transform>(true)) if (t != null && t.name == OutlineName) Destroy(t.gameObject); // 복제된 캐릭터(봇)가 원본에서 물려받은 윤곽선은 지운다
             if (shader == null) shader = Resources.Load<Shader>("CharacterOutline");
             if (shader == null) return;
             foreach (var r in GetComponentsInChildren<Renderer>(true))
