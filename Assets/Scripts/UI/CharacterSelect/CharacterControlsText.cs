@@ -16,7 +16,7 @@ namespace Project1.UI
 
         public const string HunterChargeDefault = "모아서 강하게 치기";
         public const string SurvivorCharge = "패링";
-        public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 주먹을 막는다.\n막으면 상대를 0.5초 스턴한다.\n떼면 돌려차기.";
+        public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 팔을 사용한 공격을 막는다.\n막으면 상대를 0.5초 스턴한다.\n떼면 돌려차기.";
         public const string PalletDrop = "판자 내리기";
         public const string PalletDropDesc = "판자 옆에서 · 깔린 감시자는 경직";
         // 평타 설명(마우스를 올리면). 생존자는 주먹, 감시자는 무기. 맹인은 지팡이.
