@@ -13,7 +13,7 @@ namespace Project1.Presentation
     public class CharacterOutline : MonoBehaviour
     {
         public static Color Color = Color.white;
-        public static float WidthPixels = 1.1f;
+        public static float WidthPixels = 1.35f;
         private const string OutlineName = "~Outline";
 
         private static Shader shader;
