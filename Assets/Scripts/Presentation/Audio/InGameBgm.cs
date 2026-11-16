@@ -5,38 +5,40 @@ using UnityEngine.SceneManagement;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 게임 중 탐색 배경음악(FE): 플레이를 시작하면 저절로 생긴다(붙일 것 없음).
-    /// 내 캐릭터(LocalPlayerInput) 가까이(NearRange m) 적이 없을 때:
+    /// 게임 중 배경음악(FE): 플레이를 시작하면 저절로 생긴다(붙일 것 없음). 내 캐릭터(LocalPlayerInput)와 가장 가까운 적의 거리로 고른다:
+    /// - 적이 가까이(NearRange m 안, 조우) = Resources/Bgm/Chase (실내·야외 모두)
     /// - 실내(카메라 CameraIndoorSensor — 머리 위 천장) = Resources/Bgm/Indoor
-    /// - 야외 = Resources/Bgm/Outdoor
-    /// 적이 가까이 오면(조우) 끈다. 적이 멀어진 뒤에는 ClearDelay초 지나야 다시 튼다. 실내·야외는 IndoorHold초 이어져야 바꾼다(문턱에서 깜빡이지 않게).
+    /// - 야외 = Resources/Bgm/Outdoor, 야외에서 적이 완전히 멀면(FarRange m 넘게, 적이 없어도) = Resources/Bgm/OutdoorFar
+    /// 적이 멀어진 뒤에도 ClearDelay초는 Chase를 이어 간다. 실내·야외는 IndoorHold초 이어져야 바꾼다(문턱에서 깜빡이지 않게).
     /// 내 캐릭터가 없는 씬(타이틀·캐릭터 선택)에서는 건드리지 않는다. Suppressed = true면(게임 종료 창) 쉰다 — 씬이 바뀌면 풀린다.
     /// </summary>
-    public class ExploreBgm : MonoBehaviour
+    public class InGameBgm : MonoBehaviour
     {
-        public const string IndoorTrack = "Indoor", OutdoorTrack = "Outdoor";
+        public const string IndoorTrack = "Indoor", OutdoorTrack = "Outdoor", OutdoorFarTrack = "OutdoorFar", ChaseTrack = "Chase";
         private const float CheckInterval = 0.25f;
         private const float NearRange = 20f;   // 이 안에 적이 있으면 '조우'
-        private const float ClearDelay = 3f;   // 적이 멀어진 뒤 다시 틀기까지(초)
+        private const float FarRange = 40f;    // 가장 가까운 적이 이보다 멀면 '완전히 멂'(돌아올 땐 FarRange - FarMargin 안으로 와야 풀림)
+        private const float FarMargin = 5f;
+        private const float ClearDelay = 3f;   // 적이 멀어진 뒤 Chase를 이어 가는 시간(초)
         private const float IndoorHold = 1f;   // 실내·야외가 이만큼 이어져야 곡을 바꾼다(초)
         private const float IndoorThreshold = 0.5f;
 
-        private static ExploreBgm instance;
+        private static InGameBgm instance;
 
-        /// <summary>true면 탐색 음악을 쉰다(예: 게임 종료 창의 음악을 틀 때).</summary>
+        /// <summary>true면 게임 중 음악을 쉰다(예: 게임 종료 창의 음악을 틀 때).</summary>
         public static bool Suppressed { get; set; }
 
         private float checkAt, enemySeenAt = float.NegativeInfinity, indoorChangedAt;
-        private bool indoor, rawIndoor;
+        private bool indoor, rawIndoor, far = true;
         private string playing; // 이 스크립트가 튼 곡(null = 안 틂)
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Create()
         {
             if (instance != null) return;
-            var go = new GameObject("ExploreBgm");
+            var go = new GameObject("InGameBgm");
             DontDestroyOnLoad(go);
-            instance = go.AddComponent<ExploreBgm>();
+            instance = go.AddComponent<InGameBgm>();
         }
 
         private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
@@ -61,13 +63,15 @@ namespace Project1.Presentation
             if (nowIndoor != rawIndoor) { rawIndoor = nowIndoor; indoorChangedAt = Time.unscaledTime; }
             if (playing == null || Time.unscaledTime - indoorChangedAt >= IndoorHold) indoor = rawIndoor;
 
-            if (EnemyNear(input.gameObject)) enemySeenAt = Time.unscaledTime;
+            float d = NearestEnemy(input.gameObject);
+            if (d <= NearRange) enemySeenAt = Time.unscaledTime;
+            if (far && d < FarRange - FarMargin) far = false;
+            else if (!far && d > FarRange) far = true;
             bool calm = Time.unscaledTime - enemySeenAt >= ClearDelay;
-            string want = calm ? (indoor ? IndoorTrack : OutdoorTrack) : null;
+            string want = !calm ? ChaseTrack : indoor ? IndoorTrack : far ? OutdoorFarTrack : OutdoorTrack;
             if (want == playing) return;
             playing = want;
-            if (want != null) BgmPlayer.Play(want);
-            else BgmPlayer.Stop();
+            BgmPlayer.Play(want);
         }
 
         private static bool IsIndoor()
@@ -76,16 +80,18 @@ namespace Project1.Presentation
             return cam != null && cam.TryGetComponent(out CameraIndoorSensor sensor) && sensor.Indoor01 >= IndoorThreshold;
         }
 
-        private static bool EnemyNear(GameObject player)
+        /// <summary>가장 가까운 적까지 거리(m). 적이 없으면 무한대.</summary>
+        private static float NearestEnemy(GameObject player)
         {
-            if (!player.TryGetComponent(out CharacterIdentity me)) return false;
+            if (!player.TryGetComponent(out CharacterIdentity me)) return float.PositiveInfinity;
             Vector3 p = player.transform.position;
+            float best = float.PositiveInfinity;
             foreach (var other in FindObjectsByType<CharacterIdentity>())
             {
                 if (other == me || !other.isActiveAndEnabled || !me.CanHit(other)) continue;
-                if ((other.transform.position - p).sqrMagnitude <= NearRange * NearRange) return true;
+                best = Mathf.Min(best, Vector3.Distance(other.transform.position, p));
             }
-            return false;
+            return best;
         }
     }
 }
