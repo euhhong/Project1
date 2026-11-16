@@ -19,6 +19,9 @@ namespace Project1.UI
 
         /// <summary>3D 모델 그림 크기(기준 픽셀). 무대 RenderTexture도 이 비율로 만든다.</summary>
         public static readonly Vector2 ModelPanelSize = new(300f, 630f);
+        /// <summary>모델 칸 바깥으로 더 그리는 여백(좌우·위아래 각각). 꼬리·촉수처럼 칸을 벗어나는 부분도 잘리지 않고 보인다 — 모델 크기는 모두 같다.</summary>
+        public static readonly Vector2 ModelBleed = new(300f, 220f);
+        public static Vector2 ModelCanvasSize => ModelPanelSize + ModelBleed * 2f;
         private const float ModelLeft = 20f, ModelTop = 1080f - 630f; // 왼쪽 아래 구석에 작게 — 일러스트는 가리지 않는다
         private const float IllusLeft = -30f, IllusRight = 630f, IllusTop = 0f, IllusBottom = 24f; // 일러스트가 화면 위 끝에서 아래 끝 거의까지(이름은 그 아래쪽 위에 얹음)
         private const float ColumnLeft = 1300f, ColumnWidth = 520f; // 일러스트 오른쪽 끝(약 1290)을 가리지 않게
@@ -48,6 +51,9 @@ namespace Project1.UI
         private Color accent = SurvivorAccent;
         private float animTime = 99f;
         private int animDir;
+        private float illusWidthScale = 1f;
+        // 일러스트 가로 압축(캐릭터별). 루키노: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
+        private static readonly Dictionary<string, float> IllustrationWidthScale = new() { ["Hunter_Luchino"] = 0.85f };
 
         public CharacterSelectView(Texture modelTexture)
         {
@@ -88,6 +94,7 @@ namespace Project1.UI
             illus.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
             illus.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Bottom);
             illus.style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
+            illus.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100)); // 아래 가운데 기준으로 늘고 줄임
 
             missing = Text(illusLayer, "일러스트 준비 중", bodyFont, 30, new Color(InkDim.r, InkDim.g, InkDim.b, 0.6f));
             missing.style.position = Position.Absolute;
@@ -138,20 +145,21 @@ namespace Project1.UI
             shadow.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
             shadow.style.unityBackgroundImageTintColor = new Color(0f, 0f, 0f, 0.75f);
 
-            var model = Abs(area, left: 0f, top: 0f, right: 0f, bottom: 0f);
-            model.pickingMode = PickingMode.Position;
+            // 모델 그림은 칸보다 크게(ModelBleed) — 칸을 벗어난 부분도 보인다. 끌기는 칸(area)에서 받는다.
+            var model = Abs(area, left: -ModelBleed.x, top: -ModelBleed.y, right: float.NaN, bottom: float.NaN);
+            model.style.width = ModelCanvasSize.x; model.style.height = ModelCanvasSize.y;
             if (modelTexture is RenderTexture rt) model.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
 
             // 끌어서 조금 돌려 볼 수 있다
             float lastX = 0f;
-            model.RegisterCallback<PointerDownEvent>(e => { model.CapturePointer(e.pointerId); lastX = e.position.x; });
-            model.RegisterCallback<PointerMoveEvent>(e =>
+            area.RegisterCallback<PointerDownEvent>(e => { area.CapturePointer(e.pointerId); lastX = e.position.x; });
+            area.RegisterCallback<PointerMoveEvent>(e =>
             {
-                if (!model.HasPointerCapture(e.pointerId)) return;
+                if (!area.HasPointerCapture(e.pointerId)) return;
                 ModelDragged?.Invoke(e.position.x - lastX);
                 lastX = e.position.x;
             });
-            model.RegisterCallback<PointerUpEvent>(e => model.ReleasePointer(e.pointerId));
+            area.RegisterCallback<PointerUpEvent>(e => area.ReleasePointer(e.pointerId));
         }
 
         private void BuildColumn(VisualElement root)
@@ -216,6 +224,7 @@ namespace Project1.UI
             controls.Show(entry, accent);
 
             var tex = Illustration(entry.id);
+            illusWidthScale = IllustrationWidthScale.TryGetValue(entry.id, out var ws) ? ws : 1f;
             illus.style.backgroundImage = tex != null ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
             missing.style.display = tex != null ? DisplayStyle.None : DisplayStyle.Flex;
 
@@ -269,7 +278,8 @@ namespace Project1.UI
             float p = Mathf.Clamp01(animTime / SwitchTime);
             float e = 1f - Mathf.Pow(1f - p, 3f); // 빨리 들어와서 천천히 멈춘다
             illus.style.translate = new Translate(animDir * 300f * (1f - e), 0f);
-            illus.style.scale = new Scale(Vector2.one * (1.05f - 0.05f * e));
+            float s = 1.05f - 0.05f * e;
+            illus.style.scale = new Scale(new Vector2(s * illusWidthScale, s));
             illus.style.opacity = e;
             nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
             nameBlock.style.opacity = e;

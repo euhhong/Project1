@@ -43,8 +43,8 @@ namespace Project1.UI
             if (mainCamera != null) mainCamera.enabled = false;
 
             float s = Mathf.Max(0.75f, Screen.height / (float)RuntimeUiPanel.ReferenceResolution.y);
-            var size = CharacterSelectView.ModelPanelSize * s;
-            stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)));
+            var size = CharacterSelectView.ModelCanvasSize * s; // 모델 칸보다 크게 그려 튀어나온 부분(꼬리·촉수)도 보이게
+            stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)), CharacterSelectView.ModelCanvasSize.y / CharacterSelectView.ModelPanelSize.y);
             view = new CharacterSelectView(stage.Texture);
             view.StepRequested += Step;
             view.RoleRequested += r => { if (r != role) ShowRole(r); };

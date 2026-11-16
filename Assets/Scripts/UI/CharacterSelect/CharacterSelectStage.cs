@@ -11,7 +11,7 @@ namespace Project1.UI
     public class CharacterSelectStage : IDisposable
     {
         private static readonly Vector3 Origin = new(10000f, 0f, 10000f);
-        private const float Spacing = 3.5f;
+        private const float Spacing = 6f; // 그림을 칸보다 넓게 그리므로(튀어나온 부분까지) 옆 캐릭터가 같이 보이지 않게 멀리
         private const float CameraDistance = 6.5f, CameraHeight = 1.9f, LookHeight = 1.0f, FieldOfView = 25f; // 살짝 위에서 내려다봄, 감시자(키 약 2.3m)까지 그림 높이에 꽉 차게
         /// <summary>모델이 보는 방향: 화면 왼쪽으로 30° 돌린 3/4 모습(제5인격 캐릭터 소개 각도).</summary>
         private const float ShowcaseYaw = 30f;
@@ -22,17 +22,13 @@ namespace Project1.UI
         private readonly GameObject root;
         private readonly Camera camera;
         private readonly List<GameObject> lineup = new();
-        private readonly List<float> baseScale = new(), fitScale = new(); // 창에서 잘리는 모델(예: 루키노·하스터)만 줄이는 배율
-        private float fitTimer;
-        private const float FitDelay = 0.3f; // 대기 모션이 자세를 잡은 뒤 잰다
-        private const float FitMargin = 0.04f; // 창 가장자리 여유(0~1)
-        private const float MinFit = 0.55f;
         private int focus;
         private Vector3 velocity;
 
         public RenderTexture Texture { get; }
 
-        public CharacterSelectStage(Vector2Int textureSize)
+        /// <param name="slotHeightRatio">그림 높이 ÷ 모델 칸 높이. 칸보다 크게 그려 튀어나온 부분도 보이게 할 때 1보다 크다(모델 크기·발 위치는 그대로).</param>
+        public CharacterSelectStage(Vector2Int textureSize, float slotHeightRatio = 1f)
         {
             root = new GameObject("CharacterSelectStage");
             root.transform.position = Origin;
@@ -61,7 +57,7 @@ namespace Project1.UI
             var camGo = new GameObject("SelectCamera");
             camGo.transform.SetParent(root.transform, false);
             camera = camGo.AddComponent<Camera>();
-            camera.fieldOfView = FieldOfView;
+            camera.fieldOfView = 2f * Mathf.Atan(Mathf.Tan(FieldOfView * 0.5f * Mathf.Deg2Rad) * slotHeightRatio) * Mathf.Rad2Deg; // 칸 기준 화각을 그림 크기만큼 넓힘(모델 크기는 칸과 같게)
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.clear; // 배경 투명 — 화면 배경 위에 캐릭터만 얹힌다
             camera.allowHDR = false; // HDR 중간 버퍼는 알파가 없어 배경이 투명하지 않게 된다
@@ -82,8 +78,6 @@ namespace Project1.UI
         {
             foreach (var m in lineup) UnityEngine.Object.Destroy(m);
             lineup.Clear();
-            baseScale.Clear();
-            fitScale.Clear();
             for (int i = 0; i < entries.Count; i++)
             {
                 var e = entries[i];
@@ -98,13 +92,10 @@ namespace Project1.UI
                 foreach (var r in m.GetComponentsInChildren<Renderer>(true))
                     if (Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
                 var anim = m.GetComponent<Animator>();
-                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; anim.cullingMode = AnimatorCullingMode.AlwaysAnimate; }
+                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
                 lineup.Add(m);
-                baseScale.Add(e.scale);
-                fitScale.Add(1f);
             }
             focus = Mathf.Clamp(focusIndex, 0, Mathf.Max(lineup.Count - 1, 0));
-            fitTimer = FitDelay;
             camera.transform.position = CameraTarget();
             velocity = Vector3.zero;
             Aim();
@@ -121,72 +112,12 @@ namespace Project1.UI
 
         public void Tick()
         {
-            if (fitTimer > 0f)
-            {
-                fitTimer -= Time.unscaledDeltaTime;
-                if (fitTimer <= 0f) FitAll();
-            }
-            float step = Time.unscaledDeltaTime * 3f;
-            for (int i = 0; i < lineup.Count; i++)
-            {
-                float target = baseScale[i] * fitScale[i];
-                var t = lineup[i].transform;
-                t.localScale = Vector3.one * Mathf.MoveTowards(t.localScale.x, target, step * baseScale[i]);
-            }
-
             var cam = camera.transform;
             cam.position = Vector3.SmoothDamp(cam.position, CameraTarget(), ref velocity, 0.12f);
             Aim();
         }
 
-        private Vector3 CameraTarget() => CameraTargetFor(focus);
-        private static Vector3 CameraTargetFor(int index) => Origin + new Vector3(-index * Spacing, CameraHeight, CameraDistance);
-
-        /// <summary>
-        /// 모델마다 그 앞 카메라 자리에서 화면(창)에 비춘 모습을 재어, 위·옆으로 창을 벗어나면 발을 기준으로 줄인다(넘치지 않는 모델은 그대로).
-        /// 대기 모션 자세 그대로 잰다(SkinnedMeshRenderer.BakeMesh). 선택 화면에서만 — 게임 속 크기는 그대로.
-        /// </summary>
-        private void FitAll()
-        {
-            var cam = camera.transform;
-            Vector3 savedPos = cam.position;
-            Quaternion savedRot = cam.rotation;
-            var mesh = new Mesh();
-            for (int i = 0; i < lineup.Count; i++)
-            {
-                cam.position = CameraTargetFor(i);
-                Aim();
-                float k = 1f;
-                Vector3 feet = camera.WorldToViewportPoint(lineup[i].transform.position);
-                void Check(Vector3 world)
-                {
-                    var v = camera.WorldToViewportPoint(world);
-                    if (v.z <= 0f) return;
-                    if (v.y > feet.y) k = Mathf.Min(k, (1f - FitMargin - feet.y) / (v.y - feet.y));
-                    if (v.x > feet.x) k = Mathf.Min(k, (1f - FitMargin - feet.x) / (v.x - feet.x));
-                    if (v.x < feet.x) k = Mathf.Min(k, (feet.x - FitMargin) / (feet.x - v.x));
-                }
-                foreach (var r in lineup[i].GetComponentsInChildren<Renderer>())
-                {
-                    if (!r.enabled) continue;
-                    if (r is SkinnedMeshRenderer smr)
-                    {
-                        smr.BakeMesh(mesh, true);
-                        var m = smr.transform.localToWorldMatrix;
-                        var verts = mesh.vertices;
-                        for (int v = 0; v < verts.Length; v += 4) Check(m.MultiplyPoint3x4(verts[v]));
-                    }
-                    else
-                    {
-                        var b = r.bounds;
-                        for (int c = 0; c < 8; c++) Check(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
-                    }
-                }
-                fitScale[i] = Mathf.Clamp(k, MinFit, 1f);
-            }
-            UnityEngine.Object.Destroy(mesh);
-            cam.SetPositionAndRotation(savedPos, savedRot);
-        }
+        private Vector3 CameraTarget() => Origin + new Vector3(-focus * Spacing, CameraHeight, CameraDistance);
 
         private void Aim()
         {
