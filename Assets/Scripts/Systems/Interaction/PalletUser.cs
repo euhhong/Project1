@@ -1,0 +1,77 @@
+using Project1.Core;
+using UnityEngine;
+
+namespace Project1.Systems
+{
+    /// <summary>
+    /// 생존자가 판자를 내린다(BE): 세워진 판자(Pallet) 옆에서 판자 쪽을 보고 스페이스바(점프)를 누르면 점프 대신 판자를 내린다.
+    /// - 내리는 동안(lockTime초) 제자리에 서서(이동·점프 못 함) 판자가 넘어가는 쪽을 본다. 판자는 생존자 반대쪽으로 넘어간다.
+    /// - 땅에 서 있고, 기절·쓰러짐·공격·스킬 중이 아닐 때만. 판자 근처가 아니면 스페이스바는 그냥 점프.
+    /// 이동보다 먼저 돌아야 같은 틱의 점프를 막을 수 있다(DefaultExecutionOrder). 캐릭터 루트에 붙인다(CharacterLoadout, 생존자만).
+    /// </summary>
+    [DefaultExecutionOrder(-80)]
+    [DisallowMultipleComponent]
+    public class PalletUser : MonoBehaviour, IPalletUser, IMoveOverride, IFacingOverride
+    {
+        [Tooltip("판자를 내리는 동작 시간(초) — 이 동안 제자리(모션 Skill_Pallet_Drop 길이와 맞춤).")]
+        [SerializeField, Min(0.1f)] private float lockTime = 0.75f;
+
+        private ICharacterInputSource input;
+        private ICharacterState state;
+        private ICharacterStun stun;
+        private ICharacterHealth health;
+        private ICharacterAttackState attack;
+        private ICharacterSkillState skill;
+        private CharacterIdentity identity;
+        private float lockUntil = -1f, lockStart;
+        private float faceYaw;
+
+        public int DropCount { get; private set; }
+        public bool Dropping => Time.time < lockUntil;
+        public float DropProgress => Dropping ? Mathf.Clamp01((Time.time - lockStart) / lockTime) : 0f;
+
+        private void Awake()
+        {
+            input = GetComponent<ICharacterInputSource>();
+            state = GetComponent<ICharacterState>();
+            identity = GetComponent<CharacterIdentity>();
+        }
+
+        private void FixedUpdate()
+        {
+            if (input == null) Awake();
+            if (input == null || Dropping) return;
+            CharacterInputFrame frame = input.ReadInput();
+            if (!frame.Jump) return;
+            if (stun == null) TryGetComponent(out stun);
+            if (health == null) TryGetComponent(out health);
+            if (attack == null) TryGetComponent(out attack);
+            if (skill == null) TryGetComponent(out skill);
+            if (state != null && !state.IsGrounded) return;
+            if ((stun != null && stun.IsStunned) || (health != null && health.IsDead)) return;
+            if (attack != null && attack.AttackState != CharacterAttackState.None) return;
+            if (skill != null && skill.State == SkillState.Casting) return;
+
+            Vector3 look = Quaternion.Euler(0f, frame.LookYaw, 0f) * Vector3.forward; // 시야 방향(몸이 아직 안 돌았어도)
+            if (!Pallet.TryFind(transform.position, look, out Pallet pallet, out float fallSign)) return;
+            if (!pallet.BeginDrop(identity, fallSign)) return;
+            Vector3 dir = pallet.FallDirection;
+            faceYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            lockStart = Time.time;
+            lockUntil = Time.time + lockTime;
+            DropCount++;
+        }
+
+        public bool TryGetMoveOverride(out Vector2 localMove, out float speed, out bool allowJump)
+        {
+            localMove = Vector2.zero; speed = 0f; allowJump = false;
+            return Dropping; // 내리는 동안 제자리(이번 틱의 스페이스바 점프도 막는다)
+        }
+
+        public bool TryGetFacingYaw(out float yaw)
+        {
+            yaw = faceYaw;
+            return Dropping;
+        }
+    }
+}
