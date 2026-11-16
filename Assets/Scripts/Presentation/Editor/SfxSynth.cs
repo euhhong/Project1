@@ -233,19 +233,21 @@ namespace Project1.Presentation.EditorTools
             return s;
         }
 
-        /// <summary>캐릭터 넘기기(선택 화면): 두꺼운 카드를 휙 넘기는 소리 — 올라갔다 내려가는 띠 잡음 바람 + 끝에 낮고 부드러운 툭.</summary>
+        /// <summary>캐릭터 넘기기(선택 화면): 아주 경쾌하고 가벼운 '틱-슉' — 높고 짧은 바람 + 맑게 톡 튀는 두 음(위로). 낮은 소리 없이, 크게 눌러 또렷하게.</summary>
         private static float[] Flip()
         {
-            float len = 0.32f; var s = Buf(len); var r = new System.Random(22);
-            var bp = new Biquad(); var lp = new Biquad(); lp.SetLow(1800f, 0.7f);
+            float len = 0.16f; var s = Buf(len); var r = new System.Random(22);
+            var bp = new Biquad(); var hp = new Biquad(); hp.SetHigh(2000f, 0.7f);
             for (int i = 0; i < s.Length; i++)
             {
                 float t = i / (float)Rate, k = t / len;
-                bp.SetBand(Mathf.Lerp(500f, 1300f, Mathf.Sin(Mathf.PI * Mathf.Min(k * 1.3f, 1f))), 1.1f); // 휙: 낮게 → 높게 → 낮게
-                float whoosh = lp.Run(bp.Run(Noise(r))) * Mathf.Sin(Mathf.PI * Mathf.Min(k * 1.35f, 1f));
-                float tt = t - 0.2f; // 넘어간 카드가 닿는 툭
-                float tap = tt > 0f ? Mathf.Sin(2f * Mathf.PI * 105f * tt) * Mathf.Exp(-tt * 38f) * 0.45f : 0f;
-                s[i] = Soft(whoosh * 3.2f + tap * 1.4f); // 크게 눌러 꽉 차게
+                bp.SetBand(Mathf.Lerp(3500f, 7500f, k), 1.2f); // 위로 가볍게 쓸려 올라감
+                float swish = hp.Run(bp.Run(Noise(r))) * Env(k, 0.1f, 5f);
+                // 톡톡: 1760Hz 뒤에 2640Hz(완전 5도 위)가 25ms 늦게 — 짧고 맑게
+                float p1 = Mathf.Sin(2f * Mathf.PI * 1760f * t) * Mathf.Exp(-t * 55f);
+                float t2 = t - 0.025f;
+                float p2 = t2 > 0f ? Mathf.Sin(2f * Mathf.PI * 2640f * t2) * Mathf.Exp(-t2 * 45f) : 0f;
+                s[i] = Soft(swish * 3.5f + (p1 * 0.6f + p2 * 0.7f));
             }
             return s;
         }

@@ -58,7 +58,7 @@ namespace Project1.UI
         private void ShowRole(CharacterRole newRole, bool sound = true)
         {
             role = newRole;
-            if (sound) Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 0.8f, 0.05f, 0.85f); // 진영 바꾸기: 조금 낮은 넘기기 소리
+            if (sound) Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 1f, 0.03f, 1.12f); // 진영 바꾸기: 조금 높은 넘기기 소리
             shown = roster.Of(role);
             index[role] = Mathf.Clamp(index[role], 0, Mathf.Max(shown.Count - 1, 0));
             stage.Show(shown, index[role]);
@@ -72,7 +72,7 @@ namespace Project1.UI
             if (shown == null || shown.Count == 0) return;
             index[role] = (index[role] + dir + shown.Count) % shown.Count;
             stage.Focus(index[role]);
-            Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 0.75f, 0.08f); // 다른 캐릭터로 넘기기: 카드 휙
+            Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 1f, 0.05f); // 다른 캐릭터로 넘기기: 경쾌한 틱-슉
             Refresh(dir);
         }
 
