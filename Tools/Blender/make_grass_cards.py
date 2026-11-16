@@ -1,5 +1,5 @@
 """
-풀 모델 여러 개(맵 소품 Grass/Grass_01 ~ Grass_NN)를 만든다 — 척박한 땅에 실오라기 같은 풀이 듬성듬성 난 모양을 여러 조합으로.
+풀 모델 여러 개(맵 소품 Grass/Grass_01 ~ Grass_NN)를 만든다 — 실오라기 같은 풀만 듬성듬성(흙 조각 없음, 땅 색 그대로) 여러 조합으로.
 - 텍스처는 한 장(아틀라스 4칸 × 2줄): 0~6칸 = 풀 사진 7종(VARCO, 배경을 뺌), 7칸 = 흙 조각 사진. 모든 모델이 머티리얼 하나를 같이 쓴다(가볍게).
 - 모델마다: 흙 조각(있거나 없음, 지름 0.8~1.8m, 바닥에서 1cm) + 풀 포기 1~9개(풀 종류·높이 0.12~0.55m·자리·방향 무작위).
   포기마다 세로 판 두 장을 엇갈려 세운다(어느 쪽에서 봐도 보이게).
@@ -21,8 +21,8 @@ def cell_uv(c):
 
 def build(idx, rnd):
     verts, faces, uvs = [], [], []
-    soil = rnd.random() < 0.7
-    patch = rnd.uniform(0.8, 1.8)
+    soil = False  # 흙 조각은 쓰지 않는다(땅 색이 달라 보여서) — 풀만
+    patch = rnd.uniform(0.9, 1.6)  # 풀 포기들이 흩어지는 범위(지름 m)
     if soil:
         h = patch / 2; b = len(verts)
         a0 = rnd.random() * math.tau
@@ -30,7 +30,7 @@ def build(idx, rnd):
             a = a0 + k * math.pi / 2 + math.pi / 4
             verts.append((math.cos(a) * h * 1.414, math.sin(a) * h * 1.414, 0.01))
         faces.append((b, b + 1, b + 2, b + 3)); uvs.append(cell_uv(SOIL))
-    tufts = rnd.randint(2, 5) if not soil else rnd.randint(5, 12)
+    tufts = rnd.randint(2, 7)
     main = rnd.randrange(GRASS_KINDS)
     for t in range(tufts):
         kind = main if rnd.random() < 0.5 else rnd.randrange(GRASS_KINDS)
