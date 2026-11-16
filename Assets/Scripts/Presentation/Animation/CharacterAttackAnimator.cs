@@ -225,6 +225,8 @@ namespace Project1.Presentation
             if (lightHeavyFor == rc) return lightHeavy;
             lightHeavyFor = rc;
             lightHeavy = false;
+            // 광대: 강공격 자리는 비워 두지만(기본 모션) 예전 두 손 모으기 → 내려치기 모션을 그대로 쓴다(평타 모션으로 바꾸지 않음).
+            if (rc != null && rc.name.StartsWith("SmileyFace")) return false;
             if (rc is AnimatorOverrideController aoc)
             {
                 overridePairs.Clear();

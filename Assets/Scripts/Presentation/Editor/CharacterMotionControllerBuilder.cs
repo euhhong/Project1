@@ -100,7 +100,8 @@ namespace Project1.Presentation.EditorTools
             // 공격 = 두 손을 모아 머리 위 → 아래로 내려치기(HasturSlam — Generic 모델 전용 모션, 뒤에 적어 이긴다)
             ("Hastur", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Hastur") }, HasturCrawl, HasturSlam }),
             // 광대: 어떤 공격이든 두 손 무기(로켓)로 머리 위에서 아래로 내려친다. 강공격을 모으는 동안은 로켓을 받쳐 든 자세.
-            ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker"), ("Attack_Heavy", "Attack_Heavy_Joker"), ("Attack_HeavyCharge", "Carry_Joker") } }),
+            // 광대 차징(좌클릭 꾹)은 예전 두 손 모으기 → 머리 위에서 내려치기 모션 그대로(감시자 기본 Attack_HeavyCharge_Hunter·Attack_Heavy, 사용자 요청). 평타만 두 손 로켓 내려치기.
+            ("SmileyFace", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Joker") } }),
             // 리퍼: 무기가 없고 왼손 자체가 무기 → 모든 공격을 왼손으로(감시자 공격을 Blender로 좌우 뒤집은 모션)
             ("Ripper", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Ripper"), ("Attack_Heavy", "Attack_Heavy_Ripper"), ("Attack_RunJump_Survivor", "Attack_RunJump_Ripper") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
