@@ -11,6 +11,7 @@ namespace Project1.Presentation
     /// - 실내(카메라 CameraIndoorSensor — 머리 위 천장) = Resources/Bgm/Indoor
     /// - 야외 = Resources/Bgm/Outdoor, 야외에서 적이 완전히 멀면(FarRange m 넘게, 적이 없어도) = Resources/Bgm/OutdoorFar
     /// 적이 멀어진 뒤에도 ClearDelay초는 Chase를 이어 간다. 실내·야외는 IndoorHold초 이어져야 바꾼다(문턱에서 깜빡이지 않게).
+    /// FixedTrack이 있으면(연습 모드) 그 곡만 튼다.
     /// 내 캐릭터가 없는 씬(타이틀·캐릭터 선택)에서는 건드리지 않는다. Suppressed = true면(게임 종료 창) 쉰다 — 씬이 바뀌면 풀린다.
     /// </summary>
     public class InGameBgm : MonoBehaviour
@@ -30,6 +31,9 @@ namespace Project1.Presentation
 
         /// <summary>true면 게임 중 음악을 쉰다(예: 게임 종료 창의 음악을 틀 때).</summary>
         public static bool Suppressed { get; set; }
+
+        /// <summary>null이 아니면 상황과 상관없이 이 곡만 튼다(예: 연습 모드 = Practice). 게임 씬을 열 때 CharacterSelectBootstrap이 정한다.</summary>
+        public static string FixedTrack { get; set; }
 
         private float checkAt, enemySeenAt = float.NegativeInfinity, indoorChangedAt;
         private bool indoor, rawIndoor, far = true, floor3;
@@ -74,7 +78,7 @@ namespace Project1.Presentation
             float y = input.transform.position.y;
             if (!floor3 && y >= Floor3Enter && y < RoofHeight) floor3 = true;
             else if (floor3 && (y < Floor3Leave || y >= RoofHeight)) floor3 = false;
-            string want = !calm ? ChaseTrack : floor3 ? Floor3Track : indoor ? IndoorTrack : far ? OutdoorFarTrack : OutdoorTrack;
+            string want = FixedTrack ?? (!calm ? ChaseTrack : floor3 ? Floor3Track : indoor ? IndoorTrack : far ? OutdoorFarTrack : OutdoorTrack);
             if (want == playing) return;
             playing = want;
             BgmPlayer.Play(want);
