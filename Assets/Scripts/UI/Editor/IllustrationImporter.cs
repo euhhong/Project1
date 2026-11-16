@@ -14,6 +14,7 @@ namespace Project1.UI.Editor
         private const string Folder = "Assets/UI/Resources/Illustrations/";
 
         private static float SeedMin = 0.9f;  // 테두리에서 이 정도로 흰 픽셀부터 배경으로 본다
+        private static bool EraseFlooded; // true = 번진 배경을 색 없이 지움(StrongWhite 그림)
         private static float FloodMin = 0.45f; // 배경은 이보다 밝은 픽셀로만 번진다
         private static float FullMin = 0.8f;  // 이보다 밝으면 흰색을 완전히 뺀다(그 사이는 조금만)
         private static float MaxStep = 0.12f; // 이웃과 밝기 차가 이보다 크면(외곽선) 번지지 않는다
@@ -23,12 +24,13 @@ namespace Project1.UI.Editor
         // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
         private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
         // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
-        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue) };
+        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue) };
+        // 흰 배경 빼기를 더 세게(그림마다): 카우보이 — 둘레에 날리는 옅은 흰/분홍 천 조각 효과까지 배경으로 빼 버린다(사용자 요청).
+        private static readonly Dictionary<string, (float flood, float full, float step)> StrongWhite = new() { ["Survivor_Cowboy"] = (0.3f, 0.62f, 0.3f) };
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
         private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) },
             // 검은 배경 그림: 배경에 붙은 검은 옷(칸 안에서는 새까만 배경만 빠짐)
             ["Hunter_Ripper"] = new[] { new RectInt(340, 20, 210, 270), new RectInt(330, 230, 480, 330), new RectInt(300, 560, 600, 562), new RectInt(810, 262, 400, 150) },
-            ["Survivor_Cowboy"] = new[] { new RectInt(150, 700, 1252, 422) },
             ["Survivor_MindsEye"] = new[] { new RectInt(420, 200, 490, 380), new RectInt(630, 540, 250, 200) }, // 머리카락·고글·목도리 매듭의 어두운 그늘
         };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
@@ -94,7 +96,10 @@ namespace Project1.UI.Editor
                     return true;
                 }
                 var (encMin, encMax) = EnclosedRanges.TryGetValue(id, out var range) ? range : (EnclosedMinArea, int.MaxValue);
-                RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(id), encMin, encMax, ProtectRects.TryGetValue(id, out var keep) ? keep : null);
+                float flood0 = FloodMin, full0 = FullMin, step0 = MaxStep;
+                if (StrongWhite.TryGetValue(id, out var strong)) { FloodMin = strong.flood; FullMin = strong.full; MaxStep = strong.step; EraseFlooded = true; }
+                try { RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(id), encMin, encMax, ProtectRects.TryGetValue(id, out var keep) ? keep : null); }
+                finally { FloodMin = flood0; FullMin = full0; MaxStep = step0; EraseFlooded = false; }
                 tex.SetPixels32(px);
                 System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
@@ -192,6 +197,14 @@ namespace Project1.UI.Editor
                 float strength = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(FloodMin, FullMin, lum[i]));
                 float a = Mathf.Lerp(1f, 1f - lum[i], strength);
                 var c = px[i];
+                if (EraseFlooded)
+                {
+                    // 번진 곳은 색을 남기지 않고 지운다(옅은 천 조각 효과까지) — 어두운 경계만 살짝 부드럽게
+                    a = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(FloodMin, FloodMin + 0.06f, lum[i]));
+                    if (a <= 0.004f) { px[i] = new Color32(255, 255, 255, 0); continue; }
+                    px[i] = new Color32(c.r, c.g, c.b, (byte)Mathf.RoundToInt(a * c.a));
+                    continue;
+                }
                 if (a <= 0.004f) { px[i] = new Color32(255, 255, 255, 0); continue; }
                 byte Un(byte v) => (byte)Mathf.RoundToInt(Mathf.Clamp01((v / 255f - (1f - a)) / a) * 255f);
                 px[i] = new Color32(Un(c.r), Un(c.g), Un(c.b), (byte)Mathf.RoundToInt(a * c.a));
