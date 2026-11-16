@@ -29,10 +29,10 @@ namespace Project1.UI.Editor
         private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue), ["Survivor_Mercenary"] = (80, int.MaxValue), ["Hunter_Hastur"] = (60, int.MaxValue) };
         // 흰 배경 빼기를 더 세게(그림마다) — 둘레에 날리는 옅은 천 조각 효과까지 배경으로 빼 버린다. 지금은 쓰는 그림 없음.
         private static readonly Dictionary<string, (float flood, float full, float step)> StrongWhite = new();
-        // 누끼 뒤 붉은빛 중화 세기(그림마다, 0~1): 카우보이 — 너무 붉지 않게.
-        private static readonly Dictionary<string, float> RedTone = new() { ["Survivor_Cowboy"] = 1f };
-        // 누끼 뒤 캐릭터 둘레에 그리는 테두리(그림마다): 두께(픽셀)와 색. 카우보이 — 테두리 강화.
-        private static readonly Dictionary<string, (int width, Color32 color)> Outline = new() { ["Survivor_Cowboy"] = (4, new Color32(245, 236, 222, 255)) };
+        // 누끼 뒤 붉은빛 중화 세기(그림마다, 0~1). 지금은 쓰는 그림 없음(카우보이는 원본 색 그대로).
+        private static readonly Dictionary<string, float> RedTone = new();
+        // 누끼 뒤 캐릭터 둘레에 그리는 테두리(그림마다): 두께(픽셀)와 색. 지금은 쓰는 그림 없음.
+        private static readonly Dictionary<string, (int width, Color32 color)> Outline = new();
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
         private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) },
             // 검은 배경 그림: 배경에 붙은 검은 옷(칸 안에서는 새까만 배경만 빠짐)
