@@ -8,9 +8,9 @@ namespace Project1.Systems
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
-    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 따라 곡선으로 확 달라지는 거리만큼 밀려나고(짧게 달리면 0.5m ~ 45m 넘게 달리면 16m, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
-    ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5.5초).
+    ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: 달린 거리에 따라 같은 곡선으로 wallStunMin 0.5초 ~ wallStunMax 5.5초.
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
     /// - 시야(마우스 우클릭)로 방향은 틀 수 있다(몸이 시야 방향을 보기 때문).
     /// - 돌진 중 E를 한 번 더 누르면 그 자리에서 멈춘다(넘어지지 않음, cancelGrace 뒤부터).
@@ -38,15 +38,15 @@ namespace Project1.Systems
         [Min(0f)] public float ramDepthExtra = 0.25f;
         [Tooltip("박는 순간 A·D를 누르고 있으면 넉백 방향을 그쪽으로 이만큼(도) 튼다.")]
         [Range(0f, 45f)] public float ramSteerAngle = 15f;
-        [Tooltip("돌진한 거리 1m마다 넉백 처음 속도(m/s). 밀리는 거리 ≈ 속도 × knockTime ÷ 2.")]
-        [Min(0f)] public float knockSpeedPerMeter = 1f;
-        [Min(0f)] public float minKnockSpeed = 5f, maxKnockSpeed = 25f;
-        [Tooltip("넉백 시간(초). 밀리는 동안 상대는 기절(못 움직임).")]
-        [Min(0.05f)] public float knockTime = 0.5f;
+        [Tooltip("밀려나는 거리(m): 거의 안 달리고 박으면 minKnockDistance, fullKnockRun(m) 이상 달려 박으면 maxKnockDistance. 그 사이는 knockCurve 제곱 곡선(짧게 달리면 아주 조금, 길게 달릴수록 확 멀리).")]
+        [Min(0f)] public float minKnockDistance = 0.5f, maxKnockDistance = 16f;
+        [Min(1f)] public float fullKnockRun = 45f;
+        [Min(1f)] public float knockCurve = 1.6f;
+        [Tooltip("밀려나는 시간(초): 짧게 달렸을 때 ~ 길게 달렸을 때. 밀리는 동안 상대는 이동은 된다(기절 없음).")]
+        [Min(0.05f)] public float minKnockTime = 0.3f, maxKnockTime = 0.9f;
         [Header("넉백으로 벽에 박힘 → 기절")]
-        [Tooltip("기절 시간 = wallStunBase + 돌진한 시간(초) × wallStunPerSecond, 최대 wallStunMax(초).")]
-        [Min(0f)] public float wallStunBase = 2f;
-        [Min(0f)] public float wallStunPerSecond = 1f;
+        [Tooltip("벽에 박힌 감시자 기절(초): 거의 안 달리고 박으면 wallStunMin, fullKnockRun(m) 이상 달려 박으면 wallStunMax — 밀려나는 거리와 같은 곡선(knockCurve).")]
+        [Min(0f)] public float wallStunMin = 0.5f;
         [Min(0f)] public float wallStunMax = 5.5f; // 감시자가 벽에 박혀 걸리는 기절 최대(초)
         [Tooltip("벽을 이만큼(m) 두껍게 본다: 밀려나는 쪽으로 벽·장애물이 이 거리 안에 들어오면 완전히 닿지 않아도 벽에 박힌 것으로 쳐서 기절.")]
         [Min(0f)] public float ramWallMargin = 0.6f;
@@ -116,8 +116,12 @@ namespace Project1.Systems
                 Vector3 dir = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up);
                 dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up).normalized;
                 if (Mathf.Abs(steer) > 0.1f) dir = Quaternion.AngleAxis(Mathf.Clamp(steer, -1f, 1f) * ramSteerAngle, Vector3.up) * dir; // A(왼쪽)·D(오른쪽)를 누르고 있으면 그쪽으로 살짝
-                float speed = Mathf.Clamp(distance * knockSpeedPerMeter, minKnockSpeed, maxKnockSpeed);
-                float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5.5초)
+                // 달린 거리 → 밀려나는 거리(곡선이라 차이가 확 난다: 5m 달림 ≈ 1m, 16m ≈ 3.4m, 32m ≈ 9.6m, 45m 이상 = 16m)
+                float t = Mathf.Clamp01(distance / fullKnockRun);
+                float pushDist = Mathf.Lerp(minKnockDistance, maxKnockDistance, Mathf.Pow(t, knockCurve));
+                float knockTime = Mathf.Lerp(minKnockTime, maxKnockTime, t);
+                float speed = 2f * pushDist / knockTime; // 넉백은 처음 속도에서 0까지 줄어든다 → 거리 = 속도 × 시간 ÷ 2
+                float wallStun = Mathf.Lerp(wallStunMin, wallStunMax, Mathf.Pow(t, knockCurve)); // 벽에 박히면: 5m 달림 ≈ 0.7초, 16m ≈ 1.5초, 32m ≈ 3.4초, 45m 이상 = 5.5초
                 Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin);
                 return true;
             }
