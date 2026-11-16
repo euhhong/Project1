@@ -22,7 +22,7 @@ namespace Project1.UI
         private const float ModelLeft = 20f, ModelTop = 1080f - 630f; // 왼쪽 아래 구석에 작게 — 일러스트는 가리지 않는다
         private const float IllusLeft = 170f, IllusRight = 640f, IllusTop = 16f, IllusBottom = 175f; // 화면에 꽉 차게(가운데 왼쪽), 아래 175는 이름 자리
         private const float ColumnLeft = 1270f, ColumnWidth = 490f;
-        private const float SwitchTime = 0.34f, WipeTime = 0.26f;
+        private const float SwitchTime = 0.34f;
 
         private static readonly Color Ink = new(0.9f, 0.92f, 0.95f);
         private static readonly Color InkDim = new(0.6f, 0.66f, 0.74f);
@@ -38,7 +38,8 @@ namespace Project1.UI
         private readonly Dictionary<string, Texture2D> illustrations = new();
         private readonly HashSet<VisualElement> hovered = new();
 
-        private VisualElement illusLayer, illus, glow, wipe, wipeLine, nameBlock, nameRule;
+        private VisualElement illusLayer, illus, glow, nameBlock, nameRule;
+        private CharacterSelectFlipTransition flip;
         private CharacterControlsPanel controls;
         private Label watermark, missing, nameLabel, subLabel;
         private Button hunterTab, survivorTab, startButton, practiceButton, prevArrow, nextArrow;
@@ -63,6 +64,8 @@ namespace Project1.UI
             BuildColumn(root);
             BuildTabs(root);
             BuildArrows(root);
+            flip = new CharacterSelectFlipTransition(); // 넘길 때 파라락(맨 위에 잠깐 덮음)
+            root.Add(flip.Root);
         }
 
         // ───────── 만들기 ─────────
@@ -93,17 +96,6 @@ namespace Project1.UI
             missing.style.position = Position.Absolute;
             missing.style.left = 0; missing.style.right = 0; missing.style.top = Length.Percent(50);
             missing.style.unityTextAlign = TextAnchor.MiddleCenter;
-
-            // 넘길 때 비스듬히 휙 지나가는 띠(진영 색) + 뒤따르는 흰 선
-            wipe = Abs(illusLayer, left: 0f, top: -400f, right: float.NaN, bottom: -400f);
-            wipe.style.width = 300f;
-            wipe.style.rotate = new Rotate(Angle.Degrees(16f));
-            wipe.style.display = DisplayStyle.None;
-            wipeLine = Abs(illusLayer, left: 0f, top: -400f, right: float.NaN, bottom: -400f);
-            wipeLine.style.width = 22f;
-            wipeLine.style.rotate = new Rotate(Angle.Degrees(16f));
-            wipeLine.style.backgroundColor = new Color(1f, 1f, 1f, 0.85f);
-            wipeLine.style.display = DisplayStyle.None;
         }
 
         private void BuildName(VisualElement root)
@@ -223,8 +215,10 @@ namespace Project1.UI
             illus.style.backgroundImage = tex != null ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
             missing.style.display = tex != null ? DisplayStyle.None : DisplayStyle.Flex;
 
-            animTime = 0f;
+            // 넘길 때: 띠가 아래에서 위로 파라락 지나가고, 화면을 덮는 순간부터 새 캐릭터가 들어온다
             animDir = dir;
+            animTime = dir != 0 ? -CharacterSelectFlipTransition.CoverTime : 0f;
+            if (dir != 0) flip.Play(accent, dir);
             Animate();
         }
 
@@ -247,7 +241,7 @@ namespace Project1.UI
             nameRule.style.backgroundColor = accent;
             subLabel.style.color = accent;
             glow.style.unityBackgroundImageTintColor = new Color(accent.r, accent.g, accent.b, 0.22f);
-            wipe.style.backgroundColor = new Color(accent.r, accent.g, accent.b, 0.9f);
+            backdrop.SetAccent(accent);
             Restyle();
         }
 
@@ -261,6 +255,7 @@ namespace Project1.UI
         public void Tick(float dt)
         {
             backdrop.Tick(dt);
+            flip.Tick(dt);
             if (animTime < SwitchTime + 0.05f)
             {
                 animTime += dt;
@@ -278,19 +273,6 @@ namespace Project1.UI
             watermark.style.translate = new Translate(animDir * 140f * (1f - e), 0f);
             nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
             nameBlock.style.opacity = e;
-
-            float q = Mathf.Clamp01(animTime / WipeTime);
-            bool wiping = animDir != 0 && q < 1f;
-            wipe.style.display = wipeLine.style.display = wiping ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!wiping) return;
-            float width = illusLayer.resolvedStyle.width;
-            if (float.IsNaN(width) || width <= 0f) width = 1100f;
-            float s = q * q * (3f - 2f * q);
-            // 다음(+1)은 오른쪽에서 왼쪽으로, 이전(−1)은 왼쪽에서 오른쪽으로 훑는다(새 일러스트가 들어오는 쪽에서)
-            float x = animDir > 0 ? Mathf.Lerp(width + 200f, -560f, s) : Mathf.Lerp(-560f, width + 200f, s);
-            wipe.style.left = x;
-            wipeLine.style.left = animDir > 0 ? x + 330f : x - 52f;
-            wipe.style.opacity = wipeLine.style.opacity = 1f - q * q;
         }
 
         // ───────── 버튼 색 ─────────
