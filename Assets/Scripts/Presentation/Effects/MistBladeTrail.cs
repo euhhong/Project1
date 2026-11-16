@@ -8,14 +8,16 @@ namespace Project1.Presentation
     /// 지나간 자리에 흩어지는 안개(칼날 뒤에서 나와 손톱 모양을 가리지 않음) + 세 줄기 손톱 자국 줄(궤적) + 끝난 자리에서 칼날이 안개로 부서져 흩어짐.
     /// 칼날은 안개보다 위에 그려 날아가는 내내 손톱 모양이 온전히 보인다.
     /// 칼날은 휘두른 방향(swingAxis, 날아가는 방향에 수직)으로 세운다 — 내려치기면 세로로 선다.
-    /// 세기(IProjectile.Power)가 약하면(E, 1칸) 작고 옅다.
+    /// 세기(IProjectile.Power)가 약하면(E, 1칸) 작고 옅고 손톱 세 줄기, 2칸을 채워 평타로 날리면 손톱 다섯 줄기에 줄기도 굵고 좌우로 넓적하다.
     /// 투사체(IProjectile, BE)의 자리를 따라간다. 처음엔 손톱 자리에서 시작해 짧게 BE 자리로 합쳐진다.
     /// MistClawVisual이 투사체가 생길 때 만든다. 끝나면 안개가 다 흩어진 뒤 스스로 지워진다.
     /// </summary>
     public class MistBladeTrail : MonoBehaviour
     {
         private const float StartBlend = 0.12f;   // 손톱 → BE 자리로 합쳐지는 시간(초)
-        private const int Claws = 3, Segments = 14;
+        private const int Segments = 14;
+        private const int ClawsWeak = 3, ClawsStrong = 5; // 1칸 칼날 = 손톱 세 줄기, 2칸 칼날 = 다섯 줄기(더 넓적)
+        private int Claws = ClawsWeak;
         private static readonly Color BladeColor = new(0.86f, 0.88f, 0.93f, 0.9f);
         private static readonly Color MistColor = new(0.8f, 0.82f, 0.87f, 0.5f);
         private static Texture2D puffTexture;
@@ -43,12 +45,13 @@ namespace Project1.Presentation
             float power = p.Power > 0f ? p.Power : 1f;
             t.strength = Mathf.Clamp01(power);
             t.scale = Mathf.Lerp(0.6f, 1f, t.strength); // 약한 칼날(0.5)은 0.8배
-            if (t.strength >= 0.99f) // 2칸(세기 1) 칼날만
+            if (t.strength >= 0.99f) // 2칸(세기 1) 칼날만: 손톱 다섯 줄기 + 줄기도 굵게, 좌우(수평)로 더 넓적하게
             {
+                t.Claws = ClawsStrong;
                 // 칼날 몸 좌표: Y = 휘두른 방향, X = 줄기가 나란히 놓이는 쪽. 둘 중 수평에 가까운 쪽을 넓힌다.
                 Vector3 xAxis = Vector3.Cross(t.swingAxis, p.Direction);
                 bool xHorizontal = Mathf.Abs(Vector3.Dot(xAxis.normalized, Vector3.up)) < Mathf.Abs(Vector3.Dot(t.swingAxis, Vector3.up));
-                float f = 2.2f;
+                float f = 2.0f; // 다섯 줄기라 줄기 사이만으로도 넓다 — 전체 폭 ≈ BE 판정 폭(좌우 반폭 0.9m)
                 if (xHorizontal) t.wideX = f; else t.wideY = f;
             }
             t.Build();
@@ -62,7 +65,7 @@ namespace Project1.Presentation
             bgo.transform.SetParent(transform, false);
             bgo.transform.rotation = Quaternion.LookRotation(projectile.Direction, swingAxis);
             bgo.transform.localScale = new Vector3(scale * wideX, scale * wideY, scale);
-            mesh = BuildClawMesh();
+            mesh = BuildClawMesh(Claws, Claws == ClawsStrong ? 0.14f : 0.09f); // 2칸 칼날은 줄기도 굵게
             bgo.AddComponent<MeshFilter>().sharedMesh = mesh;
             bladeRenderer = bgo.AddComponent<MeshRenderer>();
             bladeMat = new Material(Shader.Find("Sprites/Default")) { name = "MistBlade" }; // 꼭짓점 색(가장자리 투명), 양면
@@ -78,7 +81,7 @@ namespace Project1.Presentation
             {
                 var tgo = new GameObject("ClawStreak" + c);
                 tgo.transform.SetParent(blade, false);
-                tgo.transform.localPosition = new Vector3((c - (Claws - 1) * 0.5f) * 0.2f, (c - 1) * 0.06f, 0.28f); // 줄기 가운데(앞으로 휜 끝)
+                tgo.transform.localPosition = new Vector3((c - (Claws - 1) * 0.5f) * 0.2f, (c - (Claws - 1) * 0.5f) * 0.06f, 0.28f); // 줄기 가운데(앞으로 휜 끝)
                 var tr = tgo.AddComponent<TrailRenderer>();
                 tr.sharedMaterial = trailMat;
                 tr.time = 0.22f;
@@ -112,7 +115,7 @@ namespace Project1.Presentation
             emission.rateOverDistance = 10f; // 지나간 자리에만 옅게(칼날을 덮지 않게)
             var shape = mist.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(0.5f, 1.4f, 0.15f); // 세 줄기가 차지하는 자리(칼날 크기는 위 localScale로 따라감)
+            shape.scale = new Vector3(0.25f * Claws - 0.25f, 1.4f, 0.15f); // 줄기들이 차지하는 자리(칼날 크기는 위 localScale로 따라감)
             shape.position = new Vector3(0f, 0f, -0.7f);  // 칼날 바로 뒤에서 나온다(앞의 손톱 모양을 가리지 않게)
             var size = mist.sizeOverLifetime;
             size.enabled = true; size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.8f, 1f, 1.8f));
@@ -193,21 +196,22 @@ namespace Project1.Presentation
         }
 
         /// <summary>
-        /// 손톱 세 줄기. 줄기마다 Y(휘두른 방향)로 뻗고, 가운데가 앞(+Z)으로 휜 초승달, 양 끝은 뾰족하다.
+        /// 손톱 줄기 claws개(기본 세 줄기, 2칸 칼날은 다섯). 줄기마다 Y(휘두른 방향)로 뻗고, 가운데가 앞(+Z)으로 휜 초승달, 양 끝은 뾰족하다.
         /// 단면이 + 모양(X로 펼친 띠 + Z로 펼친 띠)이라 뒤·옆 어디서 봐도 보인다. 띠 가장자리는 투명(꼭짓점 색).
-        /// 가운데 줄기가 가장 길다.
+        /// 가운데 줄기가 가장 길고, 바깥으로 갈수록 조금씩 짧다. width = 줄기 굵기.
         /// </summary>
-        internal static Mesh BuildClawMesh()
+        internal static Mesh BuildClawMesh(int claws = ClawsWeak, float width = 0.09f)
         {
             var verts = new System.Collections.Generic.List<Vector3>();
             var colors = new System.Collections.Generic.List<Color>();
             var tris = new System.Collections.Generic.List<int>();
-            const float halfLen = 0.75f, bow = 0.28f, spacing = 0.2f, width = 0.09f;
-            for (int c = 0; c < Claws; c++)
+            const float halfLen = 0.75f, bow = 0.28f, spacing = 0.2f;
+            float mid = (claws - 1) * 0.5f;
+            for (int c = 0; c < claws; c++)
             {
-                float off = (c - (Claws - 1) * 0.5f) * spacing;
-                float len = c == 1 ? halfLen : halfLen * 0.82f;
-                float shift = (c - 1) * 0.06f; // 손톱마다 조금씩 어긋나게
+                float off = (c - mid) * spacing;
+                float len = halfLen * (1f - 0.12f * Mathf.Abs(c - mid)); // 가운데가 가장 길다
+                float shift = (c - mid) * 0.06f; // 손톱마다 조금씩 어긋나게
                 for (int band = 0; band < 3; band++)
                 {
                     // 0 = 뒤에서 보이는 띠(X), 1 = 옆에서 보이는 띠(Z), 2 = 둘레의 옅은 안개 번짐(넓고 흐림)

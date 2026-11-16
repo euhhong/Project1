@@ -96,7 +96,15 @@ namespace Project1.Systems
         {
             if (Charges < n) return false;
             Charges -= n;
+            KeepOneInPractice();
             return true;
+        }
+
+        /// <summary>연습 모드(쿨타임 없음): 안개를 써도 늘 1칸은 찬 채로 남고, 바로 나머지 1칸을 채우기 시작한다.</summary>
+        private void KeepOneInPractice()
+        {
+            if (!SkillCooldowns.Disabled || Charges >= 1) return;
+            Charges = 1; NextProgress = 0f;
         }
 
         private void FixedUpdate()
@@ -111,6 +119,7 @@ namespace Project1.Systems
             if (attacking && phase == AttackPhase.Active && lastPhase != AttackPhase.Active && Charges >= maxCharges)
             {
                 Charges = 0;
+                KeepOneInPractice();
                 LaunchBlade(false);
             }
             lastPhase = phase;
