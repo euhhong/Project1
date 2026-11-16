@@ -70,6 +70,9 @@ namespace Project1.UI
             index[role] = Mathf.Clamp(index[role], 0, Mathf.Max(shown.Count - 1, 0));
             stage.Show(shown, index[role]);
             Refresh(0);
+            // 생존자 선택을 보는 동안 생존자 선택 음악, 감시자 쪽은 끔
+            if (role == CharacterRole.Survivor) Project1.Presentation.BgmPlayer.Play("SurvivorSelect");
+            else Project1.Presentation.BgmPlayer.Stop();
         }
 
         private void Step(int dir)
@@ -126,6 +129,7 @@ namespace Project1.UI
         public void StartGame(CharacterRoster.Entry entry, bool battle = false)
         {
             started = true;
+            Project1.Presentation.BgmPlayer.Stop(); // 게임에 들어가면 선택 음악을 끈다
             CharacterPick.Set(entry, battle);
             if (preload != null) preload.allowSceneActivation = true;
             else SceneManager.LoadScene(GameSceneName);

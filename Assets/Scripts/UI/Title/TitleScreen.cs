@@ -78,6 +78,7 @@ namespace Project1.UI
             root.Add(fade);
 
             Select(0);
+            Project1.Presentation.BgmPlayer.Play("Title"); // 타이틀 배경음악
         }
 
         /// <summary>그림을 비율 그대로 화면을 꽉 덮게(넘치는 쪽은 가운데 기준으로 잘림).</summary>

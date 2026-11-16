@@ -81,6 +81,8 @@ namespace Project1.UI
         private void End(string text)
         {
             result = text;
+            ExploreBgm.Suppressed = true; // 게임 종료 창 음악(탐색 음악은 쉼)
+            BgmPlayer.Play("Win", loop: false);
             if (bot != null && bot.TryGetComponent(out AiBotInput ai)) ai.enabled = false;
             if (bot != null && bot.TryGetComponent(out AiBotInput a2)) a2.SetTarget(null);
         }
