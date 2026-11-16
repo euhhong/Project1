@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Project1.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,29 +6,24 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터 선택 화면. 게임 씬을 시작하면 먼저 뜬다(CharacterSelectBootstrap).
-    /// - W/↑ = 감시자, S/↓ = 생존자, A·D/←·→ = 캐릭터 바꾸기, Space/Enter = 시작
-    /// - 선택 중에는 플레이어 캐릭터를 꺼 두고, 멀리 떨어진 곳에 임시 무대(바닥·카메라·대기 모델)를 만든다.
-    /// - 시작하면 무대를 지우고, 플레이어 캐릭터 루트의 모델을 고른 캐릭터로 바꾼 뒤 다시 켠다.
+    /// - W/↑ = 감시자, S/↓ = 생존자, A·D/←·→ = 캐릭터 넘기기, 1·Space·Enter = 연습, 2·G = 게임 시작(AI 봇). 화면 버튼·화살표로도 된다.
+    /// - 선택 중에는 플레이어 캐릭터를 꺼 둔다. 화면은 CharacterSelectView(UI), 3D 모델은 CharacterSelectStage(멀리 떨어진 임시 무대)가 맡는다.
+    /// - 시작하면 화면과 무대를 지우고, 플레이어 캐릭터 루트의 모델을 고른 캐릭터로 바꾼 뒤 다시 켠다.
     /// 씬에 모델을 늘어놓지 않는다. 무대는 실행 중에만 만든다.
     /// </summary>
     public class CharacterSelectScreen : MonoBehaviour
     {
-        private static readonly Vector3 StageOrigin = new(10000f, 0f, 10000f);
-        private const float Spacing = 3.5f;
-        private const float CameraDistance = 7.5f, CameraHeight = 2.2f, LookHeight = 1.5f;
-        private static readonly string[] HiddenInSelect = { "Gamekeeper_Grab_Weapon" };
+        private const float DragDegreesPerPixel = 0.45f;
 
         private CharacterRoster roster;
         private GameObject player;
         private Camera mainCamera;
-        private GameObject stage;
-        private Camera stageCamera;
-        private readonly List<GameObject> lineup = new();
+        private CharacterSelectStage stage;
+        private CharacterSelectView view;
         private List<CharacterRoster.Entry> shown;
         private CharacterRole role = CharacterRole.Survivor;
         private readonly Dictionary<CharacterRole, int> index = new() { [CharacterRole.Survivor] = 0, [CharacterRole.Hunter] = 0 };
-        private Vector3 cameraVelocity;
-        private GUIStyle titleStyle, nameStyle, tabStyle, hintStyle;
+        private bool started;
 
         public void Init(CharacterRoster roster, GameObject player)
         {
@@ -47,106 +41,81 @@ namespace Project1.UI
             player.SetActive(false);
             mainCamera = Camera.main;
             if (mainCamera != null) mainCamera.enabled = false;
-            BuildStage();
-            ShowRole(role, snapCamera: true);
+
+            float s = Mathf.Max(0.75f, Screen.height / (float)RuntimeUiPanel.ReferenceResolution.y);
+            var size = CharacterSelectView.ModelPanelSize * s;
+            stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)));
+            view = new CharacterSelectView(stage.Texture);
+            view.StepRequested += Step;
+            view.RoleRequested += r => { if (r != role) ShowRole(r); };
+            view.StartRequested += battle => StartCurrent(battle);
+            view.ModelDragged += dx => stage.Rotate(-dx * DragDegreesPerPixel);
+            ShowRole(role);
         }
 
-        private void BuildStage()
-        {
-            stage = new GameObject("CharacterSelectStage");
-            stage.transform.position = StageOrigin;
-
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            floor.name = "Floor";
-            floor.transform.SetParent(stage.transform, false);
-            floor.transform.localScale = new Vector3(8f, 1f, 2f);
-            floor.transform.localPosition = new Vector3(-Spacing * 4f, 0f, 0f);
-            Destroy(floor.GetComponent<Collider>());
-
-            var lightGo = new GameObject("Light");
-            lightGo.transform.SetParent(stage.transform, false);
-            lightGo.transform.rotation = Quaternion.Euler(35f, -20f, 0f);
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 0.6f;
-
-            var camGo = new GameObject("SelectCamera");
-            camGo.transform.SetParent(stage.transform, false);
-            stageCamera = camGo.AddComponent<Camera>();
-            stageCamera.fieldOfView = 35f;
-            stageCamera.clearFlags = CameraClearFlags.SolidColor;
-            stageCamera.backgroundColor = new Color(0.08f, 0.08f, 0.1f);
-        }
-
-        private void ShowRole(CharacterRole newRole, bool snapCamera)
+        private void ShowRole(CharacterRole newRole)
         {
             role = newRole;
-            foreach (var m in lineup) Destroy(m);
-            lineup.Clear();
             shown = roster.Of(role);
-            for (int i = 0; i < shown.Count; i++)
-            {
-                var e = shown[i];
-                var m = Instantiate(e.model, stage.transform);
-                m.name = e.id;
-                m.transform.localPosition = new Vector3(-i * Spacing, 0f, 0f); // 카메라가 앞에서 보므로 -X 쪽이 화면 오른쪽
-                m.transform.localRotation = Quaternion.identity; // 모델은 +Z(카메라 쪽)를 본다
-                m.transform.localScale = Vector3.one * e.scale;
-                // 판정 상자는 선택 화면에서 필요 없다.
-                foreach (var c in m.GetComponentsInChildren<Collider>()) c.enabled = false;
-                // 선택 화면에서는 들지 않는 소품(예: 사냥터지기 그랩)을 감춘다. 게임에서는 그대로 든다.
-                foreach (var r in m.GetComponentsInChildren<Renderer>(true))
-                    if (System.Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
-                var anim = m.GetComponent<Animator>();
-                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
-                lineup.Add(m);
-            }
             index[role] = Mathf.Clamp(index[role], 0, Mathf.Max(shown.Count - 1, 0));
-            if (snapCamera) stageCamera.transform.position = CameraTarget();
-            cameraVelocity = Vector3.zero;
+            stage.Show(shown, index[role]);
+            Refresh(0);
         }
 
-        private Vector3 CameraTarget() =>
-            StageOrigin + new Vector3(-index[role] * Spacing, CameraHeight, CameraDistance);
+        private void Step(int dir)
+        {
+            if (shown == null || shown.Count == 0) return;
+            index[role] = (index[role] + dir + shown.Count) % shown.Count;
+            stage.Focus(index[role]);
+            Refresh(dir);
+        }
+
+        private void Refresh(int dir)
+        {
+            if (shown.Count == 0) view.ShowEmpty(role);
+            else view.Show(shown[index[role]], role, index[role], shown.Count, dir);
+        }
+
+        private void StartCurrent(bool battle)
+        {
+            if (!started && shown != null && shown.Count > 0) StartGame(shown[index[role]], battle);
+        }
 
         private void Update()
         {
+            if (started || shown == null || stage == null || view == null) return; // Play 중 다시 컴파일되면 무대·화면이 비어 있다
             var kb = Keyboard.current;
-            if (kb == null || shown == null) return;
-
-            if ((kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) && role != CharacterRole.Hunter)
-                ShowRole(CharacterRole.Hunter, snapCamera: true);
-            else if ((kb.sKey.wasPressedThisFrame || kb.downArrowKey.wasPressedThisFrame) && role != CharacterRole.Survivor)
-                ShowRole(CharacterRole.Survivor, snapCamera: true);
-
-            if (shown.Count > 0)
+            if (kb != null)
             {
-                if (kb.aKey.wasPressedThisFrame || kb.leftArrowKey.wasPressedThisFrame)
-                    index[role] = (index[role] - 1 + shown.Count) % shown.Count;
-                if (kb.dKey.wasPressedThisFrame || kb.rightArrowKey.wasPressedThisFrame)
-                    index[role] = (index[role] + 1) % shown.Count;
-                // 1·Space·Enter = 연습 모드(훈련 상대), 2·G = 게임 시작(AI 봇과 전투). 화면 아래 버튼으로도 고를 수 있다.
+                if ((kb.wKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) && role != CharacterRole.Hunter)
+                    ShowRole(CharacterRole.Hunter);
+                else if ((kb.sKey.wasPressedThisFrame || kb.downArrowKey.wasPressedThisFrame) && role != CharacterRole.Survivor)
+                    ShowRole(CharacterRole.Survivor);
+
+                if (kb.aKey.wasPressedThisFrame || kb.leftArrowKey.wasPressedThisFrame) Step(-1);
+                if (kb.dKey.wasPressedThisFrame || kb.rightArrowKey.wasPressedThisFrame) Step(+1);
+                // 1·Space·Enter = 연습 모드(훈련 상대), 2·G = 게임 시작(AI 봇과 전투).
                 if (kb.digit1Key.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)
                 {
-                    StartGame(shown[index[role]], battle: false);
+                    StartCurrent(battle: false);
                     return;
                 }
                 if (kb.digit2Key.wasPressedThisFrame || kb.gKey.wasPressedThisFrame)
                 {
-                    StartGame(shown[index[role]], battle: true);
+                    StartCurrent(battle: true);
                     return;
                 }
             }
 
-            var cam = stageCamera.transform;
-            cam.position = Vector3.SmoothDamp(cam.position, CameraTarget(), ref cameraVelocity, 0.12f);
-            cam.LookAt(new Vector3(cam.position.x, StageOrigin.y + LookHeight, StageOrigin.z));
+            stage.Tick();
+            view.Tick(Time.unscaledDeltaTime);
         }
 
         /// <summary>고른 캐릭터로 시작한다. battle = false: 연습 모드(지금 테스트 화면 — 훈련 상대), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
         public void StartGame(CharacterRoster.Entry entry, bool battle = false)
         {
-            Destroy(stage);
+            started = true;
+            Teardown();
             if (mainCamera != null) mainCamera.enabled = true;
             player.SetActive(true);
             CharacterLoadout.Apply(player, entry);
@@ -156,48 +125,14 @@ namespace Project1.UI
             Destroy(gameObject);
         }
 
-        private void OnGUI()
+        private void Teardown()
         {
-            if (shown == null) return;
-            float u = Screen.height / 1080f;
-            titleStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.UpperCenter, fontStyle = FontStyle.Bold };
-            nameStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
-            tabStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter };
-            hintStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.LowerCenter };
-            titleStyle.fontSize = Mathf.RoundToInt(44 * u);
-            nameStyle.fontSize = Mathf.RoundToInt(56 * u);
-            tabStyle.fontSize = Mathf.RoundToInt(30 * u);
-            hintStyle.fontSize = Mathf.RoundToInt(26 * u);
-
-            float w = Screen.width, h = Screen.height;
-            GUI.Label(new Rect(0, 30 * u, w, 60 * u), "캐릭터 선택", titleStyle);
-
-            var on = new Color(1f, 0.85f, 0.3f);
-            var off = new Color(1f, 1f, 1f, 0.45f);
-            tabStyle.normal.textColor = role == CharacterRole.Hunter ? on : off;
-            GUI.Label(new Rect(w * 0.5f - 320 * u, 100 * u, 300 * u, 50 * u), "▲ W  감시자", tabStyle);
-            tabStyle.normal.textColor = role == CharacterRole.Survivor ? on : off;
-            GUI.Label(new Rect(w * 0.5f + 20 * u, 100 * u, 300 * u, 50 * u), "▼ S  생존자", tabStyle);
-
-            if (shown.Count == 0)
-            {
-                GUI.Label(new Rect(0, h * 0.75f, w, 80 * u), "고를 캐릭터가 없습니다", nameStyle);
-                return;
-            }
-            var e = shown[index[role]];
-            GUI.Label(new Rect(0, h * 0.78f, w, 80 * u), $"◀  {e.displayName}  ▶", nameStyle);
-            GUI.Label(new Rect(0, h * 0.78f + 70 * u, w, 40 * u), $"{index[role] + 1} / {shown.Count}", tabStyle);
-            // 모드 고르기(임시 UI — 대충): 연습 모드 / 게임 시작
-            float bw = 260 * u, bh = 64 * u, by = h - 170 * u;
-            var btn = new GUIStyle(GUI.skin.button) { fontSize = Mathf.RoundToInt(28 * u), fontStyle = FontStyle.Bold };
-            if (GUI.Button(new Rect(w * 0.5f - bw - 20 * u, by, bw, bh), "1  연습 모드", btn)) { StartGame(e, battle: false); return; }
-            if (GUI.Button(new Rect(w * 0.5f + 20 * u, by, bw, bh), "2  게임 시작", btn)) { StartGame(e, battle: true); return; }
-            GUI.Label(new Rect(0, h - 70 * u, w, 50 * u), "A·D  캐릭터 바꾸기      W·S  감시자/생존자      1·Enter  연습 모드      2·G  게임 시작(AI 봇)", hintStyle);
+            view?.Dispose();
+            view = null;
+            stage?.Dispose();
+            stage = null;
         }
 
-        private void OnDestroy()
-        {
-            if (stage != null) Destroy(stage);
-        }
+        private void OnDestroy() => Teardown();
     }
 }

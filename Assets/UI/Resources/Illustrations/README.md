@@ -2,6 +2,7 @@
 
 캐릭터 선택 창에서 쓰는 캐릭터별 일러스트. 파일 이름 = 캐릭터 ID(`CharacterRoster`의 `id`), PNG(배경 투명 또는 흰색).
 게임에서는 `Resources.Load<Texture2D>("Illustrations/<ID>")`로 읽는다.
+흰 배경은 가져올 때 자동으로 투명하게 뺀다(`Assets/Scripts/UI/Editor/IllustrationImporter.cs`, 원본 PNG는 그대로).
 
 | 캐릭터 | 파일 이름 | 받음 |
 |---|---|---|
