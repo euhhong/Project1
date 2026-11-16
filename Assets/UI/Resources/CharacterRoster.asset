@@ -39,7 +39,7 @@ MonoBehaviour:
     selectController: {fileID: 9100000, guid: 8c77f3b420d8c0a47b47ea5e075ea12b, type: 2}
     skill: {fileID: 11400000, guid: 3a7d596fdf6513b40a3d31357548b077, type: 2}
   - id: Survivor_Forward
-    displayName: "\uC804\uC704"
+    displayName: "\uD3EC\uC6CC\uB4DC"
     role: 0
     model: {fileID: 919132149155446097, guid: ab484250811c13142a4a9a6791a7dd32, type: 3}
     scale: 4

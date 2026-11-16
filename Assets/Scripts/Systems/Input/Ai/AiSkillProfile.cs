@@ -12,7 +12,7 @@ namespace Project1.Systems
         public readonly float Weight;
         /// <summary>0보다 크면 E를 이만큼(초) 꾹 눌렀다 뗀다(로켓 돌진 들고 다니기, 그랩 조준).</summary>
         public readonly float HoldSeconds;
-        /// <summary>돌진형(전위 럭비공·광대 로켓): 사거리 끝에서 상대 공격을 유도하고 틈에 박는다(AiChargeBaiter).</summary>
+        /// <summary>돌진형(포워드 럭비공·광대 로켓): 사거리 끝에서 상대 공격을 유도하고 틈에 박는다(AiChargeBaiter).</summary>
         public readonly bool Charge;
         /// <summary>0보다 크면 시전한 지 이만큼(초) 지나 E를 한 번 더 누른다(손전등 넣기).</summary>
         public readonly float RepressAfter;

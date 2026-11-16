@@ -79,7 +79,7 @@ namespace Project1.Systems
         public string AnimationState =>
             skill == null || (State != SkillState.Casting && State != SkillState.Recovering) ? string.Empty : skill.AnimationState(this);
 
-        // 넘어짐·착지 경직(Recovering)은 모션 길이를 경직 시간에 맞춘다(예: 루키노 Hard Landing, 전위 Fall_1).
+        // 넘어짐·착지 경직(Recovering)은 모션 길이를 경직 시간에 맞춘다(예: 루키노 Hard Landing, 포워드 Fall_1).
         public bool SyncAnimationToProgress => skill != null && (State == SkillState.Recovering || skill.SyncAnimationToCast);
 
         public AttackPhase MotionPhase =>

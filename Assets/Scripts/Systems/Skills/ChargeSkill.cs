@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 돌진(전위 럭비공): 쓰면 바라보는 방향으로 계속 달려 나간다.
+    /// 돌진(포워드 럭비공): 쓰면 바라보는 방향으로 계속 달려 나간다.
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
@@ -159,7 +159,7 @@ namespace Project1.Systems
         /// <summary>HUD: 돌진 중 멈추는 방법.</summary>
         public override string StatusText(CharacterSkill ctx) => "멈춤: E";
 
-        /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(전위 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
+        /// <summary>벽·장애물에 박으면 기절 페널티를 줄지(포워드 럭비공 = 예, 광대 로켓 돌진 = 아니오 — 그냥 멈춤).</summary>
         protected virtual bool CrashPenalty => true;
 
         /// <summary>CrashPenalty가 없을 때 벽에 박으면 잠깐 못 움직이는 경직(초, 기절 아님 — Recovering). 기본 0.</summary>
@@ -168,7 +168,7 @@ namespace Project1.Systems
         /// <summary>HUD: 돌진하는 동안 남은 시간 막대(시전 진행).</summary>
         public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
 
-        /// <summary>박치기 판정을 몸보다 옆으로 넓게 볼지(전위 = 예). 아니오면 몸이 실제로 닿아야 박는다(광대 로켓 옛 판정).</summary>
+        /// <summary>박치기 판정을 몸보다 옆으로 넓게 볼지(포워드 = 예). 아니오면 몸이 실제로 닿아야 박는다(광대 로켓 옛 판정).</summary>
         protected virtual bool UsesRamZone => true;
 
         /// <summary>몸이 상대에 닿았을 때 다르게 처리할지(광대 로켓 옛 판정: 넉백 없이 바로 기절). 처리했으면 true(넉백 박치기를 하지 않음).</summary>

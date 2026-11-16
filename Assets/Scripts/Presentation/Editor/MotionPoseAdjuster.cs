@@ -26,7 +26,7 @@ namespace Project1.Presentation.EditorTools
             public Dictionary<string, float> amplify = new();
         }
 
-        // 전위 럭비공 돌진: 무게중심을 낮추고(무릎을 더 굽히고 상체를 앞으로 숙임), 두 손으로 가슴 앞에 공을 안는다.
+        // 포워드 럭비공 돌진: 무게중심을 낮추고(무릎을 더 굽히고 상체를 앞으로 숙임), 두 손으로 가슴 앞에 공을 안는다.
         public static readonly Adjustment[] Adjustments =
         {
             new Adjustment
@@ -40,7 +40,7 @@ namespace Project1.Presentation.EditorTools
         };
 
 
-        // 값은 의사 모델이 아니라 전위 모델로 재서 맞췄다(2026-11-12): 골반 0.213 → 0.170(약 20% 낮게), 발은 땅 높이 유지,
+        // 값은 의사 모델이 아니라 포워드 모델로 재서 맞췄다(2026-11-12): 골반 0.213 → 0.170(약 20% 낮게), 발은 땅 높이 유지,
         // 몸 앞으로 약 15도, 두 손은 가슴 앞으로 모은다. 이 아바타의 팔 Front-Back은 - 가 앞쪽이다.
         public static class ForwardCharge
         {

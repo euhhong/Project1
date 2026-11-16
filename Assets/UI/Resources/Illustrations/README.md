@@ -17,7 +17,7 @@
 | 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
 | 카우보이 | Survivor_Cowboy.png | |
 | 의사 | Survivor_Doctor.png | |
-| 전위 | Survivor_Forward.png | |
+| 포워드 | Survivor_Forward.png | ✅ (1402×1122, 흰 배경) |
 | 용병 | Survivor_Mercenary.png | |
 | 맹인 | Survivor_MindsEye.png | |
 | 도둑 | Survivor_Thief.png | |

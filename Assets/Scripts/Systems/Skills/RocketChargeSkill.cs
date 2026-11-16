@@ -4,12 +4,12 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 로켓 돌진(광대 E): 전위 돌진(ChargeSkill)과 같은 돌진 앞에 "들고 다니기"가 붙는다.
+    /// 로켓 돌진(광대 E): 포워드 돌진(ChargeSkill)과 같은 돌진 앞에 "들고 다니기"가 붙는다.
     /// 0) 시야(화면 가운데) 가까이(lookBlockAngle 12도 안)에 보이는 상대가 있으면 E로 시작하지 못한다("상대를 보고 있음").
     /// 1) E를 꾹 누르는 동안: 로켓을 두 손으로 머리 위로 치켜든 채 걸어 다닌다(castMoveSpeed, 점프 가능).
     ///    이때 좌클릭(공격)을 누르면 돌진하지 않고 끝난다(취소).
     /// 2) E를 떼면(한 번만 눌러도 바로) 로켓 머리를 앞으로 한 채 chargeSpeed로 돌진한다 — 벽에 부딪히면 기절 페널티 없이 그냥 멈추고(CrashPenalty 끔),
-    ///    캐릭터에 몸이 닿으면 옛 판정: 넉백 없이 그 자리에서 돌진 거리만큼 기절(stunPerMeter, min~max — 전위의 넓힌 판정·넉백 박치기와 다름). 돌진 중 E를 한 번 더 누르면 멈춘다.
+    ///    캐릭터에 몸이 닿으면 옛 판정: 넉백 없이 그 자리에서 돌진 거리만큼 기절(stunPerMeter, min~max — 포워드의 넓힌 판정·넉백 박치기와 다름). 돌진 중 E를 한 번 더 누르면 멈춘다.
     /// 동작 구간: 들고 다님 = Windup, 돌진 = Active(TryGetMotionPhase) — FE가 로켓 쥐는 법을 바꾼다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Rocket Charge")]
@@ -50,7 +50,7 @@ namespace Project1.Systems
                 if (!input.SkillHeld) ctx.SetPhase(Charging); // 뗐다(또는 한 번만 눌렀다) → 돌진
                 return false;
             }
-            // 돌진: 전위와 같다(돌진을 시작한 뒤 지난 시간으로 장애물 판정·기절 시간을 잰다). E를 한 번 더 누르면 취소.
+            // 돌진: 포워드와 같다(돌진을 시작한 뒤 지난 시간으로 장애물 판정·기절 시간을 잰다). E를 한 번 더 누르면 취소.
             if (input.Skill && ctx.PhaseTime > cancelGrace) return true;
             return ShouldEndEarly(ctx.gameObject, ctx.PhaseTime, out recovery);
         }

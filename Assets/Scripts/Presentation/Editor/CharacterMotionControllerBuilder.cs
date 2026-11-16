@@ -27,11 +27,11 @@ namespace Project1.Presentation.EditorTools
         private const float ForwardJumpMoveZ = 0.5f;
         private const float RunJumpMoveZ = (1f + CharacterAnimatorDriver.RunBlendValue) * 0.5f;
 
-        // 스킬 모션의 재생 배속. 전위 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
+        // 스킬 모션의 재생 배속. 포워드 돌진은 이동 속도를 2배(16m/s)로 올린 만큼 달리기 모션도 2배 빠르게.
         // 광대 로켓 돌진: 다리는 달리기 모션(6.5m/s용) — 돌진 8m/s에 맞춰 1.2배.
         private static readonly Dictionary<string, float> SkillLoopSpeed = new() { ["Forward_Charge"] = 2f, ["SmileyFace_RocketCharge"] = 1.2f }; // 사냥터지기 그랩은 재생 위치를 BE 구간에 맞춘다(CharacterSkillAnimator.MotionTiming)
 
-        // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 전위 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
+        // 스킬이 도중에 막혀 끝날 때(넘어짐) 쓰는 모션. 포워드 돌진이 벽에 부딪힘 → Fall_1(Rifle Hit To Back).
         private static readonly (string skillId, string slot)[] SkillEndMotions = { ("Forward_Charge", "Fall_1"), ("SmileyFace_RocketCharge", "Fall_1") };
 
         // 상체만 쓰는 스킬 모션(SkillUpper 레이어, 다리는 걷기·달리기 그대로): 광대 로켓 치켜들고 걷기, 용병 벽 짚기(다리는 계속 달림).
@@ -103,7 +103,7 @@ namespace Project1.Presentation.EditorTools
             ("Ripper", new[] { HunterOverrides, new[] { ("Attack_Light", "Attack_Light_Ripper"), ("Attack_Heavy", "Attack_Heavy_Ripper"), ("Attack_RunJump_Survivor", "Attack_RunJump_Ripper") } }),
             // 생존자: 생존자 Controller + 기본 공격만 바꾼다
             ("MindsEye", new[] { new[] { ("Attack_Light", "Attack_Light_MindsEye") } }),                 // 맹인: 돌며 가로 베기
-            // 손에 아무것도 들지 않은 생존자(용병·도둑·카우보이 — 카우보이 소품은 ModelPropFixer가 없앰): 훅 펀치. 무언가 든 생존자(공군·의사·전위·맹인)는 그대로
+            // 손에 아무것도 들지 않은 생존자(용병·도둑·카우보이 — 카우보이 소품은 ModelPropFixer가 없앰): 훅 펀치. 무언가 든 생존자(공군·의사·포워드·맹인)는 그대로
             ("Mercenary", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
             ("Thief", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
             ("Cowboy", new[] { new[] { ("Attack_Light", "Attack_Light_HookPunch") } }),
@@ -392,7 +392,7 @@ namespace Project1.Presentation.EditorTools
             var fullSm = ac.layers[ac.layers.Length - 1].stateMachine;
             fullSm.defaultState = fullSm.AddState("Empty");
             if (clips["Hit_HeadKick"] != null) { var kd = fullSm.AddState("Hit_HeadKick"); kd.motion = clips["Hit_HeadKick"]; kd.speed = 1.27f; } // 나가떨어져 눕기까지(약 0.8초). 일어나기는 GetUp 레이어(Kip Up)가 이어 받는다(기절 1.5초 안에)
-            // 뒤에서 맞아 기절(전위 돌진·신호탄): 휘청이며 돌아 쓰러져 누움(Turn To Knocked Unconscious). 재생 위치는 CharacterHitReactionAnimator가 기절 시간에 맞춘다.
+            // 뒤에서 맞아 기절(포워드 돌진·신호탄): 휘청이며 돌아 쓰러져 누움(Turn To Knocked Unconscious). 재생 위치는 CharacterHitReactionAnimator가 기절 시간에 맞춘다.
             if (clips["Stun_Back"] != null) fullSm.AddState("Stun_Back").motion = clips["Stun_Back"];
 
             // 데미지 없는 충격파에 맞음(사냥터지기 그랩이 벽에 도착): 전신으로 휘청임(Edge Slip). CharacterShockReactionAnimator가 무게를 켠다.

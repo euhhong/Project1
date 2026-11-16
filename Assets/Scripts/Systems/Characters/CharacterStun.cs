@@ -7,7 +7,7 @@ namespace Project1.Systems
     /// <summary>
     /// 기절. Stun(초)을 받으면 그동안 제자리에 서서 점프·공격·스킬을 못 한다(IMoveOverride로 이동을 0으로).
     /// 기절 중 다시 기절하면 남은 시간이 더 긴 쪽으로 늘어난다(합치지 않는다).
-    /// 캐릭터 루트에 붙인다. 예: 전위 돌진에 맞은 캐릭터.
+    /// 캐릭터 루트에 붙인다. 예: 포워드 돌진에 맞은 캐릭터.
     /// </summary>
     [DisallowMultipleComponent]
     public class CharacterStun : MonoBehaviour, ICharacterStun, IMoveOverride
@@ -40,7 +40,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 깨지는 기절을 건다(없으면 붙인다): 그동안 맞거나(HitEvents) 밀리거나(Knockback)·충격파(ShockSlow)·다른 기절이 걸리면 바로 풀린다
-        /// (다른 기절이면 그 기절로 바뀐다). 예: 전위 럭비공·광대 로켓 돌진이 벽에 박힘.
+        /// (다른 기절이면 그 기절로 바뀐다). 예: 포워드 럭비공·광대 로켓 돌진이 벽에 박힘.
         /// </summary>
         public static void ApplyBreakable(GameObject target, float seconds)
         {

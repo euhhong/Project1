@@ -34,7 +34,7 @@ namespace Project1.Systems
         [Min(0f)] public float backOffWeight = 0.9f;
         [Min(0f)] public float feintWeight = 1f;
         [Min(0f)] public float skillWeightScale = 1f;
-        [Tooltip("돌진형(전위·광대) 스킬이 준비됐을 때 들락날락 유도를 고르는 가중치.")]
+        [Tooltip("돌진형(포워드·광대) 스킬이 준비됐을 때 들락날락 유도를 고르는 가중치.")]
         [Min(0f)] public float baitWeight = 4f;
         [Tooltip("스킬을 쓴 뒤 다시 고르기까지 최소 시간(초).")]
         [Min(0f)] public float skillGap = 2.5f;

@@ -35,7 +35,7 @@ namespace Project1.Systems
         /// <summary>target을 velocity(m/s, 수평)로 duration초 동안 밀어낸다. stun = 밀리는 동안 기절시킬지, stunAfter = 다 밀린 뒤 더 기절해 있는 시간(초),
         /// impactDamage = 벽·캐릭터에 부딪히면 데미지를 줄지(끄면 거기서 멈추기만 — 감시자 평타 넉백), impactPerSpeed = 부딪힘 데미지 배율(음수면 이 컴포넌트 값),
         /// impactStun = 부딪히면(데미지를 입으면) 더 거는 경직(초, 벽꿍 — 생존자 평타).
-        /// impactStunWallOnly = impactStun을 벽·장애물에 박힐 때만(캐릭터에 부딪히면 아님), 데미지·빠르기와 상관없이 건다(예: 전위 박치기).</summary>
+        /// impactStunWallOnly = impactStun을 벽·장애물에 박힐 때만(캐릭터에 부딪히면 아님), 데미지·빠르기와 상관없이 건다(예: 포워드 박치기).</summary>
         public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f, bool stun = true, bool impactDamage = true,
             float impactPerSpeed = -1f, float impactStun = 0f, bool impactStunWallOnly = false)
         {
@@ -92,7 +92,7 @@ namespace Project1.Systems
             time = duration; // 더 밀리지 않는다(벽을 따라 미끄러지지 않게)
             if (impactStunWallOnly)
             {
-                // 벽·장애물에 박힘(캐릭터가 아님) → 데미지·빠르기와 상관없이 기절(예: 전위 박치기)
+                // 벽·장애물에 박힘(캐릭터가 아님) → 데미지·빠르기와 상관없이 기절(예: 포워드 박치기)
                 bool wall = lastHit == null || lastHit.GetComponentInParent<CharacterIdentity>() == null;
                 if (wall && impactStun > 0f) CharacterStun.Apply(gameObject, impactStun, velocity);
                 if (!impactDamage || speed < minImpactSpeed) return;

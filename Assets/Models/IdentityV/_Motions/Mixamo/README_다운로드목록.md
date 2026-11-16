@@ -44,17 +44,17 @@
 | Hit_Body_Front | 몸통 피격(공통) — 몸 앞(약 ±60°)에서 맞음, 크게 뒤로 젖힘 | **받음** — 상체만(HitReact 레이어) | Standing React Large From Front |
 | Hit_Body_Side / Hit_Body_Back | 몸통 피격(공통) — 맞은 위치가 옆이면 Side, 뒤면 Back | **받음** | Big Side Hit / Big Kidney Hit |
 | Hit_Limb | 팔·다리 피격(공통) | **받음** | Side Hit |
-| Fall_1 | 넘어지기 1 — 전위 돌진이 벽·장애물에 부딪힘(`Forward_Charge_End`) | **받음** — 1.8초 동안 넘어져 못 움직임 | Rifle Hit To Back |
-| Skill_Forward_Charge | 전위 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |
+| Fall_1 | 넘어지기 1 — 포워드 돌진이 벽·장애물에 부딪힘(`Forward_Charge_End`) | **받음** — 1.8초 동안 넘어져 못 움직임 | Rifle Hit To Back |
+| Skill_Forward_Charge | 포워드 럭비공 돌진(반복) | **받음** — 돌진 16m/s에 맞춰 2배속 재생 | Running |
 | Skill_Luchino_Leap | 루키노 도약(E) → 공중에서 공격 키 = 내려찍기 | **받음** — 한 파일을 둘로 나눔: Skill_Luchino_Leap(16~30, 도약~꼭대기) + Skill_Luchino_Leap_Slam(39~48, 내리치며 하강) | Jump Attack |
 | Skill_Luchino_Leap_Land | 루키노 내려찍기 착지(경직 1.2초에 맞춰 재생) | **받음** — 2~45프레임(발 닿음 → 손 짚고 웅크림 → 일어서기), 발 기준 높이 | Hard Landing |
 | Skill_Mercenary_Guard_Wall | 용병 아대: 벽에 닿은 직후 0.1초(WallDashSkill.wallPoseTime)만 손을 잠깐 들어 벽을 짚는 자세, 상체만(SkillUpper 레이어, 다리는 계속 달림), 그다음은 원래 모션(튕겨 나갈 때 따로 모션 없음 — 밀어내기 모션은 사용자 요청으로 뺌, `Tools/Blender/make_wall_pushoff.py`만 남김) | **받음** — 한 프레임 자세 | Male Action Pose |
 | Skill_SmileyFace_RocketCharge_Raise | 광대 로켓 돌진(E): E를 꾹 누르는 동안 로켓을 두 손으로 머리 위로 치켜듦 — 상체만(SkillUpper), 다리는 걷기 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter) | (직접 만듦) |
-| Skill_SmileyFace_RocketCharge | 광대 로켓 돌진(E): E를 떼면 돌진(8m/s = 전위의 0.5배) — 무게중심을 낮추고 로켓을 껴안은 채 머리를 정면으로 들이받음, 다리는 달리기 모션(Run_F)의 다리·엉덩이를 가져와 엇갈려 뜀(1.2배속), 상체 떨림 없음. 벽에 부딪히면 Fall_1 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter + Run_F 다리) | (직접 만듦) |
+| Skill_SmileyFace_RocketCharge | 광대 로켓 돌진(E): E를 떼면 돌진(8m/s = 포워드의 0.5배) — 무게중심을 낮추고 로켓을 껴안은 채 머리를 정면으로 들이받음, 다리는 달리기 모션(Run_F)의 다리·엉덩이를 가져와 엇갈려 뜀(1.2배속), 상체 떨림 없음. 벽에 부딪히면 Fall_1 | **Blender로 새로 만듦**(`Tools/Blender/make_rocket_charge.py`, 바탕 = SelectIdle_Hunter + Run_F 다리) | (직접 만듦) |
 | Skill_Coordinator_Flare | 공군 신호총 쏘기(E) — 신호총은 이때만 꺼내 듦 | **Blender로 바꿔 씀**(`Tools/Blender/make_flare_shot.py`) — 바탕의 왼쪽으로 도는 발걸음을 줄여 몸을 옆으로 틀며 오른팔로 목표(앞, 12° 위)를 겨눔(0.2초) → 쏨 → 반동으로 팔이 튐 → 겨눈 채 → 내림(0.8초) | Turn Left 45 Degrees → Blender |
 | Skill_Thief_Flashlight | 도둑 손전등(E) — 오른팔을 앞으로 곧게 뻗어 어깨 높이로 들고 비춤(상체만, 다리는 걷기·달리기). 반복 | **Blender로 만듦**(`Tools/Blender/make_flashlight_hold.py`) — 생존자 대기(Idle) 위에 오른팔만 앞(4° 아래)으로 겨눔, 머리는 앞을 봄 | Idle → Blender |
 | Skill_Doctor_SelfHeal | 의사 자가치료(주사기 꽂기) | **대기** — 파일을 넣으면 Skill 레이어에 자동으로 들어간다 | |
-| Stun | 기절(반복, 고개 숙임) — 전위 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
+| Stun | 기절(반복, 고개 숙임) — 포워드 돌진에 맞음 | **대기** — 없으면 머리 피격(Head Hit)으로 고개를 숙이고 기절 동안 유지 | |
 | Climb | 기어오르기(공통) | **받음, 연결 대기** — Climbing To Top(벽에 발을 대고 매달린 데서 위로 올라섬). Freehang Climb보다 자연스러워 골랐다. 기어오를 곳이 생기면 연결 | Climbing To Top |
 | Stairs_Up | 계단 오르기(공통, 반복) | **받음** — Stairs 레이어(전신), 앞으로 가며 충분히 오르면 CharacterStairsAnimator가 켬(빠르기 = 앞 속도). 붉은나비·하스터는 미끄러지는 이동 그대로 | Running Up Stairs |
 | Block | 막기(공통, 반복) | **받음, 연결 대기** — 막기 기능이 아직 없어 Animator에는 넣지 않았다 | Standing Block Idle |

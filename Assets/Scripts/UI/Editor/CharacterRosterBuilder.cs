@@ -36,7 +36,7 @@ namespace Project1.UI.EditorTools
             ["Survivor_Mercenary"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.WallDashSkill>(); s.id = "Mercenary_Guard"; s.displayName = "아대"; s.castTime = 99999f; /* 켜 두는 스킬: 다시 누를 때까지 */ s.cooldown = 0f; return s; },
             ["Hunter_Geisha"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.ButterflyGlideSkill>(); s.id = "Geisha_Butterfly"; s.displayName = "이동"; s.castTime = 3f; s.cooldown = 5f; return s; },
             ["Survivor_Coordinator"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.FlareShotSkill>(); s.id = "Coordinator_Flare"; s.displayName = "신호총"; s.castTime = 2f; s.cooldown = 0f; return s; },
-            ["Hunter_SmileyFace"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.RocketChargeSkill>(); s.id = "SmileyFace_RocketCharge"; s.displayName = "로켓 돌진"; s.castTime = 12f; s.cooldown = 6f; s.castMoveSpeed = 3.6f; s.chargeSpeed = 8f /* 전위(16)의 0.5배 */; return s; },
+            ["Hunter_SmileyFace"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.RocketChargeSkill>(); s.id = "SmileyFace_RocketCharge"; s.displayName = "로켓 돌진"; s.castTime = 12f; s.cooldown = 6f; s.castMoveSpeed = 3.6f; s.chargeSpeed = 8f /* 포워드(16)의 0.5배 */; return s; },
             ["Hunter_Ripper"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.MistBladeSkill>(); s.id = "Ripper_MistBlade"; s.displayName = "안개 칼날"; s.castTime = 3f; s.cooldown = 0f; /* 안개 1칸을 쓴다(7초마다 1칸, 최대 2칸) */ return s; },
             ["Survivor_Thief"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.FlashlightSkill>(); s.id = "Thief_Flashlight"; s.displayName = "손전등"; s.castTime = 6f; /* 최대 — E를 다시 누르면 넣음 */ s.cooldown = 0f; s.castMoveSpeed = 2.5f; return s; },
             ["Hunter_HellEmber"] = () => { var s = ScriptableObject.CreateInstance<Project1.Systems.CloneSummonSkill>(); s.id = "HellEmber_Clone"; s.displayName = "분신"; s.castTime = 0.4f; s.cooldown = 0f; /* 분신 10초, 한 번에 하나 */ return s; },
@@ -47,7 +47,7 @@ namespace Project1.UI.EditorTools
         private static readonly Dictionary<string, string> Names = new()
         {
             ["Survivor_Doctor"] = "의사", ["Survivor_Coordinator"] = "공군", ["Survivor_Cowboy"] = "카우보이",
-            ["Survivor_Forward"] = "전위", ["Survivor_Mercenary"] = "용병", ["Survivor_MindsEye"] = "맹인",
+            ["Survivor_Forward"] = "포워드", ["Survivor_Mercenary"] = "용병", ["Survivor_MindsEye"] = "맹인",
             ["Survivor_Thief"] = "도둑",
             ["Hunter_Antonio"] = "안토니오", ["Hunter_Gamekeeper"] = "사냥터지기", ["Hunter_Geisha"] = "붉은나비",
             ["Hunter_Hastur"] = "하스터", ["Hunter_HellEmber"] = "공장장", ["Hunter_Luchino"] = "루키노",

@@ -9,7 +9,7 @@ namespace Project1.Systems
     /// - 상태: 없음 → 약공격, 또는 없음 → 강공격 모으기 → 강공격.
     /// - 공격마다 준비 → 판정 → 후딜레이. 판정 구간에만 AttackHitDetector로 Hitbox를 켠다.
     ///   땅: 약=오른손, 강=오른손+소품. 앞으로 달리다 뛴 공중 공격(IsRunJumpAttack, 플라잉킥 등): 양발(감시자는 SetRunJumpSlots로 무기·손 + 앞 긴 판정). 그 밖의 공중 공격은 땅 공격과 같다.
-    /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
+    /// - 다른 행동을 막는 스킬(ICharacterSkillState.LocksActions, 예: 포워드 돌진)·기절 중에는 공격을 시작하지 않는다.
     /// - 공중에서는 꾹 눌러 모을 수 없다: 누르는 순간 공중 공격이 한 번 나가고, 키를 뗄 때까지 새 입력을 받지 않는다.
     /// - 공격이 끝난 뒤에도 잠깐(약 lightReattackDelay / 강 heavyReattackDelay) 새 공격을 받지 않는다. 이동은 되고 안내·쿨다운 표시는 없다.
     ///   (달리기 점프 공격에 이어 가는 두 번째 날아 차기, 맹인 후리기 잇기는 예외)
@@ -286,7 +286,7 @@ namespace Project1.Systems
             switch (AttackState)
             {
                 case CharacterAttackState.None:
-                    // 다른 행동을 막는 스킬(예: 전위 돌진)·기절 중에는 공격을 시작하지 않는다.
+                    // 다른 행동을 막는 스킬(예: 포워드 돌진)·기절 중에는 공격을 시작하지 않는다.
                     if (skillState == null) TryGetComponent(out skillState);
                     if (stun == null) TryGetComponent(out stun);
                     if (health == null) TryGetComponent(out health);

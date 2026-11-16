@@ -6,7 +6,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 누워 있다가 일어나는 모션을 하나로 고정한다: Animator "GetUp" 레이어(전신, 맨 위)의 GetUp(Kip Up).
     /// - 넉다운(헤드샷 킥에 나가떨어짐)·뒤에서 맞아 쓰러짐: CharacterHitReactionAnimator가 Begin(남은 기절 시간)을 부른다.
-    /// - 스킬이 막혀 넘어짐(전위 돌진·광대 로켓 돌진이 벽에 부딪힘 — Skill 레이어 "_End" 상태): 넘어진 시간이 getUpTime만큼 남으면 스스로 시작한다.
+    /// - 스킬이 막혀 넘어짐(포워드 돌진·광대 로켓 돌진이 벽에 부딪힘 — Skill 레이어 "_End" 상태): 넘어진 시간이 getUpTime만큼 남으면 스스로 시작한다.
     /// 재생 위치는 행동 불가 시간이 끝나는 순간 다 일어서게 맞춘다(짧으면 빨리). 체력 0 쓰러짐(CharacterDeathAnimator)은 일어나지 않으므로 쓰지 않는다.
     /// 연출 전용이고 게임 상태는 바꾸지 않는다. 캐릭터 루트에 붙인다(CharacterHitReactionAnimator가 함께 붙인다).
     /// </summary>

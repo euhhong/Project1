@@ -11,7 +11,7 @@ namespace Project1.Presentation
     /// - 몸통: 맞은 위치가 몸 앞(약 ±60°)이면 Hit_Body_Front(Standing React Large From Front), 옆이면 Hit_Body_Side(Big Side Hit)
     /// - 팔·다리: Hit_Limb(Side Hit). 몸통·팔·다리를 등 쪽에서 맞으면 Hit_Body_Back(Standing React Large From Left)
     /// - 작은 데미지(세기 0.75 미만, 예: 리퍼 E): 부위·방향과 상관없이 Hit_Small(Standing React Small From Headshot)
-    /// - 뒤에서 맞아 1초 이상 기절(전위 돌진·신호탄): "HitReactFull"(전신)에 Stun_Back(Turn To Knocked Unconscious — 휘청이며 쓰러져 누움)을 기절 시간에 맞춰 재생, 끝에는 Kip Up으로 일어남(CharacterGetUpAnimator)
+    /// - 뒤에서 맞아 1초 이상 기절(포워드 돌진·신호탄): "HitReactFull"(전신)에 Stun_Back(Turn To Knocked Unconscious — 휘청이며 쓰러져 누움)을 기절 시간에 맞춰 재생, 끝에는 Kip Up으로 일어남(CharacterGetUpAnimator)
     /// 상체만 움직이므로 걷기·달리기 다리 모션은 그대로 이어진다. 연출 전용이고 게임 상태는 바꾸지 않는다.
     /// 쓰러지며 나가떨어지는 피격(HitResult.Knockdown — 헤드샷 킥)은 "HitReactFull" 레이어(전신)에 Hit_HeadKick(Corkscrew Evade — 나가떨어져 누움)을 재생하고, 기절이 끝날 때 맞춰 Kip Up으로 일어난다(CharacterGetUpAnimator).
     /// 공격 중(약·강공격)에는 피격 모션을 얹지 않는다 — 둘이 바짝 붙어 서로 때려도 공격 모션이 끝까지 제대로 나온다.
@@ -37,7 +37,7 @@ namespace Project1.Presentation
         private static readonly int SmallId = Animator.StringToHash("Hit_Small");
         private const float SmallPower = 0.75f; // 세기(HitResult.PowerScale)가 이보다 작으면 작은 데미지(예: 리퍼 E 0.5)
 
-        // 뒤에서 맞아 기절(전위 돌진·신호탄 — CharacterStun.StunnedFromBehind): 전신 "HitReactFull" 레이어에 Stun_Back(휘청이며 돌아 쓰러져 누움)
+        // 뒤에서 맞아 기절(포워드 돌진·신호탄 — CharacterStun.StunnedFromBehind): 전신 "HitReactFull" 레이어에 Stun_Back(휘청이며 돌아 쓰러져 누움)
         private static readonly int StunBackId = Animator.StringToHash("Stun_Back");
         [Tooltip("뒤에서 맞은 기절이 이 시간(초) 이상일 때만 쓰러지는 모션을 쓴다(짧으면 보통 기절 모션).")]
         [SerializeField, Min(0f)] private float stunBackMin = 1f;

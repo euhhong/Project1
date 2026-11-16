@@ -10,7 +10,7 @@ namespace Project1.Core
         Casting,
         /// <summary>재사용 대기.</summary>
         Cooldown,
-        /// <summary>스킬이 도중에 막혀 끝난 뒤 못 움직이는 중(예: 전위 돌진이 벽에 부딪혀 넘어짐). 끝나면 Cooldown.</summary>
+        /// <summary>스킬이 도중에 막혀 끝난 뒤 못 움직이는 중(예: 포워드 돌진이 벽에 부딪혀 넘어짐). 끝나면 Cooldown.</summary>
         Recovering,
     }
 

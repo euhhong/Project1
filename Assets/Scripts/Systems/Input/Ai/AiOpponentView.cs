@@ -37,7 +37,7 @@ namespace Project1.Systems
         /// <summary>스킬을 쓰는 중이라 다른 행동을 못 함(돌진·자가치료 등).</summary>
         public readonly bool SkillBusy => Skill == SkillState.Recovering || (Skill == SkillState.Casting && SkillLocksActions && !ChargingAtSomeone);
 
-        /// <summary>돌진형 스킬(전위·광대)로 달려드는 중 — 틈이 아니라 피해야 할 때.</summary>
+        /// <summary>돌진형 스킬(포워드·광대)로 달려드는 중 — 틈이 아니라 피해야 할 때.</summary>
         public readonly bool ChargingAtSomeone => Skill == SkillState.Casting && AiSkillProfile.For(SkillId).Charge;
     }
 
