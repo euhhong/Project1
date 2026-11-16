@@ -11,9 +11,9 @@
 | 사냥터지기(노루) | Hunter_Gamekeeper.png | |
 | 하스터 | Hunter_Hastur.png | |
 | 공장장 | Hunter_HellEmber.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
-| 루키노 | Hunter_Luchino.png | |
+| 루키노 | Hunter_Luchino.png | ✅ (1402×1122, 흰 배경) |
 | 리퍼 | Hunter_Ripper.png | |
-| 광대 | Hunter_SmileyFace.png | |
+| 광대 | Hunter_SmileyFace.png | ✅ (1402×1122, 흰 배경) |
 | 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
 | 카우보이 | Survivor_Cowboy.png | |
 | 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |

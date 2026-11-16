@@ -22,6 +22,11 @@ namespace Project1.UI
         private readonly GameObject root;
         private readonly Camera camera;
         private readonly List<GameObject> lineup = new();
+        private readonly List<float> baseScale = new(), fitScale = new(); // 창에서 잘리는 모델(예: 루키노·하스터)만 줄이는 배율
+        private float fitTimer;
+        private const float FitDelay = 0.3f; // 대기 모션이 자세를 잡은 뒤 잰다
+        private const float FitMargin = 0.04f; // 창 가장자리 여유(0~1)
+        private const float MinFit = 0.55f;
         private int focus;
         private Vector3 velocity;
 
@@ -77,6 +82,8 @@ namespace Project1.UI
         {
             foreach (var m in lineup) UnityEngine.Object.Destroy(m);
             lineup.Clear();
+            baseScale.Clear();
+            fitScale.Clear();
             for (int i = 0; i < entries.Count; i++)
             {
                 var e = entries[i];
@@ -91,10 +98,13 @@ namespace Project1.UI
                 foreach (var r in m.GetComponentsInChildren<Renderer>(true))
                     if (Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
                 var anim = m.GetComponent<Animator>();
-                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
+                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; anim.cullingMode = AnimatorCullingMode.AlwaysAnimate; }
                 lineup.Add(m);
+                baseScale.Add(e.scale);
+                fitScale.Add(1f);
             }
             focus = Mathf.Clamp(focusIndex, 0, Mathf.Max(lineup.Count - 1, 0));
+            fitTimer = FitDelay;
             camera.transform.position = CameraTarget();
             velocity = Vector3.zero;
             Aim();
@@ -111,12 +121,72 @@ namespace Project1.UI
 
         public void Tick()
         {
+            if (fitTimer > 0f)
+            {
+                fitTimer -= Time.unscaledDeltaTime;
+                if (fitTimer <= 0f) FitAll();
+            }
+            float step = Time.unscaledDeltaTime * 3f;
+            for (int i = 0; i < lineup.Count; i++)
+            {
+                float target = baseScale[i] * fitScale[i];
+                var t = lineup[i].transform;
+                t.localScale = Vector3.one * Mathf.MoveTowards(t.localScale.x, target, step * baseScale[i]);
+            }
+
             var cam = camera.transform;
             cam.position = Vector3.SmoothDamp(cam.position, CameraTarget(), ref velocity, 0.12f);
             Aim();
         }
 
-        private Vector3 CameraTarget() => Origin + new Vector3(-focus * Spacing, CameraHeight, CameraDistance);
+        private Vector3 CameraTarget() => CameraTargetFor(focus);
+        private static Vector3 CameraTargetFor(int index) => Origin + new Vector3(-index * Spacing, CameraHeight, CameraDistance);
+
+        /// <summary>
+        /// 모델마다 그 앞 카메라 자리에서 화면(창)에 비춘 모습을 재어, 위·옆으로 창을 벗어나면 발을 기준으로 줄인다(넘치지 않는 모델은 그대로).
+        /// 대기 모션 자세 그대로 잰다(SkinnedMeshRenderer.BakeMesh). 선택 화면에서만 — 게임 속 크기는 그대로.
+        /// </summary>
+        private void FitAll()
+        {
+            var cam = camera.transform;
+            Vector3 savedPos = cam.position;
+            Quaternion savedRot = cam.rotation;
+            var mesh = new Mesh();
+            for (int i = 0; i < lineup.Count; i++)
+            {
+                cam.position = CameraTargetFor(i);
+                Aim();
+                float k = 1f;
+                Vector3 feet = camera.WorldToViewportPoint(lineup[i].transform.position);
+                void Check(Vector3 world)
+                {
+                    var v = camera.WorldToViewportPoint(world);
+                    if (v.z <= 0f) return;
+                    if (v.y > feet.y) k = Mathf.Min(k, (1f - FitMargin - feet.y) / (v.y - feet.y));
+                    if (v.x > feet.x) k = Mathf.Min(k, (1f - FitMargin - feet.x) / (v.x - feet.x));
+                    if (v.x < feet.x) k = Mathf.Min(k, (feet.x - FitMargin) / (feet.x - v.x));
+                }
+                foreach (var r in lineup[i].GetComponentsInChildren<Renderer>())
+                {
+                    if (!r.enabled) continue;
+                    if (r is SkinnedMeshRenderer smr)
+                    {
+                        smr.BakeMesh(mesh, true);
+                        var m = smr.transform.localToWorldMatrix;
+                        var verts = mesh.vertices;
+                        for (int v = 0; v < verts.Length; v += 4) Check(m.MultiplyPoint3x4(verts[v]));
+                    }
+                    else
+                    {
+                        var b = r.bounds;
+                        for (int c = 0; c < 8; c++) Check(new Vector3((c & 1) == 0 ? b.min.x : b.max.x, (c & 2) == 0 ? b.min.y : b.max.y, (c & 4) == 0 ? b.min.z : b.max.z));
+                    }
+                }
+                fitScale[i] = Mathf.Clamp(k, MinFit, 1f);
+            }
+            UnityEngine.Object.Destroy(mesh);
+            cam.SetPositionAndRotation(savedPos, savedRot);
+        }
 
         private void Aim()
         {
