@@ -183,10 +183,10 @@ namespace Project1.UI
             tabs.style.left = 110f; tabs.style.top = 36f;
             tabs.style.flexDirection = FlexDirection.Row;
             root.Add(tabs);
-            hunterTab = MakeButton(tabs, "감시자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Hunter));
-            hunterTab.style.width = 150f;
-            survivorTab = MakeButton(tabs, "생존자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Survivor));
-            survivorTab.style.width = 150f;
+            hunterTab = MakeButton(tabs, "W  감시자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Hunter));
+            hunterTab.style.width = 200f;
+            survivorTab = MakeButton(tabs, "S  생존자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Survivor));
+            survivorTab.style.width = 200f;
             survivorTab.style.marginLeft = 12f;
         }
 
