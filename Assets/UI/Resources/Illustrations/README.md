@@ -1,0 +1,22 @@
+# 캐릭터 일러스트 (캐릭터 선택 창 UI)
+
+캐릭터 선택 창에서 쓰는 캐릭터별 일러스트. 파일 이름 = 캐릭터 ID(`CharacterRoster`의 `id`), PNG(배경 투명 또는 흰색).
+게임에서는 `Resources.Load<Texture2D>("Illustrations/<ID>")`로 읽는다.
+
+| 캐릭터 | 파일 이름 | 받음 |
+|---|---|---|
+| 붉은나비(미치코) | Hunter_Geisha.png | 대기(채팅에 붙여넣은 이미지 — 파일로 받아야 함) |
+| 안토니오 | Hunter_Antonio.png | |
+| 사냥터지기(노루) | Hunter_Gamekeeper.png | |
+| 하스터 | Hunter_Hastur.png | |
+| 공장장 | Hunter_HellEmber.png | |
+| 루키노 | Hunter_Luchino.png | |
+| 리퍼 | Hunter_Ripper.png | |
+| 광대 | Hunter_SmileyFace.png | |
+| 공군 | Survivor_Coordinator.png | |
+| 카우보이 | Survivor_Cowboy.png | |
+| 의사 | Survivor_Doctor.png | |
+| 전위 | Survivor_Forward.png | |
+| 용병 | Survivor_Mercenary.png | |
+| 맹인 | Survivor_MindsEye.png | |
+| 도둑 | Survivor_Thief.png | |
