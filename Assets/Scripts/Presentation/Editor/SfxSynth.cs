@@ -252,41 +252,25 @@ namespace Project1.Presentation.EditorTools
             return s;
         }
 
-        /// <summary>
-        /// 메뉴 고름 완료(타이틀 버튼 누름): 바람을 가르는 크고 시원한 '슈잉~ 핑!'
-        /// 슈 = 넓은 바람(낮은 데서 높은 데로 빠르게 쓸려 올라가며 부풀었다 빠짐) / 잉~ = 바람 속에서 올라가는 울림 음 / 핑 = 바람이 정점일 때 맑게 튀는 쇳소리(길게 울림). 크게 눌러 꽉 차게.
-        /// </summary>
+        /// <summary>메뉴 고름 완료(타이틀 버튼 누름): 짧고 빠르고 높은 '슁-핑!' — 아주 짧게 위로 튀는 높은 바람 + 맑고 높은 쇳소리(빠르게 사라짐). 크게.</summary>
         private static float[] Confirm()
         {
-            float len = 0.9f; var s = Buf(len); var r = new System.Random(23);
-            var bp = new Biquad(); var bp2 = new Biquad(); var hp = new Biquad(); hp.SetHigh(250f, 0.7f);
-            const float pingAt = 0.2f;
-            float[] pingF = { 3150f, 4730f, 6620f, 8900f };
-            float[] pingA = { 0.9f, 0.55f, 0.35f, 0.18f };
-            double toneArg = 0;
+            float len = 0.28f; var s = Buf(len); var r = new System.Random(23);
+            var bp = new Biquad(); var hp = new Biquad(); hp.SetHigh(2500f, 0.7f);
+            float[] pingF = { 4200f, 6300f, 8400f };
+            float[] pingA = { 0.9f, 0.45f, 0.2f };
             for (int i = 0; i < s.Length; i++)
             {
                 float t = i / (float)Rate;
-                // 슈: 0~0.32초 동안 600 → 5200Hz로 쓸려 올라가는 두 겹 바람(가운데 + 한 옥타브 위), 0.2초쯤 가장 크게
-                float sweep = Mathf.Clamp01(t / 0.32f);
-                float fc = Mathf.Lerp(600f, 5200f, sweep * sweep * (3f - 2f * sweep));
-                bp.SetBand(fc, 0.8f); bp2.SetBand(fc * 2f, 1.2f);
-                float n = Noise(r);
-                float swell = t < 0.2f ? Mathf.Pow(t / 0.2f, 1.5f) : Mathf.Exp(-(t - 0.2f) * 7f);
-                float wind = hp.Run(bp.Run(n) * 1.2f + bp2.Run(n) * 0.7f) * swell;
-                // 잉~: 바람 속에서 650 → 1700Hz로 올라가는 울림 음(살짝 떨림)
-                float tf = Mathf.Lerp(650f, 1700f, Mathf.Clamp01(t / 0.35f)) * (1f + 0.01f * Mathf.Sin(2f * Mathf.PI * 9f * t));
-                toneArg += 2.0 * Math.PI * tf / Rate;
-                float tone = (float)Math.Sin(toneArg) * swell * 0.35f;
-                // 핑: 정점에서 맑게 튀어 길게 울리는 쇳소리
-                float pt = t - pingAt, ping = 0f;
+                bp.SetBand(Mathf.Lerp(3000f, 9000f, Mathf.Clamp01(t / 0.06f)), 1.1f); // 60ms 만에 높이 튀어 오름
+                float wind = hp.Run(bp.Run(Noise(r))) * (t < 0.02f ? t / 0.02f : Mathf.Exp(-(t - 0.02f) * 30f));
+                float pt = t - 0.025f, ping = 0f;
                 if (pt > 0f)
                 {
-                    float atk = Mathf.Min(1f, pt / 0.002f);
-                    for (int p = 0; p < pingF.Length; p++) ping += Mathf.Sin(2f * Mathf.PI * pingF[p] * pt) * pingA[p] * Mathf.Exp(-pt * (4.5f + p * 3f));
-                    ping *= atk;
+                    for (int p = 0; p < pingF.Length; p++) ping += Mathf.Sin(2f * Mathf.PI * pingF[p] * pt) * pingA[p] * Mathf.Exp(-pt * (14f + p * 6f));
+                    ping *= Mathf.Min(1f, pt / 0.0015f);
                 }
-                s[i] = Soft(wind * 3.2f + tone + ping * 0.8f);
+                s[i] = Soft(wind * 3.5f + ping * 1.1f);
             }
             return s;
         }
