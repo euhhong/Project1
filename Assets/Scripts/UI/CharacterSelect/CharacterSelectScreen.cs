@@ -125,7 +125,7 @@ namespace Project1.UI
             Project1.Presentation.BgmPlayer.Stop(); // 게임에 들어가면 선택 음악을 끈다
             CharacterPick.Set(entry, battle);
             // 게임 씬을 미리 불러 두지 않는다: 미리 부르는 중엔 다른 씬을 열 수 없어 ESC(타이틀로)가 게임 씬을 다 부를 때까지 멈췄다
-            ScreenFade.Out(() => SceneManager.LoadSceneAsync(GameSceneName), GameSceneName);
+            ScreenFade.Out(() => SceneManager.LoadScene(GameSceneName), GameSceneName);
         }
 
         /// <summary>타이틀 씬으로 돌아간다(검게 어두워졌다가 타이틀이 열리면 밝아짐). 빌드에 타이틀이 없으면 아무것도 안 함.</summary>
@@ -134,7 +134,7 @@ namespace Project1.UI
             if (!Application.CanStreamedLevelBeLoaded(TitleScreen.SceneName)) return false;
             started = true;
             CharacterPick.Clear();
-            ScreenFade.Out(() => SceneManager.LoadSceneAsync(TitleScreen.SceneName), TitleScreen.SceneName);
+            ScreenFade.Out(() => SceneManager.LoadScene(TitleScreen.SceneName), TitleScreen.SceneName);
             return true;
         }
 

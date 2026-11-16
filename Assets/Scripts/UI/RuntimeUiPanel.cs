@@ -61,6 +61,16 @@ namespace Project1.UI
             return panel;
         }
 
+        /// <summary>
+        /// 씬을 바꿀 때 Start 시점엔 앞 씬의 EventSystem이 아직 남아 있어 만들지 않았다가, 앞 씬이 내려가며 그것이 없어지면 버튼이 안 눌린다.
+        /// 그래서 매 프레임 EventSystem이 하나도 없으면 그때 만든다.
+        /// </summary>
+        private void LateUpdate()
+        {
+            if (ownEventSystem == null && EventSystem.current == null && FindAnyObjectByType<EventSystem>() == null)
+                ownEventSystem = new GameObject(name + " EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        }
+
         private void OnDestroy()
         {
             if (ownEventSystem != null) Destroy(ownEventSystem);

@@ -120,7 +120,7 @@ namespace Project1.UI
             {
                 case 0: // 어두워진 뒤 캐릭터 선택으로(열리면 밝아짐)
                     fadeStart = float.MaxValue; // 넘어가는 동안 입력 막기
-                    ScreenFade.Out(() => SceneManager.LoadSceneAsync(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName, FadeTime);
+                    ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName, FadeTime);
                     break;
                 case 1: options.Open(); break;
                 case 2: credits.Open(); break;
