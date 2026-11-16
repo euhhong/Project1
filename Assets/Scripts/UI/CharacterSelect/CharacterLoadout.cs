@@ -130,6 +130,7 @@ namespace Project1.UI
             SetProp<MirrorTraveler>(player, true);
             SetProp<MirrorTravelAnimator>(player, true);
             SetProp<MirrorTravelEffect>(player, true); // 들어갈 때·나올 때 보랏빛 리본
+            SetProp<CharacterOutline>(player, true);   // 게임 중 캐릭터 모델 가장자리에 얇은 흰 윤곽선(FE)
             if (player.TryGetComponent(out CharacterMotor palletMotor)) palletMotor.RefreshSpeedLimits(); // 판자 내리는 동안 제자리(IMoveOverride)를 이동에 알린다
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))
