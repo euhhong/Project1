@@ -6,7 +6,7 @@ namespace Project1.UI.Editor
 {
     /// <summary>
     /// 캐릭터 일러스트(Assets/UI/Resources/Illustrations) 가져오기 설정 + 흰 배경 빼기.
-    /// 원본 PNG는 그대로 두고, 가져올 때만 테두리에 이어진 흰 배경을 투명하게 만든다(어두운 선택 화면 위에 바로 얹으려고).
+    /// 흰 배경 PNG가 들어오면 테두리에 이어진 흰 배경을 투명하게 뺀 PNG로 파일을 바꿔 저장한다(어두운 선택 화면 위에 바로 얹으려고).
     /// 연기·나비처럼 흰색으로 옅어지는 부분은 반투명으로 남고, 캐릭터 안의 흰 부분(얼굴·앞치마)은 외곽선에 막혀 그대로다.
     /// </summary>
     public class IllustrationImporter : AssetPostprocessor
@@ -20,9 +20,9 @@ namespace Project1.UI.Editor
         private const int EdgeGrow = 2;       // 외곽선 둘레 밝은 테두리(헤일로)를 없애려고 배경을 몇 픽셀 더 넓힌다
         private const float WarmMin = 0.14f;  // (R+G)/2 − B가 이보다 크면 노란 빛(불꽃)으로 보고 지킨다
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
-        private const int EnclosedMinArea = 500;  // 이만큼 넓게 뭉쳐 있으면 배경
+        private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
 
-        public override uint GetVersion() => 3;
+        public override uint GetVersion() => 6;
 
         private void OnPreprocessTexture()
         {
@@ -40,12 +40,56 @@ namespace Project1.UI.Editor
             ti.textureCompression = TextureImporterCompression.Uncompressed; // 1402×1122처럼 4의 배수가 아닌 크기가 많아 압축하지 않는다
         }
 
-        private void OnPostprocessTexture(Texture2D texture)
+        // 가져올 때 픽셀만 바꾸면 Unity가 원본(불투명)을 보고 알파 없는 형식(RGB24)으로 굳혀 버린다.
+        // 그래서 흰 배경이 남은 PNG는 파일 자체를 누끼 딴 PNG로 바꿔 저장한다(한 번만 — 이미 투명하면 건드리지 않는다).
+        private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
-            if (!assetPath.StartsWith(Folder)) return;
-            var px = texture.GetPixels32();
-            RemoveWhiteBackground(px, texture.width, texture.height);
-            texture.SetPixels32(px);
+            var targets = new List<string>();
+            foreach (var p in imported)
+                if (p.StartsWith(Folder) && p.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase)) targets.Add(p);
+            if (targets.Count > 0) EditorApplication.delayCall += () => { foreach (var p in targets) BakeIfWhite(p); };
+        }
+
+        [MenuItem("Tools/FE/일러스트 흰 배경 빼기")]
+        private static void BakeAll()
+        {
+            int n = 0;
+            foreach (var p in System.IO.Directory.GetFiles(Folder, "*.png"))
+                if (BakeIfWhite(p.Replace('\\', '/'))) n++;
+            Debug.Log($"[FE] 일러스트 흰 배경 빼기: {n}장 바꿈");
+        }
+
+        /// <summary>테두리가 흰 불투명 배경이면 누끼를 따서 PNG를 덮어쓴다. 바꿨으면 true.</summary>
+        public static bool BakeIfWhite(string path)
+        {
+            var bytes = System.IO.File.ReadAllBytes(path);
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            try
+            {
+                if (!tex.LoadImage(bytes)) return false;
+                var px = tex.GetPixels32();
+                if (!HasWhiteBorder(px, tex.width, tex.height)) return false;
+                RemoveWhiteBackground(px, tex.width, tex.height);
+                tex.SetPixels32(px);
+                System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                Debug.Log($"[FE] 일러스트 흰 배경을 뺐습니다: {path}");
+                return true;
+            }
+            finally { Object.DestroyImmediate(tex); }
+        }
+
+        private static bool HasWhiteBorder(Color32[] px, int w, int h)
+        {
+            int white = 0, total = 0;
+            void Check(Color32 c)
+            {
+                total++;
+                if (c.a == 255 && c.r >= 230 && c.g >= 230 && c.b >= 230) white++;
+            }
+            for (int x = 0; x < w; x += 4) { Check(px[x]); Check(px[(h - 1) * w + x]); }
+            for (int y = 0; y < h; y += 4) { Check(px[y * w]); Check(px[y * w + w - 1]); }
+            return white > total * 0.3f;
         }
 
         /// <summary>테두리에 이어진 흰 배경을 투명하게(흰색 → 알파). 검사용 명령에서도 부른다.</summary>
@@ -144,8 +188,25 @@ namespace Project1.UI.Editor
                     if (y > 0) Visit(i - w);
                     if (y < h - 1) Visit(i + w);
                 }
-                if (region.Count >= EnclosedMinArea)
-                    foreach (int i in region) seed(i);
+                if (region.Count < EnclosedMinArea) continue;
+                // 둘레가 노란 빛(불꽃)이면 배경이 아니라 빛나는 심지다 — 남긴다.
+                int edge = 0, warmEdge = 0;
+                foreach (int i in region)
+                {
+                    int x = i % w, y = i / w;
+                    void Edge(int j)
+                    {
+                        if (lum[j] >= PureWhite && !warm[j]) return; // 같은 흰 덩어리
+                        edge++;
+                        if (warm[j]) warmEdge++;
+                    }
+                    if (x > 0) Edge(i - 1);
+                    if (x < w - 1) Edge(i + 1);
+                    if (y > 0) Edge(i - w);
+                    if (y < h - 1) Edge(i + w);
+                }
+                if (edge > 0 && warmEdge > edge * 0.25f) continue;
+                foreach (int i in region) seed(i);
             }
         }
     }

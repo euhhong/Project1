@@ -13,7 +13,7 @@ namespace Project1.UI
     /// </summary>
     public class CharacterSelectScreen : MonoBehaviour
     {
-        private const float DragDegreesPerPixel = 0.45f;
+        private const float DragDegreesPerPixel = 0.3f; // 모델은 끌어서 조금만 돌려 볼 수 있다
 
         private CharacterRoster roster;
         private GameObject player;

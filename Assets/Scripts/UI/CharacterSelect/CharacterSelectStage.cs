@@ -6,19 +6,21 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터 선택 화면의 3D 무대: 멀리 떨어진 곳에 캐릭터를 옆으로 늘어놓고, 카메라가 고른 캐릭터 앞으로 미끄러져 간다(넘길 때 슉슉).
-    /// 카메라는 화면이 아니라 RenderTexture(Texture)에 그리고, UI가 그 그림을 모델 창에 보여 준다. 실행 중에만 만든다.
+    /// 카메라는 배경이 투명한 RenderTexture(Texture)에 그리고, UI가 그 그림을 화면에 그대로 얹는다(따로 창 없이). 실행 중에만 만든다.
     /// </summary>
     public class CharacterSelectStage : IDisposable
     {
         private static readonly Vector3 Origin = new(10000f, 0f, 10000f);
         private const float Spacing = 3.5f;
-        private const float CameraDistance = 7.5f, CameraHeight = 2.2f, LookHeight = 1.5f;
+        private const float CameraDistance = 6.5f, CameraHeight = 1.9f, LookHeight = 1.0f, FieldOfView = 25f; // 살짝 위에서 내려다봄, 감시자(키 약 2.3m)까지 그림 높이에 꽉 차게
+        /// <summary>모델이 보는 방향: 화면 왼쪽으로 30° 돌린 3/4 모습(제5인격 캐릭터 소개 각도).</summary>
+        private const float ShowcaseYaw = 30f;
         private static readonly string[] HiddenInSelect = { "Gamekeeper_Grab_Weapon" };
-        public static readonly Color BackgroundColor = new(0.05f, 0.065f, 0.09f);
+        /// <summary>모델 그림에서 발이 닿는 높이(위에서부터 0~1). UI가 여기에 그림자를 깐다.</summary>
+        public static readonly float FeetFromTop = 0.5f + 0.5f * Mathf.Tan(Mathf.Atan(CameraHeight / CameraDistance) - Mathf.Atan((CameraHeight - LookHeight) / CameraDistance)) / Mathf.Tan(FieldOfView * 0.5f * Mathf.Deg2Rad);
 
         private readonly GameObject root;
         private readonly Camera camera;
-        private readonly Material floorMaterial;
         private readonly List<GameObject> lineup = new();
         private int focus;
         private Vector3 velocity;
@@ -30,23 +32,23 @@ namespace Project1.UI
             root = new GameObject("CharacterSelectStage");
             root.transform.position = Origin;
 
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            floor.name = "Floor";
-            floor.transform.SetParent(root.transform, false);
-            floor.transform.localScale = new Vector3(8f, 1f, 2f);
-            floor.transform.localPosition = new Vector3(-Spacing * 4f, 0f, 0f);
-            UnityEngine.Object.Destroy(floor.GetComponent<Collider>());
-            var floorRenderer = floor.GetComponent<Renderer>();
-            floorMaterial = floorRenderer.material; // 기본 재질의 복사본 — 어둡게 칠한다
-            floorMaterial.color = new Color(0.1f, 0.11f, 0.14f);
-
             var lightGo = new GameObject("Light");
             lightGo.transform.SetParent(root.transform, false);
             lightGo.transform.rotation = Quaternion.Euler(35f, -20f, 0f);
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 0.7f;
+            light.intensity = 0.95f;
             light.color = new Color(0.88f, 0.92f, 1f);
+
+            // 앞에서 비추는 약한 보조광 — 어두운 배경에서도 옷·얼굴이 묻히지 않게
+            var fillGo = new GameObject("FillLight");
+            fillGo.transform.SetParent(root.transform, false);
+            fillGo.transform.rotation = Quaternion.Euler(10f, 160f, 0f);
+            var fill = fillGo.AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.intensity = 0.45f;
+            fill.color = new Color(0.8f, 0.86f, 1f);
+            fill.shadows = LightShadows.None;
 
             Texture = new RenderTexture(textureSize.x, textureSize.y, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "CharacterSelectModel" };
             Texture.Create();
@@ -54,9 +56,10 @@ namespace Project1.UI
             var camGo = new GameObject("SelectCamera");
             camGo.transform.SetParent(root.transform, false);
             camera = camGo.AddComponent<Camera>();
-            camera.fieldOfView = 35f;
+            camera.fieldOfView = FieldOfView;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = BackgroundColor;
+            camera.backgroundColor = Color.clear; // 배경 투명 — 화면 배경 위에 캐릭터만 얹힌다
+            camera.allowHDR = false; // HDR 중간 버퍼는 알파가 없어 배경이 투명하지 않게 된다
             camera.targetTexture = Texture;
         }
 
@@ -71,7 +74,7 @@ namespace Project1.UI
                 var m = UnityEngine.Object.Instantiate(e.model, root.transform);
                 m.name = e.id;
                 m.transform.localPosition = new Vector3(-i * Spacing, 0f, 0f); // 카메라가 앞에서 보므로 -X 쪽이 화면 오른쪽
-                m.transform.localRotation = Quaternion.identity; // 모델은 +Z(카메라 쪽)를 본다
+                m.transform.localRotation = Quaternion.Euler(0f, ShowcaseYaw, 0f); // 모델 +Z(얼굴) = 카메라 쪽에서 화면 왼쪽(+X)으로 돌린 3/4 모습
                 m.transform.localScale = Vector3.one * e.scale;
                 // 판정 상자는 선택 화면에서 필요 없다.
                 foreach (var c in m.GetComponentsInChildren<Collider>()) c.enabled = false;
@@ -116,7 +119,6 @@ namespace Project1.UI
         {
             if (camera != null) camera.targetTexture = null;
             UnityEngine.Object.Destroy(root);
-            UnityEngine.Object.Destroy(floorMaterial);
             Texture.Release();
             UnityEngine.Object.Destroy(Texture);
         }

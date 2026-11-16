@@ -7,24 +7,26 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터 선택 화면 UI(UI Toolkit, 코드로 만든다). 배치·글꼴·넘길 때 연출만 맡고, 무엇을 고를지는 CharacterSelectScreen이 정한다.
-    /// 배치(기준 1920×1080): 왼쪽 일러스트 | 가운데 3D 모델 창 | 오른쪽 게임 시작·연습 버튼과 정보, 양 끝에 ‹ › 화살표, 왼쪽 위 제목·진영 탭.
+    /// 배치(기준 1920×1080): 맨 왼쪽 3D 모델(창·테두리 없이 배경에 바로 서서 일러스트 아래쪽 앞에 겹침), 가운데 크게 일러스트(누끼) + 바로 아래 캐릭터 이름,
+    /// 오른쪽에 게임 시작·연습 버튼과 그 아래 정보 칸, 양 끝 ‹ › 화살표, 왼쪽 위 진영 탭.
     /// </summary>
     public class CharacterSelectView : IDisposable
     {
         public event Action<int> StepRequested;          // -1 = 이전, +1 = 다음
         public event Action<CharacterRole> RoleRequested;
         public event Action<bool> StartRequested;        // true = 게임 시작(AI 봇), false = 연습
-        public event Action<float> ModelDragged;         // 모델 창을 가로로 끈 거리(기준 픽셀)
+        public event Action<float> ModelDragged;         // 모델을 가로로 끈 거리(기준 픽셀)
 
-        public static readonly Vector2 ModelPanelSize = new(400f, 860f);
-        private const float ModelPanelRight = 470f, ModelPanelTop = 120f;
-        private const float ColumnRight = 90f, ColumnWidth = 350f;
+        /// <summary>3D 모델 그림 크기(기준 픽셀). 무대 RenderTexture도 이 비율로 만든다.</summary>
+        public static readonly Vector2 ModelPanelSize = new(420f, 880f);
+        private const float ModelLeft = 110f, ModelTop = 200f; // 왼쪽 아래 — 일러스트 왼쪽 아래 끝에만 살짝 겹치고 일러스트는 가리지 않는다
+        private const float IllusLeft = 330f, IllusRight = 630f, IllusTop = 30f, IllusBottom = 205f;
+        private const float ColumnLeft = 1270f, ColumnWidth = 490f;
         private const float SwitchTime = 0.34f, WipeTime = 0.26f;
 
-        private static readonly Color Ink = new(0.88f, 0.91f, 0.95f);
+        private static readonly Color Ink = new(0.9f, 0.92f, 0.95f);
         private static readonly Color InkDim = new(0.6f, 0.66f, 0.74f);
         private static readonly Color Line = new(0.78f, 0.84f, 0.92f, 0.4f);
-        private static readonly Color PanelFill = new(0.03f, 0.045f, 0.07f, 0.62f);
         private static readonly Color ButtonFill = new(0.07f, 0.09f, 0.13f, 0.85f);
         private static readonly Color SurvivorAccent = new(0.25f, 0.57f, 0.84f);
         private static readonly Color HunterAccent = new(0.74f, 0.17f, 0.21f);
@@ -32,13 +34,13 @@ namespace Project1.UI
         private readonly RuntimeUiPanel panel;
         private readonly CharacterSelectBackdrop backdrop;
         private readonly Font titleFont, bodyFont;
+        private readonly Texture2D radial;
         private readonly Dictionary<string, Texture2D> illustrations = new();
         private readonly HashSet<VisualElement> hovered = new();
 
-        private VisualElement illusLayer, illus, wipe, wipeLine, dots;
-        private Label watermark, missing, roleLabel, nameLabel, skillName, skillMeta;
+        private VisualElement illusLayer, illus, glow, wipe, wipeLine, nameBlock, nameRule, dots;
+        private Label watermark, missing, nameLabel, subLabel, infoRole, skillHeader, skillName, skillMeta;
         private Button hunterTab, survivorTab, startButton, practiceButton, prevArrow, nextArrow;
-        private VisualElement modelPanel, modelAccent;
         private CharacterRole role;
         private Color accent = SurvivorAccent;
         private float animTime = 99f;
@@ -48,15 +50,17 @@ namespace Project1.UI
         {
             titleFont = Resources.Load<Font>("Fonts/EastSeaDokdo-Regular");
             bodyFont = Resources.Load<Font>("Fonts/GowunDodum-Regular");
+            radial = MakeRadial(128);
             panel = RuntimeUiPanel.Create("CharacterSelectUI", 100);
             var root = panel.Root;
 
             backdrop = new CharacterSelectBackdrop();
             root.Add(backdrop.Root);
             BuildIllustration(root);
-            BuildModelPanel(root, modelTexture);
+            BuildName(root);
+            BuildModel(root, modelTexture); // 일러스트 다음에 넣어 일러스트 왼쪽 아래 위에 살짝 겹쳐 선다
             BuildColumn(root);
-            BuildHeader(root);
+            BuildTabs(root);
             BuildArrows(root);
         }
 
@@ -64,16 +68,21 @@ namespace Project1.UI
 
         private void BuildIllustration(VisualElement root)
         {
-            illusLayer = Abs(root, left: 90f, top: 0f, right: ModelPanelRight + ModelPanelSize.x + 10f, bottom: 0f);
+            // 일러스트 뒤 진영 색 빛(웅장하게)
+            glow = Abs(root, left: IllusLeft + 60f, top: IllusTop + 40f, right: IllusRight + 60f, bottom: IllusBottom - 120f);
+            glow.style.backgroundImage = new StyleBackground(radial);
+            glow.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+
+            illusLayer = Abs(root, left: IllusLeft, top: 0f, right: IllusRight, bottom: IllusBottom - 30f);
             illusLayer.style.overflow = Overflow.Hidden;
 
-            watermark = Text(illusLayer, "", titleFont, 300, new Color(1f, 1f, 1f, 0.05f));
+            watermark = Text(illusLayer, "", titleFont, 380, new Color(1f, 1f, 1f, 0.045f));
             watermark.style.position = Position.Absolute;
-            watermark.style.left = 0; watermark.style.right = 0; watermark.style.top = 210f;
+            watermark.style.left = -400f; watermark.style.right = -400f; watermark.style.top = 120f;
             watermark.style.unityTextAlign = TextAnchor.MiddleCenter;
             watermark.style.whiteSpace = WhiteSpace.NoWrap;
 
-            illus = Abs(illusLayer, left: 0f, top: 250f, right: 0f, bottom: 0f);
+            illus = Abs(illusLayer, left: 0f, top: IllusTop, right: 0f, bottom: 30f);
             illus.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Contain);
             illus.style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
             illus.style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Bottom);
@@ -81,7 +90,7 @@ namespace Project1.UI
 
             missing = Text(illusLayer, "일러스트 준비 중", bodyFont, 30, new Color(InkDim.r, InkDim.g, InkDim.b, 0.6f));
             missing.style.position = Position.Absolute;
-            missing.style.left = 0; missing.style.right = 0; missing.style.top = Length.Percent(55);
+            missing.style.left = 0; missing.style.right = 0; missing.style.top = Length.Percent(50);
             missing.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             // 넘길 때 비스듬히 휙 지나가는 띠(진영 색) + 뒤따르는 흰 선
@@ -96,119 +105,130 @@ namespace Project1.UI
             wipeLine.style.display = DisplayStyle.None;
         }
 
-        private void BuildModelPanel(VisualElement root, Texture modelTexture)
+        private void BuildName(VisualElement root)
         {
-            modelPanel = new VisualElement();
-            modelPanel.style.position = Position.Absolute;
-            modelPanel.style.right = ModelPanelRight; modelPanel.style.top = ModelPanelTop;
-            modelPanel.style.width = ModelPanelSize.x; modelPanel.style.height = ModelPanelSize.y;
-            modelPanel.style.backgroundColor = CharacterSelectStage.BackgroundColor;
-            if (modelTexture is RenderTexture rt) modelPanel.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
-            Border(modelPanel, 2f, Line);
-            root.Add(modelPanel);
+            // 일러스트 바로 아래: 큰 이름 + 진영 색 선 + 진영
+            nameBlock = Abs(root, left: IllusLeft, top: 1080f - IllusBottom - 30f, right: IllusRight, bottom: float.NaN);
+            nameBlock.style.alignItems = Align.Center;
 
-            modelAccent = Abs(modelPanel, left: 0f, top: 0f, right: 0f, bottom: float.NaN);
-            modelAccent.style.height = 4f;
+            nameLabel = Text(nameBlock, "", titleFont, 120, Ink);
+            nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            nameLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 5f), blurRadius = 14f, color = new Color(0f, 0f, 0f, 0.75f) };
 
-            var hint = Text(root, "드래그해서 돌려 보기", bodyFont, 19, InkDim);
-            hint.style.position = Position.Absolute;
-            hint.style.right = ModelPanelRight; hint.style.width = ModelPanelSize.x;
-            hint.style.top = ModelPanelTop + ModelPanelSize.y + 10f;
-            hint.style.unityTextAlign = TextAnchor.MiddleCenter;
+            nameRule = new VisualElement { pickingMode = PickingMode.Ignore };
+            nameRule.style.width = 260f; nameRule.style.height = 3f;
+            nameRule.style.marginTop = -8f;
+            nameBlock.Add(nameRule);
 
+            subLabel = Text(nameBlock, "", bodyFont, 24, InkDim);
+            subLabel.style.marginTop = 10f;
+            subLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+        }
+
+        private void BuildModel(VisualElement root, Texture modelTexture)
+        {
+            var area = new VisualElement();
+            area.style.position = Position.Absolute;
+            area.style.left = ModelLeft; area.style.top = ModelTop;
+            area.style.width = ModelPanelSize.x; area.style.height = ModelPanelSize.y;
+            root.Add(area);
+
+            // 발밑 그림자(모델 그림보다 먼저 = 뒤에)
+            var shadow = Abs(area, left: ModelPanelSize.x * 0.5f - 150f, top: ModelPanelSize.y * CharacterSelectStage.FeetFromTop - 26f, right: float.NaN, bottom: float.NaN);
+            shadow.style.width = 300f; shadow.style.height = 52f;
+            shadow.style.backgroundImage = new StyleBackground(radial);
+            shadow.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+            shadow.style.unityBackgroundImageTintColor = new Color(0f, 0f, 0f, 0.75f);
+
+            var model = Abs(area, left: 0f, top: 0f, right: 0f, bottom: 0f);
+            model.pickingMode = PickingMode.Position;
+            if (modelTexture is RenderTexture rt) model.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(rt));
+
+            // 끌어서 조금 돌려 볼 수 있다
             float lastX = 0f;
-            modelPanel.RegisterCallback<PointerDownEvent>(e => { modelPanel.CapturePointer(e.pointerId); lastX = e.position.x; });
-            modelPanel.RegisterCallback<PointerMoveEvent>(e =>
+            model.RegisterCallback<PointerDownEvent>(e => { model.CapturePointer(e.pointerId); lastX = e.position.x; });
+            model.RegisterCallback<PointerMoveEvent>(e =>
             {
-                if (!modelPanel.HasPointerCapture(e.pointerId)) return;
+                if (!model.HasPointerCapture(e.pointerId)) return;
                 ModelDragged?.Invoke(e.position.x - lastX);
                 lastX = e.position.x;
             });
-            modelPanel.RegisterCallback<PointerUpEvent>(e => modelPanel.ReleasePointer(e.pointerId));
+            model.RegisterCallback<PointerUpEvent>(e => model.ReleasePointer(e.pointerId));
         }
 
         private void BuildColumn(VisualElement root)
         {
+            // 오른쪽: 게임 시작·연습 버튼 + 그 아래 정보 칸
             var col = new VisualElement();
             col.style.position = Position.Absolute;
-            col.style.right = ColumnRight; col.style.width = ColumnWidth;
-            col.style.top = ModelPanelTop; col.style.bottom = 1080f - ModelPanelTop - ModelPanelSize.y;
-            col.style.flexDirection = FlexDirection.Column;
+            col.style.left = ColumnLeft; col.style.width = ColumnWidth;
+            col.style.top = 56f; col.style.bottom = 110f;
             root.Add(col);
 
-            startButton = MakeButton(col, "게임 시작", 58, 96f, () => StartRequested?.Invoke(true));
-            practiceButton = MakeButton(col, "연습", 46, 72f, () => StartRequested?.Invoke(false));
+            var buttons = new VisualElement();
+            buttons.style.width = 340f;
+            col.Add(buttons);
+            startButton = MakeButton(buttons, "게임 시작", 58, 92f, () => StartRequested?.Invoke(true));
+            practiceButton = MakeButton(buttons, "연습", 46, 70f, () => StartRequested?.Invoke(false));
             practiceButton.style.marginTop = 14f;
 
             var info = new VisualElement();
-            info.style.marginTop = 28f;
+            info.style.marginTop = 34f;
             info.style.flexGrow = 1f;
-            info.style.backgroundColor = PanelFill;
+            info.style.backgroundColor = new Color(0.03f, 0.045f, 0.07f, 0.62f);
             Border(info, 1f, Line);
-            info.style.paddingLeft = info.style.paddingRight = 28f;
-            info.style.paddingTop = 22f; info.style.paddingBottom = 22f;
+            info.style.paddingLeft = info.style.paddingRight = 32f;
+            info.style.paddingTop = 26f; info.style.paddingBottom = 24f;
             col.Add(info);
 
-            roleLabel = Text(info, "", bodyFont, 22, accent);
-            nameLabel = Text(info, "", titleFont, 104, Ink);
-            nameLabel.style.marginTop = -6f;
-            nameLabel.style.whiteSpace = WhiteSpace.NoWrap;
-            nameLabel.style.textShadow = new TextShadow { offset = new Vector2(0f, 4f), blurRadius = 10f, color = new Color(0f, 0f, 0f, 0.6f) };
-
-            dots = new VisualElement();
+            infoRole = Text(info, "", bodyFont, 22, accent);
+            dots = new VisualElement { pickingMode = PickingMode.Ignore };
             dots.style.flexDirection = FlexDirection.Row;
-            dots.style.marginTop = 4f;
+            dots.style.marginTop = 10f;
             info.Add(dots);
 
-            var rule = new VisualElement();
+            var rule = new VisualElement { pickingMode = PickingMode.Ignore };
             rule.style.height = 1f;
             rule.style.backgroundColor = Line;
-            rule.style.marginTop = 22f; rule.style.marginBottom = 18f;
+            rule.style.marginTop = 22f; rule.style.marginBottom = 20f;
             info.Add(rule);
 
-            var header = Text(info, "고유 스킬", titleFont, 42, Ink);
-            header.name = "skill-header";
-            skillName = Text(info, "", bodyFont, 30, Ink);
-            skillName.style.marginTop = 6f;
+            skillHeader = Text(info, "고유 스킬", titleFont, 44, accent);
+            skillName = Text(info, "", bodyFont, 32, Ink);
+            skillName.style.marginTop = 8f;
             skillName.style.whiteSpace = WhiteSpace.Normal;
             skillMeta = Text(info, "", bodyFont, 22, InkDim);
-            skillMeta.style.marginTop = 6f;
+            skillMeta.style.marginTop = 8f;
 
             var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
             spacer.style.flexGrow = 1f;
             info.Add(spacer);
 
-            var keys = Text(info, "A·D  캐릭터 넘기기\nW·S  감시자 / 생존자\n2·G  게임 시작     1·Enter  연습", bodyFont, 18, InkDim);
+            var keys = Text(info, "A·D  캐릭터 넘기기        W·S  감시자 / 생존자\n2·G  게임 시작        1·Enter  연습        모델은 끌어서 돌려 보기", bodyFont, 18, InkDim);
             keys.style.whiteSpace = WhiteSpace.Normal;
         }
 
-        private void BuildHeader(VisualElement root)
+        private void BuildTabs(VisualElement root)
         {
-            var header = new VisualElement { pickingMode = PickingMode.Ignore };
-            header.style.position = Position.Absolute;
-            header.style.left = 120f; header.style.top = 44f;
-            root.Add(header);
-
-            var title = Text(header, "캐릭터 선택", titleFont, 84, Ink);
-            title.style.textShadow = new TextShadow { offset = new Vector2(0f, 4f), blurRadius = 12f, color = new Color(0f, 0f, 0f, 0.7f) };
-
             var tabs = new VisualElement();
+            tabs.style.position = Position.Absolute;
+            tabs.style.left = 110f; tabs.style.top = 36f;
             tabs.style.flexDirection = FlexDirection.Row;
-            tabs.style.marginTop = 8f;
-            header.Add(tabs);
-            hunterTab = MakeButton(tabs, "감시자", 38, 56f, () => RoleRequested?.Invoke(CharacterRole.Hunter));
-            hunterTab.style.width = 180f;
-            survivorTab = MakeButton(tabs, "생존자", 38, 56f, () => RoleRequested?.Invoke(CharacterRole.Survivor));
-            survivorTab.style.width = 180f;
-            survivorTab.style.marginLeft = 14f;
+            root.Add(tabs);
+            hunterTab = MakeButton(tabs, "감시자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Hunter));
+            hunterTab.style.width = 150f;
+            survivorTab = MakeButton(tabs, "생존자", 34, 50f, () => RoleRequested?.Invoke(CharacterRole.Survivor));
+            survivorTab.style.width = 150f;
+            survivorTab.style.marginLeft = 12f;
         }
 
         private void BuildArrows(VisualElement root)
         {
             prevArrow = MakeArrow(root, "<", () => StepRequested?.Invoke(-1));
-            prevArrow.style.left = 16f;
+            prevArrow.style.left = 14f;
             nextArrow = MakeArrow(root, ">", () => StepRequested?.Invoke(+1));
-            nextArrow.style.right = 16f;
+            nextArrow.style.right = 14f;
         }
 
         private Button MakeArrow(VisualElement parent, string text, Action onClick)
@@ -228,10 +248,11 @@ namespace Project1.UI
         public void Show(CharacterRoster.Entry entry, CharacterRole shownRole, int index, int count, int dir)
         {
             SetRole(shownRole);
-            roleLabel.text = $"{(shownRole == CharacterRole.Hunter ? "감시자" : "생존자")}   ·   {index + 1:00} / {count:00}";
             nameLabel.text = entry.displayName;
             watermark.text = entry.displayName;
-
+            string roleName = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
+            subLabel.text = roleName;
+            infoRole.text = $"{roleName}   ·   {index + 1:00} / {count:00}";
             if (entry.skill != null)
             {
                 skillName.text = string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.name : entry.skill.displayName;
@@ -249,7 +270,7 @@ namespace Project1.UI
                 var d = new VisualElement { pickingMode = PickingMode.Ignore };
                 bool on = i == index;
                 d.style.width = on ? 26f : 10f; d.style.height = 6f;
-                d.style.marginRight = 6f;
+                d.style.marginLeft = d.style.marginRight = 3f;
                 d.style.backgroundColor = on ? accent : new Color(Ink.r, Ink.g, Ink.b, 0.25f);
                 dots.Add(d);
             }
@@ -267,10 +288,11 @@ namespace Project1.UI
         public void ShowEmpty(CharacterRole shownRole)
         {
             SetRole(shownRole);
-            roleLabel.text = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
             nameLabel.text = "없음";
             watermark.text = "";
-            skillName.text = "고를 캐릭터가 없습니다";
+            subLabel.text = "고를 캐릭터가 없습니다";
+            infoRole.text = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
+            skillName.text = "";
             skillMeta.text = "";
             dots.Clear();
             illus.style.backgroundImage = new StyleBackground(StyleKeyword.None);
@@ -281,11 +303,12 @@ namespace Project1.UI
         {
             role = shownRole;
             accent = role == CharacterRole.Hunter ? HunterAccent : SurvivorAccent;
-            roleLabel.style.color = accent;
-            modelAccent.style.backgroundColor = accent;
+            nameRule.style.backgroundColor = accent;
+            subLabel.style.color = accent;
+            infoRole.style.color = accent;
+            skillHeader.style.color = accent;
+            glow.style.unityBackgroundImageTintColor = new Color(accent.r, accent.g, accent.b, 0.22f);
             wipe.style.backgroundColor = new Color(accent.r, accent.g, accent.b, 0.9f);
-            var header = nameLabel.parent.Q<Label>("skill-header");
-            if (header != null) header.style.color = accent;
             Restyle();
         }
 
@@ -310,19 +333,19 @@ namespace Project1.UI
         {
             float p = Mathf.Clamp01(animTime / SwitchTime);
             float e = 1f - Mathf.Pow(1f - p, 3f); // 빨리 들어와서 천천히 멈춘다
-            illus.style.translate = new Translate(animDir * 280f * (1f - e), 0f);
+            illus.style.translate = new Translate(animDir * 300f * (1f - e), 0f);
             illus.style.scale = new Scale(Vector2.one * (1.05f - 0.05f * e));
             illus.style.opacity = e;
-            watermark.style.translate = new Translate(animDir * 120f * (1f - e), 0f);
-            nameLabel.style.translate = new Translate(0f, 26f * (1f - e));
-            nameLabel.style.opacity = e;
+            watermark.style.translate = new Translate(animDir * 140f * (1f - e), 0f);
+            nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
+            nameBlock.style.opacity = e;
 
             float q = Mathf.Clamp01(animTime / WipeTime);
             bool wiping = animDir != 0 && q < 1f;
             wipe.style.display = wipeLine.style.display = wiping ? DisplayStyle.Flex : DisplayStyle.None;
             if (!wiping) return;
             float width = illusLayer.resolvedStyle.width;
-            if (float.IsNaN(width) || width <= 0f) width = 1000f;
+            if (float.IsNaN(width) || width <= 0f) width = 1100f;
             float s = q * q * (3f - 2f * q);
             // 다음(+1)은 오른쪽에서 왼쪽으로, 이전(−1)은 왼쪽에서 오른쪽으로 훑는다(새 일러스트가 들어오는 쪽에서)
             float x = animDir > 0 ? Mathf.Lerp(width + 200f, -560f, s) : Mathf.Lerp(-560f, width + 200f, s);
@@ -369,7 +392,7 @@ namespace Project1.UI
             b.style.marginLeft = b.style.marginRight = b.style.marginTop = b.style.marginBottom = 0f;
             b.style.paddingLeft = b.style.paddingRight = b.style.paddingTop = b.style.paddingBottom = 0f;
             b.style.borderTopLeftRadius = b.style.borderTopRightRadius = b.style.borderBottomLeftRadius = b.style.borderBottomRightRadius = 0f;
-            b.style.unityFontDefinition = FontDefinition.FromFont(titleFont);
+            if (titleFont != null) b.style.unityFontDefinition = FontDefinition.FromFont(titleFont);
             b.style.fontSize = fontSize;
             b.style.unityTextAlign = TextAnchor.MiddleCenter;
             b.RegisterCallback<PointerEnterEvent>(_ => { hovered.Add(b); Restyle(); });
@@ -409,9 +432,27 @@ namespace Project1.UI
             el.style.borderLeftColor = el.style.borderRightColor = el.style.borderTopColor = el.style.borderBottomColor = color;
         }
 
+        /// <summary>가운데가 하얗고 둘레로 갈수록 투명해지는 원(빛·그림자에 색을 입혀 쓴다).</summary>
+        private static Texture2D MakeRadial(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "SelectRadial" };
+            var px = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + 0.5f) / size * 2f - 1f, dy = (y + 0.5f) / size * 2f - 1f;
+                    float a = Mathf.Clamp01(1f - Mathf.Sqrt(dx * dx + dy * dy));
+                    px[y * size + x] = new Color(1f, 1f, 1f, a * a);
+                }
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            return tex;
+        }
+
         public void Dispose()
         {
             backdrop.Dispose();
+            UnityEngine.Object.Destroy(radial);
             if (panel != null) UnityEngine.Object.Destroy(panel.gameObject);
         }
     }

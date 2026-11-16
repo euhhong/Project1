@@ -2,7 +2,7 @@
 
 캐릭터 선택 창에서 쓰는 캐릭터별 일러스트. 파일 이름 = 캐릭터 ID(`CharacterRoster`의 `id`), PNG(배경 투명 또는 흰색).
 게임에서는 `Resources.Load<Texture2D>("Illustrations/<ID>")`로 읽는다.
-흰 배경은 가져올 때 자동으로 투명하게 뺀다(`Assets/Scripts/UI/Editor/IllustrationImporter.cs`, 원본 PNG는 그대로).
+흰 배경 PNG를 넣으면 Unity가 자동으로 누끼를 따서 PNG 파일을 바꿔 저장한다(`Assets/Scripts/UI/Editor/IllustrationImporter.cs`, 메뉴 Tools/FE/일러스트 흰 배경 빼기).
 
 | 캐릭터 | 파일 이름 | 받음 |
 |---|---|---|
