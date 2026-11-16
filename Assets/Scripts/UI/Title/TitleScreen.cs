@@ -9,30 +9,30 @@ namespace Project1.UI
     /// 타이틀 화면(Assets/Scenes/Title.unity — 빌드 첫 씬). 씬을 열면 스스로 화면을 만든다(인스펙터 연결 없음).
     /// 배경은 Resources/Title/TitleArt(메뉴 버튼 4개가 그림에 그려져 있음)를 비율을 지키며 화면을 꽉 덮게 깔고,
     /// 그려진 버튼 자리마다 보이지 않는 클릭 칸 + 마우스를 올리면 은은한 진홍 빛을 띄운다.
-    /// - Start Game → 캐릭터 선택 씬, Options → 환경설정(음량·Policy), Multi Battle → "아직 지원하지 않는 기능입니다.", Exit → 종료 확인(예/아니오).
+    /// - 게임 시작 → 캐릭터 선택 씬, 옵션 → 환경설정(음량·Policy), 크레딧 → 크레딧 창, 게임 종료 → 종료 확인(예/아니오).
     /// - 키보드: ↑↓(W·S) 고르기, Enter·Space 누르기, ESC = 창 닫기(창이 없으면 종료 확인).
     /// </summary>
     public class TitleScreen : MonoBehaviour
     {
         public const string SceneName = "Title";
         private const string ArtResource = "Title/TitleArt";
-        private const float ArtWidth = 1670f, ArtHeight = 941f; // 그림 픽셀 크기(버튼 자리를 이 기준으로 적음)
+        private const float ArtWidth = 1672f, ArtHeight = 941f; // 그림 픽셀 크기(버튼 자리를 이 기준으로 적음)
         private const float FadeTime = 0.3f;
 
-        /// <summary>그림 속 버튼 자리(그림 픽셀: x, y, 너비, 높이).</summary>
-        private static readonly Rect[] ButtonRects =
+        /// <summary>그림 속 비스듬한 버튼 자리(그림 픽셀 꼭짓점, 위가 0: 왼위·오위·오아래·왼아래).</summary>
+        private static readonly Vector2[][] ButtonShapes =
         {
-            new(1382f, 592f, 286f, 60f), // Start Game
-            new(1382f, 667f, 286f, 48f), // Options
-            new(1382f, 733f, 286f, 49f), // Multi Battle
-            new(1382f, 799f, 286f, 49f), // Exit
+            new Vector2[] { new(1214f, 420f), new(1559f, 409f), new(1527f, 492f), new(1182f, 506f) }, // 게임 시작
+            new Vector2[] { new(1218f, 535f), new(1540f, 530f), new(1522f, 597f), new(1200f, 603f) }, // 옵션
+            new Vector2[] { new(1219f, 630f), new(1536f, 627f), new(1520f, 692f), new(1203f, 697f) }, // 크레딧
+            new Vector2[] { new(1218f, 726f), new(1538f, 723f), new(1520f, 788f), new(1199f, 793f) }, // 게임 종료
         };
 
         private RuntimeUiPanel panel;
         private VisualElement art, fade;
-        private readonly VisualElement[] glows = new VisualElement[4];
+        private readonly TitleMenuButton[] buttons = new TitleMenuButton[4];
         private TitleOptionsPanel options;
-        private TitleDialog notSupported, exitConfirm;
+        private TitleDialog credits, exitConfirm;
         private int selected;
         private float fadeStart = -1f;
 
@@ -54,10 +54,10 @@ namespace Project1.UI
             root.Add(art);
             root.RegisterCallback<GeometryChangedEvent>(_ => CoverScreen());
 
-            for (int i = 0; i < ButtonRects.Length; i++) MakeHitArea(i);
+            for (int i = 0; i < ButtonShapes.Length; i++) MakeHitArea(i);
 
             options = new TitleOptionsPanel(root, font);
-            notSupported = TitleDialog.Message(root, font, "아직 지원하지 않는 기능입니다.");
+            credits = TitleCredits.Create(root, font);
             exitConfirm = TitleDialog.Confirm(root, font, "정말 종료하시겠습니까?", Quit);
 
             fade = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -85,43 +85,17 @@ namespace Project1.UI
 
         private void MakeHitArea(int i)
         {
-            var r = ButtonRects[i];
-            var hit = new VisualElement();
-            hit.style.position = Position.Absolute;
-            hit.style.left = Length.Percent(r.x / ArtWidth * 100f);
-            hit.style.top = Length.Percent(r.y / ArtHeight * 100f);
-            hit.style.width = Length.Percent(r.width / ArtWidth * 100f);
-            hit.style.height = Length.Percent(r.height / ArtHeight * 100f);
+            var hit = new TitleMenuButton(ButtonShapes[i], ArtWidth, ArtHeight);
             art.Add(hit);
-
-            // 은은한 빛: 바깥 번짐(넓고 옅게) + 안쪽 띠(왼쪽 진홍 막대·아래 밝은 줄)
-            var glow = new VisualElement { pickingMode = PickingMode.Ignore };
-            glow.style.position = Position.Absolute;
-            glow.style.left = -6f; glow.style.right = -2f; glow.style.top = -5f; glow.style.bottom = -5f;
-            glow.style.backgroundColor = new Color(0.85f, 0.18f, 0.16f, 0.10f);
-            glow.style.borderTopLeftRadius = glow.style.borderBottomLeftRadius = 6f;
-            glow.style.opacity = 0f;
-            glow.style.transitionProperty = new System.Collections.Generic.List<StylePropertyName> { new("opacity") };
-            glow.style.transitionDuration = new System.Collections.Generic.List<TimeValue> { new(0.14f, TimeUnit.Second) };
-            hit.Add(glow);
-
-            var band = new VisualElement { pickingMode = PickingMode.Ignore };
-            band.style.position = Position.Absolute;
-            band.style.left = 6f; band.style.right = 2f; band.style.top = 5f; band.style.bottom = 5f;
-            band.style.backgroundColor = new Color(1f, 0.55f, 0.45f, 0.10f);
-            band.style.borderLeftWidth = 4f; band.style.borderLeftColor = new Color(1f, 0.32f, 0.28f, 0.95f);
-            band.style.borderBottomWidth = 1f; band.style.borderBottomColor = new Color(1f, 0.85f, 0.75f, 0.55f);
-            glow.Add(band);
-            glows[i] = glow;
-
+            buttons[i] = hit;
             hit.RegisterCallback<PointerEnterEvent>(_ => { if (!AnyDialogOpen) Select(i); });
             hit.RegisterCallback<ClickEvent>(_ => { if (!AnyDialogOpen) Activate(i); });
         }
 
         private void Select(int i)
         {
-            selected = (i + glows.Length) % glows.Length;
-            for (int k = 0; k < glows.Length; k++) glows[k].style.opacity = k == selected ? 1f : 0f;
+            selected = (i + buttons.Length) % buttons.Length;
+            for (int k = 0; k < buttons.Length; k++) buttons[k].Lit = k == selected;
         }
 
         private void Activate(int i)
@@ -131,14 +105,14 @@ namespace Project1.UI
             {
                 case 0: fadeStart = Time.unscaledTime; break; // 어두워진 뒤 캐릭터 선택으로
                 case 1: options.Open(); break;
-                case 2: notSupported.Open(); break;
+                case 2: credits.Open(); break;
                 case 3: exitConfirm.Open(); break;
             }
         }
 
-        private bool AnyDialogOpen => options.IsOpen || notSupported.IsOpen || exitConfirm.IsOpen;
+        private bool AnyDialogOpen => options.IsOpen || credits.IsOpen || exitConfirm.IsOpen;
 
-        private TitleDialog OpenDialog => options.IsOpen ? options.Dialog : notSupported.IsOpen ? notSupported : exitConfirm.IsOpen ? exitConfirm : null;
+        private TitleDialog OpenDialog => options.IsOpen ? options.Dialog : credits.IsOpen ? credits : exitConfirm.IsOpen ? exitConfirm : null;
 
         // ───────── 키보드·넘어가기 ─────────
 
