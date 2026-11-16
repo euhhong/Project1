@@ -44,7 +44,100 @@ namespace Project1.Map.EditorTools
             if (n.StartsWith("Step_") && UnderStairs(t)) { FitStepCap(t); return true; }
             if (t.parent != null && t.parent.name == "Columns") { FitBox(t, "Column"); return true; }
             if (n.StartsWith("Pillar_") || n.StartsWith("Porch_")) { FitBox(t, "Column"); return true; }
+            // 맨 큐브로 남아 있던 가구·구조물 → VARCO 모델(충돌 블록은 그대로)
+            if (n.StartsWith("Bunk")) { FitLong(t, "Bunk"); return true; }
+            if (n.StartsWith("ReadingDesk")) { FitLong(t, "ReadingDesk"); return true; }
+            if (n.StartsWith("Workbench")) { FitLong(t, "Workbench"); return true; }
+            if (n.StartsWith("Kitchen_Island")) { FitLong(t, "KitchenIsland"); return true; }
+            if (n.StartsWith("Shelf_")) { FitLong(t, "Bookshelf"); return true; }
+            if (n == "Bed_Head") return true; // Bed 쪽에서 함께 처리
+            if (n == "Bed") { FitPair(t, "Bed_Head", "Bed"); return true; }
+            if (n.StartsWith("Plinth_")) { FitBox(t, "Plinth"); return true; }
+            if (n == "Chapel_AltarStep") { FitLong(t, "Dais"); return true; }
+            if (IsLowWall(t)) { FitSegments(t, "LowStoneWall", 2.6f, 0f); return true; }
+            if (n == "Arch_Pier_N") return true; // Arch_Pier_S 쪽에서 함께 처리
+            if (n == "Arch_Pier_S") { FitBridgeArch(t); return true; }
             return false;
+        }
+
+        /// <summary>그룹(빈 부모)째 바꿀 것: 사다리(손잡이+발판) → Ladder, 무너진 잔해 더미 → RubblePile.</summary>
+        private static bool DressExtraGroup(Transform t)
+        {
+            if (t.name.StartsWith("Ladder_")) { FitGroup(t, "Ladder", t.Cast<Transform>()); return true; }
+            if (t.name == "Collapse_Rubble") { FitGroup(t, "RubblePile", t.Cast<Transform>()); return true; }
+            return false;
+        }
+
+        /// <summary>낮은 돌담: 묘지 담(Wall_N/E/S/W 아래)·3층 낮은 벽(LowWall_)·테라스 낮은 벽 — 높이 0.8~1.5m, 두께 0.3~0.6m.</summary>
+        private static bool IsLowWall(Transform t)
+        {
+            var s = t.localScale;
+            float thin = Mathf.Min(s.x, s.z);
+            if (s.y < 0.8f || s.y > 1.5f || thin < 0.3f || thin > 0.6f) return false;
+            string p = t.parent != null ? t.parent.name : "";
+            return t.name.StartsWith("LowWall") || t.name.StartsWith("Terrace_LowWall") || p.StartsWith("LowWall") || ((p is "Wall_N" or "Wall_E" or "Wall_S" or "Wall_W") && t.parent.parent != null && t.parent.parent.name == "Graveyard");
+        }
+
+        /// <summary>
+        /// 연결동 아래 돌 아치: 남·북 교각(Arch_Pier_S/N)과 그 사이(2층 바닥 아래까지)를 감싸는 자리에 BridgeArch 모델 하나 —
+        /// 아치 폭(모델의 긴 쪽)이 남북(건물 사이)으로, 트인 아치 구멍으로 동서로 지나다닌다. 교각 블록은 끈다(충돌은 그대로).
+        /// </summary>
+        private static void FitBridgeArch(Transform south)
+        {
+            var north = south.parent != null ? south.parent.Find("Arch_Pier_N") : null;
+            var prefab = LoadModel("BridgeArch");
+            if (prefab == null || north == null) { missing++; return; }
+            var b = LocalBounds(south.parent, new List<Transform> { south, north });
+            var mr = prefab.GetComponentInChildren<MeshRenderer>();
+            bool modelLongZ = mr != null && mr.bounds.size.z > mr.bounds.size.x;
+            bool spanZ = b.size.z >= b.size.x; // 아치가 걸치는 방향(건물 사이)
+            var rot = modelLongZ != spanZ ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
+            var size = modelLongZ != spanZ ? new Vector3(b.size.z, b.size.y, b.size.x) : b.size;
+            var bottom = new Vector3(b.center.x, b.min.y, b.center.z);
+            if (Place("BridgeArch", south.parent, rot, bottom, size, false, false, $"{ModelPrefix}BridgeArch_{south.parent.name}") != null)
+            { Hide(south); Hide(north); }
+        }
+
+        /// <summary>두 상자(몸 + 머리판 등)를 감싸는 자리에 모델 하나. 머리판이 +Z 쪽이면 모델 앞(+Z)을 반대로.</summary>
+        private static void FitPair(Transform body, string partnerName, string key)
+        {
+            var partner = body.parent != null ? body.parent.Find(partnerName) : null;
+            var boxes = new List<Transform> { body };
+            if (partner != null) boxes.Add(partner);
+            var b = LocalBounds(body.parent, boxes);
+            var bottom = new Vector3(b.center.x, b.min.y, b.center.z);
+            bool headPlusZ = partner == null || partner.localPosition.z >= body.localPosition.z;
+            if (Place(key, body.parent, Quaternion.Euler(0f, headPlusZ ? 180f : 0f, 0f), bottom, b.size, false, false, $"{ModelPrefix}{key}_{body.name}") != null)
+                foreach (var x in boxes) Hide(x);
+        }
+
+        /// <summary>긴 상자를 seg m 안팎 칸으로 나눠 모델을 늘어놓고 상자는 끈다(양 끝 ext m씩 더 — 이음매 없게).</summary>
+        private static void FitSegments(Transform box, string key, float segLen, float ext)
+        {
+            var prefab = LoadModel(key);
+            if (prefab == null) { missing++; return; }
+            var mr = prefab.GetComponentInChildren<MeshRenderer>();
+            bool modelLongZ = mr != null && mr.bounds.size.z > mr.bounds.size.x;
+            var s = box.localScale;
+            bool boxLongZ = s.z > s.x;
+            float len = (boxLongZ ? s.z : s.x) + ext * 2f, thick = boxLongZ ? s.x : s.z;
+            int count = Mathf.Max(1, Mathf.RoundToInt(len / segLen));
+            float seg = len / count;
+            var along = box.localRotation * (boxLongZ ? Vector3.forward : Vector3.right);
+            var frameRot = box.localRotation * (modelLongZ != boxLongZ ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity);
+            var size = modelLongZ ? new Vector3(thick, s.y, seg + 0.03f) : new Vector3(seg + 0.03f, s.y, thick);
+            var baseBottom = box.localPosition - box.localRotation * Vector3.up * (s.y / 2f);
+            for (int i = 0; i < count; i++)
+                Place(key, box.parent, frameRot, baseBottom + along * (-len / 2f + seg * (i + 0.5f)), size, false, false, $"{ModelPrefix}{key}_{box.name}_{i}");
+            Hide(box);
+        }
+
+        /// <summary>사물함 모양을 섞는다: 그대로 55%, 문이 반쯤 뜯긴 것 15%, 문이 열린 것 15%, 찌그러진 것 15%(이름으로 정해 늘 같음).</summary>
+        public static string LockerVariant(string name)
+        {
+            float h = Hash(name.Length * 3.1f, name.GetHashCode() % 997);
+            string k = h < 0.55f ? "Locker" : h < 0.7f ? "LockerBroken" : h < 0.85f ? "LockerOpen" : "LockerDented";
+            return LoadModel(k) != null ? k : "Locker";
         }
 
         /// <summary>난간 상자: 허리 높이(0.8~1.2m), 얇음(0.25m 이하), 길이 0.5m 이상. 사다리 손잡이(높고 가늚)는 뺀다.</summary>
@@ -147,7 +240,9 @@ namespace Project1.Map.EditorTools
             BuildChapel(g);
             BuildNature(g);
             BuildPalletZone(g);
-            ReplacePracticeWall(root.gameObject.scene);
+            BuildCenter(root.gameObject.scene);   // 가운데: 긴 벽 – 판자 – 긴 벽, 우물은 다른 빈터로(MapDresserScatter)
+            Physics.SyncTransforms();
+            BuildScatter(g);                      // 술래잡기용 가구·벽 앞 소품 흩뿌리기(MapDresserScatter)
         }
 
         private static void BuildChapel(Transform g)

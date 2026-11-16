@@ -29,7 +29,7 @@ namespace Project1.Map.EditorTools
         {
             { "Chair", 180f }, // 의자 그룹 +Z = 등받이 쪽 → 모델 앞(+Z)을 반대로
             { "Bench", 90f },  // 긴 의자: 블록은 z로 길다, 모델은 x로 길다
-            { "Locker", -90f },
+            { "Locker", -90f }, { "LockerBroken", -90f }, { "LockerOpen", -90f }, { "LockerDented", -90f },
         };
 
         private static Material wallMat, woodMat, stoneFloorMat, roofMat, accentMat;
@@ -177,7 +177,7 @@ namespace Project1.Map.EditorTools
                     if (DressExtraBox(t)) continue; // 예배당 긴 의자·제단, 계단 단, 기둥(MapDresser.Extras)
                     if (n.StartsWith("Statue_")) FitBox(t, "Statue", uniform: true);
                     else if (n.StartsWith("Tomb_")) FitBox(t, "Tomb");
-                    else if (n.StartsWith("Locker_") && !n.Contains("Bench")) FitBox(t, "Locker");
+                    else if (n.StartsWith("Locker_") && !n.Contains("Bench")) FitBox(t, LockerVariant(n)); // 사물함 모양을 섞음(그대로·문 뜯김·문 열림·찌그러짐)
                     else if (n is "Locker1F_Bench" or "Locker_Bench") FitBox(t, "Bench");
                     else if (n.StartsWith("Panel_")) FitBox(t, "Screen");
                     else if (n.StartsWith("Chapel_Candle_")) FitBox(t, "Candle");
@@ -186,6 +186,7 @@ namespace Project1.Map.EditorTools
                 }
                 else
                 {
+                    if (DressExtraGroup(t)) continue; // 사다리·무너진 잔해 더미(MapDresser.Extras)
                     if (n == "Fountain") FitGroup(t, "Fountain", t.Cast<Transform>());
                     else if (n == "Gazebo") FitGroup(t, "Gazebo", t.Cast<Transform>());
                     else if (n == "Table" && t.parent != null && t.parent.name == "Lobby") FitGroup(t, "Table", t.Cast<Transform>());

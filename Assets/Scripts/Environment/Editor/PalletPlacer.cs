@@ -1,3 +1,4 @@
+using System.Linq;
 using Project1.Presentation;
 using Project1.Systems;
 using UnityEditor;
@@ -35,6 +36,8 @@ namespace Project1.Map.EditorTools
             (32.32f, 0f, -26.0f, -1f, 0f, "판자 구역 남", 2.0f),
             // 1층 사물함 방: 사물함 줄 – 판자 – 사물함 줄(가운데 통로 1.9m를 가로질러 넘어감)
             (16.98f, 0.15f, -14.0f, 1f, 0f, "사물함 사이", 1.9f),
+            // 맵 가운데(예전 연습용 벽·우물 자리): 긴 무너진 벽 – 판자 – 긴 무너진 벽(MapDresser.BuildCenter)
+            (-0.82f, 0f, 12.0f, 1f, 0f, "가운데 긴 벽 사이", 2.0f),
         };
 
         [MenuItem("Tools/BG/판자 다시 배치")]
@@ -57,9 +60,67 @@ namespace Project1.Map.EditorTools
                 if (s.len > 0f) pallet.Configure(s.len);
                 go.AddComponent<PalletVisual>();
             }
+            int auto = PlaceInGaps(root);
+            Debug.Log($"[BG] 긴 가구 틈 판자 {auto}개");
             EditorSceneManager.MarkSceneDirty(root.gameObject.scene);
             EditorSceneManager.SaveScene(root.gameObject.scene);
             Debug.Log($"[BG] 판자 {Spots.Length}개를 배치하고 씬을 저장했습니다.");
+        }
+
+        // 긴 가구를 끊은 틈(MapBlockoutBuilder): 사물함 줄(칸 사이가 1.4m 넘게 벌어진 곳), 둘로 나눈 책장·창고 선반 사이.
+        private static readonly string[] LockerRows = { "Locker1F_A", "Locker1F_B", "Locker2F", "Lockers_A", "Lockers_B" };
+        private static readonly (string a, string b)[] SplitPairs = { ("Shelf_7a", "Shelf_7b"), ("Storage_Rack_A", "Storage_Rack_B") };
+
+        /// <summary>긴 가구 틈마다 판자: 앞 칸 끝면에 기대 서서 틈을 가로질러 다음 칸까지 넘어간다(길이 = 틈).</summary>
+        private static int PlaceInGaps(Transform root)
+        {
+            var map = GameObject.Find("MapBlockout");
+            if (map == null) return 0;
+            int n = 0;
+            var all = map.GetComponentsInChildren<Transform>(true);
+            foreach (var row in all.Where(t => LockerRows.Contains(t.name)))
+            {
+                var cells = row.Cast<Transform>().Where(c => c.name.StartsWith("Locker_") && c.GetComponent<Collider>() != null)
+                               .OrderBy(c => int.TryParse(c.name.Substring(7), out int i) ? i : 0).ToList();
+                for (int i = 0; i + 1 < cells.Count; i++)
+                {
+                    var b0 = cells[i].GetComponent<Collider>().bounds; var b1 = cells[i + 1].GetComponent<Collider>().bounds;
+                    Vector3 d = b1.center - b0.center; d.y = 0f;
+                    Vector3 dir = d.normalized;
+                    float half0 = Mathf.Abs(Vector3.Dot(b0.extents, new Vector3(Mathf.Abs(dir.x), 0f, Mathf.Abs(dir.z))));
+                    float half1 = Mathf.Abs(Vector3.Dot(b1.extents, new Vector3(Mathf.Abs(dir.x), 0f, Mathf.Abs(dir.z))));
+                    float gap = d.magnitude - half0 - half1;
+                    if (gap < 1.4f) continue;
+                    Vector3 face = b0.center + dir * half0; face.y = b0.min.y;
+                    Add(root, $"Pallet_Gap_{row.name}_{i}", face, dir, gap, "사물함 줄 틈"); n++;
+                }
+            }
+            foreach (var (an, bn) in SplitPairs)
+            {
+                var ta = all.FirstOrDefault(t => t.name == an); var tb = all.FirstOrDefault(t => t.name == bn);
+                if (ta == null || tb == null || ta.GetComponent<Collider>() == null || tb.GetComponent<Collider>() == null) continue;
+                var b0 = ta.GetComponent<Collider>().bounds; var b1 = tb.GetComponent<Collider>().bounds;
+                Vector3 d = b1.center - b0.center; d.y = 0f;
+                bool alongX = Mathf.Abs(d.x) > Mathf.Abs(d.z);
+                Vector3 dir = alongX ? new Vector3(Mathf.Sign(d.x), 0f, 0f) : new Vector3(0f, 0f, Mathf.Sign(d.z));
+                float gap = alongX ? (d.x > 0 ? b1.min.x - b0.max.x : b0.min.x - b1.max.x) : (d.z > 0 ? b1.min.z - b0.max.z : b0.min.z - b1.max.z);
+                if (gap < 1.2f) continue;
+                Vector3 face = new(alongX ? (d.x > 0 ? b0.max.x : b0.min.x) : b0.center.x, b0.min.y, alongX ? b0.center.z : (d.z > 0 ? b0.max.z : b0.min.z));
+                Add(root, $"Pallet_Gap_{an}", face, dir, gap, "긴 가구 틈"); n++;
+            }
+            return n;
+        }
+
+        private static void Add(Transform root, string name, Vector3 face, Vector3 dir, float gap, string by)
+        {
+            var go = new GameObject($"{name} ({by})");
+            go.transform.SetParent(root, false);
+            var pallet = go.AddComponent<Pallet>();
+            pallet.Configure(Mathf.Max(1.2f, gap));
+            Vector3 p = face + dir * (pallet.Thickness * 0.5f + 0.03f);
+            if (Physics.Raycast(p + Vector3.up * 0.5f, Vector3.down, out var hit, 1.5f, ~0, QueryTriggerInteraction.Ignore)) p.y = hit.point.y;
+            go.transform.SetPositionAndRotation(p, Quaternion.LookRotation(dir, Vector3.up));
+            go.AddComponent<PalletVisual>();
         }
     }
 }

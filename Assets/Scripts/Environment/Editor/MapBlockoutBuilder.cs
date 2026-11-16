@@ -171,9 +171,12 @@ namespace Project1.Map.EditorTools
                 if (f == 2) WallZ(w, "Corr_W", 0.2f, D - 0.2f, 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f), Door(27f));
                 else WallZ(w, "Corr_W", 0.2f, 24f, 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f));
                 WallZ(w, "Corr_E", 0.2f, 24f, W - 9f, fy, InH, WallT, wallMat, Door(6f), Door(15f), Door(21f));
-                WallX(w, "W_Split", 0.2f, 9f, 12f, fy, InH, WallT, wallMat);
+                // 계단실 ↔ 방 사이 문(1F·2F) — 막다른 방이 없게 계단실 – 방 – 복도로 돌 수 있다
+                if (f < 2) WallX(w, "W_Split", 0.2f, 9f, 12f, fy, InH, WallT, wallMat, Door(7.6f));
+                else WallX(w, "W_Split", 0.2f, 9f, 12f, fy, InH, WallT, wallMat);
                 if (f != 2) WallX(w, "W_North", 0.2f, 9f, 24f, fy, InH, WallT, wallMat);
-                WallX(w, "E_Split", W - 9f, W - 0.2f, 12f, fy, InH, WallT, wallMat);
+                if (f < 2) WallX(w, "E_Split", W - 9f, W - 0.2f, 12f, fy, InH, WallT, wallMat, Door(W - 7.6f));
+                else WallX(w, "E_Split", W - 9f, W - 0.2f, 12f, fy, InH, WallT, wallMat);
                 WallX(w, "E_North", W - 9f, W - 0.2f, 24f, fy, InH, WallT, wallMat);
             }
 
@@ -280,15 +283,15 @@ namespace Project1.Map.EditorTools
             BoxMM(r, "Kitchen_Island_B", new Vector3(2f, G, 19.4f), new Vector3(6f, G + 1f, 21.2f), accentMat);
             BoxMM(r, "Kitchen_Pantry", new Vector3(0.2f, G, 22.4f), new Vector3(1.4f, G + 2.4f, 23.8f), wallMat);
             // 1F 동: 락커룸(2.2m 사물함 두 줄 + 긴 의자)
-            Lockers(r, "Locker1F_A", new Vector3(E(5.5f), G, 13.4f), 10);
-            Lockers(r, "Locker1F_B", new Vector3(E(3f), G, 13.4f), 10);
+            Lockers(r, "Locker1F_A", new Vector3(E(5.5f), G, 13.4f), 9, gapAfter: 2); // 긴 줄을 끊어 틈(사물함 – 판자 – 사물함)
+            Lockers(r, "Locker1F_B", new Vector3(E(3f), G, 13.4f), 9, gapAfter: 5);
             BoxMM(r, "Locker1F_Bench", new Vector3(E(4.6f), G, 14f), new Vector3(E(3.9f), G + 0.45f, 22f), accentMat);
 
             // 2F 서: 침실(침대·옷장) / 동: 락커룸(사물함 한 줄 + 샤워 칸막이)
             BoxMM(r, "Bed", new Vector3(0.4f, F2, 15f), new Vector3(2.6f, F2 + 0.7f, 17.2f), accentMat);
             BoxMM(r, "Bed_Head", new Vector3(0.4f, F2, 14.8f), new Vector3(2.6f, F2 + 1.6f, 15f), accentMat);
             BoxMM(r, "Wardrobe", new Vector3(0.2f, F2, 21f), new Vector3(1.2f, F2 + 2.4f, 23.6f), wallMat);
-            Lockers(r, "Locker2F", new Vector3(E(4.5f), F2, 13.4f), 10);
+            Lockers(r, "Locker2F", new Vector3(E(4.5f), F2, 13.4f), 9, gapAfter: 4);
             foreach (float z in new[] { 14f, 17f, 20f })
                 BoxMM(r, $"Shower_{z:0}", new Vector3(E(1.8f), F2, z), new Vector3(E(0.2f), F2 + 2.2f, z + 0.1f), wallMat);
 
@@ -310,7 +313,9 @@ namespace Project1.Map.EditorTools
             BoxMM(r, "Storage_A", new Vector3(E(7.5f), F3, 13.5f), new Vector3(E(5.5f), F3 + 1.2f, 15.5f), accentMat);
             BoxMM(r, "Storage_A_Top", new Vector3(E(7.2f), F3 + 1.2f, 13.8f), new Vector3(E(6f), F3 + 2.4f, 15f), accentMat);
             BoxMM(r, "Storage_B", new Vector3(E(3.5f), F3, 18.5f), new Vector3(E(1.5f), F3 + 1.2f, 21.5f), accentMat);
-            BoxMM(r, "Storage_Rack", new Vector3(E(8.6f), F3, 22.4f), new Vector3(E(4f), F3 + 2.4f, 23.6f), wallMat);
+            // 창고 긴 선반: 둘로 끊어 틈(1.8m — 선반 – 판자 – 선반)
+            BoxMM(r, "Storage_Rack_A", new Vector3(E(8.6f), F3, 22.4f), new Vector3(E(7.1f), F3 + 2.4f, 23.6f), wallMat);
+            BoxMM(r, "Storage_Rack_B", new Vector3(E(5.3f), F3, 22.4f), new Vector3(E(4f), F3 + 2.4f, 23.6f), wallMat);
         }
 
         /// <summary>로비: 긴 식탁 + 등받이 높은 의자, 식탁 둘레 병풍 4개(모서리 틈), 샹들리에(2F·3F 사이, 우물로 사슬 — 충돌 없음).</summary>
@@ -422,8 +427,11 @@ namespace Project1.Map.EditorTools
             if (tall)
             {
                 // 서재: 2.8m 책장 줄, 2F·3F 회랑 난간(트인 곳 가장자리, 틈 = 뛰어내림)
-                foreach (float x in new[] { 4.5f, 7f, 9.5f })
-                    HZ(fu, $"Shelf_{x:0.#}", 1.2f, 6f, x, G, 2.8f, 0.6f, accentMat);
+                // 가운데 책장은 둘로 끊어 틈(1.8m — 책장 – 판자 – 책장)
+                HZ(fu, "Shelf_4.5", 1.2f, 6f, 4.5f, G, 2.8f, 0.6f, accentMat);
+                HZ(fu, "Shelf_7a", 1.2f, 2.7f, 7f, G, 2.8f, 0.6f, accentMat);
+                HZ(fu, "Shelf_7b", 4.5f, 6f, 7f, G, 2.8f, 0.6f, accentMat);
+                HZ(fu, "Shelf_9.5", 1.2f, 6f, 9.5f, G, 2.8f, 0.6f, accentMat);
                 foreach (var fy in new[] { F2, F3 })
                 {
                     HZ(fu, $"LibRail_W_{fy:0}", 0.2f, 6.5f, 3f, fy, RailH, RailT, accentMat, Gap(2.5f, 4f));
@@ -435,8 +443,8 @@ namespace Project1.Map.EditorTools
             }
             else
             {
-                Lockers(fu, "Lockers_A", new Vector3(X(5f), G, 1f), 7);
-                Lockers(fu, "Lockers_B", new Vector3(X(9.5f), G, 1f), 7);
+                Lockers(fu, "Lockers_A", new Vector3(X(5f), G, 1f), 7, gapAfter: 2);
+                Lockers(fu, "Lockers_B", new Vector3(X(9.5f), G, 1f), 7, gapAfter: 3);
                 BoxMM(fu, "Locker_Bench", new Vector3(Mathf.Min(X(7f), X(7.6f)), G, 1.5f), new Vector3(Mathf.Max(X(7f), X(7.6f)), G + 0.45f, 7.5f), accentMat);
                 for (int i = 0; i < 3; i++) // 2F 숙소: 침대 3개
                     HB(fu, $"Bunk_{i}", new Vector3(1f + i * 4.5f, F2, 0.6f), new Vector3(3.2f + i * 4.5f, F2 + 1.4f, 2.6f), accentMat);
@@ -472,9 +480,9 @@ namespace Project1.Map.EditorTools
         {
             const float z0 = -2f, z1 = 6f;
             var c = Group(p, name, Vector3.zero);
-            foreach (float x in new[] { x0 + 0.3f, x1 - 0.3f })
-                foreach (float z in new[] { z0 + 2f, z1 - 2f })
-                    Pillar(c, $"Pillar_{x:0.#}_{z:0.#}", x, z, 0.5f, -0.3f, F2 - SlabT);
+            // 아래는 기둥 대신 돌 아치(MapDresser가 BridgeArch 모델을 얹음): 양 끝(건물 벽 쪽)에 1m 교각, 가운데는 지나다닐 수 있게 트임
+            BoxMM(c, "Arch_Pier_S", new Vector3(x0, -0.3f, z0), new Vector3(x1, F2 - SlabT, z0 + 1f), accentMat);
+            BoxMM(c, "Arch_Pier_N", new Vector3(x0, -0.3f, z1 - 1f), new Vector3(x1, F2 - SlabT, z1), accentMat);
             Slab(c, "2F_Floor", new Rect2(x0, z0 + 0.15f, x1, z1 - 0.15f), F2, SlabT, floorMat);
             Slab(c, "Walkway", new Rect2(x0, z0 + 0.25f, x1, z1 - 0.25f), F3, SlabT, floorMat);
             WallZ(c, "2F_Wall_W", z0 + 0.2f, z1 - 0.2f, x0 + 0.15f, F2, InH, 0.3f, wallMat, Win(z0 + 2.5f), Win(z1 - 2.5f));
@@ -597,12 +605,15 @@ namespace Project1.Map.EditorTools
             BoxR(g, "Slab_B", new Vector3(r.x1 - sx * 0.15f, floorY + 0.9f, r.z0 + sz * 0.2f), new Vector3(sx * 0.4f, 0.3f, sz * 0.3f), Quaternion.Euler(-30f, -20f, 0f), floorMat, true);
         }
 
-        /// <summary>사물함 한 줄(+z 방향): 0.9m 폭·0.6m 깊이·2.2m 높이 칸 count개. start = 첫 칸 남쪽 끝 가운데(바닥).</summary>
-        private static void Lockers(Transform p, string name, Vector3 start, int count)
+        /// <summary>
+        /// 사물함 한 줄(+z 방향): 0.9m 폭·0.6m 깊이·2.2m 높이 칸 count개. start = 첫 칸 남쪽 끝 가운데(바닥).
+        /// gapAfter 번째 칸 뒤에 gap m 틈을 둔다(사물함 – 판자 – 사물함: PalletPlacer가 틈을 찾아 판자를 세운다). -1이면 틈 없음.
+        /// </summary>
+        private static void Lockers(Transform p, string name, Vector3 start, int count, int gapAfter = -1, float gap = 1.8f)
         {
             var g = Group(p, name, start);
             for (int i = 0; i < count; i++)
-                Box(g, $"Locker_{i}", new Vector3(0f, 1.1f, i * 0.92f + 0.45f), new Vector3(0.6f, 2.2f, 0.9f), accentMat);
+                Box(g, $"Locker_{i}", new Vector3(0f, 1.1f, i * 0.92f + 0.45f + (gapAfter >= 0 && i > gapAfter ? gap : 0f)), new Vector3(0.6f, 2.2f, 0.9f), accentMat);
         }
 
         /// <summary>

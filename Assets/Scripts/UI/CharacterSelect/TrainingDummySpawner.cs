@@ -13,9 +13,9 @@ namespace Project1.UI
     public static class TrainingDummySpawner
     {
         public const string DummyName = "TrainingDummy";
-        private const string AnchorName = "PracticeWell", OldWallName = "Wall"; // 맵 가운데 연습용 우물(예전엔 벽)
+        private const string AnchorName = "PracticeSpot", OldWallName = "Wall"; // 맵 가운데 긴 벽 – 판자 – 긴 벽 자리(예전엔 연습용 벽·우물)
         private const string ModelId = "Hunter_HellEmber"; // 공장장 모델
-        private const float SideOffset = 6f;                 // 우물 가운데에서 오른쪽으로 떨어진 거리(m) — 예전 벽 오른쪽 끝 + 2m 자리
+        private const float SideOffset = 7.5f;               // 가운데에서 오른쪽으로 떨어진 거리(m) — 오른쪽 긴 벽 끝(5.5m) + 2m
 
         private static bool hooked;
 
