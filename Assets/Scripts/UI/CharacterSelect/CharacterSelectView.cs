@@ -54,6 +54,9 @@ namespace Project1.UI
         private float illusWidthScale = 1f;
         // 일러스트 가로 압축(캐릭터별). 재앙의 도마뱀: 좌우로 너무 빵빵하게 꽉 차서 조금 좁힘.
         private static readonly Dictionary<string, float> IllustrationWidthScale = new() { ["Hunter_Luchino"] = 0.85f };
+        // 일러스트 전체 크기(캐릭터별, 아래 가운데 기준). 용병·재앙의 도마뱀: 조금 크게 꽉 차 보여 10% 줄임.
+        private static readonly Dictionary<string, float> IllustrationSizeScale = new() { ["Survivor_Mercenary"] = 0.9f, ["Hunter_Luchino"] = 0.9f };
+        private float illusSizeScale = 1f;
 
         /// <param name="document">캐릭터 선택 씬의 UIDocument(CharacterSelectUI). 없으면 실행 중에 만든다.</param>
         public CharacterSelectView(Texture modelTexture, UIDocument document = null)
@@ -226,6 +229,7 @@ namespace Project1.UI
 
             var tex = Illustration(entry.id);
             illusWidthScale = IllustrationWidthScale.TryGetValue(entry.id, out var ws) ? ws : 1f;
+            illusSizeScale = IllustrationSizeScale.TryGetValue(entry.id, out var ss) ? ss : 1f;
             illus.style.backgroundImage = tex != null ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
             missing.style.display = tex != null ? DisplayStyle.None : DisplayStyle.Flex;
 
@@ -280,7 +284,7 @@ namespace Project1.UI
             float e = 1f - Mathf.Pow(1f - p, 3f); // 빨리 들어와서 천천히 멈춘다
             illus.style.translate = new Translate(animDir * 300f * (1f - e), 0f);
             float s = 1.05f - 0.05f * e;
-            illus.style.scale = new Scale(new Vector2(s * illusWidthScale, s));
+            illus.style.scale = new Scale(new Vector2(s * illusWidthScale * illusSizeScale, s * illusSizeScale));
             illus.style.opacity = e;
             nameBlock.style.translate = new Translate(0f, 28f * (1f - e));
             nameBlock.style.opacity = e;
