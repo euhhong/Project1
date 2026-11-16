@@ -9,8 +9,10 @@ namespace Project1.Presentation
     /// 걸음 박자는 HasturArmWalk의 걸음 위상을 따른다(걸음 한 쌍에 두 번 들썩 = 두 어깨가 같이 들썩이는 순간에 몸이 들림).
     /// 빠를수록 크고 빠르게(빠르기는 HasturArmWalk가 속도에 맞춰 정함), 멈추거나 공중에 뜨면 부드럽게 가라앉는다.
     /// 다른 코드가 Model 위치를 바꾸면 그 위치를 바탕으로 더한다(매 프레임 쌓이지 않음).
+    /// 턱에 매달린 동안은 짧은 팔(소매 끝 손)이 턱에 닿게 HasturHangPose.BodyLift만큼 몸을 올린다.
     /// HasturLegWriggle이 붙인다(노란옷의 왕만) — 노란옷의 왕이 아니게 되면 스스로 원래대로 되돌리고 없어진다.
     /// </summary>
+    [DefaultExecutionOrder(-10)] // 팔 자세(HasturArmWalk → HasturHangPose.ApplyArm)보다 먼저 몸 높이를 정한다 — 손이 턱 목표에 정확히 닿게
     [DisallowMultipleComponent]
     public class HasturBodyBob : MonoBehaviour
     {
@@ -29,6 +31,7 @@ namespace Project1.Presentation
         private Transform model;
         private ICharacterState state;
         private HasturArmWalk armWalk;
+        private HasturHangPose hang;
         private Vector3 basePos, written;
         private bool has;
         private float phase, amount;
@@ -41,6 +44,7 @@ namespace Project1.Presentation
             if (animator == null || !animator.isActiveAndEnabled) { Restore(); if (!Resolve()) return; }
             state ??= GetComponent<ICharacterState>();
             if (armWalk == null) TryGetComponent(out armWalk);
+            if (hang == null) TryGetComponent(out hang);
 
             float speed = state != null ? state.LocalPlanarVelocity.magnitude : 0f;
             float move = Mathf.Clamp01(speed / fullSpeed);
@@ -58,6 +62,11 @@ namespace Project1.Presentation
             float s = Mathf.Sin(phase);
             float offset = height * amount * (s * s - 0.5f);
             float rootScale = Mathf.Max(transform.lossyScale.y, 1e-4f);
+            if (hang != null)
+            {
+                Vector3 baseWorld = model.parent != null ? model.parent.TransformPoint(basePos) : basePos;
+                offset += hang.BodyLift(animator, model.position.y - baseWorld.y); // 지금 더해져 있는 높이(들썩임 + 지난 프레임 올림)를 빼고 잰다
+            }
             model.localPosition = basePos + Vector3.up * (offset / rootScale);
             written = model.localPosition;
             has = true;

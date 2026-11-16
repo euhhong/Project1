@@ -5,8 +5,10 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 노란옷의 왕이 턱(난간·바닥 끝)에 매달릴 때의 자세(연출 전용). 노란옷의 왕 모델은 Generic 리그라 생존자 매달리기 모션(Mixamo)이 재생되지 않는다.
-    /// - 두 팔(소매)을 머리 위 턱 쪽으로 뻗고, 땅까지 닿는 두 촉수 팔은 턱 모서리를 넘어 위로 말아 감아 쥔다
-    ///   (바닥이 이어지면 윗면을 따라 눕고, 얇은 난간이면 너머로 늘어진다).
+    /// - 두 팔(소매)을 머리 위 턱 쪽으로 뻗어 소매 끝 손이 턱 모서리를 잡는다. 모델에서 땅까지 닿던 촉수 팔 메시를 지워 팔이 짧아졌으므로,
+    ///   턱에 매달린 동안(사다리 빼고) 보이는 몸(Model)을 손이 턱에 닿을 만큼 올린다(BodyLift — HasturBodyBob이 Model 높이에 더한다).
+    ///   루트·CharacterController·매달림 맞는 판정 보정(TraversalHurtboxAssist)은 그대로라 맞는 자리는 전과 비슷하다.
+    /// - 메시 없는 촉수 팔 뼈는 전처럼 턱을 넘어 감아 쥔다(그 뼈에 붙은 판정이 전과 같게).
     /// - 다리 대신 치마 밑 촉수 다섯 가닥은 벽 쪽으로 눕혀 벽에 붙인다(벽이 없으면 아래로 늘어진다).
     /// 매달림(ICharacterTraversalState: HangGrab·Hang)과 사다리 타기(Ladder — 잡는 자리가 몸 앞 손 높이로 몸을 따라 오르내림)에서 켜지고, 매달려 올라가는 동안(HangClimb·HangClimbRail·HangClimbOver)은
     /// 손을 턱에 둔 채 몸이 올라가다 끝 무렵 놓는다. 턱 위치는 매달리기 시작할 때 레이로 찾는다.
@@ -18,8 +20,14 @@ namespace Project1.Presentation
     {
         [Tooltip("두 촉수 팔이 턱을 잡는 자리 사이 간격(캐릭터 키 대비, 한쪽).")]
         [SerializeField, Range(0f, 0.5f)] private float gripSpread = 0.14f;
-        [Tooltip("소매 끝(손)이 가는 자리: 턱 모서리 아래(키 대비) / 벽 앞(키 대비).")]
-        [SerializeField, Range(0f, 1f)] private float handBelow = 0.3f, handOut = 0.1f;
+        [Tooltip("소매 끝 손목(biped Hand)이 가는 자리: 턱 모서리 아래(키 대비 — 손가락이 모서리에 걸리게) / 벽 앞(키 대비).")]
+        [SerializeField, Range(0f, 1f)] private float handBelow = 0.08f, handOut = 0.04f;
+        [Tooltip("손이 턱에 닿게 몸을 올릴 때 팔을 뻗는 정도(위팔 + 아래팔 길이 대비, 1 = 쭉 폄).")]
+        [SerializeField, Range(0.5f, 1f)] private float armReach = 0.9f;
+        [Tooltip("몸을 올리는 높이 상한(키 대비).")]
+        [SerializeField, Range(0f, 1f)] private float maxLift = 0.6f;
+        [Tooltip("올리는 높이가 바뀌는 빠르기(m/초) — 모션이 흔들려도 몸이 떨리지 않게.")]
+        [SerializeField, Min(0.1f)] private float liftSpeed = 3f;
         [Tooltip("매달릴 때 어깨를 들어 올리는 각도(도).")]
         [SerializeField, Range(0f, 60f)] private float shoulderRaise = 22f;
         [Tooltip("다리 촉수를 벽 쪽으로 눕히는 정도(아래 1 기준 앞으로) / 옆으로 벌리는 정도.")]
@@ -33,6 +41,10 @@ namespace Project1.Presentation
         private bool hasLedge, floorOnTop;
         private Vector3 edge, normal; // 턱 모서리(가운데, 월드) / 벽 바깥 방향(캐릭터 쪽)
         private float unit = 1f;      // 캐릭터 키(m)
+        private bool onLadder;        // 사다리는 몸을 올리지 않는다(잡는 자리가 몸을 따라 움직임)
+        private float lift;           // 지금 올리는 높이(m, Weight를 곱하기 전)
+        private Animator liftFor;
+        private Transform[] liftArms; // 왼 위팔·아래팔·손, 오른 위팔·아래팔·손
         private readonly RaycastHit[] hits = new RaycastHit[16];
 
         /// <summary>매달리기 자세 크기(0~1).</summary>
@@ -59,6 +71,7 @@ namespace Project1.Presentation
             else if (IsHang(a) && !IsHang(lastAction)) FindLedge();
             else if (a == TraversalAction.HangHop) FindLedge(); // 옆으로 한 보폭 가는 동안 잡는 자리도 몸을 따라 옮긴다(팔이 처음 자리에 남아 늘어나지 않게)
             else if (a == TraversalAction.Ladder) LadderGrip(); // 사다리: 창틀(턱)을 잡은 자세 그대로, 잡는 자리가 몸을 따라 오르내린다
+            if (IsHang(a)) onLadder = a == TraversalAction.Ladder;
             lastAction = a;
 
             float target = 0f;
@@ -75,6 +88,46 @@ namespace Project1.Presentation
             }
             Weight = Mathf.MoveTowards(Weight, target, Time.deltaTime / (target > Weight ? fadeIn : fadeOut));
             if (Weight <= 0f && !IsHang(a)) hasLedge = false;
+        }
+
+        /// <summary>
+        /// 매달린 동안 보이는 몸(Model)을 올릴 높이(월드 m, Weight까지 곱함). HasturBodyBob이 팔 자세(HasturArmWalk → ApplyArm)보다 먼저 부른다.
+        /// 어깨(위팔 뿌리)에서 손목 목표(HandGoal)까지 팔을 armReach만큼 뻗어 닿는 높이에 어깨가 오도록 — 두 팔 평균.
+        /// applied: 지금 Model에 이미 더해져 있는 높이(뼈 위치에서 빼고 잰다).
+        /// </summary>
+        public float BodyLift(Animator animator, float applied)
+        {
+            if (Weight <= 0f || !hasLedge || onLadder || animator == null) { lift = 0f; return 0f; }
+            if (liftFor != animator)
+            {
+                liftFor = animator;
+                var all = animator.GetComponentsInChildren<Transform>(true);
+                Transform Find(string n) { foreach (var t in all) if (t.name == n) return t; return null; }
+                liftArms = new[] { Find("biped L UpperArm"), Find("biped L Forearm"), Find("biped L Hand"),
+                                   Find("biped R UpperArm"), Find("biped R Forearm"), Find("biped R Hand") };
+            }
+            float need = 0f; int n = 0;
+            for (int i = 0; i < 2; i++)
+            {
+                Transform upper = liftArms[i * 3], fore = liftArms[i * 3 + 1], hand = liftArms[i * 3 + 2];
+                if (upper == null || fore == null || hand == null) continue;
+                Vector3 s = upper.position + Vector3.down * applied;
+                Vector3 goal = HandGoal(i == 0 ? -1f : 1f);
+                Vector3 flat = goal - s; flat.y = 0f;
+                float reach = armReach * (Vector3.Distance(upper.position, fore.position) + Vector3.Distance(fore.position, hand.position));
+                float up = Mathf.Sqrt(Mathf.Max(reach * reach - flat.sqrMagnitude, 0f));
+                need += goal.y - up - s.y; n++;
+            }
+            float target = n > 0 ? Mathf.Clamp(need / n, 0f, maxLift * unit) : 0f;
+            lift = lift <= 0f ? target : Mathf.MoveTowards(lift, target, liftSpeed * Time.deltaTime);
+            return lift * Weight;
+        }
+
+        /// <summary>한 팔(side: 왼쪽 -1 / 오른쪽 +1)의 손목 목표: 턱 모서리 바로 아래 벽 앞.</summary>
+        private Vector3 HandGoal(float side)
+        {
+            Vector3 right = Vector3.Cross(Vector3.up, -normal).normalized;
+            return edge + right * (side * gripSpread * 1.6f * unit) + Vector3.down * (handBelow * unit) + normal * (handOut * unit);
         }
 
         private static bool IsHang(TraversalAction a) => a is TraversalAction.HangGrab or TraversalAction.Hang or TraversalAction.HangHop or TraversalAction.HangClimb
@@ -154,8 +207,8 @@ namespace Project1.Presentation
                 if (axis.sqrMagnitude > 1e-10f) Blend(clavicle, Quaternion.AngleAxis(shoulderRaise, axis.normalized) * clavicle.rotation, w);
             }
 
-            // 소매: 턱 모서리 아래 벽 앞으로 손을 뻗는다(팔꿈치는 바깥·아래로).
-            Vector3 handGoal = edge + right * (side * gripSpread * 1.6f * unit) + Vector3.down * (handBelow * unit) + normal * (handOut * unit);
+            // 소매: 턱 모서리 바로 아래 벽 앞으로 손을 뻗어 소매 끝 손이 모서리를 잡는다(팔꿈치는 바깥·아래로).
+            Vector3 handGoal = HandGoal(side);
             Vector3 pole = right * side + Vector3.down * 0.5f + normal * 0.5f;
             SolveArm(upper, fore, hand, handGoal, pole, w);
 
