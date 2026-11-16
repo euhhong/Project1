@@ -35,6 +35,7 @@ namespace Project1.UI
         private TitleDialog credits, exitConfirm;
         private int selected;
         private float fadeStart = -1f;
+        private bool ownsPanel;
 
         private void Start()
         {
@@ -43,15 +44,24 @@ namespace Project1.UI
             UnityEngine.Cursor.visible = true;
 
             var font = Resources.Load<Font>("Fonts/GowunDodum-Regular");
-            panel = RuntimeUiPanel.Create("TitleUI", 0);
+            // 씬의 TitleUI(UIDocument — Title.uxml, 에디터에서도 배경이 보임)를 쓰고, 없으면 코드로 만든다
+            var doc = FindAnyObjectByType<UIDocument>();
+            ownsPanel = doc == null;
+            panel = doc != null ? RuntimeUiPanel.Attach(doc) : RuntimeUiPanel.Create("TitleUI", 0);
             var root = panel.Root;
             root.style.backgroundColor = Color.black;
 
-            art = new VisualElement();
+            art = root.Q("title-art");
+            if (art == null)
+            {
+                art = new VisualElement();
+                art.style.backgroundImage = Resources.Load<Texture2D>(ArtResource);
+                root.Add(art);
+            }
+            // 실행 중에는 그림 비율 그대로 크기를 정해 버튼 자리가 그림과 맞게 한다(CoverScreen)
             art.style.position = Position.Absolute;
-            art.style.backgroundImage = Resources.Load<Texture2D>(ArtResource);
+            art.style.right = StyleKeyword.Auto; art.style.bottom = StyleKeyword.Auto;
             art.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
-            root.Add(art);
             root.RegisterCallback<GeometryChangedEvent>(_ => CoverScreen());
 
             for (int i = 0; i < ButtonShapes.Length; i++) MakeHitArea(i);
@@ -153,7 +163,7 @@ namespace Project1.UI
 
         private void OnDestroy()
         {
-            if (panel != null) Destroy(panel.gameObject);
+            if (panel != null && ownsPanel) Destroy(panel.gameObject);
         }
     }
 }

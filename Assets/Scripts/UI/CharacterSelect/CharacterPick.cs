@@ -23,6 +23,9 @@ namespace Project1.UI
             Battle = battle;
         }
 
+        /// <summary>선택 화면에서 ESC로 타이틀로 돌아갈 때 true. 미리 불러 둔 게임 씬이 먼저 열리므로(막을 수 없음) 게임 씬이 이 값을 보고 곧장 타이틀로 넘긴다.</summary>
+        public static bool BackToTitle { get; set; }
+
         public static void Clear()
         {
             Has = false;
@@ -32,7 +35,7 @@ namespace Project1.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOnPlay()
         {
-            Has = false; EntryId = null; LastId = null; Battle = false;
+            Has = false; EntryId = null; LastId = null; Battle = false; BackToTitle = false;
         }
     }
 }

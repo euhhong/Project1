@@ -27,14 +27,23 @@ namespace Project1.UI
         {
             var player = Object.FindAnyObjectByType<Project1.Systems.LocalPlayerInput>();
             if (player == null) return; // 게임 씬이 아님(예: 캐릭터 선택 씬)
+            if (CharacterPick.BackToTitle)
+            {
+                // 선택 화면에서 ESC: 미리 불러 둔 게임 씬이 먼저 열렸을 뿐 — 한 장면도 보이지 않게 카메라를 끄고 타이틀로
+                CharacterPick.BackToTitle = false;
+                foreach (var cam in Camera.allCameras) cam.enabled = false;
+                SceneManager.LoadScene(TitleScreen.SceneName);
+                return;
+            }
             var roster = CharacterRoster.Load();
             if (roster == null || !roster.showOnStart || roster.entries.Count == 0) return;
 
             var entry = CharacterPick.Has ? roster.entries.Find(e => e.id == CharacterPick.EntryId && e.model != null) : null;
             if (entry == null)
             {
-                // 고른 캐릭터 없이 게임 씬을 바로 열었다 → 캐릭터 선택 씬부터
-                if (Application.CanStreamedLevelBeLoaded(CharacterSelectScreen.SceneName)) SceneManager.LoadScene(CharacterSelectScreen.SceneName);
+                // 고른 캐릭터 없이 게임 씬을 바로 열었다 → 타이틀부터(없으면 캐릭터 선택)
+                if (Application.CanStreamedLevelBeLoaded(TitleScreen.SceneName)) SceneManager.LoadScene(TitleScreen.SceneName);
+                else if (Application.CanStreamedLevelBeLoaded(CharacterSelectScreen.SceneName)) SceneManager.LoadScene(CharacterSelectScreen.SceneName);
                 else Debug.LogWarning($"[UI] 캐릭터 선택 씬({CharacterSelectScreen.SceneName})이 Build Settings에 없어 씬의 플레이어 그대로 시작합니다.");
                 return;
             }

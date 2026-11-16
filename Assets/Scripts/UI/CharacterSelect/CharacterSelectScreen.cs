@@ -115,6 +115,7 @@ namespace Project1.UI
                     StartCurrent(battle: true);
                     return;
                 }
+                if (kb.escapeKey.wasPressedThisFrame && BackToTitle()) return; // ESC = 뒤로(타이틀)
             }
 
             stage.Tick();
@@ -128,6 +129,22 @@ namespace Project1.UI
             CharacterPick.Set(entry, battle);
             if (preload != null) preload.allowSceneActivation = true;
             else SceneManager.LoadScene(GameSceneName);
+        }
+
+        /// <summary>타이틀 씬으로 돌아간다(빌드에 타이틀이 없으면 아무것도 안 함).</summary>
+        private bool BackToTitle()
+        {
+            if (!Application.CanStreamedLevelBeLoaded(TitleScreen.SceneName)) return false;
+            started = true;
+            CharacterPick.Clear();
+            if (preload != null)
+            {
+                // 미리 부르던 게임 씬이 끝나야 다른 씬을 열 수 있다 → 게임 씬이 열리자마자 타이틀로 넘기게 표시
+                CharacterPick.BackToTitle = true;
+                preload.allowSceneActivation = true;
+            }
+            else SceneManager.LoadScene(TitleScreen.SceneName);
+            return true;
         }
 
         private void OnDestroy()
