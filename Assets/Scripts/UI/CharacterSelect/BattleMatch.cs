@@ -74,7 +74,7 @@ namespace Project1.UI
             if (result != null && kb != null && kb.rKey.wasPressedThisFrame)
             {
                 BattleDamage.Disable();
-                SceneManager.LoadScene(CharacterSelectScreen.SceneName); // 끝나면 R = 캐릭터 선택 화면으로
+                if (!ScreenFade.Busy) ScreenFade.Out(() => SceneManager.LoadSceneAsync(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName); // 끝나면 R = 캐릭터 선택 화면으로(페이드)
             }
         }
 

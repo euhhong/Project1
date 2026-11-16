@@ -43,7 +43,7 @@ namespace Project1.UI
         {
             if (leaving) return;
             leaving = true;
-            SceneManager.LoadScene(CharacterSelectScreen.SceneName);
+            ScreenFade.Out(() => SceneManager.LoadSceneAsync(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName); // 어두워졌다가 선택 화면이 열리면 밝아짐
         }
 
         private void OnDestroy()

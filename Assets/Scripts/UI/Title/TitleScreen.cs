@@ -99,7 +99,7 @@ namespace Project1.UI
             var hit = new TitleMenuButton(ButtonShapes[i], ArtWidth, ArtHeight);
             art.Add(hit);
             buttons[i] = hit;
-            hit.RegisterCallback<PointerEnterEvent>(_ => { if (!AnyDialogOpen) Select(i); });
+            hit.RegisterCallback<PointerEnterEvent>(_ => { if (!AnyDialogOpen) { Select(i); HoverSound(); } });
             hit.RegisterCallback<ClickEvent>(_ => { if (!AnyDialogOpen) Activate(i); });
         }
 
@@ -109,12 +109,18 @@ namespace Project1.UI
             for (int k = 0; k < buttons.Length; k++) buttons[k].Lit = k == selected;
         }
 
+        /// <summary>버튼 위로 지나갈 때: 종이 넘기는 가볍고 날카로운 셕(SfxSynth ui_page, 크게).</summary>
+        private static void HoverSound() => Project1.Presentation.SfxPlayer.PlayUi("ui_page", 1f, 0.08f);
+
         private void Activate(int i)
         {
             if (fadeStart >= 0f) return;
             switch (i)
             {
-                case 0: fadeStart = Time.unscaledTime; break; // 어두워진 뒤 캐릭터 선택으로
+                case 0: // 어두워진 뒤 캐릭터 선택으로(열리면 밝아짐)
+                    fadeStart = float.MaxValue; // 넘어가는 동안 입력 막기
+                    ScreenFade.Out(() => SceneManager.LoadSceneAsync(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName, FadeTime);
+                    break;
                 case 1: options.Open(); break;
                 case 2: credits.Open(); break;
                 case 3: exitConfirm.Open(); break;
@@ -129,6 +135,7 @@ namespace Project1.UI
 
         private void Update()
         {
+            if (options == null || fade == null) return; // Play 중 다시 컴파일되면 화면이 비어 있다
             if (fadeStart >= 0f)
             {
                 float t = (Time.unscaledTime - fadeStart) / FadeTime;
@@ -147,8 +154,8 @@ namespace Project1.UI
                 else if (enter) dialog.DefaultAction?.Invoke();
                 return;
             }
-            if (kb.upArrowKey.wasPressedThisFrame || kb.wKey.wasPressedThisFrame) Select(selected - 1);
-            if (kb.downArrowKey.wasPressedThisFrame || kb.sKey.wasPressedThisFrame) Select(selected + 1);
+            if (kb.upArrowKey.wasPressedThisFrame || kb.wKey.wasPressedThisFrame) { Select(selected - 1); HoverSound(); }
+            if (kb.downArrowKey.wasPressedThisFrame || kb.sKey.wasPressedThisFrame) { Select(selected + 1); HoverSound(); }
             if (enter) Activate(selected);
             if (kb.escapeKey.wasPressedThisFrame) exitConfirm.Open();
         }

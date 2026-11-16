@@ -8,18 +8,20 @@ namespace Project1.Presentation
     /// </summary>
     public static class AudioVolume
     {
+        /// <summary>처음 켤 때(저장된 값이 없을 때) 음량 — 모두 50.</summary>
+        public const float Default = 0.5f;
         private const string MasterKey = "Volume.Master", SfxKey = "Volume.Sfx", BgmKey = "Volume.Bgm";
 
-        public static float Master { get; private set; } = 1f;
-        public static float Sfx { get; private set; } = 1f;
-        public static float Bgm { get; private set; } = 1f;
+        public static float Master { get; private set; } = Default;
+        public static float Sfx { get; private set; } = Default;
+        public static float Bgm { get; private set; } = Default;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Load()
         {
-            Master = PlayerPrefs.GetFloat(MasterKey, 1f);
-            Sfx = PlayerPrefs.GetFloat(SfxKey, 1f);
-            Bgm = PlayerPrefs.GetFloat(BgmKey, 1f);
+            Master = PlayerPrefs.GetFloat(MasterKey, Default);
+            Sfx = PlayerPrefs.GetFloat(SfxKey, Default);
+            Bgm = PlayerPrefs.GetFloat(BgmKey, Default);
             AudioListener.volume = Master;
         }
 

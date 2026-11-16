@@ -70,8 +70,22 @@ namespace Project1.Presentation
             if (clip != null) s.Play();
         }
 
+        private void OnEnable()
+        {
+            if (instance == null) instance = this; // Play 중 다시 컴파일된 뒤에도 이 플레이어를 쓴다(새로 만들지 않게)
+        }
+
+        /// <summary>붙어 있는 AudioSource 둘을 다시 찾는다(없으면 만든다).</summary>
+        private void Rebind()
+        {
+            var found = GetComponents<AudioSource>();
+            if (found.Length < sources.Length) { Awake(); return; }
+            for (int i = 0; i < sources.Length; i++) sources[i] = found[i];
+        }
+
         private void Update()
         {
+            if (sources[0] == null) Rebind(); // Play 중 다시 컴파일되면 배열이 비어 있다
             float step = Time.unscaledDeltaTime / FadeTime;
             for (int i = 0; i < sources.Length; i++)
             {

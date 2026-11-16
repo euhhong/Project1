@@ -31,8 +31,10 @@ namespace Project1.Presentation.EditorTools
             Write("pallet", Crash());
             Write("mirror_in", Shimmer(0.85f, true));
             Write("mirror_out", Shimmer(0.6f, false));
+            Write("ui_page", Page());
+            Write("ui_flip", Flip());
             AssetDatabase.Refresh();
-            Debug.Log($"[FE] 효과음 13개를 {Folder}에 만들었습니다.");
+            Debug.Log($"[FE] 효과음 15개를 {Folder}에 만들었습니다.");
         }
 
         // ───────────── 소리 ─────────────
@@ -212,6 +214,40 @@ namespace Project1.Presentation.EditorTools
 
         // ───────────── 도구 ─────────────
 
+
+        /// <summary>메뉴 고르기(타이틀 버튼 위로 마우스): 종이 한 장을 빠르게 스치는 가볍고 날카로운 '셕' — 높은 띠 잡음이 짧게 쓸려 내려가고 종이 결로 잘게 끊긴다. 낮은 소리는 걸러 가볍게, 크게 눌러 또렷하게.</summary>
+        private static float[] Page()
+        {
+            float len = 0.1f; var s = Buf(len); var r = new System.Random(21);
+            var bp = new Biquad(); var hp = new Biquad(); hp.SetHigh(1400f, 0.7f);
+            float grain = 1f; int grainLeft = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = i / (float)Rate, k = t / len;
+                bp.SetBand(Mathf.Lerp(5200f, 2600f, k), 1.3f);
+                if (--grainLeft <= 0) { grain = 0.45f + 0.55f * (float)r.NextDouble(); grainLeft = Rate / 450 + r.Next(Rate / 700); } // 종이 결: 1.5~3ms마다 크기가 바뀜
+                float swish = hp.Run(bp.Run(Noise(r))) * grain * Env(k, 0.08f, 4.5f);
+                s[i] = Soft(swish * 5f); // 크게 눌러 짧아도 또렷하게
+            }
+            return s;
+        }
+
+        /// <summary>캐릭터 넘기기(선택 화면): 두꺼운 카드를 휙 넘기는 소리 — 올라갔다 내려가는 띠 잡음 바람 + 끝에 낮고 부드러운 툭.</summary>
+        private static float[] Flip()
+        {
+            float len = 0.32f; var s = Buf(len); var r = new System.Random(22);
+            var bp = new Biquad(); var lp = new Biquad(); lp.SetLow(1800f, 0.7f);
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = i / (float)Rate, k = t / len;
+                bp.SetBand(Mathf.Lerp(500f, 1300f, Mathf.Sin(Mathf.PI * Mathf.Min(k * 1.3f, 1f))), 1.1f); // 휙: 낮게 → 높게 → 낮게
+                float whoosh = lp.Run(bp.Run(Noise(r))) * Mathf.Sin(Mathf.PI * Mathf.Min(k * 1.35f, 1f));
+                float tt = t - 0.2f; // 넘어간 카드가 닿는 툭
+                float tap = tt > 0f ? Mathf.Sin(2f * Mathf.PI * 105f * tt) * Mathf.Exp(-tt * 38f) * 0.45f : 0f;
+                s[i] = Soft(whoosh * 1.8f + tap);
+            }
+            return s;
+        }
         private static float[] Buf(float seconds) => new float[Mathf.CeilToInt(seconds * Rate)];
         private static float Noise(System.Random r) => (float)(r.NextDouble() * 2.0 - 1.0);
         private static float Soft(float x) => (float)Math.Tanh(x); // 부드럽게 눌러 깨짐 없게

@@ -22,7 +22,6 @@ namespace Project1.UI
         private CharacterRoster roster;
         private CharacterSelectStage stage;
         private CharacterSelectView view;
-        private AsyncOperation preload;
         private List<CharacterRoster.Entry> shown;
         private CharacterRole role = CharacterRole.Survivor;
         private readonly Dictionary<CharacterRole, int> index = new() { [CharacterRole.Survivor] = 0, [CharacterRole.Hunter] = 0 };
@@ -53,19 +52,13 @@ namespace Project1.UI
             view.RoleRequested += r => { if (r != role) ShowRole(r); };
             view.StartRequested += battle => StartCurrent(battle);
             view.ModelDragged += dx => stage.Rotate(-dx * DragDegreesPerPixel);
-            ShowRole(role);
-
-            // 게임 씬을 미리 불러 둔다(고르면 바로 넘어감).
-            if (Application.CanStreamedLevelBeLoaded(GameSceneName))
-            {
-                preload = SceneManager.LoadSceneAsync(GameSceneName);
-                if (preload != null) preload.allowSceneActivation = false;
-            }
+            ShowRole(role, sound: false);
         }
 
-        private void ShowRole(CharacterRole newRole)
+        private void ShowRole(CharacterRole newRole, bool sound = true)
         {
             role = newRole;
+            if (sound) Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 0.8f, 0.05f, 0.85f); // 진영 바꾸기: 조금 낮은 넘기기 소리
             shown = roster.Of(role);
             index[role] = Mathf.Clamp(index[role], 0, Mathf.Max(shown.Count - 1, 0));
             stage.Show(shown, index[role]);
@@ -79,6 +72,7 @@ namespace Project1.UI
             if (shown == null || shown.Count == 0) return;
             index[role] = (index[role] + dir + shown.Count) % shown.Count;
             stage.Focus(index[role]);
+            Project1.Presentation.SfxPlayer.PlayUi("ui_flip", 0.75f, 0.08f); // 다른 캐릭터로 넘기기: 카드 휙
             Refresh(dir);
         }
 
@@ -124,29 +118,23 @@ namespace Project1.UI
             view.Tick(Time.unscaledDeltaTime);
         }
 
-        /// <summary>고른 캐릭터로 게임 씬을 연다. battle = false: 연습 모드(훈련 상대·쿨타임 없음), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
+        /// <summary>고른 캐릭터로 게임 씬을 연다(검게 어두워진 뒤 열고, 열리면 밝아짐). battle = false: 연습 모드(훈련 상대·쿨타임 없음), true: 게임 시작(AI 봇과 전투, BattleMatch).</summary>
         public void StartGame(CharacterRoster.Entry entry, bool battle = false)
         {
             started = true;
             Project1.Presentation.BgmPlayer.Stop(); // 게임에 들어가면 선택 음악을 끈다
             CharacterPick.Set(entry, battle);
-            if (preload != null) preload.allowSceneActivation = true;
-            else SceneManager.LoadScene(GameSceneName);
+            // 게임 씬을 미리 불러 두지 않는다: 미리 부르는 중엔 다른 씬을 열 수 없어 ESC(타이틀로)가 게임 씬을 다 부를 때까지 멈췄다
+            ScreenFade.Out(() => SceneManager.LoadSceneAsync(GameSceneName), GameSceneName);
         }
 
-        /// <summary>타이틀 씬으로 돌아간다(빌드에 타이틀이 없으면 아무것도 안 함).</summary>
+        /// <summary>타이틀 씬으로 돌아간다(검게 어두워졌다가 타이틀이 열리면 밝아짐). 빌드에 타이틀이 없으면 아무것도 안 함.</summary>
         private bool BackToTitle()
         {
             if (!Application.CanStreamedLevelBeLoaded(TitleScreen.SceneName)) return false;
             started = true;
             CharacterPick.Clear();
-            if (preload != null)
-            {
-                // 미리 부르던 게임 씬이 끝나야 다른 씬을 열 수 있다 → 게임 씬이 열리자마자 타이틀로 넘기게 표시
-                CharacterPick.BackToTitle = true;
-                preload.allowSceneActivation = true;
-            }
-            else SceneManager.LoadScene(TitleScreen.SceneName);
+            ScreenFade.Out(() => SceneManager.LoadSceneAsync(TitleScreen.SceneName), TitleScreen.SceneName);
             return true;
         }
 

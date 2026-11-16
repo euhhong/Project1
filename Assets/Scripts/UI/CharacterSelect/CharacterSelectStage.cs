@@ -24,7 +24,8 @@ namespace Project1.UI
 
         private readonly GameObject root;
         private readonly Camera camera;
-        private readonly List<GameObject> lineup = new();
+        private readonly List<GameObject> lineup = new(); // 지금 보이는 진영
+        private readonly Dictionary<string, List<GameObject>> lineups = new(); // 만들어 둔 진영들(캐릭터 ID 목록 → 모델)
         private int focus;
         private Vector3 velocity;
 
@@ -99,29 +100,39 @@ namespace Project1.UI
         /// <summary>한 진영의 캐릭터를 늘어놓고 focus 앞에 카메라를 바로 둔다.</summary>
         public void Show(List<CharacterRoster.Entry> entries, int focusIndex)
         {
-            foreach (var m in lineup) UnityEngine.Object.Destroy(m);
-            lineup.Clear();
-            for (int i = 0; i < entries.Count; i++)
+            // 진영마다 한 번만 만들어 두고(만들기가 무거움) 다시 보여 줄 땐 켜기만 한다
+            foreach (var m in lineup) if (m != null) m.SetActive(false);
+            string key = string.Join("|", entries.ConvertAll(e => e.id));
+            if (!lineups.TryGetValue(key, out var built))
             {
-                var e = entries[i];
-                var m = UnityEngine.Object.Instantiate(e.model, root.transform);
-                m.name = e.id;
-                m.transform.localPosition = new Vector3(-i * Spacing, 0f, 0f); // 카메라가 앞에서 보므로 -X 쪽이 화면 오른쪽
-                m.transform.localRotation = Quaternion.Euler(0f, ShowcaseYaw, 0f); // 모델 +Z(얼굴) = 카메라 쪽에서 화면 왼쪽(+X)으로 돌린 3/4 모습
-                m.transform.localScale = Vector3.one * e.scale;
-                // 판정 상자는 선택 화면에서 필요 없다.
-                foreach (var c in m.GetComponentsInChildren<Collider>()) c.enabled = false;
-                // 선택 화면에서는 들지 않는 소품(예: 사냥터지기 그랩)을 감춘다. 게임에서는 그대로 든다.
-                foreach (var r in m.GetComponentsInChildren<Renderer>(true))
-                    if (Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
-                var anim = m.GetComponent<Animator>();
-                if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
-                lineup.Add(m);
+                built = new List<GameObject>();
+                for (int i = 0; i < entries.Count; i++) built.Add(Build(entries[i], i));
+                lineups[key] = built;
             }
+            lineup.Clear();
+            lineup.AddRange(built);
+            foreach (var m in lineup) if (m != null) m.SetActive(true);
             focus = Mathf.Clamp(focusIndex, 0, Mathf.Max(lineup.Count - 1, 0));
             camera.transform.position = CameraTarget();
             velocity = Vector3.zero;
             Aim();
+        }
+
+        private GameObject Build(CharacterRoster.Entry e, int i)
+        {
+            var m = UnityEngine.Object.Instantiate(e.model, root.transform);
+            m.name = e.id;
+            m.transform.localPosition = new Vector3(-i * Spacing, 0f, 0f); // 카메라가 앞에서 보므로 -X 쪽이 화면 오른쪽
+            m.transform.localRotation = Quaternion.Euler(0f, ShowcaseYaw, 0f); // 모델 +Z(얼굴) = 카메라 쪽에서 화면 왼쪽(+X)으로 돌린 3/4 모습
+            m.transform.localScale = Vector3.one * e.scale;
+            // 판정 상자는 선택 화면에서 필요 없다.
+            foreach (var c in m.GetComponentsInChildren<Collider>()) c.enabled = false;
+            // 선택 화면에서는 들지 않는 소품(예: 사냥터지기 그랩)을 감춘다. 게임에서는 그대로 든다.
+            foreach (var r in m.GetComponentsInChildren<Renderer>(true))
+                if (Array.IndexOf(HiddenInSelect, r.name) >= 0) r.enabled = false;
+            var anim = m.GetComponent<Animator>();
+            if (anim != null) { anim.runtimeAnimatorController = e.selectController; anim.applyRootMotion = false; }
+            return m;
         }
 
         /// <summary>카메라가 focus 캐릭터 앞으로 미끄러져 간다(사이 캐릭터를 지나치며 슉).</summary>
@@ -152,7 +163,7 @@ namespace Project1.UI
         {
             if (camera != null) camera.targetTexture = null;
             if (ownsRoot) UnityEngine.Object.Destroy(root);
-            else foreach (var m in lineup) if (m != null) UnityEngine.Object.Destroy(m);
+            else foreach (var list in lineups.Values) foreach (var m in list) if (m != null) UnityEngine.Object.Destroy(m);
             Texture.Release();
             UnityEngine.Object.Destroy(Texture);
         }

@@ -36,6 +36,15 @@ namespace Project1.Presentation
             instance.PlayAt(name, pos, volume, pitch * (1f + Random.Range(-pitchJitter, pitchJitter)));
         }
 
+        /// <summary>화면(UI) 소리: name 소리를 듣는 자리(AudioListener)에서 — 메뉴 고르기·캐릭터 넘기기 등. 높낮이는 조금씩 흔든다.</summary>
+        public static void PlayUi(string name, float volume = 1f, float pitchJitter = 0.06f, float pitch = 1f)
+        {
+            if (instance == null) return;
+            var listener = FindAnyObjectByType<AudioListener>();
+            Vector3 at = listener != null ? listener.transform.position : Vector3.zero;
+            instance.PlayAt(name, at, volume, pitch * (1f + Random.Range(-pitchJitter, pitchJitter)));
+        }
+
         private void Awake()
         {
             for (int i = 0; i < Voices; i++)
