@@ -38,7 +38,8 @@ namespace Project1.Presentation
         {
             var kb = Keyboard.current;
             if (kb != null && kb.f3Key.wasPressedThisFrame) visible = !visible;
-            if (Time.unscaledTime >= nextScan) { Rescan(); nextScan = Time.unscaledTime + RescanInterval; }
+            // 숨겨 둔 동안은 찾지 않는다 — 맵 전체 콜라이더(천 개 넘음)를 1초마다 훑어 주기적으로 끊겼다
+            if (visible && Time.unscaledTime >= nextScan) { Rescan(); nextScan = Time.unscaledTime + RescanInterval; }
         }
 
         private void Rescan()
