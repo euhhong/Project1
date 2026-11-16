@@ -65,7 +65,7 @@ namespace Project1.Systems
         public void Configure(float length)
         {
             height = Mathf.Max(0.3f, length);
-            if (board == null) Build();
+            if (board == null) return; // 아직 판자 몸이 없으면(편집 화면에서 배치할 때) 길이만 — 게임을 시작하면 Awake가 이 길이로 만든다
             boardCollider.center = new Vector3(0f, height * 0.5f, 0f);
             boardCollider.size = new Vector3(width, height, thickness);
         }

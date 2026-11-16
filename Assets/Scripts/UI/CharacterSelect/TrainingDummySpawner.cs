@@ -5,17 +5,17 @@ using UnityEngine;
 namespace Project1.UI
 {
     /// <summary>
-    /// 테스트용 훈련 상대: 게임을 시작하면 맵의 벽(Wall) 옆에 조금 떨어진 자리에 가만히 서 있는 감시자 하나를 세운다.
+    /// 테스트용 훈련 상대: 게임을 시작하면 맵 가운데 연습용 우물(PracticeWell, 예전엔 벽 Wall) 옆에 가만히 서 있는 감시자 하나를 세운다.
     /// - 움직이지 않고, 체력·게이지는 없다(맞으면 피격 모션만 — 공격·스킬 판정과 이펙트를 확인하는 용도).
     /// - 몸(CharacterController) + 누구인지(CharacterIdentity, 팀 없음) + 모델(맞는 판정 Hurtbox 포함) + 피격 모션.
-    /// 씬을 고치지 않고 실행 중에 만든다. 벽이 없는 씬이거나 이미 있으면 만들지 않는다.
+    /// 씬을 고치지 않고 실행 중에 만든다. 우물·벽이 없는 씬이거나 이미 있으면 만들지 않는다.
     /// </summary>
     public static class TrainingDummySpawner
     {
         public const string DummyName = "TrainingDummy";
-        private const string WallName = "Wall";
+        private const string AnchorName = "PracticeWell", OldWallName = "Wall"; // 맵 가운데 연습용 우물(예전엔 벽)
         private const string ModelId = "Hunter_HellEmber"; // 공장장 모델
-        private const float GapFromWall = 2f;                // 벽 끝에서 옆으로 떨어진 거리(m)
+        private const float SideOffset = 6f;                 // 우물 가운데에서 오른쪽으로 떨어진 거리(m) — 예전 벽 오른쪽 끝 + 2m 자리
 
         private static bool hooked;
 
@@ -31,14 +31,15 @@ namespace Project1.UI
 
         private static void Spawn()
         {
-            var wall = GameObject.Find(WallName);
+            var wall = GameObject.Find(AnchorName);
+            if (wall == null) wall = GameObject.Find(OldWallName);
             if (wall == null || GameObject.Find(DummyName) != null) return;
             var roster = CharacterRoster.Load();
             var entry = roster != null ? roster.entries.Find(e => e.id == ModelId) : null;
             if (entry == null || entry.model == null) return;
 
-            // 벽의 오른쪽 끝에서 옆으로 GapFromWall 떨어진 곳, 벽과 같은 줄(벽 앞면 쪽을 봄)
-            Vector3 p = wall.transform.position + wall.transform.right * (wall.transform.lossyScale.x * 0.5f + GapFromWall);
+            // 우물(예전 벽) 가운데에서 오른쪽으로 SideOffset 떨어진 곳, 같은 줄(앞쪽 반대를 봄 — 시작 자리 쪽)
+            Vector3 p = wall.transform.position + wall.transform.right * SideOffset;
             if (Physics.Raycast(p + Vector3.up * 10f, Vector3.down, out var hit, 30f, ~0, QueryTriggerInteraction.Ignore)) p = hit.point;
             else p.y = 0f;
 

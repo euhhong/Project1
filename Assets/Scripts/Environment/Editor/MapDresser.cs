@@ -14,7 +14,7 @@ namespace Project1.Map.EditorTools
     /// 블록아웃을 다시 만들면(MapBlockoutBuilder.Build) 끝에서 자동으로 다시 적용된다. 여러 번 실행해도 같은 결과.
     /// 모델: Assets/Environment/Models/VARCO/{Key}/{Key}.fbx — 없는 모델은 블록 그대로 둔다.
     /// </summary>
-    public static class MapDresser
+    public static partial class MapDresser
     {
         private const string RootName = "MapBlockout";
         private const string GardenName = "VARCO_Garden";
@@ -66,6 +66,7 @@ namespace Project1.Map.EditorTools
 
             DressProps(root);
             BuildGarden(root);
+            BuildExtras(root); // 예배당 장식·야외 나무·풀·납작 바위·판자 구역·연습용 우물(MapDresser.Extras)
             return $"MapDresser: 텍스처 {retextured}개 블록, 모델 {placed}개 배치" + (missing > 0 ? $", 모델 파일 없음 {missing}건(블록 그대로)" : "");
         }
 
@@ -173,6 +174,7 @@ namespace Project1.Map.EditorTools
                 string n = t.name;
                 if (IsBox(t))
                 {
+                    if (DressExtraBox(t)) continue; // 예배당 긴 의자·제단, 계단 단, 기둥(MapDresser.Extras)
                     if (n.StartsWith("Statue_")) FitBox(t, "Statue", uniform: true);
                     else if (n.StartsWith("Tomb_")) FitBox(t, "Tomb");
                     else if (n.StartsWith("Locker_") && !n.Contains("Bench")) FitBox(t, "Locker");
