@@ -8,7 +8,7 @@ namespace Project1.UI
     /// <summary>
     /// 캐릭터 선택 화면 UI(UI Toolkit, 코드로 만든다). 배치·글꼴·넘길 때 연출만 맡고, 무엇을 고를지는 CharacterSelectScreen이 정한다.
     /// 배치(기준 1920×1080): 맨 왼쪽 3D 모델(창·테두리 없이 배경에 바로 서서 일러스트 아래쪽 앞에 겹침), 가운데 크게 일러스트(누끼) + 바로 아래 캐릭터 이름,
-    /// 오른쪽에 게임 시작·연습 버튼과 그 아래 정보 칸, 양 끝 ‹ › 화살표, 왼쪽 위 진영 탭.
+    /// 오른쪽 위 끝에 게임 시작·연습 버튼, 오른쪽에 정보 칸, 양 끝 ‹ › 화살표, 왼쪽 위 진영 탭.
     /// </summary>
     public class CharacterSelectView : IDisposable
     {
@@ -159,28 +159,26 @@ namespace Project1.UI
 
         private void BuildColumn(VisualElement root)
         {
-            // 오른쪽: 게임 시작·연습 버튼 + 그 아래 정보 칸
-            var col = new VisualElement();
-            col.style.position = Position.Absolute;
-            col.style.left = ColumnLeft; col.style.width = ColumnWidth;
-            col.style.top = 56f; col.style.bottom = 110f;
-            root.Add(col);
-
+            // 게임 시작·연습 버튼: 화면 오른쪽 위 끝
             var buttons = new VisualElement();
-            buttons.style.width = 340f;
-            col.Add(buttons);
-            startButton = MakeButton(buttons, "게임 시작", 58, 92f, () => StartRequested?.Invoke(true));
-            practiceButton = MakeButton(buttons, "연습", 46, 70f, () => StartRequested?.Invoke(false));
-            practiceButton.style.marginTop = 14f;
+            buttons.style.position = Position.Absolute;
+            buttons.style.right = 36f; buttons.style.top = 32f;
+            buttons.style.width = 320f;
+            root.Add(buttons);
+            startButton = MakeButton(buttons, "게임 시작", 58, 88f, () => StartRequested?.Invoke(true));
+            practiceButton = MakeButton(buttons, "연습", 46, 66f, () => StartRequested?.Invoke(false));
+            practiceButton.style.marginTop = 12f;
 
+            // 정보 칸: 오른쪽, 버튼 아래
             var info = new VisualElement();
-            info.style.marginTop = 34f;
-            info.style.flexGrow = 1f;
+            info.style.position = Position.Absolute;
+            info.style.left = ColumnLeft; info.style.width = ColumnWidth;
+            info.style.top = 266f; info.style.bottom = 110f;
+            root.Add(info);
             info.style.backgroundColor = new Color(0.03f, 0.045f, 0.07f, 0.62f);
             Border(info, 1f, Line);
             info.style.paddingLeft = info.style.paddingRight = 32f;
             info.style.paddingTop = 26f; info.style.paddingBottom = 24f;
-            col.Add(info);
 
             infoRole = Text(info, "", bodyFont, 22, accent);
             dots = new VisualElement { pickingMode = PickingMode.Ignore };
