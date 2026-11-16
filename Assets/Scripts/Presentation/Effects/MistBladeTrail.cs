@@ -23,6 +23,7 @@ namespace Project1.Presentation
         private IProjectile projectile;
         private Vector3 startOffset, swingAxis;
         private float age, scale, strength;
+        private float wideX = 1f, wideY = 1f; // 2칸 칼날: 좌우(수평)로 넓적하게 — 칼날 축 중 수평인 쪽을 늘린다
         private bool ended;
         private Transform blade;
         private MeshRenderer bladeRenderer;
@@ -42,6 +43,14 @@ namespace Project1.Presentation
             float power = p.Power > 0f ? p.Power : 1f;
             t.strength = Mathf.Clamp01(power);
             t.scale = Mathf.Lerp(0.6f, 1f, t.strength); // 약한 칼날(0.5)은 0.8배
+            if (t.strength >= 0.99f) // 2칸(세기 1) 칼날만
+            {
+                // 칼날 몸 좌표: Y = 휘두른 방향, X = 줄기가 나란히 놓이는 쪽. 둘 중 수평에 가까운 쪽을 넓힌다.
+                Vector3 xAxis = Vector3.Cross(t.swingAxis, p.Direction);
+                bool xHorizontal = Mathf.Abs(Vector3.Dot(xAxis.normalized, Vector3.up)) < Mathf.Abs(Vector3.Dot(t.swingAxis, Vector3.up));
+                float f = 2.2f;
+                if (xHorizontal) t.wideX = f; else t.wideY = f;
+            }
             t.Build();
             return t;
         }
@@ -52,7 +61,7 @@ namespace Project1.Presentation
             var bgo = new GameObject("MistBlade");
             bgo.transform.SetParent(transform, false);
             bgo.transform.rotation = Quaternion.LookRotation(projectile.Direction, swingAxis);
-            bgo.transform.localScale = Vector3.one * scale;
+            bgo.transform.localScale = new Vector3(scale * wideX, scale * wideY, scale);
             mesh = BuildClawMesh();
             bgo.AddComponent<MeshFilter>().sharedMesh = mesh;
             bladeRenderer = bgo.AddComponent<MeshRenderer>();
@@ -142,7 +151,7 @@ namespace Project1.Presentation
             // 손에서 떨어진 직후 짧게 커지고, 날아가며 살짝 일렁인다
             float grow = Mathf.SmoothStep(0.35f, 1f, Mathf.Clamp01(age / 0.1f));
             float wobble = 1f + Mathf.Sin(age * 31f) * 0.04f;
-            blade.localScale = new Vector3(scale * grow, scale * grow * wobble, scale * grow);
+            blade.localScale = new Vector3(scale * grow * wideX, scale * grow * wobble * wideY, scale * grow);
         }
 
         private void End()

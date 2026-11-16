@@ -15,6 +15,8 @@ namespace Project1.Systems
     {
         private CharacterIdentity owner, target;
         private float turnRate, hitRadius, wallRadius, lifetime, age;
+        /// <summary>상대를 맞히는 판정을 좌우(수평, 날아가는 방향에 수직)로 이만큼(m, 반폭) 넓힌다 — 0이면 둥근 판정(hitRadius)만. 벽 판정은 그대로(wallRadius). 예: 리퍼 2칸 안개 칼날.</summary>
+        public float HalfWidth;
         private HitboxSlot slot;
         private int attackId;
         private readonly RaycastHit[] hits = new RaycastHit[32];
@@ -72,7 +74,14 @@ namespace Project1.Systems
 
             // 상대 Hurtbox
             float hurtDist = float.MaxValue; Hurtbox hurt = null; Vector3 hurtPoint = from;
-            int n = Physics.SphereCastNonAlloc(from, hitRadius, Direction, hits, step, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
+            int n;
+            if (HalfWidth > 0f)
+            {
+                Vector3 side = Vector3.Cross(Vector3.up, Direction);
+                side = side.sqrMagnitude > 1e-6f ? side.normalized : Vector3.right;
+                n = Physics.CapsuleCastNonAlloc(from - side * HalfWidth, from + side * HalfWidth, hitRadius, Direction, hits, step, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide); // 좌우로 넓적한 판정
+            }
+            else n = Physics.SphereCastNonAlloc(from, hitRadius, Direction, hits, step, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
             for (int i = 0; i < n; i++)
             {
                 var h = hits[i];
