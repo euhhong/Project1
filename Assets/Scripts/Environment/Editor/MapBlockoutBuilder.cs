@@ -849,12 +849,24 @@ namespace Project1.Map.EditorTools
             }
 
             float cursor = a0;
+            int w = 0;
             foreach (var o in (ops ?? System.Array.Empty<Opening>()).OrderBy(q => q.from))
             {
                 Piece(cursor, o.from, 0f, h);
                 Piece(o.from, o.to, 0f, Mathf.Min(o.bottom, h));
                 Piece(o.from, o.to, Mathf.Min(o.top, h), h);
                 cursor = o.to;
+                // 창문(바닥에서 떨어지고 위가 막힌 구멍) 자리 표시 — MapDresser가 고딕 창틀 모델을 양쪽 면에 얹는다(충돌·렌더러 없음).
+                // 위치 = 구멍 아래 가운데(벽 두께 가운데), 앞(+Z) = 벽 바깥 방향 한쪽, 크기 = 구멍 폭 × 높이 × 벽 두께
+                if (o.bottom > 0.05f && o.top < h - 0.05f)
+                {
+                    var mk = new GameObject($"WinOpening_{name}_{w++}").transform;
+                    mk.SetParent(g, false);
+                    float mid = (o.from + o.to) / 2f;
+                    mk.localPosition = alongX ? new Vector3(mid, y0 + o.bottom, across) : new Vector3(across, y0 + o.bottom, mid);
+                    mk.localRotation = alongX ? Quaternion.identity : Quaternion.Euler(0f, 90f, 0f);
+                    mk.localScale = new Vector3(o.to - o.from, o.top - o.bottom, t);
+                }
             }
             Piece(cursor, a1, 0f, h);
         }

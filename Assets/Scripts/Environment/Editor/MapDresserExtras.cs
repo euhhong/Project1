@@ -260,6 +260,7 @@ namespace Project1.Map.EditorTools
             var g = new GameObject(ExtrasName).transform;
             g.SetParent(root, false);
             Physics.SyncTransforms();
+            DressWindows(root);                   // 네모난 창문 구멍마다 고딕 돌 창틀(MapDresserWindows)
             BuildChapel(g);
             BuildNature(g);
             BuildPalletZone(g);
