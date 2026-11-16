@@ -13,7 +13,7 @@
 | 루키노 | Hunter_Luchino.png | |
 | 리퍼 | Hunter_Ripper.png | |
 | 광대 | Hunter_SmileyFace.png | |
-| 공군 | Survivor_Coordinator.png | |
+| 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
 | 카우보이 | Survivor_Cowboy.png | |
 | 의사 | Survivor_Doctor.png | |
 | 전위 | Survivor_Forward.png | |
