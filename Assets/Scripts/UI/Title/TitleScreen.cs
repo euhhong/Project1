@@ -81,6 +81,14 @@ namespace Project1.UI
             Project1.Presentation.BgmPlayer.Play("Title"); // 타이틀 배경음악
         }
 
+        /// <summary>Play 중 코드가 다시 불려 오면 버튼·창이 다 비어 누를 수 없게 된다 → 다음 Update에서 처음처럼 다시 만든다(처음 열릴 때는 Start가 만든다).</summary>
+        private void OnEnable()
+        {
+            if (options == null && Time.timeSinceLevelLoad > 0.5f) rebuild = true;
+        }
+
+        private bool rebuild;
+
         /// <summary>그림을 비율 그대로 화면을 꽉 덮게(넘치는 쪽은 가운데 기준으로 잘림).</summary>
         private void CoverScreen()
         {
@@ -136,7 +144,8 @@ namespace Project1.UI
 
         private void Update()
         {
-            if (options == null || fade == null) return; // Play 중 다시 컴파일되면 화면이 비어 있다
+            if (rebuild) { rebuild = false; fadeStart = -1f; Start(); return; } // Play 중 코드가 다시 불려 와 비었으면 다시 만든다
+            if (options == null || fade == null) return;
             if (fadeStart >= 0f)
             {
                 float t = (Time.unscaledTime - fadeStart) / FadeTime;

@@ -89,7 +89,8 @@ namespace Project1.UI
 
         private void Update()
         {
-            if (started || shown == null || stage == null || view == null) return; // Play 중 다시 컴파일되면 무대·화면이 비어 있다
+            if (rebuild) { rebuild = false; Rebuild(); return; } // Play 중 코드가 다시 불려 와 비었으면 다시 만든다
+            if (started || shown == null || stage == null || view == null) return;
             var kb = Keyboard.current;
             if (kb != null)
             {
@@ -136,6 +137,31 @@ namespace Project1.UI
             CharacterPick.Clear();
             ScreenFade.Out(() => SceneManager.LoadScene(TitleScreen.SceneName), TitleScreen.SceneName);
             return true;
+        }
+
+        /// <summary>
+        /// Play 중 코드가 다시 불려 오면(다른 작업이 스크립트를 고침) 이 화면이 들고 있던 것(view·stage)이 모두 비고 UI도 비어 검은 화면만 남는다.
+        /// 그때는 OnEnable이 다시 불리므로, 씬이 열린 지 조금 지났으면 남은 모델을 치우고 처음처럼 다시 만든다.
+        /// </summary>
+        private void OnEnable()
+        {
+            if (view == null && Time.timeSinceLevelLoad > 0.5f) rebuild = true; // 처음 열릴 때는 Start가 만든다. UI 문서가 먼저 다시 만들어지게 다음 Update에서
+        }
+
+        private bool rebuild;
+
+        private void Rebuild()
+        {
+            var stageRoot = GameObject.Find(CharacterSelectStage.RootName);
+            if (stageRoot != null)
+                for (int i = stageRoot.transform.childCount - 1; i >= 0; i--)
+                {
+                    var c = stageRoot.transform.GetChild(i);
+                    if (c.name != CharacterSelectStage.CameraName && c.name != CharacterSelectStage.LightName && c.name != CharacterSelectStage.FillLightName && c.name != CharacterSelectStage.ScreenCameraName)
+                        Destroy(c.gameObject); // 전에 늘어놓았던 모델
+                }
+            started = false;
+            Start();
         }
 
         private void OnDestroy()
