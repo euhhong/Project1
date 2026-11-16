@@ -106,7 +106,12 @@ namespace Project1.Systems
             go.AddComponent<CharacterStamina>(); // 다른 캐릭터처럼: 달리면 소모, 지치면 걷기 속도
             go.SetActive(true);
             CloneEvents.RaiseSpawned(go, owner); // FE: 모델·겉모습·낫
-            if (go.TryGetComponent(out CharacterMotor motor)) motor.RefreshSpeedLimits();
+            if (go.TryGetComponent(out CharacterMotor motor))
+            {
+                float hunterWalk = CharacterMotor.SpeedsFor(true).walk;
+                motor.SetSpeeds(hunterWalk, hunterWalk); // 분신은 늘 감시자의 통상 이동속도(걷기)로 — 달리지 않는다
+                motor.RefreshSpeedLimits();
+            }
             if (go.TryGetComponent(out AttackHitDetector det)) det.RefreshHitboxes();
             return brain;
         }
