@@ -37,13 +37,44 @@ namespace Project1.Map.EditorTools
         private static bool DressExtraBox(Transform t)
         {
             string n = t.name;
+            if (IsRailBox(t)) { FitRailing(t); return true; } // 계단 둘레·2층 회랑·발코니·테라스 난간(허리 높이 얇은 벽) → 철창 난간
             if (n.StartsWith("PewBack_")) return true; // Pew_ 쪽에서 함께 처리
             if (n.StartsWith("Pew_")) { FitPew(t); return true; }
             if (n == "Chapel_Altar") { FitBox(t, "Altar"); return true; }
-            if (n.StartsWith("Step_") && UnderStairs(t)) { FitLong(t, "Step"); return true; }
+            if (n.StartsWith("Step_") && UnderStairs(t)) { FitStepCap(t); return true; }
             if (t.parent != null && t.parent.name == "Columns") { FitBox(t, "Column"); return true; }
             if (n.StartsWith("Pillar_") || n.StartsWith("Porch_")) { FitBox(t, "Column"); return true; }
             return false;
+        }
+
+        /// <summary>난간 상자: 허리 높이(0.8~1.2m), 얇음(0.25m 이하), 길이 0.5m 이상. 사다리 손잡이(높고 가늚)는 뺀다.</summary>
+        private static bool IsRailBox(Transform t)
+        {
+            for (var p = t.parent; p != null; p = p.parent) if (p.name.StartsWith("Ladder")) return false;
+            var s = t.localScale;
+            float thin = Mathf.Min(s.x, s.z), len = Mathf.Max(s.x, s.z);
+            return s.y >= 0.8f && s.y <= 1.2f && thin <= 0.25f && len >= 0.5f;
+        }
+
+        /// <summary>난간 상자를 2.2m 안팎 칸으로 나눠 철창 난간(Railing) 모델을 늘어놓고 상자는 끈다(충돌은 그대로).</summary>
+        private static void FitRailing(Transform box)
+        {
+            var prefab = LoadModel("Railing");
+            if (prefab == null) { missing++; return; }
+            var mr = prefab.GetComponentInChildren<MeshRenderer>();
+            bool modelLongZ = mr != null && mr.bounds.size.z > mr.bounds.size.x;
+            var s = box.localScale;
+            bool boxLongZ = s.z > s.x;
+            float len = boxLongZ ? s.z : s.x;
+            int count = Mathf.Max(1, Mathf.RoundToInt(len / 2.2f));
+            float seg = len / count;
+            var along = box.localRotation * (boxLongZ ? Vector3.forward : Vector3.right);
+            var frameRot = box.localRotation * (modelLongZ != boxLongZ ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity);
+            var size = modelLongZ ? new Vector3(0.22f, s.y, seg + 0.02f) : new Vector3(seg + 0.02f, s.y, 0.22f);
+            var baseBottom = box.localPosition - box.localRotation * Vector3.up * (s.y / 2f);
+            for (int i = 0; i < count; i++)
+                Place("Railing", box.parent, frameRot, baseBottom + along * (-len / 2f + seg * (i + 0.5f)), size, false, false, $"{ModelPrefix}Railing_{box.name}_{i}");
+            Hide(box);
         }
 
         private static bool UnderStairs(Transform t)
@@ -65,6 +96,28 @@ namespace Project1.Map.EditorTools
             var rot = Quaternion.Euler(0f, backAtPlusZ ? 180f : 0f, 0f);
             if (Place("Pew", seat.parent, rot, bottom, b.size, false, false, $"{ModelPrefix}Pew_{seat.name}") != null)
                 foreach (var x in boxes) Hide(x);
+        }
+
+        /// <summary>
+        /// 계단 단: 블록(바닥부터 디딤면까지 이어진 상자)은 그대로 두어 옆에서 보면 한 덩어리로 이어지게 하고,
+        /// 맨 위에만 얇은 돌 디딤판(Step 모델, 두께 capHeight)을 얹는다 — 모델을 상자 높이만큼 늘이면 모서리가 둥글어 단마다 틈이 보인다.
+        /// 디딤판은 앞뒤로 조금 길게(겹쳐서 단 사이 이음매가 안 보이게).
+        /// </summary>
+        private static void FitStepCap(Transform box)
+        {
+            const float capHeight = 0.18f, overlap = 0.06f;
+            var s = box.localScale;
+            var prefab = LoadModel("Step");
+            if (prefab == null) { missing++; return; }
+            var mr = prefab.GetComponentInChildren<MeshRenderer>();
+            bool modelLongZ = mr != null && mr.bounds.size.z > mr.bounds.size.x;
+            bool boxLongZ = s.z > s.x;
+            bool turn = modelLongZ != boxLongZ;
+            var frameRot = box.localRotation * (turn ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity);
+            var top = box.localPosition + box.localRotation * Vector3.up * (s.y / 2f);
+            var bottom = top - box.localRotation * Vector3.up * (capHeight - 0.02f); // 디딤판 윗면이 블록 윗면보다 2cm 위
+            var size = turn ? new Vector3(s.z + overlap, capHeight, s.x + overlap) : new Vector3(s.x + overlap, capHeight, s.z + overlap);
+            Place("Step", box.parent, frameRot, bottom, size, false, false, $"{ModelPrefix}Step_{box.name}"); // 블록은 끄지 않는다(옆면 = 이어진 블록)
         }
 
         /// <summary>긴 상자(계단 단 등): 모델의 긴 쪽을 상자의 긴 쪽에 맞춘다(늘어나 찌그러지지 않게).</summary>
