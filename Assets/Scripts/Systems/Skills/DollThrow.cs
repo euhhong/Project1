@@ -10,7 +10,7 @@ namespace Project1.Systems
     ///   목표(흰 조준원)는 늘 1층(공장장 발 높이) 바닥 — 몸 정면 aimDistance m(위층·지붕 윗면에 붙지 않음). 몸 쪽으로 끌어당겨도 취소하지 않는다(취소는 E만).
     /// - 포물선 꼭대기 = 발에서 apexBase + 거리 × apexPerMeter(멀수록 조금씩 높아짐) + 위를 본 시야 각도 × apexPerDegree + 각도² × apexPerDegreeSq(우클릭으로 시야를 올릴수록 점점 더 높아짐 — 높이 조절).
     /// - 떼면 인형이 그 포물선을 실제로 날아간다: 처음 닿는 윗면(1층 바닥·위층 바닥·지붕)에 멈추고, 벽에 닿으면 수평 속도를 잃고 아래로 떨어진다 —
-    ///   높이 띄우면 위층·지붕에도 올라간다. 보조선(AimArc)은 실제로 멈출 곳(ActualLanding)까지. 인형은 하나 — 다시 던지면 앞 인형은 없어진다.
+    ///   높이 띄우면 위층·지붕에도 올라간다. 보조선(AimArc)은 실제로 멈출 곳(ActualLanding)까지. 인형은 하나 — 던진 인형을 회수하기 전에는 다시 던지지 못한다(좌클릭 꾹이 아무 일도 안 함).
     ///   창틀(얇은 턱, WindowSillCheck) 위에는 멈추지 않고 가로질러 미끄러져 떨어진다(sillSlideSpeed).
     /// - 좌클릭 차징 = 인형 던지기 자세 + 포물선·원. 좌클릭을 누른 채 마우스 = 떨어질 자리 조절(좌우 = 방향, 상하 = 거리 aimLookScale배). 우클릭을 누른 채 마우스 = 시야 높이(위쪽 한계 열림).
     ///   차징을 시작하면 그 순간 시야에서 aimViewRaise도만 위로 올려 고정(IChargeLook — LocalPlayerInput).
@@ -184,7 +184,7 @@ namespace Project1.Systems
             {
                 if (!input.HeavyCharging) waitRelease = false; // E로 취소한 뒤 좌클릭을 뗄 때까지 다시 겨누지 않는다
             }
-            else if (input.HeavyCharging && !blocked)
+            else if (input.HeavyCharging && !blocked && (Aiming || !DollActive)) // 던진 인형을 회수하기 전에는 새 인형을 겨누지(던지지) 못한다
             {
                 if (!Aiming) StartAimDistance(input); // 누르기 시작: 지금 화면 가운데가 가리키는 곳까지의 거리에서 시작
                 Aiming = true;
