@@ -45,7 +45,7 @@ namespace Project1.UI
 
             var font = Resources.Load<Font>("Fonts/GowunDodum-Regular");
             // 씬의 TitleUI(UIDocument — Title.uxml, 에디터에서도 배경이 보임)를 쓰고, 없으면 코드로 만든다
-            var doc = FindAnyObjectByType<UIDocument>();
+            var doc = RuntimeUiPanel.FindSceneDocument(this); // 이 씬의 TitleUI만(넘어오는 중의 페이드 판 말고)
             ownsPanel = doc == null;
             panel = doc != null ? RuntimeUiPanel.Attach(doc) : RuntimeUiPanel.Create("TitleUI", 0);
             var root = panel.Root;

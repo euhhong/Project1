@@ -47,7 +47,7 @@ namespace Project1.UI
             var stageRoot = GameObject.Find(CharacterSelectStage.RootName);
             stage = new CharacterSelectStage(new Vector2Int(Mathf.RoundToInt(size.x), Mathf.RoundToInt(size.y)),
                 CharacterSelectView.ModelCanvasSize.y / CharacterSelectView.ModelPanelSize.y, stageRoot != null ? stageRoot.transform : null);
-            view = new CharacterSelectView(stage.Texture, FindAnyObjectByType<UIDocument>());
+            view = new CharacterSelectView(stage.Texture, RuntimeUiPanel.FindSceneDocument(this)); // 이 씬의 CharacterSelectUI(페이드 판 말고)
             view.StepRequested += Step;
             view.RoleRequested += r => { if (r != role) ShowRole(r); };
             view.StartRequested += battle => StartCurrent(battle);

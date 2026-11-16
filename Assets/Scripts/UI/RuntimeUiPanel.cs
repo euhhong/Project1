@@ -48,6 +48,17 @@ namespace Project1.UI
             return panel;
         }
 
+        /// <summary>
+        /// owner와 같은 씬에 놓인 UIDocument(없으면 null). 씬이 바뀌는 동안엔 화면 페이드(ScreenFade — 씬이 바뀌어도 남는 UIDocument)도 살아 있어,
+        /// 아무 UIDocument나 찾으면 그 판에 화면을 그렸다가 페이드가 끝나 판이 지워질 때 화면도 같이 사라진다(검은 화면).
+        /// </summary>
+        public static UIDocument FindSceneDocument(Component owner)
+        {
+            foreach (var d in FindObjectsByType<UIDocument>())
+                if (d.gameObject.scene == owner.gameObject.scene) return d;
+            return null;
+        }
+
         /// <summary>씬에 이미 있는 UIDocument(예: 캐릭터 선택 씬의 CharacterSelectUI — PanelSettings 에셋 연결)를 그대로 쓴다. EventSystem이 없으면 잠깐 만든다.</summary>
         public static RuntimeUiPanel Attach(UIDocument document)
         {
