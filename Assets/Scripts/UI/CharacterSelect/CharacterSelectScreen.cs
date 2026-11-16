@@ -121,6 +121,7 @@ namespace Project1.UI
             CharacterLoadout.Apply(player, entry);
             Project1.Systems.SkillCooldowns.Disabled = !battle; // 연습 모드 = 쿨타임 없이 스킬, 게임 시작 = 쿨타임 그대로
             if (battle) BattleMatch.Begin(roster, player, entry);
+            else PracticeExit.Begin(); // 연습 모드: ESC·오른쪽 위 버튼으로 선택 화면으로 돌아가기
             Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
             Destroy(gameObject);
         }
