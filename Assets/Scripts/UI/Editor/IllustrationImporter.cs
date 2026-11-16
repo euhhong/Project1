@@ -20,6 +20,8 @@ namespace Project1.UI.Editor
         private const int EdgeGrow = 2;       // 외곽선 둘레 밝은 테두리(헤일로)를 없애려고 배경을 몇 픽셀 더 넓힌다
         private const float WarmMin = 0.14f;  // (R+G)/2 − B가 이보다 크면 노란 빛(불꽃)으로 보고 지킨다
         private const float SkinMin = 0.03f;  // R이 G·B보다 이만큼 크면(분홍기 도는 살색) 배경으로 번지지 않는다
+        // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
+        private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
 
@@ -70,7 +72,7 @@ namespace Project1.UI.Editor
                 if (!tex.LoadImage(bytes)) return false;
                 var px = tex.GetPixels32();
                 if (!HasWhiteBorder(px, tex.width, tex.height)) return false;
-                RemoveWhiteBackground(px, tex.width, tex.height);
+                RemoveWhiteBackground(px, tex.width, tex.height, SkinProtectIds.Contains(System.IO.Path.GetFileNameWithoutExtension(path)));
                 tex.SetPixels32(px);
                 System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
@@ -94,7 +96,7 @@ namespace Project1.UI.Editor
         }
 
         /// <summary>테두리에 이어진 흰 배경을 투명하게(흰색 → 알파). 검사용 명령에서도 부른다.</summary>
-        public static void RemoveWhiteBackground(Color32[] px, int w, int h)
+        public static void RemoveWhiteBackground(Color32[] px, int w, int h, bool protectSkin = false)
         {
             int n = w * h;
             var lum = new float[n];
@@ -104,7 +106,7 @@ namespace Project1.UI.Editor
                 var c = px[i];
                 lum[i] = Mathf.Min(c.r, Mathf.Min(c.g, c.b)) / 255f;
                 warm[i] = (c.r + c.g) * 0.5f - c.b > WarmMin * 255f
-                       || (c.r - Mathf.Max(c.g, c.b) >= SkinMin * 255f && lum[i] < PureWhite); // 아주 옅은 살색(창백한 얼굴)도 흰 배경과 헷갈리지 않게 지킨다
+                       || (protectSkin && c.r - Mathf.Max(c.g, c.b) >= SkinMin * 255f && lum[i] < PureWhite); // 창백한 얼굴이 흰 배경과 이어진 그림만(SkinProtectIds): 분홍기 도는 살색을 지킨다
             }
 
             var bg = new bool[n];

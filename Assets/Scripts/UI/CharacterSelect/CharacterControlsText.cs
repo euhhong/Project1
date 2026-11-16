@@ -16,7 +16,7 @@ namespace Project1.UI
 
         public const string HunterChargeDefault = "모아서 강하게 치기";
         public const string SurvivorCharge = "패링";
-        public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 주먹을 막는다.\n막히면 때린 쪽이 0.5초 경직된다.\n떼면 돌려차기.";
+        public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 주먹을 막는다.\n막으면 상대를 0.5초 스턴한다.\n떼면 돌려차기.";
         public const string PalletDrop = "판자 내리기";
         public const string PalletDropDesc = "판자 옆에서 · 깔린 감시자는 경직";
 
@@ -37,7 +37,7 @@ namespace Project1.UI
             ["Survivor_Mercenary"] = new(SurvivorCharge, "켜고 끄기 · 벽에 닿으면 벽 차고 도약"),
             ["Survivor_Coordinator"] = new(SurvivorCharge, "가까운 상대를 쫓는 신호탄 · 맞으면 기절"),
             ["Survivor_Cowboy"] = new(SurvivorCharge, "올가미 · 잡은 상대를 뛰어넘기"),
-            ["Survivor_MindsEye"] = new(SurvivorCharge, "지팡이로 찔러 밀어내기"),
+            ["Survivor_MindsEye"] = new(SurvivorCharge, "앞으로 상대를 밀어내 벽에 맞추면 각종 피해를 입힘"),
             ["Survivor_Thief"] = new(SurvivorCharge, "손전등 · 비추면 E 봉인, 정면이면 기절"),
         };
 

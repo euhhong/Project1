@@ -17,7 +17,9 @@
 | 공군 | Survivor_Coordinator.png | ✅ (1402×1122, 흰 배경) |
 | 카우보이 | Survivor_Cowboy.png | |
 | 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |
-| 포워드 | Survivor_Forward.png | ✅ (1402×1122, 흰 배경) |
+| 포워드 | Survivor_Forward.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
 | 용병 | Survivor_Mercenary.png | |
 | 맹인 | Survivor_MindsEye.png | |
 | 도둑 | Survivor_Thief.png | |
+
+원본은 채팅 첨부(압축 WebP)가 아니라 원본 PNG 파일로 받는다 — 채팅 첨부는 화질이 떨어진다.
