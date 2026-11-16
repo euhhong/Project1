@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 생존자가 판자를 내린다(BE): 세워진 판자(Pallet) 옆에서 판자 쪽을 보고 스페이스바(점프)를 누르면 점프 대신 판자를 내린다.
-    /// - 내리는 동안(lockTime초) 제자리에 서서(이동·점프 못 함) 판자가 넘어가는 쪽을 본다. 판자는 생존자 반대쪽으로 넘어간다.
+    /// 생존자가 판자를 내린다(BE): 세워진 판자(Pallet) 옆(통로 안)에서 판자 쪽을 보고 스페이스바(점프)를 누르면 점프 대신 판자를 내린다.
+    /// - 내리는 동안(lockTime초) 제자리에 서서(이동·점프 못 함) 판자 쪽을 본다. 판자는 틈을 가로질러 정해진 쪽으로 넘어가 길을 막는다.
     /// - 땅에 서 있고, 기절·쓰러짐·공격·스킬 중이 아닐 때만. 판자 근처가 아니면 스페이스바는 그냥 점프.
     /// 이동보다 먼저 돌아야 같은 틱의 점프를 막을 수 있다(DefaultExecutionOrder). 캐릭터 루트에 붙인다(CharacterLoadout, 생존자만).
     /// </summary>
@@ -55,7 +55,8 @@ namespace Project1.Systems
             Vector3 look = Quaternion.Euler(0f, frame.LookYaw, 0f) * Vector3.forward; // 시야 방향(몸이 아직 안 돌았어도)
             if (!Pallet.TryFind(transform.position, look, out Pallet pallet, out float fallSign)) return;
             if (!pallet.BeginDrop(identity, fallSign)) return;
-            Vector3 dir = pallet.FallDirection;
+            Vector3 dir = Vector3.ProjectOnPlane(pallet.transform.position + pallet.FallDirection * 0.3f - transform.position, Vector3.up); // 판자 쪽을 보고 민다
+            if (dir.sqrMagnitude < 1e-3f) dir = pallet.FallDirection;
             faceYaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
             lockStart = Time.time;
             lockUntil = Time.time + lockTime;

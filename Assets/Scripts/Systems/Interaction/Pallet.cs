@@ -5,8 +5,9 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 판자(생존자 전용 기물, BE): 맵에 세워져 있다가 생존자가 옆에서 스페이스바를 누르면(PalletUser) 생존자 반대쪽으로 넘어간다.
-    /// - 세워진 판자: 루트 = 바닥 가운데, 위(+Y) = 판자 길이, 옆(+X) = 폭, 앞(+Z) = 판자 면. 판자 몸(Board 자식)에 막는 상자 판정.
+    /// 판자(생존자 전용 기물, BE): 통로·상자 사이·빈 문틀 한쪽에 기대 세워져 있다가, 생존자가 옆(통로 안)에서 스페이스바를 누르면(PalletUser)
+    /// 틈을 가로질러 앞(+Z)으로 넘어가 길을 막는다(넘어가는 쪽은 늘 같음 — 생존자가 어디 서 있든).
+    /// - 세워진 판자: 루트 = 바닥 가운데(틈 한쪽 벽에 붙음), 위(+Y) = 판자 길이(= 틈 너비, Configure), 옆(+X) = 폭(통로 방향), 앞(+Z) = 넘어가는 쪽. 판자 몸(Board 자식)에 막는 상자 판정.
     /// - 넘어가기: dropDelay초 뒤(밀어 넘기는 모션의 미는 순간) 바닥 모서리를 축으로 fallTime초 동안 점점 빠르게 넘어가 눕고, 살짝 튀었다 가라앉는다.
     /// - 넘어가는 판자에 깔린 감시자(눕는 자리 + 넘어가는 동안 판자 끝이 지나가는 자리): 피해(DamageRules.PalletDamage)와 경직(DamageRules.PalletStun).
     ///   한 번 넘어간 판자는 누운 채로 남는다(다시 못 씀). 생존자는 깔리지 않는다.
@@ -60,6 +61,15 @@ namespace Project1.Systems
         private void OnEnable() => all.Add(this);
         private void OnDisable() => all.Remove(this);
 
+        /// <summary>판자 길이(m, 넘어가 누웠을 때 틈을 가로지르는 길이)를 정한다(배치할 때).</summary>
+        public void Configure(float length)
+        {
+            height = Mathf.Max(0.3f, length);
+            if (board == null) Build();
+            boardCollider.center = new Vector3(0f, height * 0.5f, 0f);
+            boardCollider.size = new Vector3(width, height, thickness);
+        }
+
         private void Build()
         {
             var go = new GameObject("Board");
@@ -71,7 +81,7 @@ namespace Project1.Systems
         }
 
         /// <summary>
-        /// position(생존자 발)에서 forward를 보고 있을 때 내릴 수 있는 세워진 판자 중 가장 가까운 것. 판자는 생존자 반대쪽으로 넘어간다(fallSign).
+        /// position(생존자 발)에서 내릴 수 있는 세워진 판자 중 가장 가까운 것: 판자 옆(통로 쪽 1.2m)이나 앞(틈 안), 판자 쪽을 대충이라도 볼 때. 넘어가는 쪽은 늘 앞(fallSign = +1).
         /// </summary>
         public static bool TryFind(Vector3 position, Vector3 forward, out Pallet pallet, out float fallSign)
         {
@@ -81,14 +91,13 @@ namespace Project1.Systems
             {
                 if (p == null || p.State != PalletState.Up) continue;
                 Vector3 local = p.transform.InverseTransformPoint(position);
-                if (Mathf.Abs(local.x) > p.width * 0.5f + 0.4f || local.y < -1f || local.y > p.height) continue;
-                float side = Mathf.Abs(local.z);
-                if (side > p.useRange + p.thickness * 0.5f) continue;
-                float s = local.z >= 0f ? -1f : 1f;               // 생존자 반대쪽으로 넘어간다
-                Vector3 toBoard = p.transform.forward * s;         // 생존자 → 판자 방향
+                if (Mathf.Abs(local.x) > p.width * 0.5f + 1.2f || local.y < -1f || local.y > p.height) continue;
+                if (local.z < -0.35f || local.z > Mathf.Min(p.height, p.useRange + 0.4f)) continue; // 벽 뒤는 안 됨, 틈 안·판자 옆만
+                Vector3 toPallet = Vector3.ProjectOnPlane(p.transform.position + Vector3.up - position, Vector3.up);
                 Vector3 f = Vector3.ProjectOnPlane(forward, Vector3.up);
-                if (f.sqrMagnitude > 1e-4f && Vector3.Dot(f.normalized, toBoard) < 0.2f) continue; // 판자 쪽을 대충이라도 봐야 한다
-                if (side < best) { best = side; pallet = p; fallSign = s; }
+                if (f.sqrMagnitude > 1e-4f && toPallet.sqrMagnitude > 0.04f && Vector3.Dot(f.normalized, toPallet.normalized) < -0.2f) continue; // 판자를 등지고 있으면 안 됨
+                float dist = new Vector2(local.x, local.z - 0.3f).magnitude;
+                if (dist < best) { best = dist; pallet = p; fallSign = 1f; }
             }
             return pallet != null;
         }
