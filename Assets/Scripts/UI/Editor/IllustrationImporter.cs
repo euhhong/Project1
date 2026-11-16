@@ -23,11 +23,12 @@ namespace Project1.UI.Editor
         // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
         private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
         // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
-        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, 8000) };
-        // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
-        private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(456, 316, 124, 66), new RectInt(470, 382, 250, 66), new RectInt(426, 448, 294, 202) } };
+        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue) };
+        // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
+        private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) } };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경
+        private const float ProtectWhite = 0.99f; // 지킬 칸 안에서도 이만큼 새하얀 픽셀은 배경으로 본다
 
         public override uint GetVersion() => 6;
 
@@ -115,27 +116,32 @@ namespace Project1.UI.Editor
                        || (protectSkin && c.r - Mathf.Max(c.g, c.b) >= SkinMin * 255f && lum[i] < PureWhite); // 창백한 얼굴이 흰 배경과 이어진 그림만(SkinProtectIds): 분홍기 도는 살색을 지킨다
             }
 
-            // 지킬 칸(그림 위쪽 기준 픽셀 좌표): 흰 옷처럼 흰 배경과 이어져 빠지면 안 되는 곳
+            // 지킬 칸(그림 위쪽 기준 픽셀 좌표): 흰 옷·흰 털처럼 흰 배경과 이어져 빠지면 안 되는 곳.
+            // 칸 안에서는 새하얀(ProtectWhite 이상) 배경만 번져 들어가고, 옅은 흰색(옷·털)은 막는다 — 칸 모양이 네모로 남지 않게.
+            var prot = new bool[n];
             if (protect != null)
                 foreach (var r in protect)
                     for (int y = Mathf.Max(0, r.yMin); y < Mathf.Min(h, r.yMax); y++)
                         for (int x = Mathf.Max(0, r.xMin); x < Mathf.Min(w, r.xMax); x++)
-                            warm[(h - 1 - y) * w + x] = true;
+                            prot[(h - 1 - y) * w + x] = true;
+            bool Guarded(int i) => warm[i] || (prot[i] && lum[i] < ProtectWhite);
+            var noEnclosed = new bool[n];
+            for (int i = 0; i < n; i++) noEnclosed[i] = warm[i] || prot[i];
 
             var bg = new bool[n];
             var queue = new int[n];
             int head = 0, tail = 0;
             void Seed(int i)
             {
-                if (!bg[i] && !warm[i] && lum[i] >= SeedMin) { bg[i] = true; queue[tail++] = i; }
+                if (!bg[i] && !Guarded(i) && lum[i] >= SeedMin) { bg[i] = true; queue[tail++] = i; }
             }
             for (int x = 0; x < w; x++) { Seed(x); Seed((h - 1) * w + x); }
             for (int y = 0; y < h; y++) { Seed(y * w); Seed(y * w + w - 1); }
-            SeedEnclosedWhite(lum, warm, w, h, Seed, enclosedMin, enclosedMax);
+            SeedEnclosedWhite(lum, noEnclosed, w, h, Seed, enclosedMin, enclosedMax);
 
             void Spread(int from, int j)
             {
-                if (bg[j] || warm[j] || lum[j] < FloodMin || Mathf.Abs(lum[j] - lum[from]) > MaxStep) return;
+                if (bg[j] || Guarded(j) || lum[j] < FloodMin || Mathf.Abs(lum[j] - lum[from]) > MaxStep) return;
                 bg[j] = true;
                 queue[tail++] = j;
             }
