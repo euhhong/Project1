@@ -263,6 +263,7 @@ namespace Project1.Map.EditorTools
             BuildChapel(g);
             BuildNature(g);
             BuildPalletZone(g);
+            BuildMirrors(g);                      // 맵 네 구석 순간이동 전신거울(MapDresserMirrors)
             BuildCenter(root.gameObject.scene);   // 가운데: 긴 벽 – 판자 – 긴 벽, 우물은 다른 빈터로(MapDresserScatter)
             Physics.SyncTransforms();
             BuildScatter(g);                      // 술래잡기용 가구·벽 앞 소품 흩뿌리기(MapDresserScatter)

@@ -22,25 +22,29 @@ namespace Project1.Map.EditorTools
         private static readonly (float x, float z, float len)[] CenterWalls = { (-3.25f, 12f, 4.5f), (3.25f, 12f, 4.5f) };
         private static readonly Vector2[] WellCandidates =
         {
-            // 맵 구석(담장 안쪽) — 비어 있는 첫 자리
-            new(-41f, 41f), new(41f, 41f), new(-41f, -41f), new(41f, -41f), new(-39f, 39f), new(39f, 39f), new(-39f, -39f), new(39f, -39f),
+            // 맵 구석 옆(담장 안쪽) — 구석 대각선(순간이동 거울과 그 앞 길)은 비우고 옆으로 비켜 선 첫 빈자리
+            new(-41.5f, -35f), new(35f, -41.5f), new(41.5f, -35f), new(-35f, -41.5f), new(-41.5f, 31f), new(41.5f, 31f),
         };
 
         private static readonly (string key, float h, bool indoor)[] LoopProps =
         {
             ("Wardrobe", 2.1f, true), ("Dresser", 1.1f, true), ("Sofa", 0.95f, true), ("Piano", 1.4f, true), ("CrateStack", 2.0f, true),
             ("Clock", 2.2f, true), ("TableBroken", 1.0f, true),
+            ("RockingChair", 1.1f, true), ("TeaCart", 1.0f, true), ("WineRack", 1.9f, true), ("RockingHorse", 1.1f, true), ("SpinningWheel", 1.1f, true),
             ("Cart", 1.3f, false), ("SackPile", 1.0f, false), ("FirewoodPile", 1.1f, false), ("StatueFallen", 1.2f, false), ("WoodFence", 1.2f, false), ("CrateStack", 2.0f, false),
+            ("HayBale", 1.1f, false), ("TreeStump", 0.9f, false), ("IronBench", 0.95f, false), ("BirdBath", 1.0f, false), ("WaterPump", 1.4f, false), ("GardenTrellis", 2.4f, false),
         };
         private static readonly (string key, float h, bool indoor)[] WallProps =
         {
             ("Trunk", 0.6f, true), ("Bucket", 0.45f, true), ("Lantern", 0.45f, true), ("Vase", 1.0f, true), ("Mirror", 1.8f, true), ("Coffin", 0.6f, true),
             ("Barrel", 1.05f, true),
+            ("Gramophone", 1.2f, true), ("Birdcage", 1.9f, true), ("BookPile", 0.6f, true), ("CoatRack", 1.9f, true), ("SuitcasePile", 1.0f, true),
             ("Lamppost", 3.2f, false), ("StoneBench", 0.6f, false), ("Brazier", 1.0f, false), ("Gravestone", 1.1f, false), ("GraveCross", 1.3f, false),
             ("DeadBush", 1.2f, false), ("Wheelbarrow", 0.8f, false), ("Bucket", 0.45f, false),
+            ("StoneUrn", 1.3f, false), ("Signpost", 2.0f, false), ("WagonWheel", 1.2f, false), ("Scarecrow", 2.0f, false),
         };
         private const float LoopClear = 2.0f, LoopSpacing = 7f, WallSpacing = 4f;
-        private const int MaxLoopIndoor = 16, MaxLoopOutdoor = 12, MaxWallIndoor = 34, MaxWallOutdoor = 30;
+        private const int MaxLoopIndoor = 22, MaxLoopOutdoor = 18, MaxWallIndoor = 46, MaxWallOutdoor = 40;
 
         private static void BuildScatter(Transform g)
         {
@@ -48,6 +52,7 @@ namespace Project1.Map.EditorTools
             root.SetParent(g, false);
             var placedAt = new List<Vector3>();
             foreach (var p in Object.FindObjectsByType<Project1.Systems.Pallet>()) placedAt.Add(p.transform.position);
+            placedAt.AddRange(MirrorSpots); // 순간이동 거울과 그 앞(들어가는·나오는 자리)은 비워 둔다
             int loopIn = 0, loopOut = 0, wallIn = 0, wallOut = 0;
             var loopSpots = new List<Vector3>();
             var wallSpots = new List<Vector3>();
@@ -165,7 +170,7 @@ namespace Project1.Map.EditorTools
             foreach (var c in WellCandidates)
             {
                 var p = Ground(new Vector3(c.x, 0f, c.y));
-                if (!Clear(p, 2.6f) || Blocked(p, new Vector3(3f, 2.5f, 3f), 0f)) continue;
+                if (!Clear(p, 1.8f) || Blocked(p, new Vector3(3f, 2.5f, 3f), 0f) || Near(p, MirrorSpots, 3.5f)) continue;
                 var well = new GameObject(PracticeWellName);
                 SceneManager.MoveGameObjectToScene(well, scene);
                 well.transform.position = p;
