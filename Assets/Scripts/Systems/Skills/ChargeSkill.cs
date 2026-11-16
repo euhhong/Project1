@@ -8,7 +8,7 @@ namespace Project1.Systems
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
     /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   기절 시간은 달린 거리에 비례: 짧게 달릴수록 짧게(minCrashStun 0.2초, 거의 안 달림) ~ crashRecovery(1.8초, fullCrashDistance 12m 이상).
-    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음) 상대는 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
+    /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 비례한 세기로 밀려나고(knockSpeedPerMeter, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만 기절: wallStunBase(2초) + 돌진한 시간 × wallStunPerSecond(최대 wallStunMax 5초).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
@@ -103,8 +103,9 @@ namespace Project1.Systems
             if (victim != null)
             {
                 float distance = elapsed * chargeSpeed;
-                Vector3 dir = Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up);
-                dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
+                // 넉백 방향 = 돌진하던 쪽(내가 보던 앞). 두 몸의 중심을 잇는 방향은 옆을 스치듯 박으면 엉뚱하게 옆으로 튀어서 쓰지 않는다.
+                Vector3 dir = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up);
+                dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.ProjectOnPlane(victim.transform.position - owner.transform.position, Vector3.up).normalized;
                 float speed = Mathf.Clamp(distance * knockSpeedPerMeter, minKnockSpeed, maxKnockSpeed);
                 float wallStun = Mathf.Min(wallStunMax, wallStunBase + elapsed * wallStunPerSecond); // 벽에 박히면(돌진한 시간에 비례, 최대 5초)
                 Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true);

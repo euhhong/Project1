@@ -160,7 +160,7 @@ namespace Project1.Systems
                     VictimId = victim.Id,
                     Part = BodyPart.Body,
                     Slot = HitboxSlot.Weapon,
-                    AttackId = -(400000 + GetInstanceID() % 100000),
+                    AttackId = -(400000 + (GetEntityId().GetHashCode() & 0x7fffffff) % 100000),
                     Tick = SimulationTick.Current,
                     Point = hb.Collider.ClosestPoint(center),
                     Kind = AttackKind.Skill,
