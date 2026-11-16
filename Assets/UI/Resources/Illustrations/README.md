@@ -19,7 +19,7 @@
 | 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |
 | 포워드 | Survivor_Forward.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
 | 용병 | Survivor_Mercenary.png | ✅ (1402×1122, 흰 배경 — 붉은빛을 조금 빼고 넣음) |
-| 맹인 | Survivor_MindsEye.png | ✅ (1199×1312, 배경까지 그린 그림 — 누끼 대신 가장자리를 서서히 투명하게) |
+| 맹인 | Survivor_MindsEye.png | ✅ (1199×1312, 흰 배경 — 모자 꽃·어깨 털·점자 종이는 지킬 칸) |
 | 도둑 | Survivor_Thief.png | ✅ (1402×1122, 투명 배경 — 채팅 첨부본) |
 
 원본은 채팅 첨부(압축 WebP)가 아니라 원본 PNG 파일로 받는다 — 채팅 첨부는 화질이 떨어진다.

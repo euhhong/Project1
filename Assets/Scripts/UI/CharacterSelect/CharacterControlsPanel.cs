@@ -68,7 +68,7 @@ namespace Project1.UI
             bool survivor = entry.role == CharacterRole.Survivor;
             var c = CharacterControlsText.For(entry);
 
-            Row(Mouse(false), "평타", null, null);
+            Row(Mouse(false), "평타", null, CharacterControlsText.AttackTooltip(entry));
             if (survivor) Row(Mouse(true), "차징 · " + CharacterControlsText.SurvivorCharge, null, CharacterControlsText.ParryTooltip);
             else Row(Mouse(true), "차징", c.Charge, null);
             string skillName = entry.skill != null && !string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.displayName : "스킬";

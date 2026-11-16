@@ -36,8 +36,10 @@ namespace Project1.UI.Editor
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
         private static readonly Dictionary<string, RectInt[]> ProtectRects = new() { ["Hunter_Gamekeeper"] = new[] { new RectInt(452, 198, 150, 132), new RectInt(464, 330, 106, 60), new RectInt(410, 390, 300, 250) },
             // 검은 배경 그림: 배경에 붙은 검은 옷(칸 안에서는 새까만 배경만 빠짐)
+            // 맹인(흰 배경): 모자 꽃, 어깨 흰 털, 날리는 점자 종이 3장, 스웨터 아랫부분 — 흰 배경과 이어져 빠지면 안 되는 곳
+            ["Survivor_MindsEye"] = new[] { new RectInt(632, 0, 140, 112), new RectInt(335, 495, 130, 150), new RectInt(754, 516, 116, 119),
+                new RectInt(185, 412, 178, 170), new RectInt(860, 215, 112, 118), new RectInt(866, 580, 186, 195), new RectInt(495, 880, 260, 330) },
             ["Hunter_Ripper"] = new[] { new RectInt(340, 20, 210, 270), new RectInt(330, 230, 480, 330), new RectInt(300, 560, 600, 562), new RectInt(810, 262, 400, 150) },
-            ["Survivor_MindsEye"] = new[] { new RectInt(420, 200, 490, 380), new RectInt(630, 540, 250, 200) }, // 머리카락·고글·목도리 매듭의 어두운 그늘
         };
         private const float PureWhite = 0.975f;  // 갇힌 흰 배경을 찾을 때: 이만큼 새하얀 픽셀이
         private const int EnclosedMinArea = 2000; // 이만큼 넓게 뭉쳐 있으면 배경

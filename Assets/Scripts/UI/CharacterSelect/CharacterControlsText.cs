@@ -19,6 +19,13 @@ namespace Project1.UI
         public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 주먹을 막는다.\n막으면 상대를 0.5초 스턴한다.\n떼면 돌려차기.";
         public const string PalletDrop = "판자 내리기";
         public const string PalletDropDesc = "판자 옆에서 · 깔린 감시자는 경직";
+        // 평타 설명(마우스를 올리면). 생존자는 주먹, 감시자는 무기. 맹인은 지팡이.
+        public const string SurvivorAttackTooltip = "주먹으로 공격한다.\n달리며 점프하면 발차기.";
+        public const string HunterAttackTooltip = "무기로 공격한다.\n달리며 점프하면 내려치기.";
+        public const string MindsEyeAttackTooltip = "지팡이로 공격해 밀어낸다.\n달리며 점프하면 발차기.";
+
+        public static string AttackTooltip(CharacterRoster.Entry entry) =>
+            entry.id == "Survivor_MindsEye" ? MindsEyeAttackTooltip : entry.role == CharacterRole.Hunter ? HunterAttackTooltip : SurvivorAttackTooltip;
 
         private static readonly Dictionary<string, Controls> ById = new()
         {
