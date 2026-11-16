@@ -18,7 +18,7 @@
 | 카우보이 | Survivor_Cowboy.png | ✅ (1402×1122, 흰 배경 — 둘레 흰 천 조각 효과는 뺌) |
 | 의사 | Survivor_Doctor.png | ✅ (1402×1122, 흰 배경) |
 | 포워드 | Survivor_Forward.png | ✅ (1402×1122, 원본 투명 배경 그대로) |
-| 용병 | Survivor_Mercenary.png | |
+| 용병 | Survivor_Mercenary.png | ✅ (1402×1122, 흰 배경) |
 | 맹인 | Survivor_MindsEye.png | ✅ (1402×1122, 검은 배경) |
 | 도둑 | Survivor_Thief.png | ✅ (1402×1122, 투명 배경 — 채팅 첨부본) |
 

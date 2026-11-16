@@ -24,7 +24,7 @@ namespace Project1.UI.Editor
         // 얼굴이 아주 창백해 흰 배경과 거의 이어진 그림 — 살색 지키기를 켠다(분홍 연기·붉은 리본이 있는 그림에 켜면 그쪽이 덜 빠지므로 필요한 그림만).
         private static readonly HashSet<string> SkinProtectIds = new() { "Survivor_Doctor" };
         // 갇힌 흰 배경으로 볼 크기(픽셀 수)를 그림마다 다르게 — 사냥터지기: 흰 셔츠(넓음)는 남기고 쇠사슬 고리 속 작은 흰 구멍만 뺀다.
-        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue) };
+        private static readonly Dictionary<string, (int min, int max)> EnclosedRanges = new() { ["Hunter_Gamekeeper"] = (20, int.MaxValue), ["Survivor_Cowboy"] = (200, int.MaxValue), ["Survivor_Mercenary"] = (80, int.MaxValue) };
         // 흰 배경 빼기를 더 세게(그림마다): 카우보이 — 둘레에 날리는 옅은 흰/분홍 천 조각 효과까지 배경으로 빼 버린다(사용자 요청).
         private static readonly Dictionary<string, (float flood, float full, float step)> StrongWhite = new() { ["Survivor_Cowboy"] = (0.3f, 0.62f, 0.3f) };
         // 지킬 칸(그림 위쪽 기준 픽셀 x, y, 너비, 높이) — 사냥터지기: 이마(뿔 사이 흰 털)와 가슴의 흰 셔츠(목깃부터 허리띠 위까지).
