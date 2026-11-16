@@ -13,7 +13,7 @@ namespace Project1.Systems
         public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
 
         [Tooltip("회복량(최대 체력 대비 비율).")]
-        [Range(0f, 1f)] public float healFraction = 0.4f;
+        [Range(0f, 1f)] public float healFraction = 0.28f;
 
         public override bool CanStart(GameObject owner, out string reason)
         {

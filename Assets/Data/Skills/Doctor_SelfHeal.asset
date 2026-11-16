@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.SelfHealSkill
   id: Doctor_SelfHeal
   displayName: "\uC790\uAC00\uCE58\uB8CC"
-  castTime: 1.5
+  castTime: 1.1
   cooldown: 0
   castMoveSpeed: 0
-  healFraction: 0.4
+  healFraction: 0.28
