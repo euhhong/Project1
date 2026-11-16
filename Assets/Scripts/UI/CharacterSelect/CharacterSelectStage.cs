@@ -61,6 +61,15 @@ namespace Project1.UI
             camera.backgroundColor = Color.clear; // 배경 투명 — 화면 배경 위에 캐릭터만 얹힌다
             camera.allowHDR = false; // HDR 중간 버퍼는 알파가 없어 배경이 투명하지 않게 된다
             camera.targetTexture = Texture;
+
+            // 화면에 그리는 카메라가 하나도 없으면 에디터 Game 창이 "No cameras rendering" 글자를 UI 위에 띄운다 — 아무것도 찍지 않고 화면만 지우는 카메라를 둔다.
+            var screenGo = new GameObject("ScreenClearCamera");
+            screenGo.transform.SetParent(root.transform, false);
+            var screenCam = screenGo.AddComponent<Camera>();
+            screenCam.cullingMask = 0;
+            screenCam.clearFlags = CameraClearFlags.SolidColor;
+            screenCam.backgroundColor = Color.black;
+            screenCam.depth = -100f;
         }
 
         /// <summary>한 진영의 캐릭터를 늘어놓고 focus 앞에 카메라를 바로 둔다.</summary>

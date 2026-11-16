@@ -8,7 +8,7 @@ namespace Project1.UI
     /// <summary>
     /// 캐릭터 선택 화면 UI(UI Toolkit, 코드로 만든다). 배치·글꼴·넘길 때 연출만 맡고, 무엇을 고를지는 CharacterSelectScreen이 정한다.
     /// 배치(기준 1920×1080): 맨 왼쪽 3D 모델(창·테두리 없이 배경에 바로 서서 일러스트 아래쪽 앞에 겹침), 가운데 크게 일러스트(누끼) + 바로 아래 캐릭터 이름,
-    /// 오른쪽 위 끝에 게임 시작·연습 버튼, 오른쪽에 정보 칸, 양 끝 ‹ › 화살표, 왼쪽 위 진영 탭.
+    /// 오른쪽 위 끝에 게임 시작·연습 버튼, 오른쪽에 조작 칸(CharacterControlsPanel), 양 끝 ‹ › 화살표, 왼쪽 위 진영 탭.
     /// </summary>
     public class CharacterSelectView : IDisposable
     {
@@ -38,8 +38,9 @@ namespace Project1.UI
         private readonly Dictionary<string, Texture2D> illustrations = new();
         private readonly HashSet<VisualElement> hovered = new();
 
-        private VisualElement illusLayer, illus, glow, wipe, wipeLine, nameBlock, nameRule, dots;
-        private Label watermark, missing, nameLabel, subLabel, infoRole, skillHeader, skillName, skillMeta;
+        private VisualElement illusLayer, illus, glow, wipe, wipeLine, nameBlock, nameRule;
+        private CharacterControlsPanel controls;
+        private Label watermark, missing, nameLabel, subLabel;
         private Button hunterTab, survivorTab, startButton, practiceButton, prevArrow, nextArrow;
         private CharacterRole role;
         private Color accent = SurvivorAccent;
@@ -169,42 +170,8 @@ namespace Project1.UI
             practiceButton = MakeButton(buttons, "연습", 46, 66f, () => StartRequested?.Invoke(false));
             practiceButton.style.marginTop = 12f;
 
-            // 정보 칸: 오른쪽, 버튼 아래
-            var info = new VisualElement();
-            info.style.position = Position.Absolute;
-            info.style.left = ColumnLeft; info.style.width = ColumnWidth;
-            info.style.top = 266f; info.style.bottom = 110f;
-            root.Add(info);
-            info.style.backgroundColor = new Color(0.03f, 0.045f, 0.07f, 0.62f);
-            Border(info, 1f, Line);
-            info.style.paddingLeft = info.style.paddingRight = 32f;
-            info.style.paddingTop = 26f; info.style.paddingBottom = 24f;
-
-            infoRole = Text(info, "", bodyFont, 22, accent);
-            dots = new VisualElement { pickingMode = PickingMode.Ignore };
-            dots.style.flexDirection = FlexDirection.Row;
-            dots.style.marginTop = 10f;
-            info.Add(dots);
-
-            var rule = new VisualElement { pickingMode = PickingMode.Ignore };
-            rule.style.height = 1f;
-            rule.style.backgroundColor = Line;
-            rule.style.marginTop = 22f; rule.style.marginBottom = 20f;
-            info.Add(rule);
-
-            skillHeader = Text(info, "고유 스킬", titleFont, 44, accent);
-            skillName = Text(info, "", bodyFont, 32, Ink);
-            skillName.style.marginTop = 8f;
-            skillName.style.whiteSpace = WhiteSpace.Normal;
-            skillMeta = Text(info, "", bodyFont, 22, InkDim);
-            skillMeta.style.marginTop = 8f;
-
-            var spacer = new VisualElement { pickingMode = PickingMode.Ignore };
-            spacer.style.flexGrow = 1f;
-            info.Add(spacer);
-
-            var keys = Text(info, "A·D  캐릭터 넘기기        W·S  감시자 / 생존자\n2·G  게임 시작        1·Enter  연습        모델은 끌어서 돌려 보기", bodyFont, 18, InkDim);
-            keys.style.whiteSpace = WhiteSpace.Normal;
+            // 정보 칸: 오른쪽, 버튼 아래 — 조작만(CharacterControlsPanel)
+            controls = new CharacterControlsPanel(root, titleFont, bodyFont, ColumnLeft, 266f, ColumnWidth, 110f);
         }
 
         private void BuildTabs(VisualElement root)
@@ -250,28 +217,7 @@ namespace Project1.UI
             watermark.text = entry.displayName;
             string roleName = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
             subLabel.text = roleName;
-            infoRole.text = $"{roleName}   ·   {index + 1:00} / {count:00}";
-            if (entry.skill != null)
-            {
-                skillName.text = string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.name : entry.skill.displayName;
-                skillMeta.text = $"재사용 대기 {entry.skill.cooldown:0.#}초   ·   E";
-            }
-            else
-            {
-                skillName.text = "없음";
-                skillMeta.text = "";
-            }
-
-            dots.Clear();
-            for (int i = 0; i < count; i++)
-            {
-                var d = new VisualElement { pickingMode = PickingMode.Ignore };
-                bool on = i == index;
-                d.style.width = on ? 26f : 10f; d.style.height = 6f;
-                d.style.marginLeft = d.style.marginRight = 3f;
-                d.style.backgroundColor = on ? accent : new Color(Ink.r, Ink.g, Ink.b, 0.25f);
-                dots.Add(d);
-            }
+            controls.Show(entry, accent);
 
             var tex = Illustration(entry.id);
             illus.style.backgroundImage = tex != null ? new StyleBackground(tex) : new StyleBackground(StyleKeyword.None);
@@ -289,10 +235,7 @@ namespace Project1.UI
             nameLabel.text = "없음";
             watermark.text = "";
             subLabel.text = "고를 캐릭터가 없습니다";
-            infoRole.text = shownRole == CharacterRole.Hunter ? "감시자" : "생존자";
-            skillName.text = "";
-            skillMeta.text = "";
-            dots.Clear();
+            controls.ShowEmpty();
             illus.style.backgroundImage = new StyleBackground(StyleKeyword.None);
             missing.style.display = DisplayStyle.None;
         }
@@ -303,8 +246,6 @@ namespace Project1.UI
             accent = role == CharacterRole.Hunter ? HunterAccent : SurvivorAccent;
             nameRule.style.backgroundColor = accent;
             subLabel.style.color = accent;
-            infoRole.style.color = accent;
-            skillHeader.style.color = accent;
             glow.style.unityBackgroundImageTintColor = new Color(accent.r, accent.g, accent.b, 0.22f);
             wipe.style.backgroundColor = new Color(accent.r, accent.g, accent.b, 0.9f);
             Restyle();
