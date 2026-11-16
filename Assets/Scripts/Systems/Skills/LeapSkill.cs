@@ -43,6 +43,8 @@ namespace Project1.Systems
         public HitboxSlot slamSlot = HitboxSlot.Weapon;
         [Tooltip("내려찍기에 맞은 상대가 경직(기절, CharacterStun)되는 시간(초). 0이면 경직 없음.")]
         [Min(0f)] public float slamStun = 1f;
+        [Tooltip("땅에서 뛰어오른 뒤 이 시간(초) 동안은 공격 키를 눌러도 내려찍기가 나가지 않는다(바로 찍기 막기).")]
+        [Min(0f)] public float slamLockAfterLeap = 0.5f;
 
         [Header("공중에서 바로 (높이 떨어지는 중)")]
         [Tooltip("공중에서 E(빠르게 떨어지기)·공격(내려찍기)을 쓰려면 발밑 땅까지 이만큼(m) 이상 떠 있어야 한다. 보통 점프는 1.45m라 스페이스바 낮은 점프에서는 쓰이지 않는다.")]
@@ -138,7 +140,7 @@ namespace Project1.Systems
             {
                 // 막 뛰어오른 직후에는 아직 땅에 붙어 있을 수 있다.
                 if (elapsed > 0.15f && motor.IsGrounded) return true; // 그냥 착지
-                if (input.AttackPressed || input.LightAttack || input.HeavyCharging || input.HeavyRelease)
+                if (elapsed >= slamLockAfterLeap && (input.AttackPressed || input.LightAttack || input.HeavyCharging || input.HeavyRelease)) // 뛰고 나서 slamLockAfterLeap초 동안은 찍기 불가
                 {
                     ctx.SetPhase(Slamming);
                     ctx.AreaCenter = FindGround(ctx.transform.position);
