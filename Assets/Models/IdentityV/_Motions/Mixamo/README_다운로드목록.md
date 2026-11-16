@@ -19,8 +19,9 @@
 
 | 자리(저장 이름) | 용도 | 상태 | 받은 원본 |
 |---|---|---|---|
-| Walk_F / Walk_B / Walk_L / Walk_R | 걷기 4방향 | **받음** | Standing Walk Forward / Back / Left / Right |
-| Run_F | 앞 달리기(생존자·감시자 공통) | **받음** | Standard Run |
+| Walk_F / Walk_B / Walk_L / Walk_R | 걷기 4방향 | **받음 + Blender로 팔 고름**(`Tools/Blender/balance_arms.py`) — 앞·뒤: 오른팔을 왼팔을 비춘 동작(반 걸음 뒤)으로 바꿔 두 팔이 같은 크기로 엇갈려 흔들림(원래 오른팔은 굽힌 채 들고 있었음), 흔들림 85%. 옆: 흔들림 80% | Standing Walk Forward / Back / Left / Right |
+| Run_F | 앞 달리기(생존자·감시자 공통) | **받음 + Blender로 팔 고름**(`balance_arms.py`) — 두 팔을 고르게(비춤), 흔들림 50%(크게 휘젓던 것을 차분하게) | Standard Run |
+| Air_Move_F / Air_Move_B / Air_Move_L / Air_Move_R | 방향키를 누르며 점프(생존자) — 4방향을 MoveX·MoveZ로 섞음. 예전 걸어서 점프(Air_F)는 생존자에게서 뺌(감시자만 Air_F) | **Blender로 새로 만듦**(`Tools/Blender/make_move_jump.py`, 바탕 = Walk_F 첫 프레임) — 1 도약 → 10 꼭대기 → 20 착지 준비. 앞: 성큼 뛰기(앞 무릎 들고 팔 엇갈림), 뒤: 무릎 모으고 두 팔 앞·옆으로 균형, 옆: 가는 쪽 다리가 먼저 뻗고 두 팔을 벌려 균형 | (직접 만듦) |
 | Run_B / Run_L / Run_R | 뒤·옆 달리기 | 대기 — 지금은 같은 방향 걷기를 1.7배속으로 빌려 씀 | |
 | Attack_Light | 기본 공격(생존자, 맹인 제외) | **받음** — 오른손 훅 2~30프레임(판정 6~11). 만화 "펑" 효과 + 리치 1.8m(CartoonPunch) | Mutant Punch (전: Boxing) |
 | Attack_Light_MindsEye | 맹인 기본 공격 → `MindsEyeLocomotion` | **받음** — 10~48프레임, 첫 타 가로 베기 24~31 후 한 바퀴 돌아 앞을 봄(두 번째 타는 뺌) | Standing Melee Combo Attack Ver. 3 |
