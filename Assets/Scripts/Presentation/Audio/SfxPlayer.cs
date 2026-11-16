@@ -79,7 +79,7 @@ namespace Project1.Presentation
             var s = pool[next]; next = (next + 1) % pool.Count;
             s.transform.position = pos;
             s.pitch = pitch;
-            s.volume = Mathf.Clamp01(volume);
+            s.volume = Mathf.Clamp01(volume) * AudioVolume.Sfx; // 환경설정의 효과음 음량
             s.clip = clip;
             s.Play();
         }
