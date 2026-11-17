@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르면 넣는다. 배터리(batteryTime 6초)를 나눠 써서 재사용 대기 없이 껐다 켰다 할 수 있고,
+    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르면 넣는다. 배터리(batteryTime 12초)를 나눠 써서 재사용 대기 없이 껐다 켰다 할 수 있고,
     /// 다 쓰면 꺼지며 가득 다시 찬 뒤 emptyCooldown(1초) 뒤에 다시 켤 수 있다. 비추는 동안에도 달릴 수 있고, 걷기·달리기 속도만 moveSpeedScale배로 조금 느려진다.
     /// - 빛(원뿔: range m, 반각 halfAngle도, 벽에 가리면 안 닿음)에 든 상대는 LightExposure로 지져진다:
     ///   지져짐 게이지가 차서 일정 이상이면 그 상대의 E가 잠기고, 정면(얼굴 쪽)으로 받으면 따로 정면 게이지도 차서 다 차면 기절 + 피해(stunDamage).
@@ -38,7 +38,7 @@ namespace Project1.Systems
 
         [Header("배터리 — 나눠 쓰기")]
         [Tooltip("배터리(초): 켜 있는 동안만 줄고, 껐다 켰다 해도 재사용 대기 없이 남은 만큼 이어 쓴다.")]
-        [Min(0.5f)] public float batteryTime = 6f;
+        [Min(0.5f)] public float batteryTime = 12f; // 6초 → 12초(2배)
         [Tooltip("배터리를 다 쓰면 꺼지고 가득 다시 찬 뒤 이 시간(초)이 지나야 다시 켤 수 있다.")]
         [Min(0f)] public float emptyCooldown = 1f;
 
