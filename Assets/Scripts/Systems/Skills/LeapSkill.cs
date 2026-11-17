@@ -89,11 +89,18 @@ namespace Project1.Systems
             return false;
         }
 
-        // 이번 시전이 땅에서 E로 뛰어오른 도약인지(공중에서 바로 내려찍기·떨어지기는 아님) — 그때만 재사용 대기.
+        // 이번 시전이 땅에서 E로 뛰어오른 도약인지(공중에서 바로 내려찍기·떨어지기는 아님). 공중 좌클릭 내려찍기는 StartedByAttack으로 따로 본다.
         private static readonly System.Collections.Generic.HashSet<CharacterSkill> groundLeaps = new();
 
-        /// <summary>땅에서 E로 뛰어오른 도약만, 내려찍기·떨어지기가 끝난 뒤 cooldown(7초). 높이 떨어지는 중에 바로 쓴 내려찍기·떨어지기는 재사용 대기 없음.</summary>
-        public override float CooldownFor(CharacterSkill ctx) => groundLeaps.Contains(ctx) ? cooldown : 0f;
+        /// <summary>
+        /// 재사용 대기(cooldown 7초)는 E로 땅에서 뛰어오른 도약과 공중 좌클릭 내려찍기에만 걸린다.
+        /// 높은 곳에서 E로 빠르게 떨어지기(공격 없음, 낙하 피해 없음)는 기본 동작이라 대기가 없다.
+        /// </summary>
+        public override float CooldownFor(CharacterSkill ctx) => groundLeaps.Contains(ctx) || ctx.StartedByAttack ? cooldown : 0f;
+
+        /// <summary>높이 떨어지는 중 E = 빠르게 떨어지기는 재사용 대기 중에도 쓸 수 있다(하던 대기는 그대로 흐름).</summary>
+        public override bool CanStartWhileCooling(GameObject owner) =>
+            owner.TryGetComponent(out ICharacterState state) && !state.IsGrounded && HeightAboveGround(owner.transform.position) >= minAirHeight;
 
         public override void OnStart(CharacterSkill ctx)
         {

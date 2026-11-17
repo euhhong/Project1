@@ -45,6 +45,12 @@ namespace Project1.Systems
         /// <summary>시전 중 공격하면 시전이 끊기는지. 기본: 공격을 막지 않는 스킬(자가치료)은 끊긴다. 켜 두는 스킬(용병 아대)은 false.</summary>
         public virtual bool CancelledByAttack => !LocksActions;
 
+        /// <summary>
+        /// 재사용 대기 중이어도 E로 시작할 수 있는지(예: 재앙의 도마뱀 — 높이 떨어지는 중 빠르게 떨어지기는 기본 동작이라 대기와 상관없음).
+        /// 이렇게 시작한 시전은 하던 대기를 멈추지 않고, 끝나면 남은 대기를 그대로 잇는다(CooldownFor가 더 길면 그것). 기본 false.
+        /// </summary>
+        public virtual bool CanStartWhileCooling(GameObject owner) => false;
+
         /// <summary>시전에 시간 제한이 없는지(castTime이 지나도 끝나지 않음 — Tick이 끝낼 때·기절·죽음까지, 예: 광대 로켓 돌진). 기본 false.</summary>
         public virtual bool NoTimeLimit => false;
 

@@ -107,6 +107,7 @@ namespace Project1.Systems
                     if (self != null && !self.CanHit(touched)) return true;
                     victim = touched;
                 }
+                else if (Grazing(owner, motor)) return false; // 벽·물건을 비스듬히 스침 → 멈추지 않고 미끄러지며 계속
             }
 
             // 박치기: 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
@@ -135,6 +136,26 @@ namespace Project1.Systems
             float stunTime = Mathf.Lerp(minCrashStun, crashRecovery, Mathf.Pow(Mathf.Clamp01(run / fullKnockRun), knockCurve)); // 박치기와 같은 곡선: 5m ≈ 0.25초, 16m ≈ 0.5초, 32m ≈ 1.1초, 45m 이상 = 1.8초
             CharacterStun.ApplyBreakable(owner, stunTime); // 방향 없음 = 앞으로 숙이는 일반 기절. 깨지는 기절: 맞거나 밀리거나 충격파·다른 기절이 걸리면 바로 풀림
             recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
+            return true;
+        }
+
+        [Header("벽·물건에 부딪혀 멈추는 판정")]
+        [Tooltip("부딪힌 면이 정면에서 이 각도(도) 안일 때만 멈춘다. 그보다 비스듬히 스치면 미끄러지며 계속 달린다.")]
+        [Range(10f, 89f)] public float crashAngle = 45f;
+        [Tooltip("비스듬히 스쳐도 실제로 나아가는 빠르기가 돌진 속도의 이 비율보다 느리면(구석에 끼임) 멈춘다.")]
+        [Range(0f, 1f)] public float stuckSpeedRatio = 0.3f;
+
+        /// <summary>벽·물건을 비스듬히 스치는 중인지(멈추지 않음): 부딪힌 면이 정면에서 crashAngle보다 비스듬하고, 실제로 잘 나아가고 있으면.</summary>
+        private bool Grazing(GameObject owner, CharacterMotor motor)
+        {
+            Vector3 fwd = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
+            Vector3 n = motor.LastObstacleNormal;
+            if (n.sqrMagnitude < 1e-4f || Vector3.Dot(-fwd, n) >= Mathf.Cos(crashAngle * Mathf.Deg2Rad)) return false; // 정면에 가깝게 박음
+            if (owner.TryGetComponent(out CharacterController cc))
+            {
+                Vector3 v = cc.velocity; v.y = 0f;
+                if (v.magnitude < chargeSpeed * stuckSpeedRatio) return false; // 구석에 끼어 못 나아감
+            }
             return true;
         }
 

@@ -100,12 +100,14 @@ namespace Project1.Systems
         public bool LocksActions =>
             State == SkillState.Recovering || (State == SkillState.Casting && skill != null && skill.LocksActions);
 
-        public bool CanUse
+        public bool CanUse => CheckUsable(false);
+
+        /// <summary>쓸 수 있는지. allowCooling = 재사용 대기 중이어도 되는지(SkillDefinition.CanStartWhileCooling — 예: 재앙의 도마뱀 빠르게 떨어지기).</summary>
+        private bool CheckUsable(bool allowCooling)
         {
-            get
             {
                 if (skill == null) { BlockedReason = null; return false; } // 보통 스킬이 없는 캐릭터(노란옷의 왕·안토니오 — E는 다른 기능이 받음): 이유 글을 띄우지 않는다
-                if (State != SkillState.Ready) { BlockedReason = null; return false; }
+                if (State != SkillState.Ready && !(allowCooling && State == SkillState.Cooldown)) { BlockedReason = null; return false; }
                 if (IsStunned) { BlockedReason = "기절"; return false; }
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
                 if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) { BlockedReason = null; return false; } // 오르는 중·매달림
@@ -139,6 +141,7 @@ namespace Project1.Systems
             CooldownRemaining = 0f;
             RecoveryProgress = 0f;
             FreeRecastLeft = 0f; freeRecastPending = 0f;
+            heldCooldown = 0f;
         }
 
         public bool TryGetSpeedLimit(out float maxSpeed)
@@ -198,6 +201,7 @@ namespace Project1.Systems
             if (inputSource == null) Awake(); // Play 중 재컴파일로 참조가 비었을 때 복구
             CharacterInputFrame input = inputSource != null ? inputSource.ReadInput() : default;
             float dt = Time.fixedDeltaTime;
+            if (heldCooldown > 0f) heldCooldown = Mathf.Max(0f, heldCooldown - dt); // 대기 중에 쓴 동작이 진행되는 동안에도 대기는 흐른다
 
             switch (State)
             {
@@ -254,7 +258,13 @@ namespace Project1.Systems
 
                 case SkillState.Cooldown:
                     CooldownRemaining = Mathf.Max(0f, CooldownRemaining - dt);
-                    if (CooldownRemaining <= 0f) State = SkillState.Ready;
+                    if (CooldownRemaining <= 0f) { State = SkillState.Ready; break; }
+                    // 재사용 대기와 상관없이 쓰는 동작(예: 재앙의 도마뱀 높은 곳에서 빠르게 떨어지기): 대기는 멈추지 않고 이어 가다 시전이 끝나면 남은 만큼 되돌린다
+                    if (input.Skill && skill.CanStartWhileCooling(gameObject) && CheckUsable(true))
+                    {
+                        heldCooldown = CooldownRemaining; heldCooldownDuration = cooldownDuration;
+                        StartedFromCombo = false; StartedByAttack = false; StartCast();
+                    }
                     break;
             }
         }
@@ -290,6 +300,10 @@ namespace Project1.Systems
             else if (completed)
             {
                 StartCooldown();
+            }
+            else if (heldCooldown > 0f)
+            {
+                StartCooldown(); // 대기 중에 쓴 동작이 끊김 → 하던 대기를 남은 만큼 잇는다
             }
             else
             {
@@ -334,9 +348,25 @@ namespace Project1.Systems
         public float FreeRecastLeft { get; private set; }
         private float freeRecastPending;
 
+        // 재사용 대기 중에 시작한 시전(CanStartWhileCooling)이 들고 있는 남은 대기(초) — 시전 중에도 줄고, 끝나면 되돌린다.
+        private float heldCooldown, heldCooldownDuration;
+
         private void StartCooldown()
         {
             RecoveryProgress = 0f;
+            if (heldCooldown > 0f)
+            {
+                // 대기 중에 쓴 동작이 끝남: 그 동작 자체의 대기(CooldownFor)가 더 길지 않으면 하던 대기를 남은 만큼 잇는다
+                float own = SkillCooldowns.Scale(skill != null ? skill.CooldownFor(this) : 0f);
+                float rest = heldCooldown; heldCooldown = 0f;
+                if (own <= rest)
+                {
+                    cooldownDuration = heldCooldownDuration;
+                    State = SkillState.Cooldown;
+                    CooldownRemaining = rest;
+                    return;
+                }
+            }
             if (freeRecastPending > 0f)
             {
                 // 바로 다시 쓸 수 있는 시간: 준비 상태로 두고, 그 안에 안 쓰면 그때 재사용 대기(Ready 틱에서)
