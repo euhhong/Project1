@@ -12,7 +12,7 @@ namespace Project1.Presentation
     [DisallowMultipleComponent]
     public class HellEmberWeaponFade : MonoBehaviour
     {
-        private const string WeaponName = "HellEmber_Weapon";
+        public const string WeaponName = "HellEmber_Weapon"; // 몸 투명화(CameraBlockedBodyFade)는 이 렌더러를 건드리지 않는다(서로 머티리얼을 바꿔 끼우다 꼬이지 않게)
 
         [Tooltip("흐려졌을 때 불투명도(0 = 안 보임).")]
         [SerializeField, Range(0f, 1f)] private float alpha = 0.25f;

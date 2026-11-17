@@ -5,7 +5,7 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 등 뒤가 벽이라 카메라가 몸 쪽으로 당겨지면(ThirdPersonCamera.Blocked01) 몸 전체를 반투명하게(연출 전용, 공장장 인형 차징 때 망치 흐려지기와 같은 방식).
-    /// 앞으로 걸어 나가 카메라가 다시 물러나면 부드럽게 원래대로. 카메라가 따라가는 캐릭터(내 캐릭터)일 때만 — 몸이 커서 화면을 가리는 노란옷의 왕에게 붙인다(CharacterLoadout).
+    /// 앞으로 걸어 나가 카메라가 다시 물러나면 부드럽게 원래대로. 카메라가 따라가는 캐릭터(내 캐릭터)일 때만, 내 화면에서만(상대에게는 그대로 보임) — 모든 캐릭터에 붙인다(CharacterLoadout).
     /// URP Lit 원본 머티리얼(에셋)은 건드리지 않는다: 흐려지는 동안만 투명 모드 사본(이름 끝 OutlineMeshCopy.FadeSuffix)을 끼우고, 다 돌아오면 원본으로. 흐린 동안 흰 윤곽선 등 복사본("~")은 숨긴다.
     /// </summary>
     [DisallowMultipleComponent]
@@ -96,7 +96,8 @@ namespace Project1.Presentation
             parts.Clear();
             builtFor = sig;
             foreach (var r in GetComponentsInChildren<Renderer>(true))
-                if (OutlineMeshCopy.IsModelRenderer(r)) parts.Add(new Part { r = r, originals = r.sharedMaterials });
+                if (OutlineMeshCopy.IsModelRenderer(r) && r.name != HellEmberWeaponFade.WeaponName) // 공장장 망치는 HellEmberWeaponFade가 따로 흐리게 한다
+                    parts.Add(new Part { r = r, originals = r.sharedMaterials });
         }
 
         /// <summary>원본 머티리얼의 사본을 투명(알파 섞기) 모드로 — URP Lit 기준(HellEmberWeaponFade와 같음).</summary>

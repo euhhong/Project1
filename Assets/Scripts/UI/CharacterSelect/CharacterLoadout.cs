@@ -66,7 +66,7 @@ namespace Project1.UI
             SetProp<HasturLegWriggle>(player, entry.id == "Hunter_Hastur");   // 노란옷의 왕: 다리 촉수 다섯 가닥 꿈틀거림(FE)
             SetProp<HasturKnockdownPose>(player, entry.id == "Hunter_Hastur"); // 노란옷의 왕: 헤드샷 날아 차기에 나가떨어짐 — 꽈배기 다리·팔 앞으로 뻗고 떠오름, 팔로 밀며 용수철처럼 일어남(FE)
             SetProp<HasturBowPose>(player, entry.id == "Hunter_Hastur");      // 노란옷의 왕: 촉수를 내려찍는 동안 허리를 숙여 인사하는 자세(FE) — 그동안 평타·촉수 세우기 잠김(BE TentacleField)
-            SetProp<CameraBlockedBodyFade>(player, entry.id == "Hunter_Hastur"); // 노란옷의 왕: 등 뒤 벽 때문에 카메라가 몸 쪽으로 당겨지면 몸 전체 반투명(FE)
+            SetProp<CameraBlockedBodyFade>(player, true); // 모든 캐릭터: 등 뒤 벽 때문에 카메라가 몸 쪽으로 당겨져 몸이 화면을 가리면 몸 전체 반투명 — 카메라가 따라가는 내 캐릭터만, 내 화면에서만(FE)
             SetProp<LuchinoTailSway>(player, entry.id == "Hunter_Luchino");   // 재앙의 도마뱀: 꼬리 흔들기·관성(돌면 처졌다 따라옴, 착지하면 탁 침)(FE)
             SetProp<WeaponHitboxPad>(player, entry.id == "Hunter_Luchino");   // 재앙의 도마뱀: 마체테 판정을 두껍고 조금 길게(빠른 가로 베기가 틱 사이에 빗나가지 않게)(BE)
             SetProp<NoteVisual>(player, entry.id == "Hunter_Antonio");  // 안토니오: 음표·전류선 연출(FE)
