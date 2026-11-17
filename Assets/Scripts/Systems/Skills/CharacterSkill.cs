@@ -234,11 +234,12 @@ namespace Project1.Systems
                         break;
                     }
                     castTime += dt;
-                    CastProgress = skill.castTime > 0f ? Mathf.Clamp01(castTime / skill.castTime) : 1f;
+                    bool unlimited = skill.NoTimeLimit; // 시간 제한 없음(광대 로켓 돌진) — Tick이 끝낼 때까지
+                    CastProgress = unlimited ? 0f : skill.castTime > 0f ? Mathf.Clamp01(castTime / skill.castTime) : 1f;
                     PhaseTime += dt;
                     float recovery = 0f;
-                    bool early = castTime < skill.castTime && skill.Tick(this, input, castTime, out recovery);
-                    if (castTime >= skill.castTime || early)
+                    bool early = (unlimited || castTime < skill.castTime) && skill.Tick(this, input, castTime, out recovery);
+                    if ((!unlimited && castTime >= skill.castTime) || early)
                     {
                         skill.Complete(gameObject);
                         EndCast(true, early ? recovery : 0f);

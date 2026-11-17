@@ -10,7 +10,7 @@ namespace Project1.Presentation
     /// CharacterLoadout이 모든 캐릭터에 붙이고 Configure(id, 감시자?)로 폴더를 정한다(인스펙터 연결 없음). 소리 파일이 없는 종류는 조용히 넘어간다.
     /// - 공통: Attack(평타 휘두르기 — 있으면 일반 swing 대신) · Attack_Hit(평타 맞힘) · Attack_Wall(평타 벽 치기) · Footstep(발소리) · Vault(창틀 넘기)
     ///         · Jump/Land(있으면 일반 jump/land 대신) · PalletDrop(판자 내리기).
-    /// - 스킬: 사냥터지기 Hook/Hook_Hit · 카우보이 LassoSpin(조준 중 반복)/Lasso · 공군 FlareGun/FlareGun_Hit · 광대 Dash/Dash_Loop
+    /// - 스킬: 사냥터지기 Hook/Hook_Hit · 카우보이 LassoSpin(조준 중 반복)/Lasso · 공군 FlareGun/FlareGun_Hit · 광대 Dash(돌진하는 동안 점화→분사, 끊기지 않게 이어 감)
     ///         · 공장장 Shadow(자리 바꾸기·분신) · 붉은나비 ButterflyThrow/Leap · 맹인 Cane · 용병 ElbowPad · 안토니오 String_Start/Aim/Release · 재앙의 도마뱀 Land_Ice(도약 착지).
     /// </summary>
     [DisallowMultipleComponent]
@@ -34,7 +34,7 @@ namespace Project1.Presentation
         private const float FootVolume = 0.4f, VaultVolume = 0.8f, AttackVolume = 0.75f, SkillVolume = 0.85f;
 
         /// <summary>
-        /// 계속·반복해서 나는 소리(발소리, 올가미 돌리기·로켓 돌진 반복음)를 낼지. 끔 — 게임 중에는 BGM이 깔리고, 이름만 보고 붙인 반복음이 다른 소리(뛰는 소리·칙칙·꾸왁)로 계속 들려서.
+        /// 계속·반복해서 나는 소리(발소리, 올가미 돌리기 반복음)를 낼지(광대 로켓 분사는 따로 — RocketThrust). 끔 — 게임 중에는 BGM이 깔리고, 이름만 보고 붙인 반복음이 다른 소리(뛰는 소리·칙칙·꾸왁)로 계속 들려서.
         /// 동작 한 번에 한 번 나는 소리(평타·창틀·스킬·판자)만 낸다.
         /// </summary>
         private static readonly bool PlayRepeating = false;
@@ -284,7 +284,9 @@ namespace Project1.Presentation
                     if (casting) StartLoop("ChargeRun_Loop", "ChargeRun_Loop"); else if (loopKind == "ChargeRun_Loop") StopLoop();
                     break;
                 case "SmileyFace_RocketCharge":
-                    StopLoop(); // 돌진 중 반복 소리는 끔(PlayRepeating)
+                    // 로켓 돌진(녹화에서 잘라 낸 Joker_Dash): 돌진하는 동안만 점화 → 분사 소리가 끊기지 않게 이어지고(시간 제한 없음), 끝나면 멈춤. 들고 다니는 동안은 조용.
+                    if (casting && phase == RocketCharging) RocketThrust();
+                    else if (loopKind == RocketThrustKind) StopLoop();
                     break;
                 case "Mercenary_Guard":
                     if (phaseChanged && phase == WallDashing) Play("ElbowPad", Body, SkillVolume, 0.04f);
@@ -410,17 +412,20 @@ namespace Project1.Presentation
         }
 
         /// <summary>계속 나는 소리: 처음 한 번은 kind(여러 개 중 하나)를, 끝나면 loopKind를 반복. 이미 같은 소리가 나는 중이면 그대로.</summary>
+        private void EnsureLoopSource()
+        {
+            if (loopSource != null) return;
+            loopSource = gameObject.AddComponent<AudioSource>();
+            loopSource.playOnAwake = false;
+            loopSource.spatialBlend = 0.85f;
+            loopSource.rolloffMode = AudioRolloffMode.Linear;
+            loopSource.minDistance = 3f; loopSource.maxDistance = 40f;
+            loopSource.dopplerLevel = 0f;
+        }
+
         private void StartLoop(string kind, string loopKindName)
         {
-            if (loopSource == null)
-            {
-                loopSource = gameObject.AddComponent<AudioSource>();
-                loopSource.playOnAwake = false;
-                loopSource.spatialBlend = 0.85f;
-                loopSource.rolloffMode = AudioRolloffMode.Linear;
-                loopSource.minDistance = 3f; loopSource.maxDistance = 40f;
-                loopSource.dopplerLevel = 0f;
-            }
+            EnsureLoopSource();
             if (loopKind == kind)
             {
                 if (!loopSource.isPlaying) PlayLoopClip(loopKindName, true); // 첫 소리가 끝났으면 반복 소리로
@@ -428,6 +433,38 @@ namespace Project1.Presentation
             }
             loopKind = kind;
             if (!PlayLoopClip(kind, false)) PlayLoopClip(loopKindName, true);
+        }
+
+        // ── 광대 로켓 분사: 가장 긴 Dash 녹화(Joker_Dash_01, 11.5초) — 앞 0.35초 무음을 건너 점화부터, 끝의 부딪힘 소리(마지막 0.7초) 전에 2초 자리로 돌아가 분사만 이어 간다 ──
+        private const string RocketThrustKind = "RocketThrust";
+        private const float ThrustStart = 0.35f, ThrustLoopFrom = 2f, ThrustTailCut = 0.7f;
+
+        private void RocketThrust()
+        {
+            if (loopKind != RocketThrustKind || loopSource == null || loopSource.clip == null)
+            {
+                if (!clips.TryGetValue("Dash", out var list) || list.Count == 0) return;
+                AudioClip longest = null;
+                foreach (var path in list)
+                {
+                    var c = Resources.Load<AudioClip>($"Sfx/{path}");
+                    if (c != null && (longest == null || c.length > longest.length)) longest = c;
+                }
+                if (longest == null) return;
+                EnsureLoopSource();
+                loopKind = RocketThrustKind;
+                loopSource.clip = longest;
+                loopSource.loop = false;
+                loopSource.pitch = 1f;
+                loopSource.volume = SkillVolume * AudioVolume.Sfx;
+                loopSource.Play();
+                loopSource.time = Mathf.Min(ThrustStart, longest.length * 0.1f);
+                return;
+            }
+            var clip = loopSource.clip;
+            float loopFrom = Mathf.Min(ThrustLoopFrom, clip.length * 0.3f);
+            if (!loopSource.isPlaying) { loopSource.Play(); loopSource.time = loopFrom; }
+            else if (loopSource.time >= clip.length - ThrustTailCut) loopSource.time = loopFrom; // 끝의 부딪힘 소리 전에 분사 자리로
         }
 
         private bool PlayLoopClip(string kind, bool loop)

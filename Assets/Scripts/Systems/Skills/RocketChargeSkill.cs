@@ -72,8 +72,11 @@ namespace Project1.Systems
         [Min(0f)] public float wallStiffness = 1f;
         protected override float CrashStiffness => wallStiffness;
 
-        /// <summary>HUD: 돌진하는 동안만 남은 시간 막대(들고 다니는 동안은 없음).</summary>
-        public override float StatusBarFill(CharacterSkill ctx) => ctx.Phase == Charging ? float.NaN : -1f;
+        /// <summary>시간 제한 없음: 들고 다니기·돌진 모두 끊기지 않으면(벽·상대에 닿음, E로 멈춤, 좌클릭 취소, 기절) 계속된다.</summary>
+        public override bool NoTimeLimit => true;
+
+        /// <summary>HUD: 시간 제한이 없으니 남은 시간 막대도 없다.</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => -1f;
 
         [Header("옛 박치기 판정 — 몸에 닿으면 바로 기절(넉백 없음)")]
         [Tooltip("돌진한 거리 1m마다 상대 기절 시간(초) / 최소 / 최대.")]

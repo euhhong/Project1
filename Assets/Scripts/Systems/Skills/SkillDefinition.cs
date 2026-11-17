@@ -45,6 +45,9 @@ namespace Project1.Systems
         /// <summary>시전 중 공격하면 시전이 끊기는지. 기본: 공격을 막지 않는 스킬(자가치료)은 끊긴다. 켜 두는 스킬(용병 아대)은 false.</summary>
         public virtual bool CancelledByAttack => !LocksActions;
 
+        /// <summary>시전에 시간 제한이 없는지(castTime이 지나도 끝나지 않음 — Tick이 끝낼 때·기절·죽음까지, 예: 광대 로켓 돌진). 기본 false.</summary>
+        public virtual bool NoTimeLimit => false;
+
         /// <summary>시전 중 castMoveSpeed로 이동 속도를 제한할지. 켜 두는 스킬(용병 아대)은 false.</summary>
         public virtual bool LimitsMoveSpeed => true;
 
