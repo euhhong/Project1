@@ -23,7 +23,6 @@ namespace Project1.Systems
         private CharacterInputFrame cachedFrame;
         private ITentacleField tentacleField;
         private AiTentacleUser tentacles;
-        private bool tentacleChecked;
 
         public AiMeleeTactics Tactics => tactics ??= new AiMeleeTactics(gameObject, settings, view);
         public AiMeleeSettings Settings => settings;
@@ -53,7 +52,12 @@ namespace Project1.Systems
             view.SetTarget(target); // 인스펙터에서 바꿨을 때
             cachedFrame = Tactics.Tick(now, dt);
             // 노란옷의 왕: 촉수 세우기·내려찍기(TentacleField — E 스킬이 아니라 근접 AI가 쓰지 않음)
-            if (tentacleField == null && !tentacleChecked) { tentacleChecked = true; if (TryGetComponent(out ITentacleField tf)) { tentacleField = tf; tentacles = new AiTentacleUser(transform, tf); } }
+            // 캐릭터를 다시 입히면 TentacleField가 지워지고 새로 붙는다 — 지워진 것을 붙잡고 있지 않게, 없거나 지워졌으면 다시 찾는다.
+            if (tentacleField as Object == null)
+            {
+                if (TryGetComponent(out ITentacleField tf)) { tentacleField = tf; tentacles = new AiTentacleUser(transform, tf); }
+                else { tentacleField = null; tentacles = null; }
+            }
             if (tentacles != null && tentacleField is Behaviour { isActiveAndEnabled: true }) tentacles.Apply(ref cachedFrame, now, target);
             return cachedFrame;
         }

@@ -66,7 +66,7 @@ namespace Project1.Presentation
 
         private void LateUpdate()
         {
-            field ??= GetComponent<ITentacleField>();
+            if (field as Object == null) field = GetComponent<ITentacleField>(); // 지워진 TentacleField를 붙잡고 있지 않게
             if (field == null) return;
             if (root == null) Build();
             root.gameObject.SetActive(true);
