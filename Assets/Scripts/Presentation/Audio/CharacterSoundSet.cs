@@ -78,7 +78,9 @@ namespace Project1.Presentation
             StopLoop();
             if (folder == null) return;
             LoadFolder(folder, null);
-            if (Skipped.TryGetValue(folder, out var skip)) foreach (var kind in skip) clips.Remove(kind); // 이름과 다른 소리가 든 파일은 빼고 빌려 쓴다
+            if (Renamed.TryGetValue(folder, out var rename))
+                foreach (var (from, to) in rename)
+                    if (clips.Remove(from, out var moved)) clips[to] = moved; // 이름과 다른 소리가 든 파일은 맞는 종류로 옮기고, 빈 자리는 빌려 쓴다
             // 자기 소리가 없는 종류는 비슷한 캐릭터 것을 빌려 쓴다.
             if (Borrowed.TryGetValue(folder, out var borrow))
                 foreach (var (kind, donor) in borrow)
@@ -95,7 +97,7 @@ namespace Project1.Presentation
             ["Doctor"] = new[] { ("Footstep", "Coordinator") },
             ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
             ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
-            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("Footstep", "Mercenary") }, // 자기 Footstep 파일은 럭비공 박치기 소리라 발소리로 쓰지 않음(Skipped)
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("Footstep", "Mercenary") }, // 자기 Footstep 파일은 돌진 소리라 ChargeStep으로 옮김(Renamed)
             ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
             ["Thief"] = new[] { ("Footstep", "Mercenary"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
             ["Antonio"] = new[] { ("Footstep", "Ripper") },
@@ -105,10 +107,10 @@ namespace Project1.Presentation
             ["Hastur"] = new[] { ("Footstep", "Luchino"), ("Vault", "Luchino") }, // 촉수 다리 = 괴물 발소리
         };
 
-        /// <summary>자기 폴더에 있어도 쓰지 않는 종류(파일 이름과 실제 소리가 다름). 빠진 자리는 Borrowed로 채운다.</summary>
-        private static readonly Dictionary<string, string[]> Skipped = new()
+        /// <summary>자기 폴더의 종류를 다른 종류로 옮겨 쓴다(파일 이름과 실제 소리가 다름). 빠진 자리는 Borrowed로 채운다.</summary>
+        private static readonly Dictionary<string, (string From, string To)[]> Renamed = new()
         {
-            ["Forward"] = new[] { "Footstep" }, // 포워드 Footstep = 럭비공 돌진 박치기 소리 — 걸을 때마다 계속 나던 문제
+            ["Forward"] = new[] { ("Footstep", "ChargeStep") }, // 포워드 Footstep = 럭비공 돌진하며 달리는 소리 — 걸을 때 말고 돌진할 때만(걸을 때마다 나던 문제)
         };
 
         private void LoadFolder(string from, string onlyKind)
@@ -195,16 +197,19 @@ namespace Project1.Presentation
             Vector3 pos = transform.position;
             Vector3 delta = pos - lastPos; delta.y = 0f;
             lastPos = pos;
-            if (!Has("Footstep") || Time.deltaTime <= 0f) return;
+            // 돌진 중(포워드 럭비공)에는 돌진 발소리(ChargeStep — 포워드 자기 발소리 파일), 평소에는 Footstep
+            bool charging = skill != null && skill.State == SkillState.Casting && skill.SkillId == "Forward_Charge" && Has("ChargeStep");
+            string kind = charging ? "ChargeStep" : "Footstep";
+            if (!Has(kind) || Time.deltaTime <= 0f) return;
             bool grounded = motor == null || motor.IsGrounded;
             bool busy = traversal != null && traversal.Action != TraversalAction.None;
             float speed = delta.magnitude / Time.deltaTime;
-            if (!grounded || busy || speed < 0.8f || speed > 14f) { stepDistance = 0f; return; }
+            if (!grounded || busy || speed < 0.8f || speed > 25f) { stepDistance = 0f; return; } // 25 넘음 = 순간이동·도약 등
             stepDistance += delta.magnitude;
-            float stride = Mathf.Clamp(speed * 0.36f, 1.1f, 2.6f); // 빠를수록 보폭이 길지만 발소리 간격은 짧아진다
+            float stride = Mathf.Clamp(speed * 0.36f, 1.1f, charging ? 4f : 2.6f); // 빠를수록 보폭이 길지만 발소리 간격은 짧아진다
             if (stepDistance < stride) return;
             stepDistance = 0f;
-            Play("Footstep", transform.position, FootVolume * Mathf.Lerp(0.7f, 1f, speed / 7f), 0.08f);
+            Play(kind, transform.position, charging ? 0.75f : FootVolume * Mathf.Lerp(0.7f, 1f, speed / 7f), 0.08f);
         }
 
         // ── 창틀 넘기 ──
