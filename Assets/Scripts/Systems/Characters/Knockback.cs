@@ -19,6 +19,7 @@ namespace Project1.Systems
         private float impactPerSpeedOverride = -1f, impactStun;
         private bool impactStunWallOnly;
         private float wallMargin;
+        private System.Action<GameObject> onWall; // 벽·장애물에 박히면 한 번(데미지와 상관없이, 예: 맹인 — 평타 봉인)
         private static readonly RaycastHit[] WallHits = new RaycastHit[16];
         private Collider lastHit;
         private static readonly System.Collections.Generic.List<Project1.Core.IKnockbackReceiver> Receivers = new();
@@ -38,9 +39,10 @@ namespace Project1.Systems
         /// impactDamage = 벽·캐릭터에 부딪히면 데미지를 줄지(끄면 거기서 멈추기만 — 감시자 평타 넉백), impactPerSpeed = 부딪힘 데미지 배율(음수면 이 컴포넌트 값),
         /// impactStun = 부딪히면(데미지를 입으면) 더 거는 경직(초, 벽꿍 — 생존자 평타).
         /// impactStunWallOnly = impactStun을 벽·장애물에 박힐 때만(캐릭터에 부딪히면 아님), 데미지·빠르기와 상관없이 건다(예: 포워드 박치기).
-        /// wallMargin = 벽을 이만큼(m) 두껍게 본다: 밀리는 쪽으로 벽이 이 거리 안에 들어오면 닿지 않아도 박힌 것으로 친다(0 = 실제로 닿아야).</summary>
+        /// wallMargin = 벽을 이만큼(m) 두껍게 본다: 밀리는 쪽으로 벽이 이 거리 안에 들어오면 닿지 않아도 박힌 것으로 친다(0 = 실제로 닿아야).
+        /// onWall = 벽·장애물(캐릭터 아님)에 박히면 한 번 부른다(밀린 캐릭터) — 데미지와 상관없이.</summary>
         public static void Push(GameObject target, Vector3 velocity, float duration, float stunAfter = 0.1f, bool stun = true, bool impactDamage = true,
-            float impactPerSpeed = -1f, float impactStun = 0f, bool impactStunWallOnly = false, float wallMargin = 0f)
+            float impactPerSpeed = -1f, float impactStun = 0f, bool impactStunWallOnly = false, float wallMargin = 0f, System.Action<GameObject> onWall = null)
         {
             if (target == null || duration <= 0f) return;
             CharacterStun.BreakFragile(target); // 밀리면(모션이 바뀜) 깨지는 기절(돌진 벽 충돌 페널티)은 바로 풀린다
@@ -48,7 +50,7 @@ namespace Project1.Systems
             target.GetComponents(Receivers);
             foreach (var r in Receivers) r.OnKnockback(ref velocity); // 예: 매달린 채 맞으면 손을 놓고 벽 바깥으로 떨어져 나간다
             if (!target.TryGetComponent(out Knockback k)) k = target.AddComponent<Knockback>();
-            k.impactDamage = impactDamage; k.impactPerSpeedOverride = impactPerSpeed; k.impactStun = impactStun; k.impactStunWallOnly = impactStunWallOnly; k.wallMargin = wallMargin;
+            k.impactDamage = impactDamage; k.impactPerSpeedOverride = impactPerSpeed; k.impactStun = impactStun; k.impactStunWallOnly = impactStunWallOnly; k.wallMargin = wallMargin; k.onWall = onWall;
             k.Begin(velocity, duration, stunAfter, stun);
         }
 
@@ -94,6 +96,11 @@ namespace Project1.Systems
         {
             impacted = true;
             time = duration; // 더 밀리지 않는다(벽을 따라 미끄러지지 않게)
+            if (onWall != null)
+            {
+                var cb = onWall; onWall = null;
+                if (lastHit == null || lastHit.GetComponentInParent<CharacterIdentity>() == null) cb(gameObject); // 벽·장애물에 박힘(캐릭터에 부딪힌 것은 아님)
+            }
             if (impactStunWallOnly)
             {
                 // 벽·장애물에 박힘(캐릭터가 아님) → 데미지·빠르기와 상관없이 기절(예: 포워드 박치기)

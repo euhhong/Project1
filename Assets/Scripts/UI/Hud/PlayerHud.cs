@@ -158,6 +158,24 @@ namespace Project1.UI
             target.GetComponents(gauges);
             float r = 34 * u, gap = 22 * u, labelH = 26 * u;
             float cx = Screen.width - 40 * u - r, cy = Screen.height - 40 * u - labelH - r;
+
+            // 자리가 고정된 작은 시계들(IFixedCooldownSlots, 예: 맹인 왼쪽 후리기 · 찌르기 · 오른쪽 후리기): 오른쪽 아래 구석에 왼쪽부터 차례로, 늘 그 자리.
+            // 쓸 수 있으면 가득 찬 초록, 재사용 대기 중이면 12시부터 돌며 차오르는 파랑. 일반 게이지는 그 왼쪽부터.
+            if (target.TryGetComponent(out IFixedCooldownSlots slots) && slots.SlotCount > 0)
+            {
+                float sr = 24 * u, sgap = 30 * u;
+                float right = Screen.width - 40 * u;
+                float scy = Screen.height - 40 * u - labelH - sr;
+                for (int i = 0; i < slots.SlotCount; i++)
+                {
+                    slots.GetSlot(i, out string sname, out float sfill);
+                    float sx = right - sr - (slots.SlotCount - 1 - i) * (sr * 2f + sgap);
+                    bool ready = sfill >= 0.999f;
+                    DrawGaugeCircle(new Vector2(sx, scy), sr, labelH, sname, Mathf.Clamp01(sfill), ready ? new Color(0.4f, 0.85f, 0.45f) : new Color(0.35f, 0.65f, 1f));
+                }
+                cx = right - slots.SlotCount * (sr * 2f + sgap) - r; // 일반 게이지는 고정 시계 왼쪽부터
+            }
+
             foreach (var g in gauges)
             {
                 if (g is Behaviour { isActiveAndEnabled: false }) continue;

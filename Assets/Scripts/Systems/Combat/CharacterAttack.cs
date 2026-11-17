@@ -293,12 +293,13 @@ namespace Project1.Systems
                     if (traversal == null) TryGetComponent(out traversal);
                     if ((skillState != null && skillState.LocksActions) || (stun != null && stun.IsStunned) || (health != null && health.IsDead)
                         || (traversal != null && traversal.LocksActions) // 오르는 중·매달림·구르기·크게 착지하는 중
-                        || ActionLocked())                                // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
+                        || ActionLocked()                                 // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
+                        || (TryGetComponent(out AttackSeal seal) && seal.Sealed)) // 평타 봉인(예: 맹인에게 밀려 벽에 박힘) — 차징 평타도
                     {
                         break;
                     }
                     // 좌우로 그음(맹인): 그은 방향으로 후리는 약공격. 뗄 때 나오는 약공격·강공격 입력은 버린다.
-                    if (swipeAttacks && input.AttackSwipe != 0 && grounded)
+                    if (swipeAttacks && input.AttackSwipe != 0 && grounded && SwipeReady(input.AttackSwipe)) // 그 쪽 후리기가 재사용 대기 중이면 무시(평타로)
                     {
                         StartSwipe(input.AttackSwipe);
                         break;
@@ -354,7 +355,7 @@ namespace Project1.Systems
 
                 case CharacterAttackState.HeavyCharge:
                     ChargeTime += dt;
-                    if (swipeAttacks && input.AttackSwipe != 0 && grounded) { ChargeTime = 0f; StartSwipe(input.AttackSwipe); break; } // 모으다가 그음 → 후리기
+                    if (swipeAttacks && input.AttackSwipe != 0 && grounded && SwipeReady(input.AttackSwipe)) { ChargeTime = 0f; StartSwipe(input.AttackSwipe); break; } // 모으다가 그음 → 후리기
                     // 모은 시간(ChargeTime)은 강공격이 끝날 때까지 둔다 — 판정(AttackHitDetector)이 HitResult.Charge로 읽어 감시자 강공격 피해를 늘린다(DamageRules.HeavyChargeBonus). EndAttack이 0으로.
                     if (input.HeavyRelease || !input.HeavyCharging)
                     {
@@ -373,7 +374,7 @@ namespace Project1.Systems
                     // 달리기 점프 공격 중 한 번 더 누름 → 끊고 다시 뛰어오르며 두 번째 날아 차기.
                     if (followUp && IsRunJumpAttack) { StartFollowUpKick(input); break; }
                     // 연속 동작(맹인): 동작이 끝나기 전에 들어온 다음 휘두르기를 받아 두고(최대 maxComboFollowUps번), 후딜레이가 시작되면 끊고 바로 이어 나간다.
-                    if (swipeAttacks && input.AttackSwipe != 0 && comboFollowUps < maxComboFollowUps) bufferedSwipe = input.AttackSwipe;
+                    if (swipeAttacks && input.AttackSwipe != 0 && comboFollowUps < maxComboFollowUps && SwipeReady(input.AttackSwipe)) bufferedSwipe = input.AttackSwipe;
                     AdvancePhase(dt);
                     if (bufferedSwipe != 0 && AttackState != CharacterAttackState.None && AttackPhase == AttackPhase.Recovery && grounded)
                     {
@@ -399,6 +400,9 @@ namespace Project1.Systems
             float walk = characterState.WalkSpeed, run = Mathf.Max(characterState.RunSpeed, walk + 0.01f);
             return v.y > Mathf.Abs(v.x) && v.y >= Mathf.Lerp(walk, run, runJumpThreshold);
         }
+
+        /// <summary>그 쪽 후리기를 지금 쓸 수 있는지(ISwipeGate — 맹인 기술별 재사용 대기). 없으면 늘 된다.</summary>
+        private bool SwipeReady(int dir) => !TryGetComponent(out ISwipeGate gate) || gate.CanSwipe(dir);
 
         private void StartSwipe(int dir)
         {

@@ -35,6 +35,10 @@ namespace Project1.Systems
         private static readonly Dictionary<CharacterSkill, HashSet<int>> hitThisCast = new();
 
         public override bool LocksActions => true;
+
+        // 재사용 대기 7초(맹인 기술별 — MindsEyeCooldowns가 가운데 시계로 보여 준다, 오른쪽 아래 일반 게이지는 숨김)
+        public override float CooldownFor(CharacterSkill ctx) => MindsEyeCooldowns.Cooldown;
+        public override bool HideCooldownGauge => true;
         public override bool SyncAnimationToCast => false;
 
         public override void OnStart(CharacterSkill ctx)
@@ -139,7 +143,9 @@ namespace Project1.Systems
                     NoDamage = true,
                     Knockback = ctx.Direction * knockbackSpeed,
                 };
-                Knockback.Push(victim.gameObject, hit.Knockback, knockbackTime);
+                bool combo = ctx.StartedFromCombo; // 휘두르기에 이어 빠르게 쓴 찌르기
+                Knockback.Push(victim.gameObject, hit.Knockback, knockbackTime, stun: false, wallMargin: 0.3f,
+                    onWall: v => CaneKnockback.OnWall(v, combo ? CaneKnockback.ComboSealTime : CaneKnockback.SealTime)); // 벽에 박히면 평타 봉인 4초(연계 찌르기면 9초) + 1초 경직, 기절 없음
                 HitEvents.Raise(hit);
             }
         }

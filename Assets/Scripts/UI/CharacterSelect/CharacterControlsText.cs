@@ -26,7 +26,7 @@ namespace Project1.UI
         // 평타 설명(마우스를 올리면). 생존자는 주먹, 감시자는 무기. 맹인은 지팡이.
         public const string SurvivorAttackTooltip = "주먹으로 공격한다.\n달리며 점프하면 발차기.";
         public const string HunterAttackTooltip = "무기로 공격한다.\n달리며 점프하면 내려치기.";
-        public const string MindsEyeAttackTooltip = "지팡이로 공격해 밀어낸다.\n달리며 점프하면 발차기.";
+        public const string MindsEyeAttackTooltip = "지팡이로 공격한다(일반 평타).\n좌클릭을 누른 채 마우스를 좌우로 그으면 그쪽으로 후려 밀어낸다(왼쪽·오른쪽 각자 7초 재사용 대기).\n밀려 벽에 박힌 상대는 평타가 4초 봉인되고 1초 경직.\n달리며 점프하면 발차기.";
 
         public static string AttackTooltip(CharacterRoster.Entry entry)
         {
@@ -71,7 +71,8 @@ namespace Project1.UI
                 skillTip: "잠깐 겨눈 뒤 신호탄을 쏜다(쏘는 동안 제자리).\n신호탄은 가장 가까운 상대를 따라가며 휘지만 길을 찾지는 않아 벽·바닥에 닿으면 사라진다.\n맞은 상대는 기절한다."),
             ["Survivor_Cowboy"] = new(SurvivorCharge, "뛰어넘을 시 대미지를 주며 이동속도 증가",
                 skillTip: "E를 누른 채 조준하며 걷고, 떼면 올가미를 던진다.\n상대를 잡으면 그 상대를 뛰어넘어 반대편에 내려선다.\n뛰어넘을 때 상대에게 대미지를 주고, 내려선 뒤 잠깐 이동 속도가 빨라진다.\n벽에 닿으면 끌려가지 않고 그냥 돌아온다."),
-            ["Survivor_MindsEye"] = new(SurvivorCharge, "앞으로 상대를 밀어내 벽에 맞추면 각종 피해를 입힘"),
+            ["Survivor_MindsEye"] = new(SurvivorCharge, "앞으로 밀어내 벽에 박으면 평타 봉인 · 후리기에 이어 쓰면 9초",
+                skillTip: "지팡이를 앞으로 찔러 상대를 세게 밀어낸다(7초 재사용 대기).\n밀려 벽에 박힌 상대는 벽 피해를 입고 평타가 4초 봉인되며 1초 경직(기절 아님).\n좌우 후리기에 이어 빠르게 쓴 찌르기로 박으면 평타 봉인 9초."),
             ["Survivor_Thief"] = new(SurvivorCharge, "손전등 · 비추면 E 봉인, 정면이면 기절",
                 skillTip: "손전등을 꺼내 앞을 비춘다(비추는 동안 조금 느려짐, E를 다시 누르면 넣음).\n빛에 든 상대는 게이지가 차서, 일정 이상이면 그 상대의 E가 잠긴다.\n얼굴(정면)로 받으면 정면 게이지도 차서 다 차면 기절 + 피해.\n벽에 가리면 빛이 닿지 않는다."),
         };

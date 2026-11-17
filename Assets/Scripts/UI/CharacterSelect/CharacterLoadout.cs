@@ -85,7 +85,8 @@ namespace Project1.UI
             SetProp<CharacterCarryPose>(player, entry.id == "Hunter_SmileyFace"); // 광대: 로켓 폭죽을 두 손으로 받쳐 든 자세
             SetProp<RocketWeapon>(player, entry.id == "Hunter_SmileyFace");       // 광대: 로켓 폭죽 무기
             SetProp<WeaponBodyClearance>(player, entry.role == CharacterRole.Hunter); // 감시자: 휘두르는 무기가 자기 몸을 뚫어 보이지 않게(FE)
-            SetProp<CaneKnockback>(player, entry.id == "Survivor_MindsEye"); // 맹인: 지팡이에 맞으면 데미지 대신 넉백(BE)
+            SetProp<CaneKnockback>(player, entry.id == "Survivor_MindsEye"); // 맹인: 좌우로 후린 지팡이에 맞으면 데미지 대신 넉백, 벽에 박히면 평타 봉인 + 짧은 경직(BE) — 그냥 좌클릭은 일반 평타
+            SetProp<MindsEyeCooldowns>(player, entry.id == "Survivor_MindsEye"); // 맹인: 왼쪽 후리기·찌르기·오른쪽 후리기 각자 7초 재사용 대기 + 오른쪽 아래 고정 시계 세 개(BE)
             SetProp<KickReach>(player, entry.role == CharacterRole.Survivor); // 생존자: 발차기(돌려차기·날아 차기) 판정을 앞으로 아주 길게(BE)
             SetProp<FistParry>(player, entry.role == CharacterRole.Survivor); // 생존자: 좌클릭 꾹 누르는 동안 주먹 막기 — 정면 150° 안 주먹을 막음, 떼면 돌려차기(BE)
             // 맨주먹 캐릭터(주먹 기본 공격을 쓰는 생존자): 손으로 맞힌 히트가 주먹이 되어 주먹 막기에 막힌다. 무기를 손 판정으로 휘두르는 감시자 등은 아님.

@@ -110,7 +110,7 @@ namespace Project1.Systems
                 if (TryGetComponent(out ICharacterHealth hp) && hp.IsDead) { BlockedReason = "쓰러짐"; return false; }
                 if (TryGetComponent(out ICharacterTraversalState tr) && tr.LocksActions) { BlockedReason = null; return false; } // 오르는 중·매달림
                 if (TryGetComponent(out ISkillLock skillLock) && skillLock.SkillLocked) { BlockedReason = skillLock.LockReason; return false; } // 예: 도둑 손전등에 지져짐
-                if (TryGetComponent(out IActionLock actionLock) && actionLock.ActionsLocked) { BlockedReason = null; return false; } // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
+                GetComponents(actionLocks); foreach (var l in actionLocks) if ((l is not Behaviour b || b.isActiveAndEnabled) && l.ActionsLocked) { BlockedReason = null; return false; } // 보이지 않는 짧은 경직(예: 공장장 인형과 자리 바꾼 직후)
                 if (attack != null && attack.AttackState != CharacterAttackState.None) { BlockedReason = "공격 중"; return false; }
                 bool ok = skill.CanStart(gameObject, out var reason);
                 BlockedReason = ok ? null : reason;
@@ -313,10 +313,13 @@ namespace Project1.Systems
         private float freeRecastDuration = 1f;
 
         /// <summary>HUD 게이지: 재사용 대기 중이면 차오름, 바로 다시 쓰기 시간(예: 그랩 벽)이면 줄어듦.</summary>
+        private static readonly System.Collections.Generic.List<IActionLock> actionLocks = new();
+
         public bool TryGetCooldown(out string label, out float fill, out bool draining)
         {
             label = SkillName; fill = 0f; draining = false;
             if (skill == null) return false;
+            if (skill.HideCooldownGauge) return false;
             if (skill.TryGetCooldownGauge(this, out string own, out float ownFill)) { label = own ?? SkillName; fill = ownFill; return true; } // 스킬이 따로 정한 게이지(예: 아대 도약 재사용 대기 — 켜 둔 채로 돈다)
             if (State == SkillState.Cooldown && CooldownDuration > 0f) { fill = 1f - CooldownRemaining / CooldownDuration; return true; }
             if (State == SkillState.Ready && FreeRecastLeft > 0f) { label = SkillName + " 다시"; fill = FreeRecastLeft / Mathf.Max(freeRecastDuration, 0.01f); draining = true; return true; }
