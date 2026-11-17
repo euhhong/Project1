@@ -53,7 +53,7 @@ namespace Project1.UI
             Project1.Systems.SkillCooldowns.Disabled = !battle; // 연습 모드 = 쿨타임 없이 스킬, 게임 시작 = 쿨타임 그대로
             Project1.Presentation.InGameBgm.FixedTrack = battle ? null : "Practice"; // 연습 모드 = 배경음악 한 곡 고정
             if (battle) BattleMatch.Begin(roster, player.gameObject, entry);
-            InGameMenu.Begin(); // ESC·오른쪽 위 버튼 = 게임 중 메뉴(계속하기·캐릭터 선택·메인 메뉴로)
+            InGameMenu.Begin(practice: !battle); // ESC·오른쪽 위 버튼: 게임 시작 = PAUSE 창(재개·나가기), 연습 = 바로 캐릭터 선택으로
             if (!battle && entry.id == "Survivor_Doctor") player.gameObject.AddComponent<PracticeHealthLoop>(); // 연습 모드 의사: 체력 50에서 시작, 가득 차면 깜빡이다 다시 50(자가 치료 연습)
             Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
         }

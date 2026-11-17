@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Geisha_Butterfly
   displayName: 이동
   castTime: 3
-  cooldown: 5
+  cooldown: 3
   castMoveSpeed: 0
   glideSpeed: 24.5
   arriveDistance: 0.3

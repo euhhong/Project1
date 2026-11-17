@@ -12,8 +12,17 @@ namespace Project1.UI
         public static string EntryId { get; private set; }
         /// <summary>true = 게임 시작(AI 봇과 전투), false = 연습 모드.</summary>
         public static bool Battle { get; private set; }
-        /// <summary>마지막으로 고른 캐릭터 ID(선택 화면을 다시 열 때 그 캐릭터부터 보여 준다).</summary>
-        public static string LastId { get; private set; }
+        /// <summary>
+        /// 마지막으로 고른 캐릭터 ID(선택 화면을 다시 열 때 그 캐릭터부터 보여 준다). PlayerPrefs에도 적어 두어
+        /// 코드가 다시 불려 오거나(static이 비워짐) 게임을 다시 켜도 마지막에 쓰던 캐릭터로 열린다.
+        /// </summary>
+        public static string LastId
+        {
+            get => !string.IsNullOrEmpty(lastId) ? lastId : PlayerPrefs.GetString(LastIdPref, null);
+            private set { lastId = value; if (!string.IsNullOrEmpty(value)) { PlayerPrefs.SetString(LastIdPref, value); PlayerPrefs.Save(); } }
+        }
+        private static string lastId;
+        private const string LastIdPref = "Project1.LastCharacter";
 
         public static void Set(CharacterRoster.Entry entry, bool battle)
         {
@@ -35,7 +44,7 @@ namespace Project1.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetOnPlay()
         {
-            Has = false; EntryId = null; LastId = null; Battle = false; BackToTitle = false;
+            Has = false; EntryId = null; lastId = null; Battle = false; BackToTitle = false; // 마지막 캐릭터는 PlayerPrefs에 남아 있다
         }
     }
 }
