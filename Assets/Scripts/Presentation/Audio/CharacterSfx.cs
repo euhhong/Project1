@@ -50,7 +50,7 @@ namespace Project1.Presentation
             if (pallet == null) pallet = GetComponent<IPalletUser>();
             if (mirror == null) mirror = GetComponent<IMirrorTraveler>();
             if (pallet != null && pallet.DropCount != palletCount) { palletCount = pallet.DropCount; palletCrashAt = Time.time + PalletCrashDelay; }
-            if (palletCrashAt > 0f && Time.time >= palletCrashAt) { palletCrashAt = -1f; SfxPlayer.Play("pallet", transform.position + transform.forward * 1.2f + Vector3.up * 0.5f, 1f); }
+            if (palletCrashAt > 0f && Time.time >= palletCrashAt) { palletCrashAt = -1f; if (!Overrides("PalletDrop")) SfxPlayer.Play("pallet", transform.position + transform.forward * 1.2f + Vector3.up * 0.5f, 1f); }
             if (mirror != null)
             {
                 if (mirror.Entering && !wasEntering) SfxPlayer.Play("mirror_in", Body, 0.9f, 0.03f);
