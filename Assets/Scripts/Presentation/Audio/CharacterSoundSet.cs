@@ -257,12 +257,15 @@ namespace Project1.Presentation
             switch (id)
             {
                 case "Gamekeeper_Grab":
-                    // 그랩 소리(Hook)는 앞부분 = 던짐, 뒷부분 = 끌려가거나 끌어오는 이동 소리 — 벽·상대를 물면(Towing·Dragging) 끝까지,
-                    // 못 물고 허공으로 되감기면(Retracting) 또는 취소·끝나면 그 자리에서 짧게 줄여 끈다.
-                    if (phaseChanged && phase == GrabExtending) { PlayStoppable("Hook", SkillVolume, 0.03f); hookLatched = false; }
-                    else if (phaseChanged && (phase == GrabDragging || phase == GrabTowing)) hookLatched = true;   // 물었다 = 끝까지
-                    else if (phaseChanged && !hookLatched && (phase == GrabRetracting || !casting)) FadeStoppable(); // 허공 그랩 = 뒷부분 끔
-                    if (phaseChanged && (phase == GrabDragging || phase == GrabTowing)) Play("Hook_Hit", Body, SkillVolume, 0.03f);
+                    // 그랩 소리 세 가지(노루.mp4 녹화) — 셋 다 같은 '뻗는' 소리로 시작하므로, 뻗는 동안 Hook_Extend를 내다가
+                    // 물면 같은 재생 위치에서 그 결과의 음원으로 바꿔 이어 간다(끊김 없이).
+                    // - 빗나감(Retracting·취소): 뻗는 소리만 — 그 자리에서 짧게 줄여 끈다.
+                    // - 벽을 물고 끌려감(Towing): Hook_Wall — 뻗음 + 이동 소리, 뒤는 조용히 끝남.
+                    // - 상대를 물어 끌어옴(Dragging): Hook_Catch — 뻗음 + '뻐억' + 끌려오는 소리 + 신음.
+                    if (phaseChanged && phase == GrabExtending) { PlayStoppable("Hook_Extend", SkillVolume, 0.03f); hookLatched = false; }
+                    else if (phaseChanged && phase == GrabTowing) { hookLatched = true; SwitchStoppable("Hook_Wall", SkillVolume); }
+                    else if (phaseChanged && phase == GrabDragging) { hookLatched = true; SwitchStoppable("Hook_Catch", SkillVolume); }
+                    else if (phaseChanged && !hookLatched && (phase == GrabRetracting || !casting)) FadeStoppable(); // 빗나감 = 뻗는 소리만
                     break;
                 case "Cowboy_Lasso":
                     StopLoop(); // 조준 중 반복 소리는 끔(PlayRepeating)
@@ -459,6 +462,25 @@ namespace Project1.Presentation
             stoppableSource.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
             stoppableSource.volume = volume * AudioVolume.Sfx;
             stoppableSource.Play();
+        }
+
+        /// <summary>
+        /// 지금 나는 끌 수 있는 소리를 다른 음원(kind)으로 바꾸되, 같은 재생 위치부터 이어 간다(같은 시작을 가진 변형 음원끼리 — 사냥터지기 그랩).
+        /// 아무것도 안 나고 있으면 처음부터 낸다.
+        /// </summary>
+        private void SwitchStoppable(string kind, float volume)
+        {
+            string path = Pick(kind);
+            var clip = path != null ? Resources.Load<AudioClip>($"Sfx/{path}") : null;
+            if (clip == null) return;
+            float at = stoppableSource != null && stoppableSource.isPlaying ? stoppableSource.time : 0f;
+            float pitch = stoppableSource != null ? stoppableSource.pitch : 1f;
+            PlayStoppable(kind, volume, 0f);
+            if (stoppableSource == null) return;
+            stoppableSource.clip = clip; // PlayStoppable이 고른 것과 같게(같은 묶음 중 하나)
+            stoppableSource.pitch = pitch;
+            stoppableSource.Play();
+            stoppableSource.time = Mathf.Min(at, Mathf.Max(0f, clip.length - 0.05f)); // 재생을 시작한 뒤 위치를 옮긴다
         }
 
         /// <summary>도중에 끌 소리를 0.08초 동안 줄여 끈다.</summary>
