@@ -78,7 +78,7 @@ namespace Project1.Presentation
             if (Time.unscaledTime < scanAt) return;
             scanAt = Time.unscaledTime + 1f;
             foreach (var c in FindObjectsByType<CharacterIdentity>())
-                if (!c.TryGetComponent(out CharacterSfx _)) c.gameObject.AddComponent<CharacterSfx>();
+                if (!c.TryGetComponent(out CharacterSfx _)) { c.gameObject.AddComponent<CharacterSfx>(); c.gameObject.AddComponent<StunChickSound>(); } // 긴 기절 병아리 소리도
         }
 
         private void PlayAt(string name, Vector3 pos, float volume, float pitch, float spatial = 0.85f)
