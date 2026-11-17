@@ -99,10 +99,13 @@ namespace Project1.Systems
         [Range(1f, 45f)] public float lookBlockAngle = 12f;
         [Min(1f)] public float lookBlockDistance = 60f;
 
+        /// <summary>상대를 보고 있어 시작하지 못할 때의 이유 — AI는 이 이유면 '쓸 수 있음'으로 보고 상대 반대쪽을 본 뒤 쓴다(AiMeleeTactics).</summary>
+        public const string LookBlockedReason = "상대가 보임";
+
         public override bool CanStart(GameObject owner, out string reason)
         {
             if (!base.CanStart(owner, out reason)) return false;
-            if (LookingAtEnemy(owner)) { reason = "상대가 보임"; return false; }
+            if (LookingAtEnemy(owner)) { reason = LookBlockedReason; return false; }
             return true;
         }
 

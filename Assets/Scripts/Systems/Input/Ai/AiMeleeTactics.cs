@@ -88,6 +88,8 @@ namespace Project1.Systems
         private float nextDecision, reaction = 0.2f, yaw, wallRubFor;
         private bool yawInit;
         private float lastOwnAttack = -9f, lastSkillUse = -9f, lastDodgeEnd = -9f;
+        private const float ForceChargeAfter = 3f; // 재사용 대기가 끝난 뒤 이 시간(초)이 지나면 틈·확률을 따지지 않고 쓴다(쿨이 돌면 한 번씩)
+        private float skillReadySince;
         private float selfSkillStart = -1f;
         private bool selfSkillRepressed, selfSlamSent, chargeCancelSent;
         private SkillState prevSelfSkill;
@@ -141,7 +143,10 @@ namespace Project1.Systems
         private bool Grounded => state == null || state.IsGrounded;
         private bool CanRun => stamina == null || (!stamina.IsExhausted && stamina.Current > 8f);
         private AiSkillProfile Profile => skill != null ? AiSkillProfile.For(skill.SkillId) : AiSkillProfile.Default;
-        private bool SkillReady => skill != null && !string.IsNullOrEmpty(skill.SkillId) && skill.State == SkillState.Ready && skill.CanUse;
+        // 광대 로켓은 상대를 보고 있으면 시작하지 못한다(LookBlockedReason) — AI는 늘 상대를 보고 있어 '못 씀'으로만 보여 돌진을 아예 안 했다.
+        // 그 이유뿐이면 쓸 수 있는 것으로 본다(돌진 직전에 상대 반대쪽을 보고 시작 — fireAway).
+        private bool SkillReady => skill != null && !string.IsNullOrEmpty(skill.SkillId) && skill.State == SkillState.Ready
+                                   && (skill.CanUse || skill.BlockedReason == RocketChargeSkill.LookBlockedReason);
         private bool CanAttack(float now) => attack != null && attack.AttackState == CharacterAttackState.None && !keys.AttackBusy && now - lastOwnAttack > ReattackGap && !WallInSwing();
 
         /// <summary>상대 쪽으로 휘두르면 상대보다 먼저 벽·물건을 칠지(그러면 휘두르지 않는다 — AI가 벽을 때리는 일이 거의 없게).</summary>
@@ -179,6 +184,7 @@ namespace Project1.Systems
             float dist = flat.magnitude;
             float targetYaw = dist > 0.01f ? Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg : yaw;
             var prof = Profile;
+            if (!SkillReady) skillReadySince = now; // 재사용 대기가 끝나 쓸 수 있게 된 시각
             bool chargeActive = prof.Charge && skill != null && skill.State == SkillState.Casting && skill.MotionPhase != AttackPhase.Windup;
 
             // 시야: 평소엔 목표를 본다. 돌진 중에는 사람이 마우스로 트는 속도까지만(앞질러 겨눔).
@@ -418,6 +424,13 @@ namespace Project1.Systems
             bool skillInRange = skillReady && !prof.Charge && prof.Weight > 0f && dist >= prof.MinRange && dist <= prof.MaxRange;
             bool canAttack = CanAttack(now);
             float reach = MyReach;
+
+            // 재사용 대기가 끝난 지 ForceChargeAfter초가 넘었으면(쿨이 돌면 한 번씩) 확률·사이 장애물을 따지지 않고 스킬부터 — 돌진형은 바로 반대쪽을 보고 돌진(Bait의 overdue)
+            if (skillReady && now - skillReadySince > ForceChargeAfter)
+            {
+                if (skillInRange) { Begin(now, Maneuver.Skill, 0.3f); return; }
+                if (prof.Charge && dist >= 3f && dist <= 13f && !seen.Stunned) { Begin(now, Maneuver.Bait, 1.5f); return; }
+            }
 
             // 사이에 창틀·판자·상자·벽이 있고 아직 안 닿으면: 그 자리에서 옆걸음·페인트하지 않고 쫓아간다(길 찾기가 넘거나 돌아감).
             if (dist > reach + 0.3f && route.ObstacleBetween(seen.Valid ? seen.Position : view.Latest.Position))
@@ -688,7 +701,9 @@ namespace Project1.Systems
                         }
                         break;
                     }
-                    if (baiter.ShouldFire(now, dist, oppReach, seen, FacingMe(seen), LineClear(), now - lastDodgeEnd))
+                    // 재사용 대기가 끝난 지 ForceChargeAfter초가 넘었으면 틈을 기다리지 않고 한 번 쓴다(쿨이 돌면 한 번씩)
+                    bool overdue = now - skillReadySince > ForceChargeAfter && dist >= 3f && dist <= 13f && !seen.Stunned;
+                    if (overdue || baiter.ShouldFire(now, dist, oppReach, seen, FacingMe(seen), LineClear(), now - lastDodgeEnd))
                     {
                         fireAway = true;
                         awayYaw = OpenAwayYaw(toYaw);

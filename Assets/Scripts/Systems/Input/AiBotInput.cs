@@ -33,6 +33,8 @@ namespace Project1.Systems
         private CharacterInputFrame cachedFrame;
         private ITentacleField tentacleField;
         private AiTentacleUser tentacles;
+        private ButterflyField butterflyField;
+        private AiButterflyUser butterflies;
         private AiPalletUser pallets;
         private AiRetreat retreat;
 
@@ -71,6 +73,13 @@ namespace Project1.Systems
                 else { tentacleField = null; tentacles = null; }
             }
             if (tentacles != null && tentacleField is Behaviour { isActiveAndEnabled: true }) tentacles.Apply(ref cachedFrame, now, target);
+            // 붉은나비: 쿨이 돌면 상대 앞에 나비를 놓고 바로 날아간다(근접 AI는 나비를 놓지 않아 E를 거의 못 썼다)
+            if (butterflyField == null)
+            {
+                if (TryGetComponent(out ButterflyField bf)) { butterflyField = bf; butterflies = new AiButterflyUser(transform, bf); }
+                else butterflies = null;
+            }
+            if (butterflies != null && butterflyField.isActiveAndEnabled) butterflies.Apply(ref cachedFrame, now, target);
             // 생존자(판자를 내릴 수 있는 캐릭터): 쫓기면 판자로 달려가 내리고, 내린 판자를 끼고 싸운다
             if (TryGetComponent(out PalletUser pu) && pu.isActiveAndEnabled)
             {
