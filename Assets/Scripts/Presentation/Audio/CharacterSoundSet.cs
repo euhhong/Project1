@@ -31,13 +31,11 @@ namespace Project1.Presentation
         private const int RocketCharging = 1;                                                  // RocketChargeSkill
         private const int WallDashing = 2;                                                     // WallDashSkill
 
-        private const float FootVolume = 0.4f, VaultVolume = 0.8f, AttackVolume = 0.75f, SkillVolume = 0.85f;
+        private static readonly string[] FootstepClips = { "footstep_01", "footstep_02", "footstep_03" }; // VARCO Sound 나무 바닥 한 걸음(작게)
+        private const float FootVolume = 0.22f, VaultVolume = 0.8f, AttackVolume = 0.75f, SkillVolume = 0.85f;
 
-        /// <summary>
-        /// 계속·반복해서 나는 소리(발소리, 올가미 돌리기 반복음)를 낼지(광대 로켓 분사는 따로 — RocketThrust). 끔 — 게임 중에는 BGM이 깔리고, 이름만 보고 붙인 반복음이 다른 소리(뛰는 소리·칙칙·꾸왁)로 계속 들려서.
-        /// 동작 한 번에 한 번 나는 소리(평타·창틀·스킬·판자)만 낸다.
-        /// </summary>
-        private static readonly bool PlayRepeating = false;
+        // 캐릭터 녹화의 반복음(발소리 Footstep, 올가미 돌리기)은 다른 소리(뛰는 소리·칙칙·꾸왁)로 들려 쓰지 않는다.
+        // 발소리는 VARCO 공통 발소리(FootstepClips)를 작게, 광대 로켓 분사는 따로(RocketThrust).
 
         public static readonly List<CharacterSoundSet> All = new();
 
@@ -197,7 +195,7 @@ namespace Project1.Presentation
             if (notes == null && TryGetComponent(out notes)) lastNotePlace = notes.LastPlaceTime;
             if (tentacleField == null) TryGetComponent(out tentacleField);
 
-            if (PlayRepeating) UpdateFootsteps(); else lastPos = transform.position; // 발소리는 끔(PlayRepeating)
+            UpdateFootsteps(); // 발소리: 모든 캐릭터가 같은 VARCO 나무 바닥 발소리(footstep_01~03)를 작게
             UpdateTraversal();
             UpdateSkill();
             UpdateFields();
@@ -211,19 +209,19 @@ namespace Project1.Presentation
             Vector3 pos = transform.position;
             Vector3 delta = pos - lastPos; delta.y = 0f;
             lastPos = pos;
-            // 돌진 중(포워드 럭비공)에는 돌진 발소리(ChargeStep — 포워드 자기 발소리 파일), 평소에는 Footstep
-            bool charging = skill != null && skill.State == SkillState.Casting && skill.SkillId == "Forward_Charge" && Has("ChargeStep");
-            string kind = charging ? "ChargeStep" : "Footstep";
-            if (!Has(kind) || Time.deltaTime <= 0f) return;
+            // 캐릭터 녹화 발소리(Footstep)는 다른 소리(뛰는 소리 등)로 들려 쓰지 않는다 — 모든 캐릭터가 VARCO 나무 바닥 발소리를 작게.
+            // 돌진(포워드·광대)·도약 중에는 돌진 소리가 따로 나므로 발소리 없음.
+            if (Time.deltaTime <= 0f) return;
+            bool dashing = skill != null && skill.State == SkillState.Casting && skill.SkillId is "Forward_Charge" or "SmileyFace_RocketCharge" or "Mercenary_Guard";
             bool grounded = motor == null || motor.IsGrounded;
             bool busy = traversal != null && traversal.Action != TraversalAction.None;
             float speed = delta.magnitude / Time.deltaTime;
-            if (!grounded || busy || speed < 0.8f || speed > 25f) { stepDistance = 0f; return; } // 25 넘음 = 순간이동·도약 등
+            if (!grounded || busy || speed < 0.8f || speed > 12f || (dashing && speed > 7.5f)) { stepDistance = 0f; return; } // 12 넘음 = 돌진·순간이동·도약 등
             stepDistance += delta.magnitude;
-            float stride = Mathf.Clamp(speed * 0.36f, 1.1f, charging ? 4f : 2.6f); // 빠를수록 보폭이 길지만 발소리 간격은 짧아진다
+            float stride = Mathf.Clamp(speed * 0.36f, 1.1f, 2.6f); // 빠를수록 보폭이 길지만 발소리 간격은 짧아진다
             if (stepDistance < stride) return;
             stepDistance = 0f;
-            Play(kind, transform.position, charging ? 0.75f : FootVolume * Mathf.Lerp(0.7f, 1f, speed / 7f), 0.08f);
+            SfxPlayer.Play(FootstepClips[Random.Range(0, FootstepClips.Length)], transform.position, FootVolume * Mathf.Lerp(0.7f, 1f, speed / 7f), 0.08f);
         }
 
         // ── 창틀 넘기 ──
@@ -269,7 +267,7 @@ namespace Project1.Presentation
                     else if (phaseChanged && !hookLatched && (phase == GrabRetracting || !casting)) FadeStoppable(); // 빗나감 = 뻗는 소리만
                     break;
                 case "Cowboy_Lasso":
-                    StopLoop(); // 조준 중 반복 소리는 끔(PlayRepeating)
+                    StopLoop(); // 조준 중 반복 소리(올가미 돌리기)는 끔
                     if (phaseChanged && phase == GrabExtending) Play("Lasso", Body, SkillVolume, 0.05f);
                     break;
                 case "Coordinator_Flare":
