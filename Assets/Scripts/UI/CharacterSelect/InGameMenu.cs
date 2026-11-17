@@ -27,6 +27,7 @@ namespace Project1.UI
 
         private void Start()
         {
+            ResultVisible = false; // 새 판(다시하기로 씬을 다시 열어도)
             panel = RuntimeUiPanel.Create("InGameMenuUI", 50);
             panel.Root.pickingMode = PickingMode.Ignore;
 
@@ -85,7 +86,41 @@ namespace Project1.UI
             AddButton(resultDialog, "ESC  나가기", exit, primary: false).HoverEffect = false; // 결과 창 나가기: 마우스를 올려도 들뜨지 않고 소리 없음
             resultDialog.CancelAction = null;   // ESC는 BattleMatch가(나가기)
             resultDialog.DefaultAction = retry; // Enter = 다시하기
+            StartCoroutine(PopResult()); // 승패는 바로 나지만 여운을 두고 1초 뒤에 뽀잉 하고 나타남
+        }
+
+        /// <summary>결과가 난 뒤 이 시간(초) 뒤에 결과 창이 나타난다.</summary>
+        public const float ResultDelay = 1f;
+        private const float PopTime = 0.38f;
+
+        /// <summary>결과 창이 다 나타났는지(그 전에는 R·ESC·Enter를 받지 않는다 — BattleMatch도 본다).</summary>
+        public static bool ResultVisible { get; private set; }
+
+        /// <summary>ResultDelay초 기다렸다가 창을 열고, 작게 → 살짝 크게 → 제 크기로 튕기듯 나타나게(뽀잉).</summary>
+        private System.Collections.IEnumerator PopResult()
+        {
+            ResultVisible = false;
+            yield return new WaitForSecondsRealtime(ResultDelay);
+            if (resultDialog == null) yield break;
+            var pop = resultDialog.Box.parent ?? resultDialog.Box; // 기운 창이면 그림자판까지 같이 든 틀
+            pop.style.scale = new Scale(new Vector3(0.2f, 0.2f, 1f));
             resultDialog.Open();
+            for (float t = 0f; t < PopTime; t += Time.unscaledDeltaTime)
+            {
+                float s = BackOut(Mathf.Clamp01(t / PopTime));
+                pop.style.scale = new Scale(new Vector3(s, s, 1f));
+                yield return null;
+            }
+            pop.style.scale = new Scale(Vector3.one);
+            ResultVisible = true;
+        }
+
+        /// <summary>0 → 1 사이에서 1을 조금 넘었다가 돌아오는 곡선(튕기듯) — 0.2에서 시작.</summary>
+        private static float BackOut(float x)
+        {
+            const float c1 = 2.2f, c3 = c1 + 1f;
+            float y = 1f + c3 * Mathf.Pow(x - 1f, 3f) + c1 * Mathf.Pow(x - 1f, 2f);
+            return Mathf.LerpUnclamped(0.2f, 1f, y);
         }
 
         private void Update()
@@ -94,7 +129,7 @@ namespace Project1.UI
             var kb = Keyboard.current;
             if (kb == null) return;
             bool enter = kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame;
-            if (resultDialog != null) { if (enter) resultDialog.DefaultAction?.Invoke(); return; } // 결과 창: Enter = 다시하기(R·ESC는 BattleMatch)
+            if (resultDialog != null) { if (enter && ResultVisible) resultDialog.DefaultAction?.Invoke(); return; } // 결과 창: Enter = 다시하기(R·ESC는 BattleMatch) — 창이 다 나타난 뒤
             if (kb.escapeKey.wasPressedThisFrame) Toggle();
             else if (dialog != null && dialog.IsOpen && enter) dialog.DefaultAction?.Invoke();
         }

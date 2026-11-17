@@ -82,7 +82,7 @@ namespace Project1.UI
                 else if (playerHealth != null && playerHealth.Current <= 0f) End("패배");
             }
             var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (result == null || kb == null || ScreenFade.Busy) return;
+            if (result == null || kb == null || ScreenFade.Busy || !InGameMenu.ResultVisible) return; // 결과 창이 나타난 뒤에만
             // 결과가 뜬 뒤: R = 다시하기, ESC = 나가기(결과 창의 버튼과 같음)
             if (kb.rKey.wasPressedThisFrame) Retry();
             else if (kb.escapeKey.wasPressedThisFrame) Exit();

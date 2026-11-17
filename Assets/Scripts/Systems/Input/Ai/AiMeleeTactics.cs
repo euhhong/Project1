@@ -16,6 +16,7 @@ namespace Project1.Systems
     public sealed class AiMeleeTactics
     {
         private const float SkillFirstChance = 0.8f; // 스킬 재사용 대기가 끝났고 닿는 거리면 이 확률로 스킬부터
+        private readonly float swayPhase = Random.Range(0f, 6.28f); // 기다릴 때 좌우로 오가는 박자(봇마다 다르게)
 
         private enum Maneuver { None, Approach, Strafe, BackOff, Feint, Hold, Light, Heavy, Parry, RunJump, Skill, Dodge, Bait }
 
@@ -171,6 +172,10 @@ namespace Project1.Systems
 
             Vector2 move = Vector2.zero; bool run = false;
             Execute(now, dist, seen, prof, ref move, ref run);
+            // 가만히 서 있지 않게: 기다리는 동안(Hold·고르기 전)에는 상대를 본 채 좌우로 살짝 오간다
+            if (move.sqrMagnitude < 0.01f && maneuver is Maneuver.Hold or Maneuver.None
+                && !(skill != null && skill.State is SkillState.Casting or SkillState.Recovering))
+                move = new Vector2(Mathf.Sin(now * 2.3f + swayPhase) >= 0f ? 0.6f : -0.6f, 0f);
             AvoidWallRub(now, dt);
             if (hopAt >= 0f && now >= hopAt)
             {

@@ -35,6 +35,9 @@ namespace Project1.Systems
         {
             if (hunter == null) { pallet = null; return; }
             Vector3 me = self.position, opp = hunter.position;
+            // 판자 내리기 범위 안의 스페이스바 = 판자 내리기(PalletUser) — 근접 AI의 점프(달리기 점프 공격·깡충)로 엉뚱하게 내리지 않게 막는다.
+            // 판자는 아래 '내리기'에서 정한 때에만 내린다.
+            if (f.Jump && Pallet.TryFind(me, self.forward, out _, out _)) f.Jump = false;
             float hunterDist = Flat(opp - me).magnitude;
 
             if (pallet == null || pallet.State == Pallet.PalletState.Falling)
@@ -66,7 +69,7 @@ namespace Project1.Systems
                 if (now - seekStart > SeekTimeout || hunterDist > EngageRange + 4f) { Give(now); return; }
                 // 1) 판자로: 틈을 지나 감시자 반대편 통로 끝으로 달린다(이미 지났으면 그 자리에서 감시자를 기다림)
                 Vector3 goal = center - lane * hunterSide * (pallet.Width * 0.5f + 0.9f);
-                if (pastGap && Flat(goal - me).magnitude < 0.6f) { Face(ref f, opp - me); f.Move = Vector2.zero; ClearAttack(ref f); return; }
+                if (pastGap && Flat(goal - me).magnitude < 0.6f) { Face(ref f, opp - me); f.Move = Sway(now); ClearAttack(ref f); return; } // 감시자를 기다리며 좌우로 살짝(서 있지 않게)
                 Steer(ref f, goal - me, run: true);
                 ClearAttack(ref f);
                 return;
@@ -90,7 +93,7 @@ namespace Project1.Systems
             }
             if (hunterDist < CloseRange) return; // 반대편이지만 바짝 붙음 — 근접 AI(공격·막기)
             Vector3 hold = center - lane * hunterSide * HoldDistance;
-            if (Flat(hold - me).magnitude < 0.5f) { Face(ref f, opp - me); f.Move = Vector2.zero; return; }
+            if (Flat(hold - me).magnitude < 0.5f) { Face(ref f, opp - me); f.Move = Sway(now); return; } // 판자 너머 감시자를 보며 좌우로 살짝(심리전, 서 있지 않게)
             Steer(ref f, hold - me, run: false, faceTarget: opp - me);
         }
 
@@ -128,6 +131,11 @@ namespace Project1.Systems
         }
 
         private void Give(float now) { pallet = null; nextSeek = now + RetryDelay; }
+
+        private readonly float swayPhase = Random.Range(0f, 6.28f);
+
+        /// <summary>제자리에 서 있지 않게: 바라보는 쪽 기준 좌우로 살짝 오가는 이동 입력.</summary>
+        private Vector2 Sway(float now) => new(Mathf.Sin(now * 2.6f + swayPhase) >= 0f ? 0.55f : -0.55f, 0f);
 
         private static void Steer(ref CharacterInputFrame f, Vector3 worldDir, bool run, Vector3? faceTarget = null)
         {
