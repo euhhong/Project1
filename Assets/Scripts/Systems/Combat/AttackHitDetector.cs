@@ -58,12 +58,13 @@ namespace Project1.Systems
         public event Action<Vector3, Vector3> WallStruck;
 
         [Header("벽 치기(튕겨 나옴)")]
+        // 평타 벽 치기는 잘 맞게(넉넉하게) — 예전 이름(wallMaxDistance 1.0·wallMinPenetration 0.12·wallMaxAngle 35)은 씬에 저장돼 있어 새 이름으로 바꿈
         [Tooltip("벽으로 칠 판정: 몸 가운데에서 이 거리(m) 안에 벽 면이 있어야 한다.")]
-        [SerializeField, Min(0.1f)] private float wallMaxDistance = 1.0f;
-        [Tooltip("판정(무기·손·발 가운데)이 벽 면을 이만큼(m) 넘게 파고들어야 '확실히 벽에 대고 친' 것으로 본다.")]
-        [SerializeField, Min(0f)] private float wallMinPenetration = 0.12f;
+        [SerializeField, Min(0.1f)] private float wallReach = 1.4f;
+        [Tooltip("판정(무기·손·발 가운데)이 벽 면에 이 거리(m)까지 못 미쳐도 벽에 대고 친 것으로 본다(+ = 덜 닿아도 됨).")]
+        [SerializeField, Min(0f)] private float wallShortfall = 0.2f;
         [Tooltip("벽이 몸 정면에서 이 각도(도) 안에 있어야 한다(옆으로 스치는 건 아님).")]
-        [SerializeField, Range(0f, 90f)] private float wallMaxAngle = 35f;
+        [SerializeField, Range(0f, 90f)] private float wallFacing = 55f;
         private bool wallStruckThisAttack;
         private static readonly RaycastHit[] wallHits = new RaycastHit[8];
 
@@ -232,7 +233,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 확실히 벽에 대고 쳤는지: 켜진 판정마다 몸 가운데 → 판정 가운데로 쏴서, 그 사이에 벽(세운 면, 캐릭터·트리거·판정 아님)이 있고
-        /// - 벽 면이 몸에서 wallMaxDistance 안, - 벽이 몸 정면 wallMaxAngle 안을 마주 보고, - 판정 가운데가 벽 면을 wallMinPenetration 넘게 파고들었으면.
+        /// - 벽 면이 몸에서 wallReach(1.4m) 안, - 벽이 몸 정면 wallFacing(55도) 안을 마주 보고, - 판정 가운데가 벽 면에 닿았거나 wallShortfall(0.2m)까지 못 미쳤으면.
         /// 바닥·천장·스치기는 아니다.
         /// </summary>
         private bool TryFindWallStrike(out Vector3 point, out Vector3 normal)
@@ -250,17 +251,18 @@ namespace Project1.Systems
                 Vector3 d = tip - body;
                 float len = d.magnitude;
                 if (len < 0.05f) continue;
-                int n = Physics.RaycastNonAlloc(body, d / len, wallHits, len, mask, QueryTriggerInteraction.Ignore);
+                // 판정 끝보다 wallShortfall만큼 더 쏜다 — 판정이 벽 면에 살짝 못 미쳐도 벽을 친 것으로(잘 맞게)
+                int n = Physics.RaycastNonAlloc(body, d / len, wallHits, len + wallShortfall, mask, QueryTriggerInteraction.Ignore);
                 for (int i = 0; i < n; i++)
                 {
                     var h = wallHits[i];
                     if (h.collider == null || h.collider.GetComponentInParent<CharacterIdentity>() != null) continue;
                     if (Mathf.Abs(h.normal.y) > 0.35f) continue;                       // 바닥·천장·경사 아님
-                    if (h.distance > wallMaxDistance) continue;                        // 몸 가까이의 벽만
+                    if (h.distance > wallReach) continue;                              // 몸 가까이의 벽만
                     Vector3 wallFace = Vector3.ProjectOnPlane(-h.normal, Vector3.up).normalized;
-                    if (Vector3.Angle(fwd, wallFace) > wallMaxAngle) continue;         // 정면을 마주 본 벽
-                    float pen = Vector3.Dot(tip - h.point, -h.normal);                 // 판정이 벽 속으로 들어간 깊이
-                    if (pen < wallMinPenetration || pen <= bestPen) continue;
+                    if (Vector3.Angle(fwd, wallFace) > wallFacing) continue;           // 정면 쪽을 마주 본 벽
+                    float pen = Vector3.Dot(tip - h.point, -h.normal) + wallShortfall; // 판정이 벽 속으로 들어간 깊이(+ 못 미쳐도 되는 거리)
+                    if (pen < 0f || (found && pen <= bestPen)) continue;
                     bestPen = pen; point = h.point; normal = h.normal; found = true;
                 }
             }
