@@ -103,11 +103,11 @@ namespace Project1.Presentation
         private static void OnHit(HitResult hit)
         {
             bool heavy = hit.Knockdown || hit.PowerScale > 1.25f || hit.Charge > 0.5f; // 쓰러뜨림·센 공격·모아 친 공격
-            Play(heavy ? "hit_heavy" : "hit_light", hit.Point, heavy ? 1f : 0.8f);
+            Play("hit_heavy", hit.Point, heavy ? 1f : 0.8f, 0.06f, heavy ? 0.95f : 1.05f); // 캐릭터 피격 = 경쾌한 "뻐억"(hit_heavy)만 — 센 공격은 조금 크고 낮게
         }
 
         private static void OnBlocked(HitResult hit) => Play("block", hit.Point, 0.9f, 0.05f);
-        private static void OnWall(GameObject attacker, Vector3 point, Vector3 normal) => Play("wall", point, 0.85f);
+        private static void OnWall(GameObject attacker, Vector3 point, Vector3 normal) => Play("hit_light", point, 0.9f, 0.04f); // 벽 치기 = 둔탁한 "턱"(hit_light) 고정
         private static void OnShockwave(GameObject source, Vector3 center, float radius) => Play("shockwave", center, 1f, 0.04f);
     }
 }
