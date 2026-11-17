@@ -22,6 +22,9 @@ namespace Project1.Systems
         private const float HurtWindow = 6f, HurtFraction = 0.3f, LowHealth = 0.35f;
         private const float NearPalletRange = 22f, SkillGapCooldown = 2f, FleeDistance = 25f;
         private const float CheckInterval = 0.4f, ArriveRange = 2f;
+        private const float FightBackRange = 2.5f, StuckTime = 1.2f;
+        private Vector3 progressPos;
+        private float progressAt;
 
         private readonly Transform self;
         private readonly AiRouteFinder route;
@@ -60,7 +63,7 @@ namespace Project1.Systems
                 nextCheck = now + CheckInterval;
                 if (!ShouldFlee(now, me, hunter)) return;
                 if (!PickDestination(me, opp, out destination)) { noFleeUntil = now + 2f; return; }
-                fleeStart = now;
+                fleeStart = now; progressPos = me; progressAt = now;
             }
 
             // 끝
@@ -72,6 +75,10 @@ namespace Project1.Systems
             }
 
             if (AiSkillYield.Now(self, hunterDist)) return; // 도주 중에도 스킬각(재사용 대기 끝 + 가까움)이면 근접 AI가 스킬을 쓰게 맡긴다
+            if (hunterDist < FightBackRange) return;       // 코앞까지 붙음: 등을 보이고 벽에 박지 않고 싸운다(근접 AI)
+            // 막힘: 한동안 거의 못 나아가면(담장·구석에 머리 박음) 도주를 그만둔다
+            if (Flat(me - progressPos).magnitude > 1f) { progressPos = me; progressAt = now; }
+            else if (now - progressAt > StuckTime) { fleeStart = -1f; noFleeUntil = now + 3f; return; }
 
             // 길을 따라 지칠 때까지 달린다(창틀·판자도 넘음)
             bool grounded = state == null || state.IsGrounded;
@@ -130,21 +137,42 @@ namespace Project1.Systems
                 Vector3 c = p.transform.position + p.transform.forward * (p.Gap * 0.5f);
                 float dMe = (c - me).magnitude, dHunter = (c - opp).magnitude;
                 if (dHunter < dMe * 1.2f || dHunter < 10f) continue; // 감시자 쪽이거나 감시자에게 가까움
+                if (!TowardAway(me, opp, c)) continue; // 감시자 쪽으로 가로질러 가야 하는 곳은 아님
                 bool otherFloor = Mathf.Abs(c.y - me.y) > 3f;
-                float score = dHunter - dMe * 0.6f + (otherFloor ? 8f : 0f);
-                if (score > best && NavMesh.SamplePosition(c, out var hit, 2f, NavMesh.AllAreas)) { best = score; dest = hit.position; }
+                float score = dHunter - dMe * 0.6f + (otherFloor ? 8f : 0f) - EdgePenalty(c);
+                if (score > best && NavMesh.SamplePosition(c, out var hit, 2f, NavMesh.AllAreas) && Reachable(me, hit.position)) { best = score; dest = hit.position; }
             }
             if (best > float.MinValue) return true;
-            Vector3 away = Flat(me - opp);
-            away = away.sqrMagnitude > 1e-4f ? away.normalized : Flat(self.forward).normalized;
-            for (int i = 0; i < 7; i++)
-            {
-                float a = (i % 2 == 0 ? 1 : -1) * (i + 1) / 2 * 25f; // 0, ±25, ±50, ±75도
-                Vector3 c = me + Quaternion.Euler(0f, a, 0f) * away * FleeDistance;
-                if (NavMesh.SamplePosition(c, out var hit, 6f, NavMesh.AllAreas) && (hit.position - opp).magnitude > FleeDistance * 0.7f) { dest = hit.position; return true; }
-            }
-            return false;
+            // 판자가 없으면: 맵 안쪽(가장자리 담장에서 떨어진) 걸어서 닿는 자리 중 감시자에게서 먼 곳 — 담장 구석으로 몰리지 않게
+            for (float x = -InnerHalf; x <= InnerHalf; x += 6f)
+                for (float z = -InnerHalf; z <= InnerHalf; z += 6f)
+                {
+                    if (!NavMesh.SamplePosition(new Vector3(x, me.y, z), out var hit, 3f, NavMesh.AllAreas)) continue;
+                    Vector3 c = hit.position;
+                    float dMe = Flat(c - me).magnitude, dHunter = Flat(c - opp).magnitude;
+                    if (dMe < 10f || dHunter < 16f || !TowardAway(me, opp, c)) continue;
+                    float score = dHunter - dMe * 0.5f - EdgePenalty(c);
+                    if (score > best && Reachable(me, c)) { best = score; dest = c; }
+                }
+            return best > float.MinValue;
         }
+
+        private const float InnerHalf = 32f; // 맵 안쪽(가운데에서 m) — 담장(±46) 가까이는 갈 곳으로 고르지 않는다
+
+        /// <summary>가장자리 담장에 가까울수록 깎는 점수(구석에 몰리지 않게).</summary>
+        private static float EdgePenalty(Vector3 p) => Mathf.Max(0f, Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.z)) - InnerHalf) * 2f;
+
+        /// <summary>me → c 방향이 감시자 쪽(60° 안)이 아닌지.</summary>
+        private static bool TowardAway(Vector3 me, Vector3 opp, Vector3 c)
+        {
+            Vector3 toC = Flat(c - me), toH = Flat(opp - me);
+            if (toC.sqrMagnitude < 1e-4f || toH.sqrMagnitude < 1e-4f) return true;
+            return Vector3.Angle(toC, toH) > 60f;
+        }
+
+        private static readonly NavMeshPath probe = new();
+        private static bool Reachable(Vector3 from, Vector3 to) =>
+            NavMesh.CalculatePath(from, to, NavMesh.AllAreas, probe) && probe.status == NavMeshPathStatus.PathComplete;
 
         private static Vector3 Flat(Vector3 v) { v.y = 0f; return v; }
     }
