@@ -43,6 +43,8 @@ namespace Project1.Systems
         [Header("생존자가 내릴 수 있는 거리")]
         [Tooltip("판자 면에서 앞·뒤로 이 거리(m) 안이면 내릴 수 있다.")]
         [SerializeField, Min(0.3f)] private float useRange = 1.6f;
+        [Tooltip("판자 옆(통로 방향)으로 이 거리(m) 안이면 내릴 수 있다 — 판자를 지나쳐 달아나는 중(판자 뒤)에도 닿게 넉넉히.")]
+        [SerializeField, Min(0.3f)] private float sideRange = 2.4f;
 
         private static readonly List<Pallet> all = new();
         private static readonly Collider[] buffer = new Collider[32];
@@ -93,7 +95,9 @@ namespace Project1.Systems
         }
 
         /// <summary>
-        /// position(생존자 발)에서 내릴 수 있는 세워진 판자 중 가장 가까운 것: 판자 옆(통로 쪽 1.2m)이나 앞(틈 안), 판자 쪽을 대충이라도 볼 때. 넘어가는 쪽은 늘 앞(fallSign = +1).
+        /// position(생존자 발)에서 내릴 수 있는 세워진 판자 중 가장 가까운 것: 판자 옆(통로 쪽 sideRange m)이나 앞(틈 안).
+        /// 어느 쪽을 보든 된다 — 판자를 지나쳐 등지고 달아나면서도(판자 뒤에서도) 내린다. 넘어가는 쪽은 늘 앞(fallSign = +1).
+        /// 이 범위 안에서는 생존자가 점프하지 않는다(스페이스바 = 판자 내리기 — PalletUser.BlocksJump).
         /// </summary>
         public static bool TryFind(Vector3 position, Vector3 forward, out Pallet pallet, out float fallSign)
         {
@@ -103,11 +107,8 @@ namespace Project1.Systems
             {
                 if (p == null || p.State != PalletState.Up) continue;
                 Vector3 local = p.transform.InverseTransformPoint(position);
-                if (Mathf.Abs(local.x) > p.width * 0.5f + 1.2f || local.y < -1f || local.y > p.height) continue;
-                if (local.z < -0.35f || local.z > Mathf.Min(p.height, p.useRange + 0.4f)) continue; // 벽 뒤는 안 됨, 틈 안·판자 옆만
-                Vector3 toPallet = Vector3.ProjectOnPlane(p.transform.position + Vector3.up - position, Vector3.up);
-                Vector3 f = Vector3.ProjectOnPlane(forward, Vector3.up);
-                if (f.sqrMagnitude > 1e-4f && toPallet.sqrMagnitude > 0.04f && Vector3.Dot(f.normalized, toPallet.normalized) < -0.2f) continue; // 판자를 등지고 있으면 안 됨
+                if (Mathf.Abs(local.x) > p.width * 0.5f + p.sideRange || local.y < -1f || local.y > p.height) continue;
+                if (local.z < -0.35f || local.z > Mathf.Max(p.height, p.useRange) + 0.6f) continue; // 벽 뒤는 안 됨, 틈 안·판자 옆(앞뒤)만
                 float dist = new Vector2(local.x, local.z - 0.3f).magnitude;
                 if (dist < best) { best = dist; pallet = p; fallSign = 1f; }
             }
@@ -122,8 +123,27 @@ namespace Project1.Systems
             sign = fallSign >= 0f ? 1f : -1f;
             startTime = Time.time;
             hitIds.Clear();
+            crushTop = MeasureCeiling();
             State = PalletState.Falling;
             return true;
+        }
+
+        private float crushTop = AirCrushHeight;
+        private static readonly RaycastHit[] ceilingHits = new RaycastHit[16];
+
+        /// <summary>틈 가운데 위로 천장(위층 바닥)까지 높이 — 깔림 판정이 위층의 감시자까지 닿지 않게. 캐릭터·이 판자는 무시. 없으면 AirCrushHeight.</summary>
+        private float MeasureCeiling()
+        {
+            Vector3 from = transform.TransformPoint(new Vector3(0f, 0.3f, sign * Gap * 0.5f));
+            int n = Physics.RaycastNonAlloc(from, Vector3.up, ceilingHits, AirCrushHeight, ~CombatLayers.HurtboxMask, QueryTriggerInteraction.Ignore);
+            float top = AirCrushHeight;
+            for (int i = 0; i < n; i++)
+            {
+                var c = ceilingHits[i].collider;
+                if (c == null || c.transform.IsChildOf(transform) || c.GetComponentInParent<CharacterIdentity>() != null) continue;
+                top = Mathf.Min(top, ceilingHits[i].distance + 0.3f);
+            }
+            return Mathf.Max(top, hitHeight);
         }
 
         private void FixedUpdate()
@@ -141,7 +161,7 @@ namespace Project1.Systems
                 if (b >= 1f) { State = PalletState.Down; BuildBlocker(); }
             }
             SetAngle(angle);
-            if (t > -0.05f && t <= fallTime + 0.05f) CrushUnder(angle); // 넘어가는 내내: 틈 위 공중까지 다 맞힌다
+            if (t > -0.05f && t <= fallTime + bounceTime + 0.05f) CrushUnder(angle); // 넘어가는 내내(튀는 동안까지): 틈 위 공중까지 다 맞힌다
         }
 
         /// <summary>넘어간 판자가 틈을 막는 상자(바닥 ~ blockHeight, 틈 전체) — 넘어가기(CharacterTraversal)로만 지나간다.</summary>
@@ -189,10 +209,15 @@ namespace Project1.Systems
         }
 
         /// <summary>넘어가는 판자가 쓸고 지나가는 자리의 감시자를 맞힌다: 틈 전체(판자를 세웠던 벽 ~ 반대편 벽) × 판자 폭, 바닥부터 hitHeight까지(공중 포함).</summary>
+        /// <summary>깔림 판정 높이: 틈 위 천장(위층 바닥)까지, 천장이 없으면 AirCrushHeight까지 — 공중의 감시자(점프·도약·내려찍기 중)도 맞는다. 씬의 hitHeight보다 낮아지지는 않는다. 바닥 0.5m 아래부터.</summary>
+        private float CrushHeight => Mathf.Max(hitHeight, crushTop) + 0.5f;
+        private const float AirCrushHeight = 15f;
+
         private void CrushUnder(float angle)
         {
-            Vector3 center = transform.TransformPoint(new Vector3(0f, hitHeight * 0.5f, sign * Gap * 0.5f));
-            Vector3 half = new(width * 0.5f + 0.25f, hitHeight * 0.5f, Gap * 0.5f + 0.25f);
+            float h = CrushHeight; // 공중(점프·도약 중)의 감시자도 맞도록 높게
+            Vector3 center = transform.TransformPoint(new Vector3(0f, h * 0.5f - 0.5f, sign * Gap * 0.5f));
+            Vector3 half = new(width * 0.5f + 0.25f, h * 0.5f, Gap * 0.5f + 0.25f);
             int n = Physics.OverlapBoxNonAlloc(center, half, buffer, transform.rotation, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
             for (int i = 0; i < n; i++)
             {
@@ -224,7 +249,7 @@ namespace Project1.Systems
             Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.5f);
             Gizmos.DrawWireCube(new Vector3(0f, height * 0.5f, 0f), new Vector3(width, height, thickness));
             Gizmos.color = new Color(1f, 0.3f, 0.2f, 0.25f); // 넘어갈 때 맞는 자리(공중 포함)
-            Gizmos.DrawWireCube(new Vector3(0f, hitHeight * 0.5f, Gap * 0.5f), new Vector3(width + 0.5f, hitHeight, Gap + 0.5f));
+            Gizmos.DrawWireCube(new Vector3(0f, CrushHeight * 0.5f - 0.5f, Gap * 0.5f), new Vector3(width + 0.5f, CrushHeight, Gap + 0.5f));
             Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.3f);
             Gizmos.DrawWireCube(new Vector3(0f, 0.9f, 0f), new Vector3(width + 0.8f, 1.8f, (useRange + thickness * 0.5f) * 2f));
         }

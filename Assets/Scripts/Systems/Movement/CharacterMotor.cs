@@ -291,7 +291,7 @@ namespace Project1.Systems
             }
 
             bool jumpedThisTick = false;
-            if (input.Jump && IsGrounded && allowJump)
+            if (input.Jump && IsGrounded && allowJump && !(TryGetComponent(out IJumpBlock jumpBlock) && jumpBlock.BlocksJump)) // 예: 판자 앞의 생존자 = 스페이스바는 판자 내리기
             {
                 vertical = Mathf.Sqrt(2f * jumpHeight * -gravity);
                 jumpedThisTick = true;
