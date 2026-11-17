@@ -11,6 +11,7 @@ namespace Project1.Systems
     /// - 넘어가기: dropDelay초 뒤(밀어 넘기는 모션의 미는 순간) 바닥 모서리를 축으로 fallTime초 동안 점점 빠르게 넘어가, 바닥에 눕지 않고 끝이 반대편 벽(틈 건너편)
     ///   restHeight 높이에 걸려 비스듬히 멈춘다(판자 길이 = √(틈² + restHeight²), Configure). 걸친 판자는 틈을 blockHeight까지 막고, 스페이스바로 넘어간다(창틀 넘기 모션 — CharacterTraversal).
     /// - 넘어가는 동안 틈 전체(바닥 ~ hitHeight 3.5m 공중까지)에 있는 감시자: 피해(DamageRules.PalletDamage)와 경직(DamageRules.PalletStun) — 뛰어오른 감시자도 맞는다.
+    ///   밀려나지 않고, 판자 반대편(내린 생존자 반대쪽) 통로 정가운데로 옮겨져 판자를 마주 본 채 고정되어 기절한다(PinOnFarSide).
     ///   한 번 넘어간 판자는 누운 채로 남는다(다시 못 씀). 생존자는 깔리지 않는다.
     /// 모양(모델)은 PalletVisual(FE)이 판자 몸에 붙인다. 배치는 PalletSpawner(맵).
     /// </summary>
@@ -26,9 +27,9 @@ namespace Project1.Systems
 
         [Header("넘어가기")]
         [Tooltip("스페이스바를 누른 뒤 판자가 넘어가기 시작할 때까지(초) — 두 손으로 잡았다 미는 순간.")]
-        [SerializeField, Min(0f)] private float dropDelay = 0.3f;
+        [SerializeField, Min(0f)] private float dropDelay = 0.18f;
         [Tooltip("넘어가는 시간(초). 점점 빨라진다(떨어지듯).")]
-        [SerializeField, Min(0.05f)] private float fallTime = 0.32f;
+        [SerializeField, Min(0.05f)] private float fallTime = 0.22f;
         [Tooltip("땅에 닿은 뒤 살짝 튀는 각도(도)와 시간(초).")]
         [SerializeField, Min(0f)] private float bounceAngle = 6f, bounceTime = 0.18f;
         [Tooltip("넘어간 판자 끝이 반대편 벽(틈 건너편 면)에 걸리는 높이(m) — 바닥에 완전히 눕지 않고 비스듬히 걸쳐 멈춘다.")]
@@ -96,19 +97,24 @@ namespace Project1.Systems
 
         /// <summary>
         /// position(생존자 발)에서 내릴 수 있는 세워진 판자 중 가장 가까운 것: 판자 옆(통로 쪽 sideRange m)이나 앞(틈 안).
-        /// 어느 쪽을 보든 된다 — 판자를 지나쳐 등지고 달아나면서도(판자 뒤에서도) 내린다. 넘어가는 쪽은 늘 앞(fallSign = +1).
-        /// 이 범위 안에서는 생존자가 점프하지 않는다(스페이스바 = 판자 내리기 — PalletUser.BlocksJump).
+        /// 판자가 몸 앞쪽 반원(앞 180°, forward 기준) 안에 있을 때만 — 등진 판자는 내리지 않는다. 넘어가는 쪽은 늘 앞(fallSign = +1).
+        /// 이 범위 안에서는 생존자가 점프하지 않는다(스페이스바 = 판자 내리기 — PalletUser.BlocksJump). 등진 판자 옆에서는 그냥 점프.
         /// </summary>
         public static bool TryFind(Vector3 position, Vector3 forward, out Pallet pallet, out float fallSign)
         {
             pallet = null; fallSign = 1f;
             float best = float.MaxValue;
+            forward.y = 0f;
             foreach (var p in all)
             {
                 if (p == null || p.State != PalletState.Up) continue;
                 Vector3 local = p.transform.InverseTransformPoint(position);
                 if (Mathf.Abs(local.x) > p.width * 0.5f + p.sideRange || local.y < -1f || local.y > p.height) continue;
                 if (local.z < -0.35f || local.z > Mathf.Max(p.height, p.useRange) + 0.6f) continue; // 벽 뒤는 안 됨, 틈 안·판자 옆(앞뒤)만
+                // 앞 180°: 판자(서 있는 판 바닥 자리)에서 가장 가까운 점이 몸 앞쪽(바라보는 방향과 내적 ≥ 0)이어야 — 바짝 붙어 있으면 된다
+                Vector3 near = p.transform.TransformPoint(new Vector3(Mathf.Clamp(local.x, -p.width * 0.5f, p.width * 0.5f), 0f, Mathf.Clamp(local.z, 0f, p.thickness)));
+                Vector3 to = near - position; to.y = 0f;
+                if (to.sqrMagnitude > 0.25f * 0.25f && forward.sqrMagnitude > 1e-4f && Vector3.Dot(forward, to) < 0f) continue;
                 float dist = new Vector2(local.x, local.z - 0.3f).magnitude;
                 if (dist < best) { best = dist; pallet = p; fallSign = 1f; }
             }
@@ -237,10 +243,38 @@ namespace Project1.Systems
                     Point = hb.Collider.ClosestPoint(center),
                     Kind = AttackKind.Skill,
                     BaseDamage = DamageRules.PalletDamage,
+                    NoKnockback = true, // 판자에 맞아도 밀려나지 않는다 — 대신 판자 반대편 가운데로 끌려가 고정된 채 기절
                 };
                 HitEvents.Raise(hit);
-                CharacterStun.Apply(victim.gameObject, DamageRules.PalletStun, FallDirection);
+                PinOnFarSide(victim.gameObject);
+                CharacterStun.Apply(victim.gameObject, DamageRules.PalletStun, Vector3.zero);
             }
+        }
+
+        /// <summary>
+        /// 깔린 감시자를 판자 반대편(내린 생존자 반대쪽 통로) 정가운데로 옮긴다 — 판자를 마주 보게. 내린 사람을 모르면 지금 있던 쪽.
+        /// 자리가 막혀 있으면(몸이 들어갈 곳이 없으면) 옮기지 않는다.
+        /// </summary>
+        private void PinOnFarSide(GameObject victim)
+        {
+            Vector3 gapCenter = transform.TransformPoint(new Vector3(0f, 0f, sign * Gap * 0.5f));
+            Vector3 lane = transform.right; lane.y = 0f; lane.Normalize();
+            float side = dropper != null ? -Mathf.Sign(Vector3.Dot(dropper.transform.position - gapCenter, lane))
+                                         : Mathf.Sign(Vector3.Dot(victim.transform.position - gapCenter, lane));
+            if (side == 0f) side = 1f;
+            var cc = victim.GetComponent<CharacterController>();
+            float r = cc != null ? cc.radius : 0.4f;
+            Vector3 spot = gapCenter + lane * side * (width * 0.5f + r + 0.15f);
+            spot.y = transform.position.y;
+            if (cc != null)
+            {
+                Vector3 p1 = spot + Vector3.up * (r + 0.1f), p2 = spot + Vector3.up * Mathf.Max(r + 0.1f, cc.height - r);
+                foreach (var c in Physics.OverlapCapsule(p1, p2, r * 0.9f, ~0, QueryTriggerInteraction.Ignore))
+                    if (c.GetComponentInParent<CharacterIdentity>() == null && c.GetComponentInParent<Pallet>() == null) return; // 자리가 막힘
+                cc.enabled = false;
+            }
+            victim.transform.SetPositionAndRotation(spot, Quaternion.LookRotation(-lane * side, Vector3.up)); // 판자를 마주 봄
+            if (cc != null) cc.enabled = true;
         }
 
         private void OnDrawGizmosSelected()

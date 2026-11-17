@@ -20,9 +20,8 @@ namespace Project1.Map.EditorTools
         // (기댈 면 바로 앞 바닥 x, y, z, 넘어가는 방향 x, z, 자리, 판자 길이 m = 틈 — 0이면 기본 2.1)
         private static readonly (float x, float y, float z, float dx, float dz, string by, float len)[] Spots =
         {
-            (28.5f, 0.15f, 37.38f, 0f, 1f, "영묘 문(묘지)", 1.78f),
+            // (영묘 문(묘지)·서쪽 연결동 2층 입구 판자는 뺌 — 어색한 자리)
             (-3.05f, 12.15f, -8.0f, 1f, 0f, "3층 하프 – 파이프 오르간", 1.55f),
-            (-22.0f, 6.15f, -1.6f, 0f, 1f, "서쪽 연결동 2층 입구", 1.5f),
             (-10.0f, 12.15f, -27.0f, 0f, 1f, "3층 서쪽 계단실 문", 2.4f),
             (13.0f, 6.15f, -27.0f, 0f, 1f, "2층 동쪽 계단실 문", 2.4f),
             (-13.0f, 0.15f, -27.0f, 0f, 1f, "1층 서쪽 계단실 문", 2.4f),

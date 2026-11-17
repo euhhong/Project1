@@ -14,7 +14,7 @@ namespace Project1.Systems
     public class PalletUser : MonoBehaviour, IPalletUser, IMoveOverride, IFacingOverride, IJumpBlock
     {
         [Tooltip("판자를 내리는 동작 시간(초) — 이 동안 제자리(모션 Skill_Pallet_Drop 길이와 맞춤).")]
-        [SerializeField, Min(0.1f)] private float lockTime = 0.75f;
+        [SerializeField, Min(0.1f)] private float lockTime = 0.45f;
 
         private ICharacterInputSource input;
         private ICharacterState state;

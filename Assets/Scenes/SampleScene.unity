@@ -18372,8 +18372,8 @@ MonoBehaviour:
   height: 2.5632012
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -19831,8 +19831,8 @@ MonoBehaviour:
   height: 2.5632012
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -23347,8 +23347,8 @@ MonoBehaviour:
   height: 2.030369
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -58736,8 +58736,8 @@ MonoBehaviour:
   height: 2.03037
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -59123,8 +59123,8 @@ MonoBehaviour:
   height: 2.1931713
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -88587,8 +88587,8 @@ MonoBehaviour:
   height: 2.0303705
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -92832,8 +92832,8 @@ MonoBehaviour:
   height: 2.5632012
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -92968,8 +92968,8 @@ MonoBehaviour:
   height: 2.3769717
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -110646,9 +110646,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1303326219}
   - {fileID: 712133347}
-  - {fileID: 1745371051}
   - {fileID: 587496976}
   - {fileID: 1311056878}
   - {fileID: 116955162}
@@ -112800,8 +112798,8 @@ MonoBehaviour:
   height: 1.7923448
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -183768,8 +183766,8 @@ MonoBehaviour:
   height: 2.5632012
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -203482,76 +203480,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 799aacc9b4a786d49a84218cb8715850, type: 3}
   m_PrefabInstance: {fileID: 1302551993}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1303326218
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1303326219}
-  - component: {fileID: 1303326221}
-  - component: {fileID: 1303326220}
-  m_Layer: 0
-  m_Name: "Pallet_01 (\uC601\uBB18 \uBB38(\uBB18\uC9C0))"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1303326219
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1303326218}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 28.5, y: 0.15, z: 37.38}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 700804923}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1303326220
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1303326218}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1303326221
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1303326218}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.9945927
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  restHeight: 0.9
-  gap: 1.78
-  hitHeight: 3.5
-  blockHeight: 1
-  useRange: 1.6
-  sideRange: 2.4
 --- !u!1 &1303344726
 GameObject:
   m_ObjectHideFlags: 0
@@ -205082,8 +205010,8 @@ MonoBehaviour:
   height: 2.5632012
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -219569,8 +219497,8 @@ MonoBehaviour:
   height: 2.030371
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -228280,8 +228208,8 @@ MonoBehaviour:
   height: 2.0124588
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -261090,8 +261018,8 @@ MonoBehaviour:
   height: 2.1931713
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -269677,76 +269605,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1744779250}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1745371050
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1745371051}
-  - component: {fileID: 1745371053}
-  - component: {fileID: 1745371052}
-  m_Layer: 0
-  m_Name: "Pallet_03 (\uC11C\uCABD \uC5F0\uACB0\uB3D9 2\uCE35 \uC785\uAD6C)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1745371051
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1745371050}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -22, y: 6.15, z: -1.6}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 700804923}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1745371052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1745371050}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &1745371053
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1745371050}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 1.7492856
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  restHeight: 0.9
-  gap: 1.5
-  hitHeight: 3.5
-  blockHeight: 1
-  useRange: 1.6
-  sideRange: 2.4
 --- !u!1 &1745655305
 GameObject:
   m_ObjectHideFlags: 0
@@ -280194,8 +280052,8 @@ MonoBehaviour:
   height: 2.0124614
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
@@ -289296,8 +289154,8 @@ MonoBehaviour:
   height: 2.1931713
   width: 1.5
   thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
+  dropDelay: 0.18
+  fallTime: 0.22
   bounceAngle: 6
   bounceTime: 0.18
   restHeight: 0.9
