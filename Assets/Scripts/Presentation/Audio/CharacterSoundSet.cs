@@ -295,8 +295,8 @@ namespace Project1.Presentation
         private void UpdateFields()
         {
             if (pallet != null && pallet.DropCount != palletCount) { palletCount = pallet.DropCount; Play("PalletDrop", Body, VaultVolume, 0.03f); }
-            if (doll != null && doll.SwapCount != swapCount) { swapCount = doll.SwapCount; Play("Shadow", Body, SkillVolume, 0.04f); }
-            if (doll != null && doll.ThrowCount != throwCount) { throwCount = doll.ThrowCount; Play("DollThrow", Body, SkillVolume, 0.04f); } // 떼서 던진 순간(겨누는 동안은 소리 없음)
+            if (doll != null && doll.SwapCount != swapCount) { swapCount = doll.SwapCount; Play("Swap", Body, SkillVolume, 0.04f); } // 인형과 자리 바꿈(공장장 녹화 38.0·43.2초 검은 줄 순간이동 소리)
+            if (doll != null && doll.ThrowCount != throwCount) { throwCount = doll.ThrowCount; Play("DollThrow", Body, SkillVolume, 0.04f); } // 떼서 던진 순간 — 풍선에 공기 들어가는 듯한 쉬이익(공장장 녹화 33.3·49.8초), 겨누는 동안은 소리 없음
             if (butterflies != null && butterflies.PlacedCount != butterflyCount) { butterflyCount = butterflies.PlacedCount; Play("ButterflyThrow", Body, SkillVolume, 0.05f); }
             if (notes != null)
             {
@@ -373,7 +373,7 @@ namespace Project1.Presentation
             Play("FlareGun_Hit", p.EndPoint, SkillVolume, 0.03f);
         }
 
-        /// <summary>리퍼 안개 칼날을 날림(평타 2칸·E 1칸 모두): 칼날이 휘감겨 나가는 쉬익 소리(리퍼 녹화 — 어두운 칼날이 뻗는 휘두르기).</summary>
+        /// <summary>리퍼 안개 칼날을 날림(평타 2칸·E 1칸 모두): 허공에 휘두른 뒤 낮고 스산하게 날아가는 스아아악(리퍼 녹화 5.5·22.4·26.7초의 꼬리).</summary>
         private void OnProjectileLaunched(IProjectile p)
         {
             if (identity == null || p.OwnerId != identity.Id || p.Kind != MistCharge.BladeKind) return;
