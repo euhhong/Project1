@@ -97,9 +97,9 @@ namespace Project1.Presentation
             ["Doctor"] = new[] { ("Footstep", "Coordinator") },
             ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
             ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
-            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("Footstep", "Mercenary") }, // 자기 Footstep 파일은 돌진 소리라 ChargeStep으로 옮김(Renamed)
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary") },
             ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
-            ["Thief"] = new[] { ("Footstep", "Mercenary"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
+            ["Thief"] = new[] { ("Footstep", "Forward"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
             ["Antonio"] = new[] { ("Footstep", "Ripper") },
             ["Gamekeeper"] = new[] { ("Attack", "Leo") },          // 닻 ↔ 망치: 무겁게 휘두르는 무기
             ["Joker"] = new[] { ("Footstep", "Leo") },             // 덩치 큰 감시자
@@ -110,7 +110,7 @@ namespace Project1.Presentation
         /// <summary>자기 폴더의 종류를 다른 종류로 옮겨 쓴다(파일 이름과 실제 소리가 다름). 빠진 자리는 Borrowed로 채운다.</summary>
         private static readonly Dictionary<string, (string From, string To)[]> Renamed = new()
         {
-            ["Forward"] = new[] { ("Footstep", "ChargeStep") }, // 포워드 Footstep = 럭비공 돌진하며 달리는 소리 — 걸을 때 말고 돌진할 때만(걸을 때마다 나던 문제)
+            // (없음) — 예: ["Folder"] = new[] { ("Footstep", "ChargeStep") }
         };
 
         private void LoadFolder(string from, string onlyKind)
