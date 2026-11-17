@@ -18,6 +18,25 @@ namespace Project1.Systems
         private const float SkillFirstChance = 0.8f; // 스킬 재사용 대기가 끝났고 닿는 거리면 이 확률로 스킬부터
         private readonly float swayPhase = Random.Range(0f, 6.28f); // 기다릴 때 좌우로 오가는 박자(봇마다 다르게)
 
+        // 돌진형(포워드·광대): 상대 반대쪽을 보고 돌진을 시작해(ChargeAwayAngle) 잠깐 곧게 나간 뒤 크게 꺾어 돌아온다
+        private const float ChargeAwayAngle = 150f, ChargeStraightTime = 0.2f, ChargeCurveRate = 240f;
+        private bool fireAway, awayHold;
+        private float awayYaw, fireAwayUntil, awayHoldFrom;
+
+        /// <summary>상대 쪽(toYaw)에서 ±ChargeAwayAngle 돌린 두 방향 중 앞이 더 트인 쪽(벽에 바로 박지 않게).</summary>
+        private float OpenAwayYaw(float toYaw)
+        {
+            float best = toYaw + 180f, bestFree = -1f;
+            foreach (float s in new[] { 1f, -1f })
+            {
+                float y = toYaw + s * ChargeAwayAngle;
+                Vector3 d = Quaternion.Euler(0f, y, 0f) * Vector3.forward;
+                float free = Physics.Raycast(tr.position + Vector3.up * 1f, d, out var hit, 8f, ~0, QueryTriggerInteraction.Ignore) && hit.collider.GetComponentInParent<CharacterIdentity>() == null ? hit.distance : 8f;
+                if (free > bestFree + 0.3f || (Mathf.Abs(free - bestFree) <= 0.3f && Random.value < 0.5f)) { bestFree = free; best = y; }
+            }
+            return best;
+        }
+
         private enum Maneuver { None, Approach, Strafe, BackOff, Feint, Hold, Light, Heavy, Parry, RunJump, Skill, Dodge, Bait }
 
         private const float ReattackGap = 0.55f; // 내 공격이 끝난 뒤 다시 누르기까지(CharacterAttack의 다시 공격 대기보다 조금 길게)
@@ -128,12 +147,20 @@ namespace Project1.Systems
             bool chargeActive = prof.Charge && skill != null && skill.State == SkillState.Casting && skill.MotionPhase != AttackPhase.Windup;
 
             // 시야: 평소엔 목표를 본다. 돌진 중에는 사람이 마우스로 트는 속도까지만(앞질러 겨눔).
+            // 돌진 직전·로켓을 들고 있는 동안(E 꾹)까지는 상대 반대쪽을 본다 — 돌진이 시작되면 그때부터 꺾는다
+            if (awayHold && (chargeActive || (now > awayHoldFrom + 0.4f && !(skill != null && skill.State == SkillState.Casting)))) awayHold = false;
             if (chargeActive)
             {
                 Vector3 lead = me.Position + me.Velocity * Mathf.Clamp(dist / 16f, 0f, 0.4f) - tr.position;
                 float leadYaw = Mathf.Atan2(lead.x, lead.z) * Mathf.Rad2Deg;
-                yaw = baiter.SteerYaw(yaw, leadYaw, dt);
+                // 뒤로 돌진을 시작했으면: 잠깐 곧게 나간 뒤 크게 꺾어 상대 쪽으로 돌아온다(그다음은 사람 손 빠르기로 따라감)
+                float sinceCharge = selfSkillStart >= 0f ? now - selfSkillStart : 99f;
+                float off = Mathf.Abs(Mathf.DeltaAngle(yaw, leadYaw));
+                if (sinceCharge < ChargeStraightTime) { }
+                else if (off > 50f) yaw = Mathf.MoveTowardsAngle(yaw, leadYaw, ChargeCurveRate * dt);
+                else yaw = baiter.SteerYaw(yaw, leadYaw, dt);
             }
+            else if ((fireAway && maneuver == Maneuver.Bait) || awayHold) yaw = Mathf.MoveTowardsAngle(yaw, awayYaw, 900f * dt); // 돌진 직전: 상대 반대쪽을 본다
             else yaw = Mathf.MoveTowardsAngle(yaw, targetYaw, 900f * dt);
             f.LookYaw = yaw;
             f.HasAimPoint = true; f.AimFromCursor = true; f.AimPoint = me.Position; f.AimNormal = Vector3.up;
@@ -566,12 +593,26 @@ namespace Project1.Systems
                     float oppReach = ReachOf(seen);
                     move = baiter.Move(now, dist, oppReach);
                     Vector3 toT = view.Latest.Position - tr.position;
-                    bool aligned = Mathf.Abs(Mathf.DeltaAngle(yaw, Mathf.Atan2(toT.x, toT.z) * Mathf.Rad2Deg)) < 10f;
-                    if (aligned && baiter.ShouldFire(now, dist, oppReach, seen, FacingMe(seen), LineClear(), now - lastDodgeEnd))
+                    float toYaw = Mathf.Atan2(toT.x, toT.z) * Mathf.Rad2Deg;
+                    // 돌진은 상대를 똑바로 보고 시작하지 않는다(정면으로 달려오면 불합리) — 상대 반대쪽을 보고 시작해 꺾어 돌아온다
+                    if (fireAway)
                     {
-                        if (prof.HoldSeconds > 0f) keys.HoldSkill(now, prof.HoldSeconds); else keys.TapSkill();
-                        lastSkillUse = now;
-                        End(now);
+                        move = Vector2.zero;
+                        if (Mathf.Abs(Mathf.DeltaAngle(yaw, awayYaw)) < 15f || now >= fireAwayUntil)
+                        {
+                            if (prof.HoldSeconds > 0f) keys.HoldSkill(now, prof.HoldSeconds); else keys.TapSkill();
+                            lastSkillUse = now;
+                            fireAway = false;
+                            awayHold = true; awayHoldFrom = now; // 로켓을 들고 있는 동안(광대)에도 반대쪽을 본 채로
+                            End(now);
+                        }
+                        break;
+                    }
+                    if (baiter.ShouldFire(now, dist, oppReach, seen, FacingMe(seen), LineClear(), now - lastDodgeEnd))
+                    {
+                        fireAway = true;
+                        awayYaw = OpenAwayYaw(toYaw);
+                        fireAwayUntil = now + 0.6f;
                         break;
                     }
                     if (now >= mUntil) End(now); // 다음 고르기에서 다시 유도할 수도(기다린 시간은 이어 감)
