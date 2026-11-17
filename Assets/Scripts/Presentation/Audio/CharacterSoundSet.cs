@@ -78,6 +78,7 @@ namespace Project1.Presentation
             StopLoop();
             if (folder == null) return;
             LoadFolder(folder, null);
+            if (Skipped.TryGetValue(folder, out var skip)) foreach (var kind in skip) clips.Remove(kind); // 이름과 다른 소리가 든 파일은 빼고 빌려 쓴다
             // 자기 소리가 없는 종류는 비슷한 캐릭터 것을 빌려 쓴다.
             if (Borrowed.TryGetValue(folder, out var borrow))
                 foreach (var (kind, donor) in borrow)
@@ -94,14 +95,20 @@ namespace Project1.Presentation
             ["Doctor"] = new[] { ("Footstep", "Coordinator") },
             ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
             ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
-            ["Forward"] = new[] { ("PalletDrop", "Mercenary") },
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("Footstep", "Mercenary") }, // 자기 Footstep 파일은 럭비공 박치기 소리라 발소리로 쓰지 않음(Skipped)
             ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
-            ["Thief"] = new[] { ("Footstep", "Forward"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
+            ["Thief"] = new[] { ("Footstep", "Mercenary"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
             ["Antonio"] = new[] { ("Footstep", "Ripper") },
             ["Gamekeeper"] = new[] { ("Attack", "Leo") },          // 닻 ↔ 망치: 무겁게 휘두르는 무기
             ["Joker"] = new[] { ("Footstep", "Leo") },             // 덩치 큰 감시자
             ["Michiko"] = new[] { ("Footstep", "Ripper") },
             ["Hastur"] = new[] { ("Footstep", "Luchino"), ("Vault", "Luchino") }, // 촉수 다리 = 괴물 발소리
+        };
+
+        /// <summary>자기 폴더에 있어도 쓰지 않는 종류(파일 이름과 실제 소리가 다름). 빠진 자리는 Borrowed로 채운다.</summary>
+        private static readonly Dictionary<string, string[]> Skipped = new()
+        {
+            ["Forward"] = new[] { "Footstep" }, // 포워드 Footstep = 럭비공 돌진 박치기 소리 — 걸을 때마다 계속 나던 문제
         };
 
         private void LoadFolder(string from, string onlyKind)
