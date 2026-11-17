@@ -64,7 +64,9 @@ namespace Project1.Map.EditorTools
         }
 
         // 긴 가구를 끊은 틈(MapBlockoutBuilder): 사물함 줄(칸 사이가 1.4m 넘게 벌어진 곳), 둘로 나눈 책장·창고 선반 사이, 예배실 장의자 사이 통로.
-        private static readonly string[] LockerRows = { "Locker1F_A", "Locker1F_B", "Locker2F", "Lockers_A", "Lockers_B" };
+        // 판자를 놓지 않는 사물함 줄 틈: 동관 1층 무너진 잔해 바로 옆(Lockers_B 3번 틈)
+        private static readonly string[] SkipGaps = { "Lockers_B_3" };
+        private static readonly string[] LockerRows ={ "Locker1F_A", "Locker1F_B", "Locker2F", "Lockers_A", "Lockers_B" };
         private static readonly (string a, string b)[] SplitPairs = { ("Shelf_7a", "Shelf_7b"), ("Storage_Rack_A", "Storage_Rack_B"), ("Pew_3_1.5", "Pew_3_7.1") }; // 마지막 = 예배실 가운데 통로(장의자 – 판자 – 장의자)
 
         /// <summary>긴 가구 틈마다 판자: 앞 칸 끝면에 기대 서서 틈을 가로질러 다음 칸까지 넘어간다(길이 = 틈).</summary>
@@ -87,6 +89,7 @@ namespace Project1.Map.EditorTools
                     float half1 = Mathf.Abs(Vector3.Dot(b1.extents, new Vector3(Mathf.Abs(dir.x), 0f, Mathf.Abs(dir.z))));
                     float gap = d.magnitude - half0 - half1;
                     if (gap < 1.4f) continue;
+                    if (SkipGaps.Contains($"{row.name}_{i}")) continue;
                     Vector3 face = b0.center + dir * half0; face.y = b0.min.y;
                     Add(root, $"Pallet_Gap_{row.name}_{i}", face, dir, gap, "사물함 줄 틈"); n++;
                 }

@@ -38,7 +38,7 @@ namespace Project1.Map.EditorTools
         {
             ("Trunk", 0.6f, true), ("Bucket", 0.45f, true), ("Lantern", 0.45f, true), ("Vase", 1.0f, true), ("Mirror", 1.8f, true), ("Coffin", 0.6f, true),
             ("Barrel", 1.05f, true),
-            ("Gramophone", 1.2f, true), ("Birdcage", 1.9f, true), ("BookPile", 0.6f, true), ("CoatRack", 1.9f, true), ("SuitcasePile", 1.0f, true),
+            ("Birdcage", 1.9f, true), // 축음기(Gramophone)는 뺌 — 입구 앞을 막는 작은 소품이라 어색함 ("BookPile", 0.6f, true), ("CoatRack", 1.9f, true), ("SuitcasePile", 1.0f, true),
             ("Lamppost", 3.2f, false), ("StoneBench", 0.6f, false), ("Brazier", 1.0f, false), ("Gravestone", 1.1f, false), ("GraveCross", 1.3f, false),
             ("DeadBush", 1.2f, false), ("Wheelbarrow", 0.8f, false), ("Bucket", 0.45f, false),
             ("StoneUrn", 1.3f, false), ("Signpost", 2.0f, false), ("WagonWheel", 1.2f, false), ("Scarecrow", 2.0f, false),

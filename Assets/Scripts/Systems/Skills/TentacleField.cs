@@ -322,6 +322,8 @@ namespace Project1.Systems
         /// 내리치는 동안: 밑동에서 내려찍는 방향으로 펼쳐진 부채꼴(반각 slamHalfAngle, 밑동에서 slamInnerRadius ~ SlamReach, 높이 slamHitHeight까지) 안의 상대를 한 번씩 맞힌다.
         /// 몸(판정 상자)의 한 부분이라도 부채꼴에 들면 맞는다 — 근거리는 웬만하면 맞고, 촉수에 바짝 붙어(slamInnerRadius 안) 둥글게 돌거나 옆·뒤로 빠지면 피한다.
         /// </summary>
+        private const float OwnPillarRadius = 0.6f; // 벽 검사에서 무시할 촉수 자기 기둥 둘레(m) — 기둥 반지름 0.35m보다 조금 넉넉히
+
         private void HitAlong(in TentacleInfo t)
         {
             if (!hitBySlam.TryGetValue(t.Id, out var done)) hitBySlam[t.Id] = done = new HashSet<int>();
@@ -335,6 +337,8 @@ namespace Project1.Systems
                 var victim = hurt.Owner;
                 if (victim == null || (self != null && !self.CanHit(victim)) || done.Contains(victim.Id)) continue;
                 if (!InSlamFan(hurt.Collider, basePos, dir, reach, out Vector3 point)) continue;
+                // 벽·장애물 너머는 맞지 않는다(촉수 그래픽은 뚫고 보여도 피해는 막힘). 촉수 자기 기둥은 무시.
+                if (!CombatLineOfSight.ClearFrom(probe, victim.gameObject, point, OwnPillarRadius)) continue;
                 done.Add(victim.Id);
                 HitEvents.Raise(new HitResult
                 {
