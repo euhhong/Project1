@@ -155,6 +155,14 @@ namespace Project1.Systems
             }
             if (casting) CastingExtras(now, dist, prof);
 
+            // 멀거나 안 보이거나 다른 층: 교전 전술 대신 길(계단·사다리)을 따라 달려 시야 안으로 쫓아간다.
+            if (UpdateChase(now, dist, me.Position))
+            {
+                Chase(ref f, now, dt, me.Position);
+                keys.Apply(ref f, now);
+                return f;
+            }
+
             React(now, dist, seen, prof);
 
             if (maneuver == Maneuver.None && now >= nextDecision) Choose(now, dist, seen, prof);
@@ -560,6 +568,82 @@ namespace Project1.Systems
             if (maneuver == Maneuver.Strafe && !mFlag) { mDir = -mDir; mFlag = true; }
             else End(now);
         }
+
+        // ───────────────────────── 추격 ─────────────────────────
+
+        private bool chasing;
+        private float chaseSwitchSince;
+        private NavPathFollower chaseNav;
+        private readonly RaycastHit[] sightHits = new RaycastHit[16];
+
+        /// <summary>
+        /// 추격할지: 상대가 chaseDistance보다 멀거나, 눈높이에서 안 보이거나(벽·바닥), 다른 층(높이 차 chaseHeightGap)이면 lostSightDelay 뒤 추격.
+        /// 보이고 chaseExitDistance 안이면 0.25초 뒤 자유 행동으로 돌아간다(경계에서 왔다 갔다 하지 않게 거리 두 개).
+        /// </summary>
+        private bool UpdateChase(float now, float dist, Vector3 targetPos)
+        {
+            float dy = Mathf.Abs(targetPos.y - tr.position.y);
+            bool visible = dist <= cfg.chaseDistance && dy < cfg.chaseHeightGap && Sees(targetPos);
+            bool wantSwitch = chasing ? visible && dist <= cfg.chaseExitDistance : !visible;
+            if (!wantSwitch) chaseSwitchSince = now;
+            else if (now - chaseSwitchSince >= (chasing ? 0.25f : cfg.lostSightDelay))
+            {
+                chasing = !chasing;
+                chaseSwitchSince = now;
+                if (chasing) { keys.Clear(); baiter.Stop(); if (maneuver != Maneuver.None) End(now); }
+                else if (chaseNav != null) chaseNav.ResetPath();
+            }
+            return chasing;
+        }
+
+        /// <summary>
+        /// 추격: NavMesh 길(계단, 사다리 링크 — RuntimeNavMesh)을 따라 달린다. 몸은 가는 쪽을 본다.
+        /// 사다리 구간이면 사다리 쪽으로 밀어 잡고 오르내린다(CharacterTraversal). 사다리 앞에서 지쳤으면(스태미나) 숨을 고르고 탄다.
+        /// 스태미나는 chaseRunStamina를 남기고 달린다(사다리 몫). 막혀서 길 찾기가 점프를 권하면 점프.
+        /// </summary>
+        private void Chase(ref CharacterInputFrame f, float now, float dt, Vector3 targetPos)
+        {
+            if (chaseNav == null && !tr.TryGetComponent(out chaseNav)) chaseNav = tr.gameObject.AddComponent<NavPathFollower>();
+            bool onLadder = traversal != null && traversal.Action == TraversalAction.Ladder;
+            bool ladderAhead = chaseNav.LadderLeg != null;
+            bool tired = stamina != null && (stamina.IsExhausted || stamina.Current < 15f);
+            bool waitForLadder = ladderAhead && !onLadder && Grounded && tired; // 지친 채 잡으면 오르다 손이 풀린다
+
+            if (waitForLadder || !chaseNav.Steer(targetPos, true, out Vector3 dir))
+            {
+                Vector3 to = targetPos - tr.position;
+                if (Flat(to).sqrMagnitude > 1e-4f) yaw = Mathf.MoveTowardsAngle(yaw, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 720f * dt);
+                f.LookYaw = yaw;
+                return;
+            }
+            yaw = Mathf.MoveTowardsAngle(yaw, Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, 720f * dt);
+            f.LookYaw = yaw;
+            Vector3 local = Quaternion.Euler(0f, -yaw, 0f) * dir; // 시야가 아직 덜 돌았어도 이동은 정확히 길 쪽으로
+            f.Move = new Vector2(local.x, local.z).normalized;
+            f.Run = !onLadder && !ladderAhead && CanRun && f.Move.y > 0.3f
+                    && (stamina == null || stamina.Current > cfg.chaseRunStamina);
+            if (chaseNav.ConsumeJump() && Grounded && !ladderAhead) keys.Jump();
+        }
+
+        /// <summary>눈높이에서 상대 가슴이 보이는지(벽·바닥·천장에 안 막힘 — 캐릭터·트리거는 무시).</summary>
+        private bool Sees(Vector3 targetPos)
+        {
+            Vector3 from = tr.position + Vector3.up * 1.5f;
+            Vector3 to = targetPos + Vector3.up * 1.2f;
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            if (len < 0.1f) return true;
+            int n = Physics.RaycastNonAlloc(from, d / len, sightHits, len, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                var c = sightHits[i].collider;
+                if (c.transform.IsChildOf(tr) || c.GetComponentInParent<CharacterIdentity>() != null) continue;
+                return false;
+            }
+            return true;
+        }
+
+        private static Vector3 Flat(Vector3 v) => new(v.x, 0f, v.z);
 
         /// <summary>나 → 목표 사이(가슴 높이)가 벽에 막히지 않았는지.</summary>
         private bool LineClear()

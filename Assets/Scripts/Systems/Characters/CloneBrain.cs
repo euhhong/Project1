@@ -92,7 +92,7 @@ namespace Project1.Systems
             var f = new CharacterInputFrame { LookYaw = transform.eulerAngles.y };
             InRange = false;
             if (despawned) return f;
-            if (follower == null) { follower = GetComponent<NavPathFollower>(); follower.SuggestJumpWhenStuck = false; }
+            if (follower == null) { follower = GetComponent<NavPathFollower>(); follower.SuggestJumpWhenStuck = false; follower.UseLadders = false; } // 분신은 사다리를 못 탄다(CharacterTraversal 없음)
             UpdateTarget();
             if (target == null) return f;
 

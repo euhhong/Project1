@@ -16,6 +16,18 @@ namespace Project1.Systems
         [Min(0.5f)] public float survivorReach = 1.6f;
         [Min(0.5f)] public float hunterReach = 2.0f;
 
+        [Header("추격 (상대가 멀거나 안 보일 때)")]
+        [Tooltip("상대가 이보다 멀면(m) 보여도 추격 — NavMesh 길(계단·사다리)을 따라 달린다.")]
+        [Min(1f)] public float chaseDistance = 22f;
+        [Tooltip("추격을 그만두는 거리(m): 상대가 보이고 이 안이면 자유 행동(교전 전술).")]
+        [Min(1f)] public float chaseExitDistance = 16f;
+        [Tooltip("높이 차가 이보다 크면(m, 다른 층) 보여도 길을 따라간다.")]
+        [Min(0.5f)] public float chaseHeightGap = 2.5f;
+        [Tooltip("상대가 안 보인 채 이만큼(초) 지나면 추격을 시작한다.")]
+        [Min(0f)] public float lostSightDelay = 0.4f;
+        [Tooltip("추격 중 스태미나가 이보다 많을 때만 달린다(사다리 오를 몫을 남김).")]
+        [Min(0f)] public float chaseRunStamina = 25f;
+
         [Header("사람 같은 반응")]
         [Tooltip("상대 동작을 알아채기까지 걸리는 시간(초, 매번 이 사이 무작위).")]
         [Min(0f)] public float reactionMin = 0.15f;

@@ -56,6 +56,11 @@ namespace Project1.Systems
         public float RemainingDistance { get; private set; }
         /// <summary>길을 찾아 따라가는 중(false면 곧장 향하는 중).</summary>
         public bool HasPath => hasPath;
+        /// <summary>사다리도 길로 쓸지(CharacterTraversal로 사다리를 타는 캐릭터: 켬. 분신처럼 못 타면 끔).</summary>
+        public bool UseLadders { get; set; } = true;
+        private NavMeshQueryFilter Filter => UseLadders ? RuntimeNavMesh.Filter : RuntimeNavMesh.FilterNoLadders;
+        /// <summary>지금 사다리 구간을 가는 중이면 그 사다리(아래 끝 → 위 끝, 또는 거꾸로). 아니면 null.</summary>
+        public Project1.Core.Ladder LadderLeg { get; private set; }
         /// <summary>막혔으니 점프해 보라(읽으면 꺼진다).</summary>
         public bool ConsumeJump() { bool j = jumpRequested; jumpRequested = false; return j; }
 
@@ -68,17 +73,19 @@ namespace Project1.Systems
             Vector3 pos = transform.position;
             float now = Time.time;
             bool meshReady = RuntimeNavMesh.Ensure();
-            var filter = RuntimeNavMesh.Filter;
+            var filter = Filter;
             NavMeshHit selfHit = default;
             bool onMesh = meshReady && NavMesh.SamplePosition(pos, out selfHit, SelfSample, filter);
             Vector3 navPos = onMesh ? selfHit.position : pos;
 
             bool blocked = CheckBlocked(pos, moving, now, out bool touching);
-            bool repath = blocked
+            // 땅에 있을 때만 길을 다시 찾는다 — 사다리·매달리기·점프 중에는 NavMesh 밖이거나 엉뚱한 층에 붙으니 지금 길을 그대로 따른다.
+            bool grounded = motor == null || motor.IsGrounded;
+            bool repath = grounded && (blocked
                           || (!hasPath && now - lastRepath >= 0.2f)
                           || (hasPath && now - lastRepath >= repathInterval)
                           || (destination - pathGoal).sqrMagnitude > repathMove * repathMove
-                          || OffPath(pos);
+                          || OffPath(pos));
             if (repath) Repath(navPos, onMesh, destination, now);
 
             Vector3 aim = destination;
@@ -92,6 +99,20 @@ namespace Project1.Systems
                 for (int i = cornerIndex; i < cornerCount - 1; i++) RemainingDistance += Vector3.Distance(corners[i], corners[i + 1]);
             }
             else RemainingDistance = Vector3.Distance(pos, destination);
+
+            // 사다리 구간(링크 한 끝 → 다른 끝): 다른 층에 있는 동안은 사다리를 똑바로 — 오를 때 벽 쪽(밀면 잡고 오름), 내려갈 때 바깥쪽(턱 끝에서 걸어 나가면 잡고 내려감).
+            LadderLeg = null;
+            if (hasPath)
+            {
+                var l = RuntimeNavMesh.LadderAt(corners[cornerIndex], 0.6f);
+                if (l != null && l == RuntimeNavMesh.LadderAt(segStart, 1f)) LadderLeg = l;
+            }
+            if (LadderLeg != null && Mathf.Abs(aim.y - pos.y) >= 0.6f)
+            {
+                direction = aim.y > pos.y ? -LadderLeg.Normal : LadderLeg.Normal;
+                lastDir = direction;
+                return true;
+            }
 
             Vector3 flat = Flat(aim - pos);
             if (flat.sqrMagnitude < 0.01f) { direction = Vector3.zero; lastDir = Vector3.zero; return false; }
@@ -112,9 +133,9 @@ namespace Project1.Systems
         {
             lastRepath = now;
             pathGoal = destination;
+            if (!onMesh) return; // 내 자리가 NavMesh 밖(상자 위 등): 지금 길을 그대로 따른다
             hasPath = false;
-            if (!onMesh) return;
-            var filter = RuntimeNavMesh.Filter;
+            var filter = Filter;
             // 목적지가 점프 중이면 공중이라 조금 넓게 찾는다
             if (!NavMesh.SamplePosition(destination, out var to, 2.5f, filter)
                 && !NavMesh.SamplePosition(destination, out to, 5f, filter)) return;
@@ -195,7 +216,9 @@ namespace Project1.Systems
             float progress = Vector3.Dot(delta, lastDir) / dt; // 가려던 방향으로 실제로 나간 속도
             bool good = progress >= speed * GoodProgress;
 
-            if (touching && !good) rubFor += dt;
+            bool ladder = LadderLeg != null; // 사다리 앞에서 벽 쪽으로 미는 것은 비비는 게 아니다(잡는 중) — 오래 못 잡을 때만 막힘
+            if (ladder) rubFor = 0f;
+            else if (touching && !good) rubFor += dt;
             else if (touching) rubFor += dt * 0.5f; // 미끄러지며 가도 오래 닿아 있으면 비비는 것
             else rubFor = Mathf.Max(0f, rubFor - dt * 2f);
 
@@ -204,7 +227,7 @@ namespace Project1.Systems
             bool still = (pos - stuckPos).sqrMagnitude <= 0.25f * 0.25f;
             if (!still) { stuckPos = pos; stuckSince = now; }
 
-            if (rubFor >= rubTime || (still && now - stuckSince >= stuckTime))
+            if (rubFor >= rubTime || (still && now - stuckSince >= (ladder ? 2f : stuckTime)))
             {
                 rubFor = 0f; stuckPos = pos; stuckSince = now; goodFor = 0f;
                 rubCount++;
