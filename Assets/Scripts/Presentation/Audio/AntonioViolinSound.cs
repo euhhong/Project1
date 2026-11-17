@@ -15,6 +15,7 @@ namespace Project1.Presentation
         private const float RestartAfter = 4f;
 
         private AntonioViolin violin;
+        private Project1.Systems.NoteField notes;
         private AudioSource source;
         private float silentSince = float.NegativeInfinity;
 
@@ -47,7 +48,8 @@ namespace Project1.Presentation
             if (source.clip == null) return;
             if (InGameBgm.Suppressed) { if (source.isPlaying) { source.Pause(); silentSince = Time.time; } return; } // 게임 종료 음악이 나오는 동안은 바이올린 소리를 내지 않는다(겹침)
 
-            float w = violin.Playing01;
+            if (notes == null) notes = GetComponentInParent<Project1.Systems.NoteField>();
+            float w = notes != null && notes.Placing ? 1f : violin.Playing01; // 음표 자리 고르는 중(좌클릭 꾹)엔 계속 연주
             source.volume = w * Volume * AudioVolume.Sfx;
             if (w > 0.01f)
             {

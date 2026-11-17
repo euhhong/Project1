@@ -216,7 +216,7 @@ namespace Project1.Presentation
 
         /// <summary>
         /// 강공격 모으기·강공격을 평타 모션으로 보여 줄지: 생존자(발차기 격투)가 아니고, 강공격 자리에 그 캐릭터 전용 모션이 없을 때(기본 임시 Attack_Heavy 그대로 — 사냥터지기·안토니오·재앙의 도마뱀 등).
-        /// 전용 강공격 모션이 있는 캐릭터(리퍼·광대·노란옷의 왕)는 그대로 둔다.
+        /// 전용 강공격 모션이 있는 캐릭터(리퍼·노란옷의 왕)는 그대로 둔다. 광대는 평타(두 손 로켓 내려치기)로.
         /// </summary>
         private bool LightForHeavy()
         {
@@ -225,8 +225,7 @@ namespace Project1.Presentation
             if (lightHeavyFor == rc) return lightHeavy;
             lightHeavyFor = rc;
             lightHeavy = false;
-            // 광대: 강공격 자리는 비워 두지만(기본 모션) 예전 두 손 모으기 → 내려치기 모션을 그대로 쓴다(평타 모션으로 바꾸지 않음).
-            if (rc != null && rc.name.StartsWith("SmileyFace")) return false;
+            // 광대: 강공격 자리는 비워 두어 평타 모션(두 손으로 로켓을 들어 위에서 아래로 후려치기, Attack_Light_Joker)을 모으기·강공격에도 쓴다.
             if (rc is AnimatorOverrideController aoc)
             {
                 overridePairs.Clear();

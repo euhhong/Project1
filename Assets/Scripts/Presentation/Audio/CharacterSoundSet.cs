@@ -63,7 +63,6 @@ namespace Project1.Presentation
         private string lastSkillState;
         private int lastPhase = -1, palletCount, swapCount, throwCount, butterflyCount;
         private float lastNotePlace = -1f, stepDistance, lastLand;
-        private bool notePlacing;
         private Vector3 lastPos;
         private AudioSource loopSource;
         private string loopKind;
@@ -304,14 +303,12 @@ namespace Project1.Presentation
             if (butterflies != null && butterflies.PlacedCount != butterflyCount) { butterflyCount = butterflies.PlacedCount; Play("ButterflyThrow", Body, SkillVolume, 0.05f); }
             if (notes != null)
             {
-                if (notes.Placing && !notePlacing) Play("String_Start", Body, SkillVolume, 0.03f); // 좌클릭 꾹 = 활을 긋기 시작
+                // 좌클릭 꾹(자리 고르는 중)에는 바이올린 연주 소리만 계속(AntonioViolinSound). 음표 소리는 설치를 확정한 순간에 낸다(좌클릭을 떼거나 E로 바로 앞에 놓음).
                 if (notes.LastPlaceTime != lastNotePlace)
                 {
-                    if (!notePlacing) Play("String_Aim", Body, SkillVolume, 0.03f); // E로 바로 앞에 놓으면 짧게 긋는 소리를 먼저
-                    Play("String_Release", Body, SkillVolume, 0.03f);
+                    Play("String_Start", Body, SkillVolume, 0.03f);
                     lastNotePlace = notes.LastPlaceTime;
                 }
-                notePlacing = notes.Placing;
             }
         }
 
