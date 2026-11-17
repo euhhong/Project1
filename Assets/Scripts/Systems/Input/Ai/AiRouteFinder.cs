@@ -54,6 +54,37 @@ namespace Project1.Systems
 
         private struct Hurdle { public Collider Collider; public Vector3 Point, Normal; public bool Vault; }
 
+        // ── 같은 곳 반복 넘기 막기: 같은 자리(LoopRadius 안)를 LoopWindow초 안에 LoopCount번 넘으면 길이 꼬인 것 — 그 자리를 BanTime초 동안 넘지 않고 다른 길(NavMesh)로 ──
+        private const float LoopRadius = 3f, LoopWindow = 12f, BanRadius = 2.5f, BanTime = 12f;
+        private const int LoopCount = 3;
+        private readonly System.Collections.Generic.List<(Vector3 p, float t)> vaultLog = new();
+        private readonly System.Collections.Generic.List<(Vector3 p, float until)> banned = new();
+
+        /// <summary>넘기를 시작한 자리를 적어 두고, 같은 자리를 짧은 시간에 여러 번 넘었으면 그 자리를 잠깐 막는다.</summary>
+        private void NoteVault(Vector3 point, float now)
+        {
+            vaultLog.RemoveAll(e => now - e.t > LoopWindow);
+            int near = 1;
+            foreach (var e in vaultLog) if (Near(e.p, point, LoopRadius)) near++;
+            vaultLog.Add((point, now));
+            if (near < LoopCount) return;
+            banned.Add((point, now + BanTime));
+            vaultLog.RemoveAll(e => Near(e.p, point, LoopRadius));
+            hasWindow = false; directVault = false; windowPushSince = -1f;
+            navUntil = Mathf.Max(navUntil, now + 4f); // 잠깐 NavMesh 길(문·계단)로
+            nextScan = now;
+        }
+
+        /// <summary>이 자리가 반복 넘기로 잠깐 막아 둔 곳인지.</summary>
+        private bool IsBanned(Vector3 point, float now)
+        {
+            banned.RemoveAll(b => now >= b.until);
+            foreach (var b in banned) if (Near(b.p, point, BanRadius)) return true;
+            return false;
+        }
+
+        private static bool Near(Vector3 a, Vector3 b, float r) => Mathf.Abs(a.y - b.y) < 1.5f && Flat(a - b).sqrMagnitude < r * r;
+
         /// <summary>곧장 가지 않고 돌아가거나 비켜 가는 중(창틀 쪽·NavMesh 길·비켜 가기·턱 마주 보기) — 이때는 가는 쪽을 본다.</summary>
         public bool Detouring { get; private set; }
 
@@ -156,7 +187,7 @@ namespace Project1.Systems
                 {
                     dir = push; Detouring = true;
                     float face = Vector3.Dot(Flat(hz.Point - pos), push);
-                    if (face <= r + JumpReach) { jump = true; lastJumpAt = hz.Collider; }
+                    if (face <= r + JumpReach) { jump = true; lastJumpAt = hz.Collider; if (hz.Vault && now - lastJump >= 0.6f) NoteVault(hz.Point, now); }
                 }
             }
 
@@ -204,7 +235,8 @@ namespace Project1.Systems
                     if (direct)
                     {
                         hasWindow = false;
-                        directVault = dist < ScanRange && Blocked(pos + Vector3.up * (h * 0.3f), straight, dist - 0.3f, out _)
+                        directVault = dist < ScanRange && Blocked(pos + Vector3.up * (h * 0.3f), straight, dist - 0.3f, out var lowHit)
+                                      && !IsBanned(lowHit.point, now) // 반복해서 넘던 곳이면 곧장 넘지 않는다
                                       && NavLength(pos, target) > dist + VaultBias + 1f;
                     }
                     else { directVault = false; ScanWindows(pos, straight, target, h); }
@@ -243,7 +275,7 @@ namespace Project1.Systems
                 {
                     dir = push;
                     float face = Vector3.Dot(Flat(hz.Point - pos), push);
-                    if (face <= r + JumpReach && now - lastJump >= 0.6f) { vault = true; lastJump = now; lastJumpAt = hz.Collider; }
+                    if (face <= r + JumpReach && now - lastJump >= 0.6f) { vault = true; lastJump = now; lastJumpAt = hz.Collider; NoteVault(hz.Point, now); }
                 }
             }
             return dir;
@@ -263,6 +295,7 @@ namespace Project1.Systems
             if (n.sqrMagnitude < 0.25f) return false;
             n.Normalize();
             if ((low.collider == badHurdle && now < badHurdleUntil) || Stair(low.collider) || low.collider.GetComponentInParent<NoLedgeGrab>() != null) return false;
+            if (IsBanned(low.point, now)) return false; // 반복해서 넘던 곳 — 넘지 않고 비켜 간다(다른 길)
             hz = new Hurdle { Collider = low.collider, Point = low.point, Normal = n };
 
             // 넘어가 걸친 판자: 판자 넘기(스페이스바)
@@ -359,6 +392,7 @@ namespace Project1.Systems
                 if (!Blocked(pos + Vector3.up * (h * 0.15f), d, ScanRange, out var low) || low.normal.y > 0.5f) continue;
                 float wallDist = low.distance;
                 if (Blocked(pos + Vector3.up * (h * 0.85f), d, wallDist + 1.0f, out _)) continue; // 가슴 높이도 막힘 = 그냥 벽
+                if (IsBanned(low.point, Time.time)) continue; // 반복해서 넘던 창틀은 고르지 않는다
                 Vector3 beyond = low.point + d * 1.0f;
                 Vector3 rest = target - beyond; rest.y = 0f;
                 float cost = wallDist + rest.magnitude;
