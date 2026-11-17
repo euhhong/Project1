@@ -8,7 +8,8 @@ namespace Project1.Systems
     /// 공장장 E: 짧게 누르면 던진 인형과 자리 바꾸기(DollThrow.TrySwap), 꾹 누르면(castTime초 = 0.4) 분신 꺼내기.
     /// - E를 누르면 시전이 시작되고, castTime 전에 떼면 인형과 자리를 바꾼다(인형이 없으면 아무 일 없음). 그동안 이동은 막지 않는다.
     /// - castTime까지 누르고 있으면 옆에 분신을 하나 불러낸다. 분신은 가장 가까운 상대를 끝까지 쫓아가(다른 층이면 계단으로 — NavPathFollower),
-    ///   공격 범위에 들면 멈춰 서서 공격한다(CloneBrain). 제한시간 없음 — 불러낸 캐릭터가 사라질 때까지 있다. 한 번에 하나 — 다시 부르면 지난 분신은 사라진다.
+    ///   공격 범위에 들면 멈춰 서서 공격한다(CloneBrain). 제한시간 없음 — 불러낸 캐릭터가 사라질 때까지 있다. 한 번에 하나.
+    /// - 분신이 나와 있을 때 꾹 누르면 분신을 집어넣고, recallCooldown(14초) 동안 다시 부를 수 없다(인형과 자리 바꾸기는 그대로).
     /// - 분신은 공격에 면역(HitImmunity — 맞아도 데미지·경직·넉백 없음)이고, 몸(CharacterController)이 다른 캐릭터를 막는 장애물이다.
     /// 분신의 몸·이동·공격·맞는 판정은 여기(BE)서 만들고, 모델·겉모습(검은 몸 + 용암 균열)·무기(갈고리 낫)는 FE가 붙인다(CloneEvents.Spawned).
     /// 분신과 불러낸 캐릭터는 서로 맞지 않는다(CharacterIdentity.Summoner).
@@ -58,11 +59,42 @@ namespace Project1.Systems
             if (ctx == null || ctx.Phase == PhaseSwapped) return; // 짧게 = 자리 바꾸기만
             var id = owner.GetComponent<CharacterIdentity>();
             if (id == null) return;
-            if (current.TryGetValue(id.Id, out var old) && old != null) old.Despawn(); // 한 번에 하나
+            if (current.TryGetValue(id.Id, out var old) && old != null)
+            {
+                // 분신이 나와 있으면 꾹 = 집어넣기 → recallCooldown 동안 다시 부를 수 없다(인형과 자리 바꾸기는 그대로 됨)
+                old.Despawn();
+                current.Remove(id.Id);
+                float cd = SkillCooldowns.Scale(recallCooldown); // 연습 모드 = 0
+                cloneReadyAt[id.Id] = Time.time + cd;
+                cloneCooldownLength[id.Id] = cd;
+                return;
+            }
+            if (CloneCooldownRemaining(id.Id) > 0f) return; // 집어넣은 뒤 재사용 대기 중
             current[id.Id] = Summon(ctx, id);
         }
 
-        public override string StatusText(CharacterSkill ctx) => "꾹: 분신";
+        [Tooltip("분신을 집어넣으면(분신이 있을 때 E 꾹) 다시 부를 수 있을 때까지(초).")]
+        [Min(0f)] public float recallCooldown = 14f;
+        private static readonly Dictionary<int, float> cloneReadyAt = new(), cloneCooldownLength = new();
+
+        private static float CloneCooldownRemaining(int ownerId) => cloneReadyAt.TryGetValue(ownerId, out float t) ? Mathf.Max(0f, t - Time.time) : 0f;
+
+        private static bool HasClone(CharacterSkill ctx) =>
+            ctx.TryGetComponent(out CharacterIdentity id) && current.TryGetValue(id.Id, out var c) && c != null;
+
+        /// <summary>HUD 오른쪽 아래 둥근 게이지 '분신': 집어넣은 뒤 다시 부를 수 있을 때까지.</summary>
+        public override bool TryGetCooldownGauge(CharacterSkill ctx, out string label, out float fill)
+        {
+            label = "분신"; fill = 0f;
+            if (!ctx.TryGetComponent(out CharacterIdentity id)) return false;
+            float left = CloneCooldownRemaining(id.Id);
+            if (left <= 0f) return false;
+            float len = cloneCooldownLength.TryGetValue(id.Id, out float l) && l > 0f ? l : recallCooldown;
+            fill = 1f - left / len;
+            return true;
+        }
+
+        public override string StatusText(CharacterSkill ctx) => HasClone(ctx) ? "꾹: 분신 넣기" : "꾹: 분신";
 
         public override string IdleStatusText(CharacterSkill ctx)
         {
