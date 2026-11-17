@@ -37,7 +37,7 @@ namespace Project1.Systems
             Vector3 me = self.position, opp = hunter.position;
             // 판자 내리기 범위 안의 스페이스바 = 판자 내리기(PalletUser) — 근접 AI의 점프(달리기 점프 공격·깡충)로 엉뚱하게 내리지 않게 막는다.
             // 판자는 아래 '내리기'에서 정한 때에만 내린다.
-            if (f.Jump && Pallet.TryFind(me, self.forward, out _, out _)) f.Jump = false;
+            if (f.Jump && Pallet.TryFind(me, Quaternion.Euler(0f, f.LookYaw, 0f) * Vector3.forward, out _, out _)) f.Jump = false;
             float hunterDist = Flat(opp - me).magnitude;
 
             if (pallet == null || pallet.State == Pallet.PalletState.Falling)
@@ -59,9 +59,13 @@ namespace Project1.Systems
                 float mySide = Vector3.Dot(me - center, lane);
                 bool pastGap = mySide * hunterSide < -0.3f;
                 float hunterToGap = Flat(opp - center).magnitude;
-                if (pastGap && hunterToGap < DropHunterRange && Pallet.TryFind(me, self.forward, out Pallet near, out _) && near == pallet)
+                // 판자는 몸 앞 반원 안에 있어야 내려진다(Pallet.TryFind) — 달아나며 등진 채면 판자 쪽으로 돌아서서 내린다(같은 틱에 시야를 판자로)
+                Vector3 toPallet = Flat(p.position - me);
+                if (pastGap && hunterToGap < DropHunterRange && Pallet.TryFind(me, toPallet, out Pallet near, out _) && near == pallet)
                 {
-                    f.Jump = true; // PalletUser: 판자 범위 안의 스페이스바 = 내리기
+                    Face(ref f, toPallet);
+                    f.Move = Vector2.zero;
+                    f.Jump = true; // PalletUser: 판자 범위 안의 스페이스바 = 내리기(시야 방향 LookYaw로 판자를 찾음)
                     ClearAttack(ref f);
                     holdUntil = now + HoldTime;
                     return;

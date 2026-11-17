@@ -46,7 +46,8 @@ namespace Project1.Systems
             if (input == null || Dropping) { BlocksJump = false; return; }
             CharacterInputFrame frame = input.ReadInput();
             // 세워진 판자의 내리기 범위 안이면 점프하지 않는다(내릴 수 없는 순간 — 공격·기절 중 등 — 에도). 이동보다 먼저 돌아 같은 틱의 점프를 막는다.
-            BlocksJump = Pallet.TryFind(transform.position, transform.forward, out _, out _);
+            Vector3 lookDir = Quaternion.Euler(0f, frame.LookYaw, 0f) * Vector3.forward; // 내리기와 같은 기준(시야 방향 앞 반원)
+            BlocksJump = Pallet.TryFind(transform.position, lookDir, out _, out _);
             if (!frame.Jump) return;
             if (stun == null) TryGetComponent(out stun);
             if (health == null) TryGetComponent(out health);
