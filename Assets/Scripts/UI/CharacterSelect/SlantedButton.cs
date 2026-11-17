@@ -23,6 +23,9 @@ namespace Project1.UI
         /// <summary>마우스를 올릴 때 낼 화면 소리 이름(SfxPlayer.PlayUi). null = 소리 없음.</summary>
         public string HoverSound { get; set; }
 
+        /// <summary>false = 마우스를 올려도 들뜨거나 밝아지지 않고 소리도 없다(누르기는 됨, 예: 결과 창의 나가기).</summary>
+        public bool HoverEffect { get; set; } = true;
+
         public SlantedButton(VisualElement parent, string text, Font font, int fontSize, float width, float height, bool primary, Action onClick)
         {
             this.primary = primary;
@@ -54,6 +57,7 @@ namespace Project1.UI
 
             face.RegisterCallback<PointerEnterEvent>(_ =>
             {
+                if (!HoverEffect) return;
                 hot = true; Restyle();
                 if (HoverSound != null) Project1.Presentation.SfxPlayer.PlayUi(HoverSound, 1f, 0.08f); // 타이틀 버튼과 같은 소리
             });

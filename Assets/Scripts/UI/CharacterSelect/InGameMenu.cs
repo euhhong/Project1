@@ -50,12 +50,13 @@ namespace Project1.UI
             dialog.DefaultAction = Resume;
         }
 
-        private void AddButton(string text, System.Action onClick, bool primary) => AddButton(dialog, text, onClick, primary);
+        private void AddButton(string text, System.Action onClick, bool primary) => _ = AddButton(dialog, text, onClick, primary);
 
-        private static void AddButton(TitleDialog d, string text, System.Action onClick, bool primary)
+        private static SlantedButton AddButton(TitleDialog d, string text, System.Action onClick, bool primary)
         {
             var b = TitleDialog.MakeSlantedButton(d.Box, text, onClick, primary, width: 280f, height: 70f);
             b.Root.style.marginTop = 22f;
+            return b;
         }
 
         // ───────── 승패 결과 창 ─────────
@@ -81,7 +82,7 @@ namespace Project1.UI
             var title = TitleDialog.SlantedText(resultDialog.Box, text, 110);
             title.style.marginBottom = 6f;
             AddButton(resultDialog, "R  다시하기", retry, primary: true);
-            AddButton(resultDialog, "ESC  나가기", exit, primary: false);
+            AddButton(resultDialog, "ESC  나가기", exit, primary: false).HoverEffect = false; // 결과 창 나가기: 마우스를 올려도 들뜨지 않고 소리 없음
             resultDialog.CancelAction = null;   // ESC는 BattleMatch가(나가기)
             resultDialog.DefaultAction = retry; // Enter = 다시하기
             resultDialog.Open();

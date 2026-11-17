@@ -5,19 +5,19 @@ namespace Project1.Presentation
 {
     /// <summary>
     /// 도둑 손전등에 정면으로 지져져 기절하면(LightExposure.Blinded) 내 화면이 하얗게 번쩍여 시야를 가린다(FE).
-    /// 내가 조종하는 캐릭터(LocalPlayerInput)가 기절했을 때만 보인다. 처음 holdTime초는 거의 하얗게, 그 뒤 기절이 끝날 즈음까지 서서히 걷힌다.
+    /// 내가 조종하는 캐릭터(LocalPlayerInput)가 기절했을 때만 보인다(상대 화면은 그대로). 기절하는 동안 내내 하얗게 가려지고,
+    /// 기절이 끝난 뒤부터 afterFade초 동안 서서히 걷혀 그 뒤 정상으로 보인다.
     /// 씬이 시작될 때 스스로 하나 만들어진다(인스펙터 연결 없음).
     /// </summary>
     public class LightBlindFlash : MonoBehaviour
     {
         [SerializeField] private Color flashColor = new(1f, 0.98f, 0.9f, 1f);
-        [Tooltip("번쩍인 직후 가장 밝게 유지하는 시간(초) / 그때 불투명도.")]
-        [SerializeField, Min(0f)] private float holdTime = 0.3f;
-        [SerializeField, Range(0f, 1f)] private float peakAlpha = 0.95f;
-        [Tooltip("걷히는 시간 = 기절 시간 × 이 비율(나머지 동안은 조금 뿌옇게 남았다가 사라짐).")]
-        [SerializeField, Range(0.1f, 2f)] private float fadeScale = 1f;
+        [Tooltip("기절하는 동안 불투명도(1 = 완전히 하얗게).")]
+        [SerializeField, Range(0f, 1f)] private float peakAlpha = 1f;
+        [Tooltip("기절이 끝난 뒤 걷히는 시간(초).")]
+        [SerializeField, Min(0.05f)] private float afterFade = 1f;
 
-        private float startTime = -100f, fadeTime = 1f;
+        private float startTime = -100f, holdTime, fadeTime = 1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Create()
@@ -34,7 +34,8 @@ namespace Project1.Presentation
         {
             if (who == null || who.GetComponent<LocalPlayerInput>() == null) return; // 내 캐릭터만
             startTime = Time.time;
-            fadeTime = Mathf.Max(0.2f, stunTime * fadeScale);
+            holdTime = Mathf.Max(0f, stunTime); // 기절하는 동안 내내 하얗게
+            fadeTime = afterFade;               // 끝난 뒤 1초에 걸쳐 걷힘
         }
 
         private void OnGUI()

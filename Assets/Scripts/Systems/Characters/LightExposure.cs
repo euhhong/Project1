@@ -27,7 +27,7 @@ namespace Project1.Systems
         [Tooltip("지져짐 게이지가 한 번 다 찬(E 봉인) 뒤: 빛이 끊기고 이 시간(초)이 지나야 떨어지기 시작한다.")]
         [SerializeField, Min(0f)] private float sealedDecayDelay = 2f;
         [Tooltip("정면 게이지가 다 찼을 때 기절 시간(초).")]
-        [SerializeField, Min(0f)] private float stunTime = 1.5f;
+        [SerializeField, Min(0f)] private float stunTime = 5f;
 
         private int litTick = int.MinValue, frontTick = int.MinValue;
         private bool sealedSkill; // 게이지가 다 찬 뒤 0까지 떨어질 때까지 E 봉인
