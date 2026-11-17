@@ -135,6 +135,7 @@ namespace Project1.UI
             if (!Application.CanStreamedLevelBeLoaded(TitleScreen.SceneName)) return false;
             started = true;
             CharacterPick.Clear();
+            CharacterPick.ForgetLast(); // 타이틀에서 다시 들어오면 처음(공군)부터 — 쓰던 캐릭터는 게임에서 돌아올 때만
             ScreenFade.Out(() => SceneManager.LoadScene(TitleScreen.SceneName), TitleScreen.SceneName);
             return true;
         }
