@@ -52,6 +52,7 @@ namespace Project1.UI
             go.AddComponent<CharacterHitReactionAnimator>();
             go.AddComponent<HitFlash>(); // 맞으면 빨갛게 달궈짐
             go.AddComponent<CharacterOutline>(); // 얇은 흰 윤곽선(내 캐릭터와 같게)
+            go.AddComponent<HiddenOpponentOutline>(); // 가려져 안 보이면 맵을 뚫고 보이는 빨간 윤곽선
             go.SetActive(true);
             CharacterModelSwapper.Swap(go, entry.model, entry.scale, entry.gameController);
         }

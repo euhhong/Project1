@@ -7,7 +7,7 @@ namespace Project1.UI
 {
     /// <summary>
     /// 게임 시작 모드(임시, UI는 대충): 훈련 상대를 치우고 AI 봇 하나와 싸운다.
-    /// - 봇 = 플레이어 캐릭터 루트를 복제(입력만 AiBotInput으로)해 상대 진영 캐릭터 중 무작위 하나를 입혀 플레이어 앞에 세운다.
+    /// - 봇 = 플레이어 캐릭터 루트를 복제(입력만 AiBotInput으로)해 상대 진영 캐릭터 중 무작위 하나를 입힌다. 둘은 1층에서 서로 멀리 떨어져 시작한다(BattleSpawnPicker).
     /// - 맞으면 체력이 준다(BattleDamage, 임시 규칙). 어느 쪽이든 체력이 0이 되면 승리/패배를 보여 주고 R로 다시(캐릭터 선택 씬으로).
     /// - 화면 위에 봇 이름·체력 막대(플레이어 체력은 원래 HUD).
     /// </summary>
@@ -51,10 +51,21 @@ namespace Project1.UI
             foreach (var c in bot.GetComponents<HealthDebugKeys>()) DestroyImmediate(c);
             var ai = bot.AddComponent<AiBotInput>();
             ai.SetTarget(player.transform);
-            Vector3 fwd = Vector3.ProjectOnPlane(player.transform.forward, Vector3.up).normalized;
-            Vector3 pos = player.transform.position + fwd * SpawnDistance;
-            if (Physics.Raycast(pos + Vector3.up * 10f, Vector3.down, out var hit, 30f, ~0, QueryTriggerInteraction.Ignore)) pos = hit.point + Vector3.up * 0.05f;
-            bot.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-fwd, Vector3.up));
+            if (BattleSpawnPicker.TryPick(out var playerSpot, out var botSpot))
+            {
+                // 서로 멀리(1층 맵 반대편 쪽)에서 시작 — 처음엔 서로 어디 있는지 모른다
+                BattleSpawnPicker.Place(player, playerSpot, botSpot);
+                BattleSpawnPicker.Place(bot, botSpot, playerSpot);
+                var cam = FindAnyObjectByType<ThirdPersonCamera>();
+                if (cam != null) cam.SnapNow();
+            }
+            else
+            {
+                Vector3 fwd = Vector3.ProjectOnPlane(player.transform.forward, Vector3.up).normalized;
+                Vector3 pos = player.transform.position + fwd * SpawnDistance;
+                if (Physics.Raycast(pos + Vector3.up * 10f, Vector3.down, out var hit, 30f, ~0, QueryTriggerInteraction.Ignore)) pos = hit.point + Vector3.up * 0.05f;
+                bot.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(-fwd, Vector3.up));
+            }
             bot.SetActive(true);
             CharacterLoadout.Apply(bot, entry, isPlayer: false);
 
