@@ -4,7 +4,8 @@ using UnityEngine;
 namespace Project1.Systems
 {
     /// <summary>
-    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르거나 castTime(최대)이 지나면 넣는다. 비추는 동안에도 달릴 수 있고, 걷기·달리기 속도만 moveSpeedScale배로 조금 느려진다.
+    /// 손전등(도둑 E): 손전등을 꺼내 몸 앞쪽을 비춘다. E를 다시 누르면 넣는다. 배터리(batteryTime 6초)를 나눠 써서 재사용 대기 없이 껐다 켰다 할 수 있고,
+    /// 다 쓰면 꺼지며 가득 다시 찬 뒤 emptyCooldown(1초) 뒤에 다시 켤 수 있다. 비추는 동안에도 달릴 수 있고, 걷기·달리기 속도만 moveSpeedScale배로 조금 느려진다.
     /// - 빛(원뿔: range m, 반각 halfAngle도, 벽에 가리면 안 닿음)에 든 상대는 LightExposure로 지져진다:
     ///   지져짐 게이지가 차서 일정 이상이면 그 상대의 E가 잠기고, 정면(얼굴 쪽)으로 받으면 따로 정면 게이지도 차서 다 차면 기절 + 피해(stunDamage).
     ///   비추지 않으면 두 게이지는 떨어진다(LightExposure — 지져짐이 다 찼던 뒤에는 2초 뒤부터).
@@ -35,8 +36,26 @@ namespace Project1.Systems
         public override bool LimitsMoveSpeed => false; // 걷기 속도로 묶지 않는다
         public override float CastSpeedScale => moveSpeedScale;
 
+        [Header("배터리 — 나눠 쓰기")]
+        [Tooltip("배터리(초): 켜 있는 동안만 줄고, 껐다 켰다 해도 재사용 대기 없이 남은 만큼 이어 쓴다.")]
+        [Min(0.5f)] public float batteryTime = 6f;
+        [Tooltip("배터리를 다 쓰면 꺼지고 가득 다시 찬 뒤 이 시간(초)이 지나야 다시 켤 수 있다.")]
+        [Min(0f)] public float emptyCooldown = 1f;
+
+        private static readonly System.Collections.Generic.Dictionary<CharacterSkill, float> battery = new();
+        private static readonly System.Collections.Generic.HashSet<CharacterSkill> emptied = new();
+
+        /// <summary>남은 배터리(초) — 처음이면 가득.</summary>
+        private float Battery(CharacterSkill ctx) => battery.TryGetValue(ctx, out float b) ? b : batteryTime;
+
+        public override bool NoTimeLimit => true; // 배터리가 다 될 때까지(E로 끌 수 있음)
+
+        /// <summary>배터리를 다 써서 꺼졌을 때만 emptyCooldown, 직접 껐으면 재사용 대기 없음.</summary>
+        public override float CooldownFor(CharacterSkill ctx) => emptied.Remove(ctx) ? emptyCooldown : 0f;
+
         public override void OnStart(CharacterSkill ctx)
         {
+            if (!battery.ContainsKey(ctx)) battery[ctx] = batteryTime;
             ctx.Reach = range;
             UpdateBeam(ctx);
         }
@@ -44,10 +63,28 @@ namespace Project1.Systems
         public override bool Tick(CharacterSkill ctx, in CharacterInputFrame input, float elapsed, out float recovery)
         {
             recovery = 0f;
-            if (input.Skill && elapsed >= toggleGrace) { ctx.Reach = 0f; return true; } // E 다시 → 넣음
+            if (input.Skill && elapsed >= toggleGrace) { ctx.Reach = 0f; return true; } // E 다시 → 넣음(남은 배터리는 그대로)
+            float left = Battery(ctx) - Time.fixedDeltaTime;
+            if (left <= 0f)
+            {
+                // 배터리를 다 씀: 꺼지고 가득 다시 차며, emptyCooldown 뒤에 다시 켤 수 있다
+                battery[ctx] = batteryTime;
+                emptied.Add(ctx);
+                ctx.Reach = 0f;
+                return true;
+            }
+            battery[ctx] = left;
             UpdateBeam(ctx);
             ShineTargets(ctx);
             return false;
+        }
+
+        /// <summary>HUD 오른쪽 아래: 꺼져 있고 배터리가 덜 찼으면 남은 배터리 원 게이지(재사용 대기 중에는 보통 게이지).</summary>
+        public override bool TryGetCooldownGauge(CharacterSkill ctx, out string label, out float fill)
+        {
+            label = "손전등";
+            fill = Mathf.Clamp01(Battery(ctx) / batteryTime);
+            return ctx.State == SkillState.Ready && fill < 0.999f;
         }
 
         public override void Complete(GameObject owner)
@@ -106,7 +143,7 @@ namespace Project1.Systems
 
         public override string StatusText(CharacterSkill ctx) => "넣기: E";
 
-        /// <summary>HUD: 비출 수 있는 남은 시간(시전 진행 막대).</summary>
-        public override float StatusBarFill(CharacterSkill ctx) => float.NaN;
+        /// <summary>HUD: 켜 있는 동안 남은 배터리 막대.</summary>
+        public override float StatusBarFill(CharacterSkill ctx) => Mathf.Clamp01(Battery(ctx) / batteryTime);
     }
 }
