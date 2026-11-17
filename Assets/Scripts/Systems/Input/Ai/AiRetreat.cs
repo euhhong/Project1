@@ -9,7 +9,7 @@ namespace Project1.Systems
     /// AI 생존자의 도주(AiBotInput이 근접 AI·판자 쓰기 위에 덮는다). 불리할 때 감시자가 따라오기 힘들게 스태미나를 아끼지 않고 달려
     /// 다른 층이나 다른 판자 구간으로 간다(도착하면 판자 쓰기 AiPalletUser가 이어 받는다).
     /// - 도주하는 때(감시자가 FleeTriggerRange 안일 때만):
-    ///   ① 직전 교전에서 크게 다침 — 최근 HurtWindow초 사이 체력을 HurtFraction 넘게 잃었거나 체력이 LowHealth 아래
+    ///   ① 치고 빠지기 — 내 공격이 막 맞았으면(HitRunReact초 안) HitRunTime초 동안 빠진다(맞았다고 도망가지는 않는다)
     ///   ② 주변 판자를 다 씀 — NearPalletRange 안의 판자가 모두 내려짐
     ///   ③ 내 스킬은 재사용 대기 중(SkillGapCooldown초 넘게 남음)인데 상대 스킬은 준비됨
     /// - 갈 곳: 감시자에게서 먼(나보다 감시자가 훨씬 먼) 세워진 판자, 다른 층이면 더 좋게. 없으면 감시자 반대쪽으로 FleeDistance 떨어진 NavMesh 자리.
@@ -19,7 +19,9 @@ namespace Project1.Systems
     public sealed class AiRetreat
     {
         private const float FleeTriggerRange = 15f, EscapedRange = 28f, MaxFleeTime = 14f, RetryDelay = 6f;
-        private const float HurtWindow = 6f, HurtFraction = 0.3f, LowHealth = 0.35f;
+        private const float HitRunReact = 0.4f, HitRunTime = 3.5f; // 내 공격이 맞고 이 시간(초) 안이면 치고 빠짐 — 빠지는 시간
+        private float lastLandedHit = -99f, fleeLimit = MaxFleeTime;
+        private int myId;
         private const float NearPalletRange = 22f, SkillGapCooldown = 2f, FleeDistance = 25f;
         private const float CheckInterval = 0.4f, ArriveRange = 2f;
         private const float FightBackRange = 2.5f, StuckTime = 1.2f;
@@ -32,7 +34,6 @@ namespace Project1.Systems
         private ICharacterSkillState skill;
         private ICharacterState state;
         private ICharacterStamina stamina;
-        private readonly Queue<(float t, float hp)> hpLog = new();
         private float nextCheck, fleeStart = -1f, noFleeUntil;
         private Vector3 destination;
 
@@ -42,6 +43,7 @@ namespace Project1.Systems
         {
             this.self = self.transform;
             route = new AiRouteFinder(self);
+            HitEvents.HitOccurred += OnHit;
         }
 
         /// <summary>입력 f 위에 도주를 덮는다(도주 중이면 이동·시야·달리기를 정하고 공격은 하지 않는다). hunter = 상대 루트.</summary>
@@ -52,14 +54,17 @@ namespace Project1.Systems
             if (skill == null) self.TryGetComponent(out skill);
             if (state == null) self.TryGetComponent(out state);
             if (stamina == null) self.TryGetComponent(out stamina);
-            LogHealth(now);
 
             Vector3 me = self.position, opp = hunter.position;
             float hunterDist = Flat(opp - me).magnitude;
 
+            // 상대가 기절해 있으면 도망가지 않는다(근접 AI가 몰아친다) — 도주 중이었어도 그만둔다
+            bool hunterStunned = hunter.TryGetComponent(out ICharacterStun hs) && hs.IsStunned && hs.StunRemaining > 0.6f;
+            if (hunterStunned) { if (Fleeing) fleeStart = -1f; return; }
             if (!Fleeing)
             {
-                if (now < nextCheck || now < noFleeUntil || hunterDist > FleeTriggerRange) return;
+                bool hitRun = now - lastLandedHit <= HitRunReact; // 치고 빠지기는 주기·쉬는 시간과 상관없이 바로
+                if (!hitRun && (now < nextCheck || now < noFleeUntil || hunterDist > FleeTriggerRange)) return;
                 nextCheck = now + CheckInterval;
                 if (!ShouldFlee(now, me, hunter)) return;
                 if (!PickDestination(me, opp, out destination)) { noFleeUntil = now + 2f; return; }
@@ -67,7 +72,7 @@ namespace Project1.Systems
             }
 
             // 끝
-            if (Flat(destination - me).magnitude < ArriveRange || hunterDist > EscapedRange || now - fleeStart > MaxFleeTime
+            if (Flat(destination - me).magnitude < ArriveRange || hunterDist > EscapedRange || now - fleeStart > fleeLimit
                 || (health != null && health.IsDead))
             {
                 fleeStart = -1f; noFleeUntil = now + RetryDelay;
@@ -95,22 +100,19 @@ namespace Project1.Systems
             f.Skill = false; f.SkillHeld = false;
         }
 
-        private void LogHealth(float now)
+        /// <summary>내가 상대를 맞혔다(HitEvents) — 치고 빠지기 조건. 봇이 없어졌으면 듣기를 그만둔다.</summary>
+        private void OnHit(HitResult hit)
         {
-            if (health == null) return;
-            hpLog.Enqueue((now, health.Current));
-            while (hpLog.Count > 0 && now - hpLog.Peek().t > HurtWindow) hpLog.Dequeue();
+            if (self == null) { HitEvents.HitOccurred -= OnHit; return; }
+            if (myId == 0 && self.TryGetComponent(out CharacterIdentity id)) myId = id.Id;
+            if (hit.AttackerId != 0 && hit.AttackerId == myId && !hit.NoDamage) lastLandedHit = Time.time;
         }
 
         private bool ShouldFlee(float now, Vector3 me, Transform hunter)
         {
-            // ① 크게 다침
-            if (health != null && health.Max > 0f)
-            {
-                float max = 0f;
-                foreach (var e in hpLog) max = Mathf.Max(max, e.hp);
-                if ((max - health.Current) / health.Max >= HurtFraction || health.Current / health.Max < LowHealth) return true;
-            }
+            // ① 치고 빠지기: 내 공격이 막 맞았다(맞았다고 도망가지 않는다)
+            if (now - lastLandedHit <= HitRunReact) { fleeLimit = HitRunTime; return true; }
+            fleeLimit = MaxFleeTime;
             // ② 주변 판자를 다 씀(주변에 판자가 있었는데 모두 내려짐 — 처음부터 판자가 없는 곳은 해당 없음)
             bool anyUp = false, anyDown = false;
             foreach (var p in Pallet.All)
