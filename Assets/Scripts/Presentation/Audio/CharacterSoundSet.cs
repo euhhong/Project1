@@ -25,7 +25,7 @@ namespace Project1.Presentation
         };
 
         // 스킬 단계 번호(각 스킬 클래스의 Phase 상수와 같아야 한다)
-        private const int GrabWindup = 0, GrabExtending = 1, GrabDragging = 4, GrabTowing = 5; // GrabShotSkill
+        private const int GrabWindup = 0, GrabExtending = 1, GrabRetracting = 2, GrabDragging = 4, GrabTowing = 5; // GrabShotSkill
         private const int FlareFired = 1;                                                      // FlareShotSkill
         private const int RocketCharging = 1;                                                  // RocketChargeSkill
         private const int WallDashing = 2;                                                     // WallDashSkill
@@ -255,7 +255,11 @@ namespace Project1.Presentation
             switch (id)
             {
                 case "Gamekeeper_Grab":
-                    if (phaseChanged && phase == GrabExtending) Play("Hook", Body, SkillVolume, 0.03f);
+                    // 그랩 소리(Hook)는 앞부분 = 던짐, 뒷부분 = 끌려가거나 끌어오는 이동 소리 — 벽·상대를 물면(Towing·Dragging) 끝까지,
+                    // 못 물고 허공으로 되감기면(Retracting) 또는 취소·끝나면 그 자리에서 짧게 줄여 끈다.
+                    if (phaseChanged && phase == GrabExtending) { PlayStoppable("Hook", SkillVolume, 0.03f); hookLatched = false; }
+                    else if (phaseChanged && (phase == GrabDragging || phase == GrabTowing)) hookLatched = true;   // 물었다 = 끝까지
+                    else if (phaseChanged && !hookLatched && (phase == GrabRetracting || !casting)) FadeStoppable(); // 허공 그랩 = 뒷부분 끔
                     if (phaseChanged && (phase == GrabDragging || phase == GrabTowing)) Play("Hook_Hit", Body, SkillVolume, 0.03f);
                     break;
                 case "Cowboy_Lasso":
@@ -418,6 +422,47 @@ namespace Project1.Presentation
             loopSource.volume = SkillVolume * AudioVolume.Sfx;
             loopSource.Play();
             return true;
+        }
+
+        // ── 도중에 끌 수 있는 한 번 소리(사냥터지기 그랩: 못 물면 뒷부분을 끈다) ──
+        private AudioSource stoppableSource;
+        private float stoppableFade = -1f;
+        private bool hookLatched; // 사냥터지기 그랩이 벽·상대를 물었는지
+
+        private void PlayStoppable(string kind, float volume, float pitchJitter)
+        {
+            string path = Pick(kind);
+            var clip = path != null ? Resources.Load<AudioClip>($"Sfx/{path}") : null;
+            if (clip == null) return;
+            if (stoppableSource == null)
+            {
+                stoppableSource = gameObject.AddComponent<AudioSource>();
+                stoppableSource.playOnAwake = false;
+                stoppableSource.spatialBlend = 0.85f;
+                stoppableSource.rolloffMode = AudioRolloffMode.Linear;
+                stoppableSource.minDistance = 3f; stoppableSource.maxDistance = 40f;
+                stoppableSource.dopplerLevel = 0f;
+            }
+            stoppableFade = -1f;
+            stoppableSource.clip = clip;
+            stoppableSource.loop = false;
+            stoppableSource.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
+            stoppableSource.volume = volume * AudioVolume.Sfx;
+            stoppableSource.Play();
+        }
+
+        /// <summary>도중에 끌 소리를 0.08초 동안 줄여 끈다.</summary>
+        private void FadeStoppable()
+        {
+            if (stoppableSource != null && stoppableSource.isPlaying && stoppableFade < 0f) stoppableFade = 0.08f;
+        }
+
+        private void LateUpdate()
+        {
+            if (stoppableSource == null || stoppableFade < 0f) return;
+            stoppableFade -= Time.deltaTime;
+            if (stoppableFade <= 0f) { stoppableSource.Stop(); stoppableFade = -1f; return; }
+            stoppableSource.volume *= Mathf.Clamp01(stoppableFade / 0.08f + 0.2f);
         }
 
         private void StopLoop()
