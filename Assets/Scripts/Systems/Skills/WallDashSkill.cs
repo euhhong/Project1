@@ -25,7 +25,7 @@ namespace Project1.Systems
         [Tooltip("도약 속도(m/s).")]
         [Min(0f)] public float dashSpeed = 35f;
         [Tooltip("도약 시간(초). 거리 = 속도 x 시간.")]
-        [Min(0.01f)] public float dashTime = 0.3f;
+        [Min(0.01f)] public float dashTime = 0.36f; // 약 12.6m
         [Tooltip("벽에 닿을 때 누르던 방향과 이 값(내적)보다 다르면 '새 이동'으로 본다.")]
         [Range(-1f, 1f)] public float newDirectionDot = 0.7f;
         [Tooltip("이동 입력으로 볼 최소 크기.")]
@@ -104,7 +104,9 @@ namespace Project1.Systems
                     {
                         // 벽에 닿음: 지금 누르던 방향을 기억해 두고, 그와 다른 첫 이동을 기다린다(최대 autoDashDelay).
                         // 재사용 대기 중·창틀 넘은 직후(PhaseTime < afterTraversalGrace)에는 준비 안 됨
-                        if (touching && DashCooldownRemaining(ctx) <= 0f && ctx.PhaseTime >= afterTraversalGrace) { ctx.SetPhase(Armed); ctx.Direction = dir; }
+                        // 걸을 때는 발동하지 않는다 — 달리는 중(달리기 키 + 이동, 지치지 않음)에 벽에 닿아야 준비
+                        bool running = input.Run && moving && !(ctx.TryGetComponent(out ICharacterStamina st) && st.IsExhausted);
+                        if (touching && running && DashCooldownRemaining(ctx) <= 0f && ctx.PhaseTime >= afterTraversalGrace) { ctx.SetPhase(Armed); ctx.Direction = dir; }
                         break;
                     }
                     if (ctx.PhaseTime >= autoDashDelay)

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Coordinator_Flare
   displayName: "\uC2E0\uD638\uCD1D"
   castTime: 2
-  cooldown: 0
+  cooldown: 14
   castMoveSpeed: 0
   windup: 0.2
   afterShot: 0.6
