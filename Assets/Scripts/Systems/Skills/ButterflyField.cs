@@ -171,7 +171,7 @@ namespace Project1.Systems
                 {
                     Place(placement.Point);
                     PlaceCooldownRemaining = SkillCooldowns.Scale(placeCooldown);
-                    Charges--; // 쥔 나비 한 마리를 쓴다
+                    if (!SkillCooldowns.Disabled) Charges--; // 쥔 나비 한 마리를 쓴다(연습 모드 = 쿨타임 끔에서는 쓰지 않아 늘 가득)
                 }
                 Placing = false; placement.Clear();
             }
