@@ -49,6 +49,9 @@ namespace Project1.Core
         /// <summary>맞은 쪽이 쓰러지며 나가떨어지는 공격인지(예: 두 번째 날아 차기가 머리에 맞음 — 회오리치며 나가떨어짐 모션). 모션(FE)이 본다.</summary>
         public bool Knockdown;
 
+        /// <summary>타격음을 내지 않는 히트(예: 카우보이 올가미로 잡아 주는 피해 — 올가미·뛰어넘기 소리만). SfxPlayer가 본다.</summary>
+        public bool Silent;
+
         /// <summary>맨주먹으로 때린 히트인지(무기 없이 손 판정으로 맞힘, 예: 생존자 주먹 기본 공격). 주먹 막기(FistParry)는 이것만 막는다.</summary>
         public bool Fist;
 

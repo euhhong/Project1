@@ -65,13 +65,14 @@ namespace Project1.Presentation
             var grab = skill != null ? skill.Skill as GrabShotSkill : null;
             bool aiming = grab != null && grab.IsAiming(skill);
             bool show = isLocal && grab != null && aiming; // 그랩 차징(E를 눌러 조준하는 동안)에만 보인다
-            if (!show) { Hide(); return; }
+            if (!show) { Hide(); if (isLocal) PalletAimOutline.Set(null); return; }
 
             Vector3 dir = aiming ? skill.Direction : Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            if (dir.sqrMagnitude < 0.0001f) { Hide(); return; }
+            if (dir.sqrMagnitude < 0.0001f) { Hide(); PalletAimOutline.Set(null); return; }
             Vector3 origin = grab.Origin(transform, dir);
             // 지금 던지면 맞는다(상대 판정 또는 끌려갈 벽) → 흰 선을 맞는 자리로 옮기고 그 위에 가늠쇠 선. 아니면 확실히 닿는 거리(벽이 가까우면 벽 앞).
             bool hit = grab.PredictsHit(transform, origin, dir, out float hitAt);
+            PalletAimOutline.Set(hit ? GrabShotSkill.LastPredictedPallet : null); // 카우보이: 지금 던지면 물 판자에 흰 외곽선
             float length = hit ? Mathf.Max(0.3f, hitAt - hitBarPullBack)
                                : Mathf.Min(grab.AimLength(origin, dir), Mathf.Max(0.5f, grab.range - endBarInset));
             Vector3 at = origin + dir * length;

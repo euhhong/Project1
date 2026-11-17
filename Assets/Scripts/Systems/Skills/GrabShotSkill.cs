@@ -497,6 +497,9 @@ namespace Project1.Systems
             return owner.position + Vector3.up * h * heightRatio + right * sideOffset + dir * forwardOffset;
         }
 
+        /// <summary>마지막 PredictsHit이 판자를 물 거라고 본 그 판자(상대를 먼저 잡거나 안 걸리면 null) — 조준 중 판자 흰 외곽선(FE)이 본다.</summary>
+        public static Pallet LastPredictedPallet { get; private set; }
+
         /// <summary>origin에서 dir로 던지면 그랩이 갈 수 있는 길이(m): 벽·물건에 먼저 닿으면 그 거리, 아니면 range. 조준 보조선용.</summary>
         public float AimLength(Vector3 origin, Vector3 dir) => FindWall(origin, dir, 0f, range, out float at, out _) ? at : range;
 
@@ -507,6 +510,7 @@ namespace Project1.Systems
         /// </summary>
         public bool PredictsHit(Transform owner, Vector3 origin, Vector3 dir, out float hitAt)
         {
+            LastPredictedPallet = null;
             bool wall = FindWall(origin, dir, 0f, range, out float wallAt, out Vector3 normal);
             bool wallNoTowPredict = lastWallNoTow; // 촉수 기둥·인형은 끌려갈 벽이 아니다(조준선 가늠쇠 안 뜸)
             float reach = wall ? wallAt : range;
@@ -531,7 +535,7 @@ namespace Project1.Systems
                     if (at < hitAt && ClearLine(origin, c.ClosestPoint(origin))) hitAt = at;
                 }
                 if (hitAt < float.MaxValue) return true;
-                if (lassoPallets && FindPalletFlat(origin, dir, 0f, range, out float pAt, out _, out _) && (!wall || wallAt >= pAt - 0.3f)) { hitAt = pAt; return true; } // 판자를 물 수 있음
+                if (lassoPallets && FindPalletFlat(origin, dir, 0f, range, out float pAt, out _, out Pallet aimed) && (!wall || wallAt >= pAt - 0.3f)) { hitAt = pAt; LastPredictedPallet = aimed; return true; } // 판자를 물 수 있음
                 hitAt = 0f;
                 return false; // 올가미는 벽에 걸려도 그냥 되감는다
             }
@@ -773,6 +777,7 @@ namespace Project1.Systems
                 Tick = SimulationTick.Current,
                 Point = point,
                 BaseDamage = DamageRules.GrabDamage, // 그랩·올가미 피해(끌려오는 동안 기절은 스킬이 건다)
+                Silent = vaultOverVictim, // 카우보이 올가미로 잡아 주는 피해는 타격음 없음
             });
         }
 

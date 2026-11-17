@@ -108,6 +108,7 @@ namespace Project1.Presentation
 
         private static void OnHit(HitResult hit)
         {
+            if (hit.Silent) return; // 타격음 없는 히트(카우보이 올가미 피해)
             bool heavy = hit.Knockdown || hit.PowerScale > 1.25f || hit.Charge > 0.5f; // 쓰러뜨림·센 공격·모아 친 공격
             Play(CharacterHitSound, hit.Point, heavy ? 1f : 0.8f, 0.05f, heavy ? 0.95f : 1.03f); // 센 공격은 조금 크고 낮게
         }
