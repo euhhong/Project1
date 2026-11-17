@@ -8,7 +8,7 @@ namespace Project1.UI
     /// 테스트용 훈련 상대: 게임을 시작하면 맵 가운데 연습용 우물(PracticeWell, 예전엔 벽 Wall) 옆에 가만히 서 있는 감시자 하나를 세운다.
     /// - 움직이지 않고, 체력·게이지는 없다(맞으면 피격 모션만 — 공격·스킬 판정과 이펙트를 확인하는 용도).
     /// - 몸(CharacterController) + 누구인지(CharacterIdentity, 팀 없음) + 모델(맞는 판정 Hurtbox 포함) + 피격 모션.
-    /// 씬을 고치지 않고 실행 중에 만든다. 우물·벽이 없는 씬이거나 이미 있으면 만들지 않는다.
+    /// 씬을 고치지 않고 실행 중에 만든다. 우물·벽이 없는 씬이거나 이미 있거나, 게임 시작(AI 봇전)으로 들어왔으면 만들지 않는다.
     /// </summary>
     public static class TrainingDummySpawner
     {
@@ -31,6 +31,7 @@ namespace Project1.UI
 
         private static void Spawn()
         {
+            if (CharacterPick.Has && CharacterPick.Battle) return; // 게임 시작(봇전)에는 세우지 않는다 — 연습 모드에서만
             var wall = GameObject.Find(AnchorName);
             if (wall == null) wall = GameObject.Find(OldWallName);
             if (wall == null || GameObject.Find(DummyName) != null) return;
