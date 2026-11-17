@@ -136,6 +136,8 @@ namespace Project1.UI
             SetProp<HiddenOpponentOutline>(player, !isPlayer); // 상대(봇)가 벽·바닥에 가려 안 보이면 맵을 뚫고 보이는 빨간 윤곽선(FE)
             SetProp<RoofSunBurn>(player, true);        // 지붕 높이(4층 이상)에 서 있으면 햇볕에 타는 도트 데미지(BE)
             SetProp<SunBurnVisual>(player, true);      // 그 연출: 연기·불티·따뜻한 빛 일렁임(FE)
+            var (atk, def) = CharacterDamageStats.For(entry.id);
+            Ensure<CharacterDamageStats>(player).Set(atk, def); // 캐릭터 기본 공격력·방어력(용병 소폭 상향, 나머지 그대로)(BE)
             Ensure<CharacterSoundSet>(player).Configure(entry.id, entry.role == CharacterRole.Hunter); // 캐릭터 전용 효과음(발소리·창틀·평타·스킬 — Resources/Sfx/Characters/{캐릭터})(FE)
             SetProp<SurvivorHeartbeat>(player, false); // 심장 소리는 쓰지 않음 — 대전 시작부터 계속 쿵쿵(뛰는 소리처럼) 들려서 뺌(FE)
             SetProp<PeriodicSoundPlayer>(player, false); // 도둑 도발 소리를 일정 시간마다 내던 것 — 상시음이라 끔(FE)

@@ -464,28 +464,7 @@ namespace Project1.Systems
         // ───────── 도착 ─────────
 
         /// <summary>도착: arrivalFaceRadius 안(같은 층쯤, 위아래 2.5m)의 가장 가까운 상대 쪽으로 시야를 바로 돌린다(ILookSnap — 카메라도 바로). 없으면 그대로.</summary>
-        private void FaceNearestEnemy(CharacterSkill ctx)
-        {
-            if (arrivalFaceRadius <= 0f || !ctx.TryGetComponent(out ILookSnap look)) return;
-            var self = ctx.GetComponent<CharacterIdentity>();
-            Vector3 me = ctx.transform.position;
-            CharacterIdentity best = null; float bestD = arrivalFaceRadius * arrivalFaceRadius;
-            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
-            {
-                if (c == null || c == self || (self != null && !self.CanHit(c))) continue;
-                if (c.TryGetComponent(out ICharacterHealth hp) && hp.IsDead) continue;
-                Vector3 to = c.transform.position - me;
-                if (Mathf.Abs(to.y) > 2.5f) continue;
-                to.y = 0f;
-                float d = to.sqrMagnitude;
-                if (d < 1e-4f || d > bestD) continue;
-                bestD = d; best = c;
-            }
-            if (best == null) return;
-            Vector3 dir = best.transform.position - me; dir.y = 0f;
-            look.SnapLook(Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg);
-            look.TrackLook(best.transform, arrivalTrackTime); // 이후 잠깐 상대 움직임을 따라 화면이 돈다(직접 돌리기는 잘 안 됨)
-        }
+        private void FaceNearestEnemy(CharacterSkill ctx) => ArrivalAutoAim.FaceNearest(ctx.gameObject, arrivalFaceRadius, arrivalTrackTime);
 
         public override string AnimationState(CharacterSkill ctx) => ctx.State == SkillState.Casting ? id : string.Empty;
 

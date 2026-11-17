@@ -26,6 +26,13 @@ namespace Project1.Systems
         [Min(0f)] public float dashSpeed = 35f;
         [Tooltip("도약 시간(초). 거리 = 속도 x 시간.")]
         [Min(0.01f)] public float dashTime = 0.36f; // 약 12.6m
+        [Header("도약 끝(붉은나비 나비 도착처럼)")]
+        [Tooltip("도약이 끝났을 때 이 거리(m, 수평) 안의 가장 가까운 상대 쪽으로 시야를 바로 돌린다(0 = 끔) / 그 뒤 화면이 그 상대를 따라 도는 시간(초).")]
+        [Min(0f)] public float arrivalFaceRadius = 6f;
+        [Min(0f)] public float arrivalTrackTime = 0.5f;
+        [Tooltip("도약이 끝난 뒤 이 시간(초) 동안 받는 피해 배율(0.7 = 30% 덜 아픔, 표시 없음).")]
+        [Min(0f)] public float arrivalGuardTime = 1f;
+        [Range(0f, 1f)] public float arrivalDamageTakenScale = 0.7f;
         [Tooltip("벽에 닿을 때 누르던 방향과 이 값(내적)보다 다르면 '새 이동'으로 본다.")]
         [Range(-1f, 1f)] public float newDirectionDot = 0.7f;
         [Tooltip("이동 입력으로 볼 최소 크기.")]
@@ -134,7 +141,10 @@ namespace Project1.Systems
                     if (motor != null && motor.HitObstacle && IsWall(ctx, motor.LastObstacle)) { SlideAlongWall(ctx, motor.LastObstacleNormal); ctx.Heading = body * ctx.Direction; }
                     if (ctx.PhaseTime >= dashTime)
                     {
-                        // 도약 끝: 꺼지지 않고 켜진 채로 돌아가고, 재사용 대기 시작
+                        // 도약 끝(붉은나비 나비 도착처럼): 근처 상대 쪽으로 시야 오토에임 + 잠깐 방어력 증가(받는 피해 줄임, 표시 없음)
+                        ArrivalAutoAim.FaceNearest(ctx.gameObject, arrivalFaceRadius, arrivalTrackTime);
+                        TimedCombatBuff.Give(ctx.gameObject, 1f, arrivalDamageTakenScale, arrivalGuardTime);
+                        // 꺼지지 않고 켜진 채로 돌아가고, 재사용 대기 시작
                         ReadyAt[ctx] = Time.time + CurrentDashCooldown; // 연습 모드도 practiceDashCooldown(1초)만큼 쉰다
                         CooldownLength[ctx] = CurrentDashCooldown;
                         ctx.SetPhase(Active);
