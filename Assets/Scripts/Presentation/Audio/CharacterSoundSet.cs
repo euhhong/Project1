@@ -356,7 +356,7 @@ namespace Project1.Presentation
         private void OnHit(HitResult hit)
         {
             if (identity == null || hit.AttackerId != identity.Id || hit.Kind == AttackKind.Skill) return;
-            // 캐릭터 전용 평타 맞힘 소리는 내지 않음 — 피격음은 SfxPlayer.CharacterHitSound(hit_heavy) 하나로 고정, "뽀-익"은 벽 치기만
+            // 캐릭터 전용 평타 맞힘 소리는 내지 않음 — 피격음은 SfxPlayer.CharacterHitSound(Antonio_Attack_Hit_01) 하나로 고정, "뽀-익"은 벽 치기만
         }
 
         private void OnWallStruck(GameObject attacker, Vector3 point, Vector3 normal)
