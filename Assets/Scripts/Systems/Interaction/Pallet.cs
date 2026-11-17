@@ -8,8 +8,9 @@ namespace Project1.Systems
     /// 판자(생존자 전용 기물, BE): 통로·상자 사이·빈 문틀 한쪽에 기대 세워져 있다가, 생존자가 옆(통로 안)에서 스페이스바를 누르면(PalletUser)
     /// 틈을 가로질러 앞(+Z)으로 넘어가 길을 막는다(넘어가는 쪽은 늘 같음 — 생존자가 어디 서 있든).
     /// - 세워진 판자: 루트 = 바닥 가운데(틈 한쪽 벽에 붙음), 위(+Y) = 판자 길이(= 틈 너비, Configure), 옆(+X) = 폭(통로 방향), 앞(+Z) = 넘어가는 쪽. 판자 몸(Board 자식)에 막는 상자 판정.
-    /// - 넘어가기: dropDelay초 뒤(밀어 넘기는 모션의 미는 순간) 바닥 모서리를 축으로 fallTime초 동안 점점 빠르게 넘어가 눕고, 살짝 튀었다 가라앉는다.
-    /// - 넘어가는 판자에 깔린 감시자(눕는 자리 + 넘어가는 동안 판자 끝이 지나가는 자리): 피해(DamageRules.PalletDamage)와 경직(DamageRules.PalletStun).
+    /// - 넘어가기: dropDelay초 뒤(밀어 넘기는 모션의 미는 순간) 바닥 모서리를 축으로 fallTime초 동안 점점 빠르게 넘어가, 바닥에 눕지 않고 끝이 반대편 벽(틈 건너편)
+    ///   restHeight 높이에 걸려 비스듬히 멈춘다(판자 길이 = √(틈² + restHeight²), Configure). 걸친 판자는 틈을 blockHeight까지 막고, 스페이스바로 넘어간다(창틀 넘기 모션 — CharacterTraversal).
+    /// - 넘어가는 동안 틈 전체(바닥 ~ hitHeight 3.5m 공중까지)에 있는 감시자: 피해(DamageRules.PalletDamage)와 경직(DamageRules.PalletStun) — 뛰어오른 감시자도 맞는다.
     ///   한 번 넘어간 판자는 누운 채로 남는다(다시 못 씀). 생존자는 깔리지 않는다.
     /// 모양(모델)은 PalletVisual(FE)이 판자 몸에 붙인다. 배치는 PalletSpawner(맵).
     /// </summary>
@@ -30,8 +31,14 @@ namespace Project1.Systems
         [SerializeField, Min(0.05f)] private float fallTime = 0.32f;
         [Tooltip("땅에 닿은 뒤 살짝 튀는 각도(도)와 시간(초).")]
         [SerializeField, Min(0f)] private float bounceAngle = 6f, bounceTime = 0.18f;
-        [Tooltip("판자가 이 각도(도)를 넘어 기울면 깔림 판정을 시작한다.")]
-        [SerializeField, Range(10f, 90f)] private float hitFromAngle = 45f;
+        [Tooltip("넘어간 판자 끝이 반대편 벽(틈 건너편 면)에 걸리는 높이(m) — 바닥에 완전히 눕지 않고 비스듬히 걸쳐 멈춘다.")]
+        [SerializeField, Min(0.2f)] private float restHeight = 0.9f;
+        [Tooltip("틈 너비(m) = 넘어가 걸치는 가로 거리. Configure가 정한다(판자 길이 = √(틈² + restHeight²)).")]
+        [SerializeField, Min(0f)] private float gap;
+        [Tooltip("넘어가는 동안 깔림 판정 높이(m, 바닥부터) — 틈 위 공중(뛰어오른 감시자)까지 다 맞힌다.")]
+        [SerializeField, Min(0.5f)] private float hitHeight = 3.5f;
+        [Tooltip("넘어간 판자가 틈을 막는 높이(m) — 이보다 낮게는 지나갈 수 없고 넘어가기(스페이스바)로 넘는다.")]
+        [SerializeField, Min(0.3f)] private float blockHeight = 1.0f;
 
         [Header("생존자가 내릴 수 있는 거리")]
         [Tooltip("판자 면에서 앞·뒤로 이 거리(m) 안이면 내릴 수 있다.")]
@@ -61,10 +68,15 @@ namespace Project1.Systems
         private void OnEnable() => all.Add(this);
         private void OnDisable() => all.Remove(this);
 
-        /// <summary>판자 길이(m, 넘어가 누웠을 때 틈을 가로지르는 길이)를 정한다(배치할 때).</summary>
-        public void Configure(float length)
+        /// <summary>틈 너비(m)·넘어가 걸친 각도(세운 자리에서, 도).</summary>
+        public float Gap => gap > 0.01f ? gap : height * 0.9f;
+        private float RestAngle => Mathf.Asin(Mathf.Clamp01(Gap / Mathf.Max(height, 0.01f))) * Mathf.Rad2Deg;
+
+        /// <summary>틈 너비(m)를 정한다(배치할 때). 판자 길이 = √(틈² + restHeight²) — 넘어가면 끝이 반대편 벽 restHeight 높이에 걸린다.</summary>
+        public void Configure(float gapWidth)
         {
-            height = Mathf.Max(0.3f, length);
+            gap = Mathf.Max(0.3f, gapWidth);
+            height = Mathf.Sqrt(gap * gap + restHeight * restHeight);
             if (board == null) return; // 아직 판자 몸이 없으면(편집 화면에서 배치할 때) 길이만 — 게임을 시작하면 Awake가 이 길이로 만든다
             boardCollider.center = new Vector3(0f, height * 0.5f, 0f);
             boardCollider.size = new Vector3(width, height, thickness);
@@ -118,17 +130,53 @@ namespace Project1.Systems
         {
             if (State != PalletState.Falling) return;
             float t = Time.time - startTime - dropDelay;
+            float rest = RestAngle; // 바닥까지 눕지 않고 반대편 벽에 걸리는 각도
             float angle;
             if (t <= 0f) angle = 0f;
-            else if (t < fallTime) { float u = t / fallTime; angle = 90f * u * u; }   // 점점 빠르게
+            else if (t < fallTime) { float u = t / fallTime; angle = rest * u * u; }   // 점점 빠르게
             else
             {
                 float b = (t - fallTime) / Mathf.Max(bounceTime, 1e-3f);
-                angle = b < 1f ? 90f - bounceAngle * Mathf.Sin(b * Mathf.PI) : 90f; // 쿵 — 살짝 튀었다 가라앉음
-                if (b >= 1f) State = PalletState.Down;
+                angle = b < 1f ? rest - bounceAngle * 0.5f * Mathf.Sin(b * Mathf.PI) : rest; // 탁 — 벽에 걸려 살짝 튀었다 멈춤
+                if (b >= 1f) { State = PalletState.Down; BuildBlocker(); }
             }
             SetAngle(angle);
-            if (angle >= hitFromAngle && t <= fallTime + 0.02f) CrushUnder(angle);
+            if (t > -0.05f && t <= fallTime + 0.05f) CrushUnder(angle); // 넘어가는 내내: 틈 위 공중까지 다 맞힌다
+        }
+
+        /// <summary>넘어간 판자가 틈을 막는 상자(바닥 ~ blockHeight, 틈 전체) — 넘어가기(CharacterTraversal)로만 지나간다.</summary>
+        private void BuildBlocker()
+        {
+            var go = new GameObject("Blocker");
+            go.transform.SetParent(transform, false);
+            var box = go.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, blockHeight * 0.5f, sign * Gap * 0.5f);
+            box.size = new Vector3(width, blockHeight, Mathf.Max(0.2f, Gap - 0.1f));
+        }
+
+        /// <summary>
+        /// 넘어간(걸친) 판자를 넘어갈 수 있으면 그 판자와 반대편 착지 자리: 발(position)이 틈 안(판자 옆, 통로 쪽 1.3m 안)이고 판자 쪽으로 움직일 때.
+        /// 착지 = 판자 건너편 통로(판자 폭 + 몸 반지름 + 0.35m).
+        /// </summary>
+        public static bool TryFindVault(Vector3 position, Vector3 moveDir, float bodyRadius, out Pallet pallet, out Vector3 landing)
+        {
+            pallet = null; landing = default;
+            float best = float.MaxValue;
+            foreach (var p in all)
+            {
+                if (p == null || p.State != PalletState.Down) continue;
+                Vector3 local = p.transform.InverseTransformPoint(position);
+                float across = local.z * p.sign;                        // 틈을 가로지르는 자리(0 = 판자를 세웠던 벽, Gap = 반대편 벽)
+                if (across < 0.05f || across > p.Gap - 0.05f || local.y < -1f || local.y > 1.5f) continue;
+                float side = Mathf.Abs(local.x) - p.width * 0.5f;      // 판자 옆으로 떨어진 거리
+                if (side < -0.2f || side > 1.3f) continue;
+                Vector3 toward = p.transform.TransformDirection(new Vector3(-Mathf.Sign(local.x), 0f, 0f));
+                if (Vector3.Dot(Vector3.ProjectOnPlane(moveDir, Vector3.up).normalized, toward) < 0.5f) continue; // 판자 쪽으로 갈 때만
+                if (side >= best) continue;
+                best = side; pallet = p;
+                landing = p.transform.TransformPoint(new Vector3(Mathf.Sign(local.x) * -(p.width * 0.5f + bodyRadius + 0.35f), 0f, local.z));
+            }
+            return pallet != null;
         }
 
         /// <summary>바닥 모서리(넘어가는 쪽)를 축으로 angle도 기울인다.</summary>
@@ -140,13 +188,12 @@ namespace Project1.Systems
             board.localPosition = hinge + r * -hinge;
         }
 
-        /// <summary>판자가 지나가는(눕는) 자리의 감시자를 맞힌다. 판자 끝 쪽 상자로 본다.</summary>
+        /// <summary>넘어가는 판자가 쓸고 지나가는 자리의 감시자를 맞힌다: 틈 전체(판자를 세웠던 벽 ~ 반대편 벽) × 판자 폭, 바닥부터 hitHeight까지(공중 포함).</summary>
         private void CrushUnder(float angle)
         {
-            // 판자 몸 기준: 판자 위쪽 절반을 조금 넓고 두껍게 덮는 상자(쓰러지며 내리치는 부분)
-            Vector3 center = board.TransformPoint(new Vector3(0f, height * 0.65f, 0f));
-            Vector3 half = new(width * 0.5f + 0.25f, height * 0.35f + 0.2f, thickness * 0.5f + 0.45f);
-            int n = Physics.OverlapBoxNonAlloc(center, half, buffer, board.rotation, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
+            Vector3 center = transform.TransformPoint(new Vector3(0f, hitHeight * 0.5f, sign * Gap * 0.5f));
+            Vector3 half = new(width * 0.5f + 0.25f, hitHeight * 0.5f, Gap * 0.5f + 0.25f);
+            int n = Physics.OverlapBoxNonAlloc(center, half, buffer, transform.rotation, CombatLayers.HurtboxMask, QueryTriggerInteraction.Collide);
             for (int i = 0; i < n; i++)
             {
                 if (!buffer[i].TryGetComponent(out Hurtbox hb) || !hb.isActiveAndEnabled) continue;
@@ -176,6 +223,8 @@ namespace Project1.Systems
             Gizmos.matrix = transform.localToWorldMatrix;
             Gizmos.color = new Color(1f, 0.8f, 0.2f, 0.5f);
             Gizmos.DrawWireCube(new Vector3(0f, height * 0.5f, 0f), new Vector3(width, height, thickness));
+            Gizmos.color = new Color(1f, 0.3f, 0.2f, 0.25f); // 넘어갈 때 맞는 자리(공중 포함)
+            Gizmos.DrawWireCube(new Vector3(0f, hitHeight * 0.5f, Gap * 0.5f), new Vector3(width + 0.5f, hitHeight, Gap + 0.5f));
             Gizmos.color = new Color(0.2f, 1f, 0.4f, 0.3f);
             Gizmos.DrawWireCube(new Vector3(0f, 0.9f, 0f), new Vector3(width + 0.8f, 1.8f, (useRange + thickness * 0.5f) * 2f));
         }

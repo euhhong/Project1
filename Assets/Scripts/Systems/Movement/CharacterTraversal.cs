@@ -316,7 +316,7 @@ namespace Project1.Systems
             if ((action == TraversalAction.None || action == TraversalAction.Fall || IsLanding(action)) && TryStartLadder(dir, grounded)) return;
             if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))
             {
-                if (TryStartWindow(dir) || TryStartClimbUp(dir)) return;
+                if (TryStartPalletVault(dir) || TryStartWindow(dir) || TryStartClimbUp(dir)) return;
             }
             if (!grounded && regrab <= 0f && (action == TraversalAction.None || action == TraversalAction.Fall)) TryStartHang(dir);
         }
@@ -450,6 +450,22 @@ namespace Project1.Systems
             if (!l && !r) return Vector3.zero;
             float dl = l ? hl.distance : look, dr = r ? hr.distance : look;
             return along * Mathf.Clamp((dr - dl) * 0.5f, -passCenterPull, passCenterPull);
+        }
+
+        /// <summary>넘어간(벽에 걸친) 판자 옆에서 판자 쪽으로 스페이스바: 창틀 넘기와 같은 모션(WindowVault)으로 판자 건너편으로 넘어간다.</summary>
+        private bool TryStartPalletVault(Vector3 dir)
+        {
+            Vector3 pos = transform.position;
+            if (!Pallet.TryFindVault(pos, dir, cc.radius, out var pallet, out Vector3 landing)) return false;
+            if (Cast(landing + Vector3.up * 0.6f, Vector3.down, 1.5f, out var floor)) landing.y = floor.point.y;
+            if (!StandRoom(landing)) return false;
+            Vector3 face = Vector3.ProjectOnPlane(landing - pos, Vector3.up);
+            if (face.sqrMagnitude < 1e-4f) return false;
+            faceYaw = YawOf(face);
+            pathStart = pos;
+            pathEnd = landing;
+            StartAction(TraversalAction.WindowVault, HunterPath ? hunterVaultTime : vaultTime);
+            return true;
         }
 
         private bool TryStartWindow(Vector3 dir)
