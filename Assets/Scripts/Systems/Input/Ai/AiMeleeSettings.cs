@@ -45,6 +45,8 @@ namespace Project1.Systems
         [Min(0f)] public float strafeWeight = 1.5f;
         [Min(0f)] public float backOffWeight = 0.9f;
         [Min(0f)] public float feintWeight = 1f;
+        [Tooltip("근접 교전 중 옆걸음·뒤로 빠지기·페인트·다가가기를 고를 때 그 사이 한 번 점프를 섞을 확률(추격 중에는 점프하지 않음 — 창틀 넘기만).")]
+        [Range(0f, 1f)] public float hopChance = 0.3f;
         [Min(0f)] public float skillWeightScale = 1f;
         [Tooltip("돌진형(포워드·광대) 스킬이 준비됐을 때 들락날락 유도를 고르는 가중치.")]
         [Min(0f)] public float baitWeight = 4f;

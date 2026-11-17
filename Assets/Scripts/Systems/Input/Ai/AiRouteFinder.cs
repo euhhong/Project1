@@ -169,6 +169,86 @@ namespace Project1.Systems
             return dir;
         }
 
+        // ───────────────────────── 추격(창틀) ─────────────────────────
+
+        private float windowPushSince = -1f;
+        private bool directVault;
+
+        /// <summary>추격 중 창틀로 가는 중(창틀 쪽·창틀 너머 곧장) — 이때는 NavMesh 길 대신 이 방향을 쓴다.</summary>
+        public bool ChaseWindow { get; private set; }
+
+        /// <summary>
+        /// 추격(AiMeleeTactics.Chase)용: NavMesh 길 방향(navDir)에 창틀 넘기를 더한다. 상대가 같은 층(높이 차 1.5m 안)일 때만.
+        /// - 가슴 높이가 벽에 막혔으면 창틀을 찾아(ScanWindows — NavMesh로 돌아가는 길보다 VaultBias까지 길어도) 창 틈 가운데로 가서 똑바로 밀고 넘는다.
+        /// - 가슴 높이는 뚫렸는데 아래가 막혔으면(창틀 너머로 보임) 돌아가는 길이 훨씬 길 때 곧장 가서 넘는다.
+        /// - 앞에 넘을 턱(창틀·걸친 판자)이 있으면 면을 똑바로 보고 vault = 점프(CharacterTraversal이 넘기). 낮은 상자에 올라서거나 그냥 점프하지는 않는다.
+        /// - 창틀 앞에서 2.5초 넘게 못 넘으면 그 창틀은 그만두고 4초 동안 다시 찾지 않는다.
+        /// </summary>
+        public Vector3 ChaseSteer(Vector3 target, Vector3 navDir, float now, bool grounded, out bool vault)
+        {
+            vault = false;
+            RefreshBody();
+            Vector3 pos = tr.position;
+            Vector3 toT = Flat(target - pos);
+            float dist = toT.magnitude;
+            float h = Height, r = Radius;
+            Vector3 dir = navDir;
+            ChaseWindow = false;
+            if (dist > 0.5f && Mathf.Abs(target.y - pos.y) < 1.5f)
+            {
+                Vector3 straight = toT / dist;
+                bool direct = !Blocked(pos + Vector3.up * (h * 0.85f), straight, dist, out _);
+                if (now >= nextScan)
+                {
+                    nextScan = now + ScanInterval;
+                    if (direct)
+                    {
+                        hasWindow = false;
+                        directVault = dist < ScanRange && Blocked(pos + Vector3.up * (h * 0.3f), straight, dist - 0.3f, out _)
+                                      && NavLength(pos, target) > dist + VaultBias + 1f;
+                    }
+                    else { directVault = false; ScanWindows(pos, straight, target, h); }
+                }
+                if (hasWindow && Vector3.Dot(Flat(pos - windowPoint), windowDir) > r + 0.2f) { hasWindow = false; windowPushSince = -1f; } // 이미 넘어왔다
+
+                if (hasWindow && now < windowUntil)
+                {
+                    Vector3 toW = Flat(windowPoint - pos);
+                    bool pushing = toW.magnitude < r + 1.3f;
+                    dir = pushing ? windowDir : toW.normalized;
+                    ChaseWindow = true;
+                    if (!pushing) windowPushSince = -1f;
+                    else if (windowPushSince < 0f) windowPushSince = now;
+                    else if (now - windowPushSince > 2.5f)
+                    {
+                        hasWindow = false; ChaseWindow = false; windowPushSince = -1f;
+                        nextScan = now + 4f; directVault = false;
+                        dir = navDir;
+                    }
+                }
+                else if (direct && directVault)
+                {
+                    dir = straight; ChaseWindow = true;
+                    // 넘지 못하고 벽에 붙어 있으면(넘을 수 없는 턱) 그만두고 잠깐 NavMesh 길로
+                    if (!TouchingWall) windowPushSince = -1f;
+                    else if (windowPushSince < 0f) windowPushSince = now;
+                    else if (now - windowPushSince > 1.5f) { directVault = false; ChaseWindow = false; windowPushSince = -1f; nextScan = now + 4f; dir = navDir; }
+                }
+            }
+
+            if (grounded && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && hz.Vault)
+            {
+                Vector3 push = -hz.Normal;
+                if (Vector3.Angle(dir, push) < 70f)
+                {
+                    dir = push;
+                    float face = Vector3.Dot(Flat(hz.Point - pos), push);
+                    if (face <= r + JumpReach && now - lastJump >= 0.6f) { vault = true; lastJump = now; lastJumpAt = hz.Collider; }
+                }
+            }
+            return dir;
+        }
+
         // ───────────────────────── 턱 ─────────────────────────
 
         /// <summary>

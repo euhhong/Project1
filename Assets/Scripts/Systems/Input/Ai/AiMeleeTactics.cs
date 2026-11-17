@@ -170,6 +170,12 @@ namespace Project1.Systems
             Vector2 move = Vector2.zero; bool run = false;
             Execute(now, dist, seen, prof, ref move, ref run);
             AvoidWallRub(now, dt);
+            if (hopAt >= 0f && now >= hopAt)
+            {
+                hopAt = -1f;
+                if (Grounded && maneuver is Maneuver.Strafe or Maneuver.BackOff or Maneuver.Feint or Maneuver.Approach
+                    && !(traversal != null && traversal.LocksActions)) keys.Jump();
+            }
 
             // 길: 상대에게 다가가는 동안 벽이 가로막으면 창틀 쪽(없으면 NavMesh 길)으로 돌고, 앞에 창틀·낮은 턱이 있으면 점프해 넘는다(플레이어와 같은 입력).
             // 닿을 듯 말 듯한 거리라도 사이에 턱·벽이 있으면 계속 길을 따라간다(창틀 바로 앞에서 멈춰 서지 않고 넘는다).
@@ -317,6 +323,7 @@ namespace Project1.Systems
         private void Choose(float now, float dist, in AiOpponentSnapshot seen, in AiSkillProfile prof)
         {
             reaction = Random.Range(cfg.reactionMin, Mathf.Max(cfg.reactionMin, cfg.reactionMax));
+            hopAt = -1f;
             bool skillReady = SkillReady && now - lastSkillUse > cfg.skillGap;
             float hp = health != null && health.Max > 0f ? health.Current / health.Max : 1f;
 
@@ -388,6 +395,9 @@ namespace Project1.Systems
                 case Maneuver.Approach: Begin(now, m, Random.Range(0.5f, 1.2f)); mDir = Random.value < 0.4f ? Random.Range(-0.7f, 0.7f) : 0f; break;
                 default: Begin(now, Maneuver.Hold, Random.Range(0.2f, 0.5f)); break;
             }
+            // 근접 교전: 옆걸음·뒤로 빠지기·페인트·다가가기 중 가끔 한 번 점프를 섞는다(사람처럼 깡충).
+            hopAt = maneuver is Maneuver.Strafe or Maneuver.BackOff or Maneuver.Feint or Maneuver.Approach && Random.value < cfg.hopChance
+                ? now + Random.Range(0.08f, Mathf.Max(0.1f, mUntil - now - 0.1f)) : -1f;
         }
 
         private void Begin(float now, Maneuver m, float duration)
@@ -572,7 +582,7 @@ namespace Project1.Systems
         // ───────────────────────── 추격 ─────────────────────────
 
         private bool chasing;
-        private float chaseSwitchSince;
+        private float chaseSwitchSince, hopAt = -1f;
         private NavPathFollower chaseNav;
         private readonly RaycastHit[] sightHits = new RaycastHit[16];
 
@@ -590,7 +600,7 @@ namespace Project1.Systems
             {
                 chasing = !chasing;
                 chaseSwitchSince = now;
-                if (chasing) { keys.Clear(); baiter.Stop(); if (maneuver != Maneuver.None) End(now); }
+                if (chasing) { keys.Clear(); baiter.Stop(); hopAt = -1f; if (maneuver != Maneuver.None) End(now); }
                 else if (chaseNav != null) chaseNav.ResetPath();
             }
             return chasing;
@@ -599,7 +609,8 @@ namespace Project1.Systems
         /// <summary>
         /// 추격: NavMesh 길(계단, 사다리 링크 — RuntimeNavMesh)을 따라 달린다. 몸은 가는 쪽을 본다.
         /// 사다리 구간이면 사다리 쪽으로 밀어 잡고 오르내린다(CharacterTraversal). 사다리 앞에서 지쳤으면(스태미나) 숨을 고르고 탄다.
-        /// 스태미나는 chaseRunStamina를 남기고 달린다(사다리 몫). 막혀서 길 찾기가 점프를 권하면 점프.
+        /// 같은 층 상대에게 창틀로 넘는 게 빠르면 창틀로 가서 넘는다(AiRouteFinder.ChaseSteer). 점프는 창틀·판자 넘기에만 — 그냥 점프는 근접 교전에서만.
+        /// 스태미나는 chaseRunStamina를 남기고 달린다(사다리 몫).
         /// </summary>
         private void Chase(ref CharacterInputFrame f, float now, float dt, Vector3 targetPos)
         {
@@ -609,20 +620,28 @@ namespace Project1.Systems
             bool tired = stamina != null && (stamina.IsExhausted || stamina.Current < 15f);
             bool waitForLadder = ladderAhead && !onLadder && Grounded && tired; // 지친 채 잡으면 오르다 손이 풀린다
 
-            if (waitForLadder || !chaseNav.Steer(targetPos, true, out Vector3 dir))
+            Vector3 to = targetPos - tr.position;
+            bool windowing = route.ChaseWindow; // 지난 틱에 창틀로 가는 중이었으면 NavMesh 길의 막힘 판정은 쉬게 한다
+            Vector3 dir = Vector3.zero;
+            bool hasNav = !waitForLadder && chaseNav.Steer(targetPos, !windowing, out dir);
+            chaseNav.ConsumeJump(); // 추격 중에는 점프하지 않는다(막혀도 — 길 찾기가 비켜 서기·다시 찾기로 빠져나옴)
+            if (!hasNav) dir = Flat(to).sqrMagnitude > 1e-4f ? Flat(to).normalized : tr.forward;
+            // 창틀: 같은 층 상대에게 창틀로 넘는 게 빠르면 창틀로(넘을 때만 점프 = 창틀 넘기). 사다리 구간에서는 사다리만.
+            bool vault = false;
+            if (!waitForLadder && !ladderAhead && !onLadder) dir = route.ChaseSteer(targetPos, dir, now, Grounded, out vault);
+            if (waitForLadder || (!hasNav && !route.ChaseWindow))
             {
-                Vector3 to = targetPos - tr.position;
                 if (Flat(to).sqrMagnitude > 1e-4f) yaw = Mathf.MoveTowardsAngle(yaw, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 720f * dt);
                 f.LookYaw = yaw;
                 return;
             }
+            if (vault) keys.Jump();
             yaw = Mathf.MoveTowardsAngle(yaw, Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg, 720f * dt);
             f.LookYaw = yaw;
             Vector3 local = Quaternion.Euler(0f, -yaw, 0f) * dir; // 시야가 아직 덜 돌았어도 이동은 정확히 길 쪽으로
             f.Move = new Vector2(local.x, local.z).normalized;
             f.Run = !onLadder && !ladderAhead && CanRun && f.Move.y > 0.3f
                     && (stamina == null || stamina.Current > cfg.chaseRunStamina);
-            if (chaseNav.ConsumeJump() && Grounded && !ladderAhead) keys.Jump();
         }
 
         /// <summary>눈높이에서 상대 가슴이 보이는지(벽·바닥·천장에 안 막힘 — 캐릭터·트리거는 무시).</summary>
