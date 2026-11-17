@@ -7,7 +7,8 @@ namespace Project1.Systems
     /// AI 생존자의 판자 쓰기(AiBotInput이 근접 AI가 만든 입력 위에 덮는다 — 판자를 내릴 수 있는 캐릭터(PalletUser)만).
     /// 1) 판자로: 감시자가 engageRange 안에서 쫓아오면, 감시자보다 내가 더 가까운 세워진 판자(벽에 가리지 않은 것) 틈을 감시자 반대쪽으로 달려 빠져나간다.
     /// 2) 내리기: 틈을 지나 감시자 반대편에 섰고 감시자가 틈 안·바로 앞까지 오면 스페이스바(= 판자 내리기, PalletUser) — 틈 안이면 깔려 기절.
-    /// 3) 끼고 싸우기: 내린 판자를 사이에 두고 감시자 반대편 가까이에 선다(감시자가 돌아오면 다시 반대편으로). 감시자가 바짝 붙으면(closeRange) 근접 AI에 맡긴다.
+    /// 3) 끼고 싸우기: 내린 판자를 사이에 두고 늘 감시자 반대편을 잡는다 — 감시자가 넘어오거나 돌아와 같은 편이 되면 판자를 넘어(스페이스바) 다시 반대편으로.
+    ///    반대편에서 감시자가 바짝 붙으면(closeRange) 근접 AI에 맡긴다.
     /// 판자 좌표: 앞(+Z) = 넘어가는 쪽(틈을 가로지름), 옆(X) = 사람이 지나가는 통로.
     /// </summary>
     public sealed class AiPalletUser
@@ -20,6 +21,8 @@ namespace Project1.Systems
         private const float CloseRange = 2.4f;      // 감시자가 이 안이면 근접 AI에 맡긴다
         private const float HoldTime = 12f;         // 내린 뒤 판자를 끼고 있는 최대 시간
         private const float RetryDelay = 3f;        // 포기한 뒤 다시 찾기까지
+        private const float VaultBackMinRange = 1.2f; // 감시자가 같은 편이어도 이보다 가까우면(넘다 맞음) 근접 AI에 맡긴다
+        private const float VaultReach = 1.1f;      // 판자 가장자리에서 이 거리 안이면 스페이스바(넘기)
 
         private readonly Transform self;
         private Pallet pallet;
@@ -69,9 +72,23 @@ namespace Project1.Systems
                 return;
             }
 
-            // 3) 끼고 싸우기(내려진 판자)
+            // 3) 끼고 싸우기(내려진 판자): 늘 감시자 반대편을 잡는다 — 감시자가 넘어오거나 돌아와 같은 편이 되면 판자를 넘어 다시 반대편으로(심리전)
             if (now > holdUntil || hunterDist > EngageRange + 4f) { Give(now); return; }
-            if (hunterDist < CloseRange) return; // 바짝 붙음 — 근접 AI(공격·막기)
+            float mySideNow = Vector3.Dot(me - center, lane);
+            bool sameSide = mySideNow * hunterSide > 0f;
+            if (sameSide && hunterDist > VaultBackMinRange)
+            {
+                // 판자 쪽으로 곧장 달려가 넘는다(스페이스바 — 쓰러진 판자 넘기, CharacterTraversal)
+                Vector3 across = -lane * Mathf.Sign(mySideNow == 0f ? hunterSide : mySideNow);
+                Vector3 toBoard = center - me; toBoard.y = 0f;
+                Vector3 go = (across * 1.2f + toBoard.normalized * 0.4f).normalized;
+                Steer(ref f, go, run: true);
+                ClearAttack(ref f);
+                if (Mathf.Abs(mySideNow) < pallet.Width * 0.5f + VaultReach) f.Jump = true;
+                holdUntil = Mathf.Max(holdUntil, now + 4f); // 넘는 동안 그만두지 않게
+                return;
+            }
+            if (hunterDist < CloseRange) return; // 반대편이지만 바짝 붙음 — 근접 AI(공격·막기)
             Vector3 hold = center - lane * hunterSide * HoldDistance;
             if (Flat(hold - me).magnitude < 0.5f) { Face(ref f, opp - me); f.Move = Vector2.zero; return; }
             Steer(ref f, hold - me, run: false, faceTarget: opp - me);

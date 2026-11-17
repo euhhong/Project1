@@ -15,6 +15,8 @@ namespace Project1.Systems
     /// </summary>
     public sealed class AiMeleeTactics
     {
+        private const float SkillFirstChance = 0.8f; // 스킬 재사용 대기가 끝났고 닿는 거리면 이 확률로 스킬부터
+
         private enum Maneuver { None, Approach, Strafe, BackOff, Feint, Hold, Light, Heavy, Parry, RunJump, Skill, Dodge, Bait }
 
         private const float ReattackGap = 0.55f; // 내 공격이 끝난 뒤 다시 누르기까지(CharacterAttack의 다시 공격 대기보다 조금 길게)
@@ -343,6 +345,10 @@ namespace Project1.Systems
                 mDir = 0f;
                 return;
             }
+
+            // 재사용 대기가 끝났으면 스킬부터 써 본다(닿는 거리면 대부분 — 돌진형은 유인 뒤 돌진)
+            if (skillInRange && Random.value < SkillFirstChance) { Begin(now, Maneuver.Skill, 0.3f); return; }
+            if (prof.Charge && skillReady && dist >= 1.2f && dist < 12f && Random.value < SkillFirstChance) { Begin(now, Maneuver.Bait, Random.Range(1f, 2.5f)); return; }
 
             if (dist > cfg.engageRadius)
             {
