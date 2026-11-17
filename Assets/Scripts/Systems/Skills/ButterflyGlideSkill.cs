@@ -9,7 +9,10 @@ namespace Project1.Systems
     /// - 겨누는 나비가 없거나 나비를 놓는 중이면(놓기를 E로 취소하고 좌클릭을 아직 안 뗀 동안 포함) 쓰지 않는다.
     /// - 날아가는 동안 뚫고 지나가는 것(ColliderPassThrough — 빠져나오면 다시 막힘, IsPassable):
     ///   · 소품·뚱뚱한 물건(분수대·조각상·받침대·상자·VARCO 소품·나무·바위·거울·가구 등 — 맵 뼈대가 아닌 것, IsStructure).
-    ///   · 낮고 얇은 난간·낮은 담(키 1.5m 이하, 두께 0.5m 이하)과 창턱(PassWindowSills).
+    ///   · 몸 가운데 직선은 틈으로 지나가고 몸 가장자리만 스치는 뼈대(창 아래턱·옆기둥·윗틀, 문틀, 벽 모서리).
+    ///   · 눈(발 위 1.7m)에서 나비가 보이는 길을 가리지 않는 뼈대(다리 쪽만 걸리는 기둥 윗부분·바닥 끝).
+    ///   · 낮고 얇은 난간·낮은 담(키 1.5m 이하, 두께 0.5m 이하)과 창턱(PassWindowSills). 내려갈 땐 윗면이 허리 아래인 얇은 벽 띠(창밖 아래로 비스듬히 뛰어내리는 길)와 계단도.
+    ///   · 지형(Terrain)은 뚫지 않고, 그 아래로 파고들지 않게만 발을 지면 위로 올린다(GlideVelocity).
     ///   · 내려갈 때 떠나는 바닥·계단(바닥판 — 2층 바닥은 1.6m 폭 띠 여러 개라 띠 사이 이음매에 걸려 멈추던 원인).
     ///     올라갈 때는 나비가 놓인 그 바닥(높이 ±0.6m, 나비에서 3m 안)만 뚫는다 — 그 밖의 천장·윗층 바닥 밑면은 막힘.
     ///   · 촉수 기둥·공장장 분신(PassSkillObstacles).
@@ -43,6 +46,8 @@ namespace Project1.Systems
         [Tooltip("올라갈 때 뚫는 바닥: 나비 높이와 이만큼(m) 안이고, 닿은 자리가 나비에서 수평 floorPassNearTarget(m) 안인 바닥만(나비가 놓인 바닥 끝).")]
         [Min(0f)] public float floorPassHeightTolerance = 0.6f;
         [Min(0f)] public float floorPassNearTarget = 3f;
+        [Tooltip("눈 높이(m, 발 위). 여기서 나비가 보이는 길을 가리지 않는 뼈대는 몸만 스치는 것으로 보고 뚫는다(ButterflyField 시야와 같은 1.7m).")]
+        [Min(0f)] public float eyeLineHeight = 1.7f;
         [Tooltip("옆으로 부딪힌 것의 윗면이 발 위 이 높이(m, 무릎) 이하면 멈추지 않고 뚫는다(바닥 이음매·낮은 턱).")]
         [Min(0f)] public float lowLedgeHeight = 0.6f;
 
@@ -91,12 +96,33 @@ namespace Project1.Systems
         {
             worldVelocity = Vector3.zero; passThrough = false;
             if (ctx.TryGetComponent(out Knockback kb) && kb.Active) return false; // 맹인에게 밀리는 중 — 밀려나는 대로
-            Vector3 to = ctx.AreaCenter - ctx.transform.position;
-            float total = to.magnitude;
-            if (total < 1e-4f) return true; // 제자리(곧 도착 처리)
-            worldVelocity = to / total * Mathf.Min(glideSpeed, total / Time.fixedDeltaTime);
+            worldVelocity = GlideVelocity(ctx.transform.position, ctx.AreaCenter, Time.fixedDeltaTime);
             return true;
         }
+
+        /// <summary>
+        /// 이번 틱 속도: pos(발)에서 target까지 대각선 직선으로 glideSpeed(마지막 틱엔 지나치지 않게).
+        /// 지형(Terrain)만은 그 아래로 파고들지 않게 다음 발 자리를 지면 위로 올린다(마당의 울퉁불퉁한 땅에 걸려 비비지 않게). 바닥·소품·계단은 올리지 않는다(직선 그대로).
+        /// </summary>
+        public Vector3 GlideVelocity(Vector3 pos, Vector3 target, float dt)
+        {
+            Vector3 to = target - pos;
+            float total = to.magnitude;
+            if (total < 1e-4f) return Vector3.zero; // 제자리(곧 도착 처리)
+            Vector3 v = to / total * Mathf.Min(glideSpeed, total / dt);
+            Vector3 next = pos + v * dt;
+            int n = Physics.RaycastNonAlloc(next + Vector3.up * 1f, Vector3.down, TerrainHits, 1.5f, Mask, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++)
+            {
+                if (!(TerrainHits[i].collider is TerrainCollider) || TerrainHits[i].distance <= 0f) continue;
+                float ground = TerrainHits[i].point.y + 0.02f;
+                if (ground > next.y) v.y += (ground - next.y) / dt;
+                break;
+            }
+            return v;
+        }
+
+        private static readonly RaycastHit[] TerrainHits = new RaycastHit[8];
 
         /// <summary>속도는 TryGetVelocityOverride가 정한다 — 입력으로는 움직이지 않는다.</summary>
         public override bool TryGetMoveOverride(CharacterSkill ctx, out Vector2 localMove, out float speed, out bool allowJump)
@@ -138,10 +164,10 @@ namespace Project1.Systems
             {
                 var hit = motor.HitObstacle ? motor.LastObstacle : null;
                 bool wall = hit != null && !(hit is TerrainCollider);
-                if (wall && !(hit is CharacterController) && hit.GetComponentInParent<CharacterIdentity>() == null
-                    && hit.bounds.max.y <= ctx.transform.position.y + lowLedgeHeight)
+                if (wall && !(hit is CharacterController) && hit.GetComponentInParent<CharacterIdentity>() == null && !(hit is MeshCollider { convex: false })
+                    && (hit.bounds.max.y <= ctx.transform.position.y + lowLedgeHeight || PassableNow(ctx, hit, to3)))
                 {
-                    Pass(ctx, hit); wall = false; // 무릎 아래 낮은 턱(바닥 이음매·계단 첫 단 등)은 막지 않고 뚫는다
+                    Pass(ctx, hit); wall = false; // 무릎 아래 낮은 턱(바닥 이음매·계단 첫 단 등)이나 뚫어도 되는 것(미리 못 본 것)은 막지 않고 뚫는다
                 }
                 bool ceiling = motor.HitCeiling && to3.y > 0.1f;
                 if (wall || ceiling) return EndBlocked(ctx, out recovery);
@@ -184,25 +210,44 @@ namespace Project1.Systems
             float look = Mathf.Min(total, glideSpeed * Time.fixedDeltaTime * 2f) + cc.radius;
             int n = Physics.CapsuleCastNonAlloc(c + Vector3.up * half, c - Vector3.up * half, cc.radius, dir, Hits, look, Mask, QueryTriggerInteraction.Ignore);
             float footY = ctx.transform.position.y;
-            for (int i = 0; i < n; i++)
+            int count = Mathf.Min(n, Hits.Length);
+            for (int i = 0; i < count; i++)
             {
                 var col = Hits[i].collider;
-                if (col == null || col.transform.IsChildOf(ctx.transform)) continue;
+                if (col == null || col.transform.IsChildOf(ctx.transform) || col is TerrainCollider || col is MeshCollider { convex: false }) continue; // 지형은 뚫지 않는다(ClosestPoint도 안 됨)
                 Vector3 p = Hits[i].distance > 0f ? Hits[i].point : col.ClosestPoint(c);
-                if (IsPassable(col, p, footY, to3.y, ctx.AreaCenter)) Pass(ctx, col);
+                if (IsPassable(col, p, footY, c, to3, ctx.AreaCenter)) Pass(ctx, col);
             }
         }
 
+        private bool PassableNow(CharacterSkill ctx, Collider col, Vector3 to3)
+        {
+            if (!ctx.TryGetComponent(out CharacterController cc)) return false;
+            Vector3 c = cc.transform.TransformPoint(cc.center);
+            return IsPassable(col, col.ClosestPoint(c), ctx.transform.position.y, c, to3, ctx.AreaCenter);
+        }
+
         /// <summary>
-        /// 날아가는 동안 col을 뚫어도 되는지. 캐릭터는 안 됨(분신·촉수는 PassSkillObstacles가 따로).
-        /// 소품(맵 뼈대가 아닌 것) → 됨. 뼈대 중 낮고 얇은 난간·담 → 됨. 바닥판 → 내려갈 땐 됨, 올라갈 땐 나비가 놓인 바닥 끝만. 그 밖의 뼈대(벽·기둥·천장 등) → 안 됨.
+        /// 날아가는 동안 col을 뚫어도 되는지(center = 지금 몸 가운데, to3 = 발에서 나비까지). 캐릭터·지형은 안 됨(분신·촉수는 PassSkillObstacles가 따로).
+        /// 소품(맵 뼈대가 아닌 것) → 됨. 몸 가운데 직선은 비켜 가고 몸 가장자리만 스치는 뼈대(창문 아래턱·옆기둥·윗틀, 문틀, 벽 모서리) → 됨.
+        /// 낮고 얇은 난간·담(발 위 lowBarrierHeight 아래) → 됨. 바닥판 → 내려갈 땐 됨, 올라갈 땐 나비가 놓인 바닥 끝만. 그 밖의 뼈대(가운데 직선이 지나는 벽·기둥·천장 등) → 안 됨.
         /// </summary>
-        private bool IsPassable(Collider col, Vector3 hitPoint, float footY, float dy, Vector3 target)
+        public bool IsPassable(Collider col, Vector3 hitPoint, float footY, Vector3 center, Vector3 to3, Vector3 target)
         {
             if (col is CharacterController || col.GetComponentInParent<CharacterIdentity>() != null) return false;
+            if (col is TerrainCollider || (col is MeshCollider mc && !mc.convex)) return false; // 안에 들어갔는지 잴 수 없어(ClosestPoint) 뚫으면 빠질 수 있다
             if (!IsStructure(col)) return true; // 분수대·조각상·상자·소품 등
+            float dy = to3.y;
+            float total = to3.magnitude;
+            if (total > 1e-3f && !col.Raycast(new Ray(center, to3 / total), out _, total)) return true; // 몸 가운데는 틈으로 지나감 — 가장자리만 스침(창틀·문틀·모서리)
+            // 눈에서 나비가 보이는 길을 가리지 않는 것(발·다리 쪽만 걸리는 기둥 윗부분·바닥 끝·턱)은 뚫는다 — 보이는 나비에는 직선으로 간다. 눈앞을 막는 벽은 막힌다.
+            Vector3 eye = new(center.x, footY + eyeLineHeight, center.z);
+            Vector3 sight = target + Vector3.up * 0.3f - eye;
+            if (sight.sqrMagnitude > 1e-4f && !col.Raycast(new Ray(eye, sight.normalized), out _, sight.magnitude)) return true;
             Bounds b = col.bounds;
-            if (b.size.y <= lowBarrierHeight && Thickness(col) <= lowBarrierThickness) return true; // 난간·낮은 담
+            // 난간·낮은 담·창턱(발 높이쯤에 있는 것만 — 창 윗틀은 아님). 내려갈 때는 키가 커도 윗면이 허리 아래인 얇은 벽(창 아래 벽 띠)도 — 창밖 아래로 비스듬히 뛰어내리는 길.
+            if (Thickness(col) <= lowBarrierThickness && b.max.y <= footY + lowBarrierHeight && (b.size.y <= lowBarrierHeight || dy < -0.3f)) return true;
+            if (dy < -0.3f && IsStairs(col)) return true; // 내려갈 때 계단(디딤·경사로·계단 밑 채움)은 높이와 상관없이 지나감 — 계단 위로 비스듬히 내려가는 길
             if (!IsFloor(col)) return false; // 벽·기둥·탑·지붕 경사 등
             if (dy < -0.3f) return b.max.y <= footY + floorPassHeightTolerance; // 내려감: 떠나는 바닥·그 아래 층 바닥을 지나 직선으로
             Vector2 flatToTarget = new(target.x - hitPoint.x, target.z - hitPoint.z);
@@ -244,6 +289,15 @@ namespace Project1.Systems
         {
             foreach (var w in words) if (name.Contains(w)) return true;
             return false;
+        }
+
+        /// <summary>계단(디딤·경사로·계단 밑 채움)인지.</summary>
+        private static bool IsStairs(Collider col)
+        {
+            string name = col.name;
+            if (name.Contains("Step") || name.Contains("Ramp") || name.Contains("Fill")) return true;
+            var parent = col.transform.parent;
+            return parent != null && parent.name.Contains("Stair");
         }
 
         /// <summary>바닥판(층 바닥 띠·테라스·지붕 바닥·계단 디딤·경사로)인지.</summary>
