@@ -41,23 +41,19 @@ namespace Project1.UI
 
             // 가운데 창
             var font = Resources.Load<Font>("Fonts/GowunDodum-Regular");
-            dialog = new TitleDialog(panel.Root, font, 520f);
-            var title = TitleDialog.Text(dialog.Box, "PAUSE", font, 44, TitleDialog.Ink);
-            title.style.unityTextAlign = TextAnchor.MiddleCenter;
-            title.style.marginBottom = 18f;
-            AddButton("재개", Resume, primary: true, font);
-            AddButton("나가기", () => Leave(CharacterSelectScreen.SceneName), primary: false, font); // 캐릭터 선택 화면으로
+            dialog = new TitleDialog(panel.Root, font, 460f, slanted: true); // 오른쪽 위 'ESC 메뉴' 버튼과 같은 느낌의 기운 창
+            var title = TitleDialog.SlantedText(dialog.Box, "PAUSE", 76);
+            title.style.marginBottom = 14f;
+            AddButton("재개", Resume, primary: true);
+            AddButton("나가기", () => Leave(CharacterSelectScreen.SceneName), primary: false); // 캐릭터 선택 화면으로
             dialog.CancelAction = Resume;
             dialog.DefaultAction = Resume;
         }
 
-        private void AddButton(string text, System.Action onClick, bool primary, Font font)
+        private void AddButton(string text, System.Action onClick, bool primary)
         {
-            var b = TitleDialog.MakeButton(dialog.Box, text, font, onClick, primary);
-            b.style.width = StyleKeyword.Auto;
-            b.style.alignSelf = Align.Stretch;
-            b.style.marginLeft = b.style.marginRight = 0f;
-            b.style.marginTop = 14f;
+            var b = TitleDialog.MakeSlantedButton(dialog.Box, text, onClick, primary, width: 280f, height: 70f);
+            b.Root.style.marginTop = 22f;
         }
 
         private void Update()

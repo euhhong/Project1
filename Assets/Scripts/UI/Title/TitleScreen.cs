@@ -68,7 +68,7 @@ namespace Project1.UI
 
             options = new TitleOptionsPanel(root, font);
             credits = TitleCredits.Create(root, font);
-            exitConfirm = TitleDialog.Confirm(root, font, "정말 종료하시겠습니까?", Quit);
+            exitConfirm = TitleDialog.Confirm(root, font, "정말 종료하시겠습니까?", Quit, slanted: true); // 'ESC 메뉴' 버튼 느낌의 기운 창
 
             fade = new VisualElement { pickingMode = PickingMode.Ignore };
             fade.style.position = Position.Absolute;

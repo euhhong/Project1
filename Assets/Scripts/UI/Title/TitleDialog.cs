@@ -24,7 +24,11 @@ namespace Project1.UI
         public Action DefaultAction { get; set; }
         public Action CancelAction { get; set; }
 
-        public TitleDialog(VisualElement root, Font font, float width)
+        /// <param name="slanted">
+        /// true = 오른쪽 위 'ESC 메뉴' 버튼(SlantedButton)과 같은 느낌: 살짝 기운 검은 판 + 흰 테두리 + 뒤에 어긋나게 깔린 적갈색 그림자판 + 왼쪽 사선 띠.
+        /// 이때 글·버튼은 SlantedText·MakeSlantedButton으로(붓글씨 글꼴).
+        /// </param>
+        public TitleDialog(VisualElement root, Font font, float width, bool slanted = false)
         {
             Font = font;
             layer = new VisualElement();
@@ -38,13 +42,69 @@ namespace Project1.UI
 
             Box = new VisualElement();
             Box.style.width = width;
-            Box.style.backgroundColor = PanelColor;
-            SetBorder(Box, 2f, Crimson, 6f);
-            Box.style.borderTopWidth = 5f;
-            Box.style.paddingLeft = Box.style.paddingRight = 44f;
-            Box.style.paddingTop = 34f; Box.style.paddingBottom = 32f;
-            layer.Add(Box);
+            if (slanted)
+            {
+                var frame = new VisualElement();
+                frame.style.rotate = new Rotate(Angle.Degrees(-3f));
+                layer.Add(frame);
+                var shadow = new VisualElement { pickingMode = PickingMode.Ignore };
+                shadow.style.position = Position.Absolute;
+                shadow.style.left = 0; shadow.style.top = 0; shadow.style.right = 0; shadow.style.bottom = 0;
+                shadow.style.backgroundColor = CharacterSelectBackdrop.Maroon;
+                shadow.style.translate = new Translate(16f, 16f);
+                frame.Add(shadow);
+                Box.style.backgroundColor = new Color(0.03f, 0.03f, 0.04f, 0.97f);
+                SetBorder(Box, 3f, new Color(1f, 1f, 1f, 0.95f), 0f);
+                Box.style.overflow = Overflow.Hidden;
+                Box.style.paddingLeft = 96f; Box.style.paddingRight = 56f; // 왼쪽 사선 띠 자리
+                Box.style.paddingTop = 30f; Box.style.paddingBottom = 40f;
+                Box.style.alignItems = Align.Center;
+                Stripe(Box, 26f, 22f, CharacterSelectBackdrop.Maroon);
+                Stripe(Box, 60f, 5f, new Color(1f, 1f, 1f, 0.6f));
+                frame.Add(Box);
+            }
+            else
+            {
+                Box.style.backgroundColor = PanelColor;
+                SetBorder(Box, 2f, Crimson, 6f);
+                Box.style.borderTopWidth = 5f;
+                Box.style.paddingLeft = Box.style.paddingRight = 44f;
+                Box.style.paddingTop = 34f; Box.style.paddingBottom = 32f;
+                layer.Add(Box);
+            }
             CancelAction = Close;
+        }
+
+        private const string BrushFont = "Fonts/EastSeaDokdo-Regular";
+
+        /// <summary>판 왼쪽의 비스듬한 장식 띠(SlantedButton과 같은 느낌).</summary>
+        private static void Stripe(VisualElement box, float left, float width, Color color)
+        {
+            var d = new VisualElement { pickingMode = PickingMode.Ignore };
+            d.style.position = Position.Absolute;
+            d.style.left = left; d.style.width = width;
+            d.style.top = -60f; d.style.bottom = -60f;
+            d.style.rotate = new Rotate(Angle.Degrees(20f));
+            d.style.backgroundColor = color;
+            box.Add(d);
+        }
+
+        /// <summary>기운 창의 글(붓글씨, 흰 글자 + 검은 그림자).</summary>
+        public static Label SlantedText(VisualElement parent, string text, int size)
+        {
+            var l = Text(parent, text, Resources.Load<Font>(BrushFont), size, Color.white);
+            l.style.unityTextAlign = TextAnchor.MiddleCenter;
+            l.style.textShadow = new TextShadow { offset = new Vector2(3f, 3f), blurRadius = 0f, color = new Color(0f, 0f, 0f, 0.85f) };
+            return l;
+        }
+
+        /// <summary>기운 창의 버튼 = 'ESC 메뉴'와 같은 SlantedButton(붓글씨, 적갈색). primary = 적갈색 얼굴판.</summary>
+        public static SlantedButton MakeSlantedButton(VisualElement parent, string text, Action onClick, bool primary, float width = 230f, float height = 66f)
+        {
+            var b = new SlantedButton(parent, text, Resources.Load<Font>(BrushFont), 40, width, height, primary, onClick) { HoverSound = "ui_page" };
+            b.SetAccent(CharacterSelectBackdrop.Maroon);
+            b.Root.style.marginLeft = b.Root.style.marginRight = 16f;
+            return b;
         }
 
         public void Open() { layer.style.display = DisplayStyle.Flex; layer.BringToFront(); }
@@ -63,10 +123,20 @@ namespace Project1.UI
             return d;
         }
 
-        /// <summary>질문 + 예/아니오. Enter·ESC는 아니오(실수로 넘어가지 않게) — 예는 클릭으로만.</summary>
-        public static TitleDialog Confirm(VisualElement root, Font font, string text, Action onYes)
+        /// <summary>질문 + 예/아니오. Enter·ESC는 아니오(실수로 넘어가지 않게) — 예는 클릭으로만. slanted = 'ESC 메뉴' 버튼 느낌의 기운 창.</summary>
+        public static TitleDialog Confirm(VisualElement root, Font font, string text, Action onYes, bool slanted = false)
         {
-            var d = new TitleDialog(root, font, 620f);
+            var d = new TitleDialog(root, font, slanted ? 680f : 620f, slanted);
+            if (slanted)
+            {
+                SlantedText(d.Box, text, 52);
+                var srow = ButtonRow(d.Box);
+                srow.style.marginTop = 34f;
+                MakeSlantedButton(srow, "예", () => { d.Close(); onYes?.Invoke(); }, primary: true, width: 190f);
+                MakeSlantedButton(srow, "아니오", d.Close, primary: false, width: 190f);
+                d.DefaultAction = d.Close;
+                return d;
+            }
             Text(d.Box, text, font, 34, Ink).style.unityTextAlign = TextAnchor.MiddleCenter;
             var row = ButtonRow(d.Box);
             MakeButton(row, "예", font, () => { d.Close(); onYes?.Invoke(); }, primary: true);
