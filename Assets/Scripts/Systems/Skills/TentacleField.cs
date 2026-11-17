@@ -10,6 +10,7 @@ namespace Project1.Systems
     ///   몸 근처로 끌어다 떼거나, 누른 채 E를 누르면 취소(좌클릭을 뗄 때까지 무시).
     ///   자리는 땅만 고른다 — 상대 몸을 가리켜도 그 발밑 땅(상대가 서 있는 자리에도 세울 수 있음). 솟을 때 밑동 risePushRadius 안의 상대는 바깥으로 살짝 밀려난다(이펙트 없음).
     /// - 촉수는 최대 maxTentacles개, 넘으면 가장 오래된 것이 땅속으로 들어간다. 세운 뒤 lifetime초가 지나도 들어간다.
+    /// - 세운 직후 노란옷의 왕과 가장 가까운 상대의 직선거리를 재서, freeSummonRange(20m) 안이면 바로 또 세울 수 있고 멀면 farSummonCooldown(5초) 뒤에 세울 수 있다.
     /// - E를 꾹 누르면 바라보는 방향(시야)에 가장 맞는 서 있는 촉수를 고른다(TargetIndex). E를 떼면 그 촉수가 내려찍는다:
     ///   뒤로 젖혀 말아 올림(slamWindup) → 앞으로 내리쳐 땅에 눕는다(slamActive, 이 동안 밑동에서 그 방향으로 펼친 부채꼴 안의 상대를 한 번씩 맞힘 — 바짝 붙은 곳은 안전) → 다시 섬(slamRecovery) → 땅속으로(sink).
     ///   내려찍는 방향 = 거리와 상관없이(닿지 않아도) 가장 가까운 상대 쪽(다 내려가기 직전까지 계속 따라감), 상대가 없으면 노란옷의 왕이 바라보는 방향.
@@ -17,8 +18,40 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 노란옷의 왕만). 그리기는 FE(TentacleVisual).
     /// </summary>
     [DisallowMultipleComponent]
-    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock, ISkillSlotInfo
+    public class TentacleField : MonoBehaviour, ITentacleField, IAttackHoldOverride, ILookSensitivity, IChargeCancelHint, IActionLock, ISkillSlotInfo, ICooldownGauge
     {
+        [Header("세우기 재사용 대기 — 상대와의 거리로")]
+        [Tooltip("촉수를 세운 직후 노란옷의 왕과 가장 가까운 상대의 직선거리(m)가 이 안이면 재사용 대기 없이 바로 또 세울 수 있다.")]
+        [SerializeField, Min(0f)] private float freeSummonRange = 20f;
+        [Tooltip("상대가 그보다 멀면(또는 없으면) 다음 촉수를 세우기까지 재사용 대기(초).")]
+        [SerializeField, Min(0f)] private float farSummonCooldown = 5f;
+        private float summonReadyAt, summonCooldownLength;
+
+        /// <summary>촉수를 세울 수 있을 때까지 남은 시간(초).</summary>
+        public float SummonCooldownRemaining => Mathf.Max(0f, summonReadyAt - Time.time);
+
+        public bool TryGetCooldown(out string label, out float fill, out bool draining)
+        {
+            label = "촉수"; draining = false;
+            float left = SummonCooldownRemaining;
+            fill = summonCooldownLength > 0f ? 1f - left / summonCooldownLength : 1f;
+            return isActiveAndEnabled && left > 0f;
+        }
+
+        /// <summary>세운 직후: 가장 가까운 상대가 freeSummonRange 안이면 대기 없음, 멀면(없으면) farSummonCooldown.</summary>
+        private void StartSummonCooldown()
+        {
+            float nearest = float.MaxValue;
+            foreach (var c in FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == null || c == self || (self != null && !self.CanHit(c))) continue;
+                nearest = Mathf.Min(nearest, Vector3.Distance(c.transform.position, transform.position));
+            }
+            float cd = nearest <= freeSummonRange ? 0f : SkillCooldowns.Scale(farSummonCooldown); // 연습 모드 = 0
+            summonCooldownLength = cd;
+            summonReadyAt = Time.time + cd;
+        }
+
         [Tooltip("촉수를 세울 자리 고르기(땅 위만, 몸 근처 = 취소).")]
         [SerializeField] private GroundPlacementPreview placement = new() { orbitWhileTurning = false, maxPlaceDistance = 25f, defaultDistance = 8f, clampToMax = true };
         [SerializeField, Min(1)] private int maxTentacles = 3;
@@ -111,6 +144,7 @@ namespace Project1.Systems
         {
             Placing = false; placement.Clear(); waitRelease = false; Selecting = false; TargetIndex = -1;
             tentacles.Clear(); hitBySlam.Clear();
+            summonReadyAt = 0f; summonCooldownLength = 0f;
             ClearObstacles();
         }
 
@@ -129,7 +163,7 @@ namespace Project1.Systems
             {
                 if (!input.HeavyCharging) waitRelease = false;
             }
-            else if (input.HeavyCharging && !blocked && !Slamming) // 내려찍는 동안은 세우기 잠김
+            else if (input.HeavyCharging && !blocked && !Slamming && SummonCooldownRemaining <= 0f) // 내려찍는 동안·세우기 재사용 대기 중엔 세우기 잠김
             {
                 if (!Placing) placement.Begin();
                 Placing = true;
@@ -214,6 +248,7 @@ namespace Project1.Systems
                 Direction = away.sqrMagnitude > 1e-4f ? away.normalized : Flat(transform.forward).normalized,
             });
             PushAwayFrom(point, away.sqrMagnitude > 1e-4f ? away.normalized : Flat(transform.forward).normalized);
+            StartSummonCooldown(); // 세운 직후 상대와의 거리로 다음 세우기 대기를 정한다
         }
 
         /// <summary>솟는 자리에 서 있던 상대를 밑동에서 바깥으로 살짝 밀어낸다(넉백만 — 피해·경직·피격 모션·이펙트 없음).</summary>
