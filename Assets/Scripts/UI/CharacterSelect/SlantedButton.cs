@@ -20,6 +20,9 @@ namespace Project1.UI
 
         public VisualElement Root { get; }
 
+        /// <summary>마우스를 올릴 때 낼 화면 소리 이름(SfxPlayer.PlayUi). null = 소리 없음.</summary>
+        public string HoverSound { get; set; }
+
         public SlantedButton(VisualElement parent, string text, Font font, int fontSize, float width, float height, bool primary, Action onClick)
         {
             this.primary = primary;
@@ -49,7 +52,11 @@ namespace Project1.UI
             stripe = Deco(left: height * 0.16f, width: height * 0.14f);
             stripeThin = Deco(left: height * 0.36f, width: Mathf.Max(3f, height * 0.04f));
 
-            face.RegisterCallback<PointerEnterEvent>(_ => { hot = true; Restyle(); });
+            face.RegisterCallback<PointerEnterEvent>(_ =>
+            {
+                hot = true; Restyle();
+                if (HoverSound != null) Project1.Presentation.SfxPlayer.PlayUi(HoverSound, 1f, 0.08f); // 타이틀 버튼과 같은 소리
+            });
             face.RegisterCallback<PointerLeaveEvent>(_ => { hot = false; pressed = false; Restyle(); });
             face.RegisterCallback<PointerDownEvent>(_ => { pressed = true; Restyle(); }, TrickleDown.TrickleDown);
             face.RegisterCallback<PointerUpEvent>(_ => { pressed = false; Restyle(); }, TrickleDown.TrickleDown);

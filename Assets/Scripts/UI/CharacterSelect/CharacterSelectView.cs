@@ -182,6 +182,7 @@ namespace Project1.UI
             root.Add(buttons);
             startButton = new SlantedButton(buttons, "게임 시작", titleFont, 70, 380f, 104f, primary: true, () => StartRequested?.Invoke(true));
             practiceButton = new SlantedButton(buttons, "연습", titleFont, 50, 300f, 74f, primary: false, () => StartRequested?.Invoke(false));
+            startButton.HoverSound = practiceButton.HoverSound = "ui_page"; // 타이틀 버튼에 마우스를 올릴 때와 같은 소리
             practiceButton.Root.style.marginTop = 22f;
             practiceButton.Root.style.marginRight = 10f;
 
