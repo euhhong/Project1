@@ -75,6 +75,6 @@ namespace Project1.Presentation
         }
         private bool Overrides(string kind) => TryGetComponent(out CharacterSoundSet own) && own.Has(kind);
         private void OnSkill() => SfxPlayer.Play("skill", Body, 0.7f, 0.05f);
-        private void OnStunned(float seconds) { if (seconds >= 0.8f) SfxPlayer.Play("stun", Body + Vector3.up * 0.6f, 0.6f, 0.03f); }
+        private void OnStunned(float seconds) { } // 기절 소리는 병아리 삐약 소리(StunChickSound)만 — 예전 일반 기절음(stun, 삐이이)은 쓰지 않음
     }
 }

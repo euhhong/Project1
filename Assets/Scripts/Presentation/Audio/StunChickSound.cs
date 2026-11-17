@@ -4,15 +4,15 @@ using UnityEngine;
 namespace Project1.Presentation
 {
     /// <summary>
-    /// 긴 기절의 병아리 소리(FE): 기절 시간이 MinStun초 이상이면 기절한 동안 머리 위(병아리가 도는 자리)에서
-    /// Resources/Sfx/stun_chick(삐약 소리 묶음)을 작게 반복한다. 기절이 풀리면 멈춘다.
+    /// 기절의 병아리 소리(FE): 기절 시간이 MinStun초(0.8) 이상이면 — 일반 기절음(stun) 대신 이것만 기절한 동안 머리 위(병아리가 도는 자리)에서
+    /// Resources/Sfx/stun_chick(VARCO "cheep-cheep" — 짧게 끊기는 삐약 소리 묶음)을 반복한다. 기절이 풀리면 멈춘다.
     /// SfxPlayer가 캐릭터마다 저절로 붙인다(붙일 것 없음). 음량 = 효과음 음량.
     /// </summary>
     [DisallowMultipleComponent]
     public class StunChickSound : MonoBehaviour
     {
         private const string ClipResource = "Sfx/stun_chick";
-        private const float MinStun = 1.5f, Volume = 0.22f;
+        private const float MinStun = 0.8f, Volume = 0.6f;
 
         private AudioSource source;
         private CharacterStun stun;
