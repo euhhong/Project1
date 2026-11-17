@@ -12,7 +12,7 @@ namespace Project1.Presentation
     public class PeriodicSoundPlayer : MonoBehaviour
     {
         [Tooltip("Resources 안의 소리 경로(확장자 없이). 여러 개면 번갈아 고른다.")]
-        [SerializeField] private string[] clipResources = { "Sfx/Characters/Thief/Thief_Taunt_01", "Sfx/Characters/Thief/Thief_Taunt_02" };
+        [SerializeField] private string[] clipResources = { "Sfx/Characters/Thief/Thief_Taunt_01", "Sfx/Characters/Thief/Thief_Taunt_02", "Sfx/Characters/Thief/Thief_Emote_Other_01" };
 
         [Tooltip("한 번 나고 다음이 날 때까지(초). 소리 길이는 빼고 센다.")]
         [Min(0.1f)] [SerializeField] private float interval = 10f;

@@ -133,6 +133,9 @@ namespace Project1.UI
             SetProp<CharacterOutline>(player, true);   // 게임 중 캐릭터 모델 가장자리에 얇은 흰 윤곽선(FE)
             SetProp<RoofSunBurn>(player, true);        // 지붕 높이(4층 이상)에 서 있으면 햇볕에 타는 도트 데미지(BE)
             SetProp<SunBurnVisual>(player, true);      // 그 연출: 연기·불티·따뜻한 빛 일렁임(FE)
+            Ensure<CharacterSoundSet>(player).Configure(entry.id, entry.role == CharacterRole.Hunter); // 캐릭터 전용 효과음(발소리·창틀·평타·스킬 — Resources/Sfx/Characters/{캐릭터})(FE)
+            SetProp<SurvivorHeartbeat>(player, isPlayer && entry.role == CharacterRole.Survivor); // 플레이어 생존자: 감시자가 가까우면 심장 소리(FE)
+            SetProp<PeriodicSoundPlayer>(player, entry.id == "Survivor_Thief"); // 도둑: 일정 시간마다 도발 소리(FE)
             if (player.TryGetComponent(out CharacterMotor palletMotor)) palletMotor.RefreshSpeedLimits(); // 판자 내리는 동안 제자리(IMoveOverride)를 이동에 알린다
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))

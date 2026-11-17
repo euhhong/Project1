@@ -62,15 +62,18 @@ namespace Project1.Presentation
         private void OnAttack(CharacterAttackState s)
         {
             if (s == CharacterAttackState.HeavyCharge || s == CharacterAttackState.None) return; // 모으기 시작은 소리 없음(휘두를 때만)
+            if (TryGetComponent(out CharacterSoundSet own) && own.OverridesSwing) return; // 캐릭터 전용 휘두르기 소리가 있으면 그것만
             SfxPlayer.Play("swing", Body, 0.55f, 0.1f, s == CharacterAttackState.Heavy ? 0.85f : 1f);
         }
-        private void OnJump() => SfxPlayer.Play("jump", transform.position, 0.35f, 0.12f);
+        private void OnJump() { if (!Overrides("Jump")) SfxPlayer.Play("jump", transform.position, 0.35f, 0.12f); }
         private void OnLand()
         {
             if (Time.time - lastLand < 0.25f) return; // 계단·턱에서 잇달아 나지 않게
             lastLand = Time.time;
+            if (Overrides("Land")) return; // 캐릭터 전용 착지 소리(재앙의 도마뱀)
             SfxPlayer.Play("land", transform.position, 0.45f, 0.1f);
         }
+        private bool Overrides(string kind) => TryGetComponent(out CharacterSoundSet own) && own.Has(kind);
         private void OnSkill() => SfxPlayer.Play("skill", Body, 0.7f, 0.05f);
         private void OnStunned(float seconds) { if (seconds >= 0.8f) SfxPlayer.Play("stun", Body + Vector3.up * 0.6f, 0.6f, 0.03f); }
     }
