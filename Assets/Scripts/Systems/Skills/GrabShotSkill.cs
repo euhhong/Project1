@@ -11,6 +11,7 @@ namespace Project1.Systems
     ///    - 아무것도 못 맞히거나 바닥 같은 면에 닿으면 그냥 되감긴다(retractSpeed).
     ///    끌어오는/끌려가는 동안은 팔을 당기는 마무리 모션 앞부분(pullMotionShare)을 당긴 정도에 맞춰 재생한다. → 3) 팔을 거둬 마무리한다(followThrough).
     /// 카우보이 올가미(towToWalls 끔 · vaultOverVictim 켬): 던지기·조준·사거리는 똑같고, 벽에 닿으면 끌려가지 않고 그냥 되감는다.
+    ///   세워진·쓰러진 판자는 잡아(lassoPallets, 높낮이 무시) 사냥터지기가 벽을 물었을 때처럼 판자 쪽으로 빠르게 끌려간다(충격파 없음). 판자 바로 뒤·옆에 상대가 있으면 상대가 우선.
     ///   판정은 높낮이를 무시한다(위에서 내려다본 줄 위에 상대 판정이 닿으면 잡음 — FindVictimFlat). 단 손 → 상대가 벽·천장에 막히지 않고 일직선으로 이어지는 열린 곳에서만(막히면 빗나감).
     ///   상대를 맞히면 끌어오지 않고 카우보이가 상대를 뛰어넘어(Vaulting) 반대편, 잡은 거리(카우보이 → 상대)만큼 떨어진 곳에 착지한다(VaultLanding). 올가미는 뛰어넘을 때까지 상대를 문다.
     /// 쓰는 동안은 이동·점프·공격 불가(끌려갈 때만 스킬이 몸을 옮긴다), 던진 뒤로는 몸이 던진 방향을 지킨다.
@@ -77,6 +78,10 @@ namespace Project1.Systems
         public bool towToWalls = true;
         [Tooltip("상대를 맞히면 끌어오는 대신 쏜 쪽이 상대를 뛰어넘어 반대편(잡은 거리만큼)에 착지한다(카우보이).")]
         public bool vaultOverVictim = false;
+        [Tooltip("카우보이 올가미: 세워진·쓰러진 판자도 잡아, 문 판자 쪽으로 빠르게 끌려간다(towSpeed, 충격파 없음).")]
+        public bool lassoPallets = true;
+        [Tooltip("판자를 물었을 때 판자에서 이 거리(m, 줄 방향) 안쪽에 잡을 상대가 있으면 상대를 먼저 잡는다(비슷한 자리면 캐릭터 우선).")]
+        [Min(0f)] public float palletCharacterMargin = 1.5f;
         [Tooltip("뛰어넘는 높이(m, 가장 낮을 때). 거리가 멀면 vaultHeightPerMeter만큼 더 높이(최대 vaultMaxHeight).")]
         [Min(0.5f)] public float vaultHeight = 2.6f;
         [Min(0f)] public float vaultHeightPerMeter = 0.1f;
@@ -259,7 +264,31 @@ namespace Project1.Systems
                             BeginVault(ctx, flatVictim, hook);
                             return false;
                         }
-                        if (FindWall(ctx, from, to, out float stopAt, out _)) { ctx.Reach = stopAt; ctx.SetPhase(Retracting); }
+                        bool wallFirst = FindWall(ctx, from, to, out float stopAt, out _);
+                        Collider wallCol = lastWallCollider;
+                        // 판자(세워진·쓰러진 것 모두, 높낮이 무시): 물면 그쪽으로 빠르게 끌려간다(사냥터지기 벽 물기처럼, 충격파 없음).
+                        if (lassoPallets && FindPalletFlat(ctx.ReachOrigin, ctx.Direction, from, to, out float palletAt, out Vector3 palletHook, out Pallet pallet)
+                            && (!wallFirst || stopAt >= palletAt - 0.3f || (wallCol != null && wallCol.GetComponentInParent<Pallet>() == pallet)))
+                        {
+                            // 비슷한 자리에 상대가 있으면(판자 뒤·옆 palletCharacterMargin 안) 상대를 먼저 잡는다
+                            if (FindVictimFlat(ctx, from, Mathf.Min(range, palletAt + palletCharacterMargin), out float nearAt, out Hurtbox nearVictim))
+                            {
+                                ctx.Reach = nearAt;
+                                Vector3 hook2 = nearVictim.Collider.ClosestPoint(ctx.ReachOrigin);
+                                RaiseHit(ctx, nearVictim, hook2);
+                                BeginVault(ctx, nearVictim, hook2);
+                                return false;
+                            }
+                            Vector3 toHook = Flat(palletHook - ctx.ReachOrigin);
+                            if (toHook.sqrMagnitude > 0.09f) { ctx.Direction = toHook.normalized; ctx.ReachOrigin = Origin(ctx); }
+                            float dist = Flat(palletHook - ctx.ReachOrigin).magnitude;
+                            ctx.Reach = dist;
+                            ctx.AreaCenter = ctx.ReachOrigin + ctx.Direction * dist; // 올가미 머리는 판자에 걸린 채
+                            ctx.AreaRadius = dist;
+                            ctx.SetPhase(Towing);
+                            return false;
+                        }
+                        if (wallFirst) { ctx.Reach = stopAt; ctx.SetPhase(Retracting); }
                         else { ctx.Reach = to; if (ctx.Reach >= range) ctx.SetPhase(Retracting); }
                         return false;
                     }
@@ -349,7 +378,7 @@ namespace Project1.Systems
                     bool arrived = ctx.Reach <= towStopReach + 0.01f;
                     bool blocked = ctx.PhaseTime > 0.05f && ctx.TryGetComponent(out CharacterMotor motor) && motor.HitObstacle; // 가는 길에 다른 것에 막힘
                     bool timeout = ctx.PhaseTime > ctx.AreaRadius / towSpeed + 0.3f;
-                    if (arrived) WallShock(ctx); // 벽에 도착: 주변에 충격파
+                    if (arrived && !vaultOverVictim) WallShock(ctx); // 벽에 도착: 주변에 충격파(카우보이가 판자에 끌려간 것은 충격파 없음)
                     if (arrived || blocked || timeout) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
                     return false;
                 }
@@ -502,6 +531,7 @@ namespace Project1.Systems
                     if (at < hitAt && ClearLine(origin, c.ClosestPoint(origin))) hitAt = at;
                 }
                 if (hitAt < float.MaxValue) return true;
+                if (lassoPallets && FindPalletFlat(origin, dir, 0f, range, out float pAt, out _, out _) && (!wall || wallAt >= pAt - 0.3f)) { hitAt = pAt; return true; } // 판자를 물 수 있음
                 hitAt = 0f;
                 return false; // 올가미는 벽에 걸려도 그냥 되감는다
             }
@@ -643,12 +673,12 @@ namespace Project1.Systems
             int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
             var hits = Physics.SphereCastAll(start, wallProbeRadius, dir, length, mask, QueryTriggerInteraction.Ignore);
             float best = float.MaxValue; bool found = false;
-            lastWallNoTow = false;
+            lastWallNoTow = false; lastWallCollider = null;
             foreach (var h in hits)
             {
                 if (h.distance <= 0f && h.point == Vector3.zero) continue;               // 처음부터 겹쳐 있던 것(손이 벽 속) — 무시
                 if (h.collider.GetComponentInParent<CharacterIdentity>() != null) continue; // 캐릭터(자기 몸 포함)는 상대 판정이 맡는다
-                if (h.distance < best) { best = h.distance; normal = h.normal; found = true; lastWallNoTow = h.collider.GetComponent<NoTowSurface>() != null; } // 촉수 기둥: 막히지만 끌려가지 않음
+                if (h.distance < best) { best = h.distance; normal = h.normal; found = true; lastWallNoTow = h.collider.GetComponent<NoTowSurface>() != null; lastWallCollider = h.collider; } // 촉수 기둥: 막히지만 끌려가지 않음
             }
             // 멈춘 공장장 인형: 콜라이더는 없지만(걸어서는 지나감) 그랩은 막힌다 — 끌려가지 않고 되감는다.
             if (SkillObstacles.SweepDoll(start, dir, length, wallProbeRadius, out float dollAt) && dollAt < best)
@@ -662,6 +692,51 @@ namespace Project1.Systems
 
         /// <summary>마지막 FindWall이 찾은 면이 끌려가지 않는 방해물(촉수 기둥·인형)인지.</summary>
         private static bool lastWallNoTow;
+        /// <summary>마지막 FindWall이 닿은 Collider(없으면 null) — 그것이 판자인지 볼 때.</summary>
+        private static Collider lastWallCollider;
+
+        /// <summary>
+        /// 카우보이 올가미의 판자 판정: from ~ to 사이 줄을 위에서 내려다본(수평) 판정으로 훑어 세워진·쓰러진 판자(넘어가는 중은 제외)를 찾는다 —
+        /// 높낮이와 상관없이 판자 Collider가 줄 굵기(hitRadius) 안에 들면 후보(쓰러져 낮게 누운 판자도). 손 → 판자가 다른 지형에 막히지 않는 가장 가까운 것.
+        /// hitAt = 줄을 따라 판자까지(수평), hook = 판자에서 손에 가장 가까운 점.
+        /// </summary>
+        private bool FindPalletFlat(Vector3 origin, Vector3 dir, float from, float to, out float hitAt, out Vector3 hook, out Pallet pallet)
+        {
+            hitAt = to; hook = default; pallet = null;
+            float len = Mathf.Max(to - from, 0.001f), radius = hitRadius;
+            Vector3 mid = origin + dir * (from + len * 0.5f);
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            var cols = Physics.OverlapBox(mid, new Vector3(radius + 1f, 40f, len * 0.5f + radius + 1f), Quaternion.LookRotation(dir, Vector3.up), mask, QueryTriggerInteraction.Ignore);
+            Vector3 o2 = Flat(origin);
+            float best = float.MaxValue;
+            foreach (var c in cols)
+            {
+                var p = c.GetComponentInParent<Pallet>();
+                if (p == null || p.State == Pallet.PalletState.Falling) continue;
+                Vector3 closest = c.ClosestPoint(origin);
+                Vector3 rel = Flat(closest) - o2;
+                float along = Vector3.Dot(rel, dir);
+                float side = (rel - dir * along).magnitude;
+                if (along < from - radius || along > to + radius || side > radius) continue;
+                if (along >= best || !ClearLineExcept(origin, closest, p)) continue;
+                best = along; hook = closest; pallet = p;
+            }
+            if (pallet == null) return false;
+            hitAt = Mathf.Clamp(best, from, to);
+            return true;
+        }
+
+        /// <summary>a → b 일직선 사이에 지형이 없는지(그 판자 자신·캐릭터·판정·트리거는 무시).</summary>
+        private static bool ClearLineExcept(Vector3 a, Vector3 b, Pallet own)
+        {
+            Vector3 d = b - a;
+            float dist = d.magnitude;
+            if (dist < 0.05f) return true;
+            int mask = ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName));
+            foreach (var h in Physics.RaycastAll(a, d / dist, dist - 0.05f, mask, QueryTriggerInteraction.Ignore))
+                if (h.collider.GetComponentInParent<CharacterIdentity>() == null && h.collider.GetComponentInParent<Pallet>() != own) return false;
+            return true;
+        }
 
         /// <summary>
         /// 그랩에 끌려가 벽에 도착: 몸 둘레 wallShockRadius 안의 상대(판정 상자)에게 데미지 없는 충격파 — 감속(ShockSlow, 휘청이는 모션은 FE).
