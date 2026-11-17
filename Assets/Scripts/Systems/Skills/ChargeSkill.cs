@@ -50,6 +50,9 @@ namespace Project1.Systems
         [Tooltip("벽을 이만큼(m) 두껍게 본다: 밀려나는 쪽으로 벽·장애물이 이 거리 안에 들어오면 완전히 닿지 않아도 벽에 박힌 것으로 쳐서 기절.")]
         [Min(0f)] public float ramWallMargin = 0.6f;
 
+        /// <summary>박치기로 상대를 밀어냄(돌진한 캐릭터, 부딪힌 자리). 소리·연출(FE)이 구독한다.</summary>
+        public static event System.Action<GameObject, Vector3> Rammed;
+
         public override bool LocksActions => true;
 
         public override bool SyncAnimationToCast => false; // 달리기 모션은 계속 돈다
@@ -122,6 +125,7 @@ namespace Project1.Systems
                 float speed = 2f * pushDist / knockTime; // 넉백은 처음 속도에서 0까지 줄어든다 → 거리 = 속도 × 시간 ÷ 2
                 float wallStun = Mathf.Lerp(wallStunMin, wallStunMax, Mathf.Pow(t, knockCurve)); // 벽에 박히면: 5m 달림 ≈ 0.7초, 16m ≈ 1.5초, 32m ≈ 3.4초, 45m 이상 = 5.5초
                 Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin);
+                Rammed?.Invoke(owner, Vector3.Lerp(owner.transform.position, victim.transform.position, 0.5f) + Vector3.up * 1.1f); // 박치기 소리·연출
                 return true;
             }
 

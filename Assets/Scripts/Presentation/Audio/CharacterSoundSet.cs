@@ -103,7 +103,7 @@ namespace Project1.Presentation
             ["Doctor"] = new[] { ("Footstep", "Coordinator") },
             ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
             ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
-            ["Forward"] = new[] { ("PalletDrop", "Mercenary") },
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("ElbowPad", "Mercenary") }, // 럭비공 박치기 = 용병 아대 몸통 부딪힘 소리
             ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
             ["Thief"] = new[] { ("Footstep", "Forward"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
             ["Antonio"] = new[] { ("Footstep", "Ripper") },
@@ -150,6 +150,14 @@ namespace Project1.Presentation
             WallBounceEvents.Struck += OnWallStruck;
             ProjectileEvents.Ended += OnProjectileEnded;
             CloneEvents.Spawned += OnCloneSpawned;
+            ChargeSkill.Rammed += OnRammed;
+        }
+
+        /// <summary>럭비공 돌진이 상대를 박음: 몸통 부딪히는 소리(포워드 — 용병 아대 소리를 빌려 씀).</summary>
+        private void OnRammed(GameObject owner, Vector3 point)
+        {
+            if (owner != gameObject) return;
+            Play("ElbowPad", point, 1f, 0.05f);
         }
 
         private void OnDisable()
@@ -159,6 +167,7 @@ namespace Project1.Presentation
             WallBounceEvents.Struck -= OnWallStruck;
             ProjectileEvents.Ended -= OnProjectileEnded;
             CloneEvents.Spawned -= OnCloneSpawned;
+            ChargeSkill.Rammed -= OnRammed;
             StopLoop();
         }
 
@@ -255,6 +264,10 @@ namespace Project1.Presentation
                     break;
                 case "Coordinator_Flare":
                     if (phaseChanged && phase == FlareFired) Play("FlareGun", Body + transform.forward * 0.5f, SkillVolume, 0.04f);
+                    break;
+                case "Forward_Charge":
+                    // 럭비공 돌진: 달리는 동안 바람 가르며 뛰는 소리(Forward_ChargeRun_Loop)를 반복, 끝나면 멈춤. 박치기 소리는 OnRammed.
+                    if (casting) StartLoop("ChargeRun_Loop", "ChargeRun_Loop"); else if (loopKind == "ChargeRun_Loop") StopLoop();
                     break;
                 case "SmileyFace_RocketCharge":
                     StopLoop(); // 돌진 중 반복 소리는 끔(PlayRepeating)
