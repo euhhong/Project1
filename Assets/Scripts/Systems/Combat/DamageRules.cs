@@ -42,7 +42,7 @@ namespace Project1.Systems
         // 스킬이 직접 정하는 피해(HitResult.BaseDamage)
         public const float LeapSlamDamage = 27f, NoteWireDamage = 8f, GrabDamage = 10f;
         /// <summary>판자(생존자가 내림)에 깔린 감시자: 피해, 경직(초).</summary>
-        public const float PalletDamage = 30f, PalletStun = 2f;
+        public const float PalletDamage = 30f, PalletStun = 5f; // 판자에 깔린 감시자: 5초 기절
 
         // ── 배율·겹침
         public const float HeadScale = 1.25f, BodyScale = 1f, LimbScale = 0.8f;

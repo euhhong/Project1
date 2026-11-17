@@ -4,7 +4,7 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터 선택 화면 정보 칸에 쓰는 조작 설명(아주 짧게). 게임 코드(스킬·CharacterLoadout)의 실제 동작을 줄여 쓴 것 — 동작이 바뀌면 여기도 고친다.
-    /// 감시자: 좌클릭 평타 / 좌클릭 차징 / E 스킬. 생존자: 좌클릭 평타 / 좌클릭 차징 = 패링 / E 스킬 / 스페이스바 판자 내리기.
+    /// 감시자: 좌클릭 평타 / 좌클릭 차징 / E 스킬 / 스페이스바 점프. 생존자: 좌클릭 평타 / 좌클릭 차징 = 패링 / E 스킬 / 스페이스바 점프 — 막대 — 판자 내리기(판자 근처의 스페이스바).
     /// </summary>
     public static class CharacterControlsText
     {
@@ -21,7 +21,8 @@ namespace Project1.UI
         public const string SurvivorCharge = "패링";
         public const string ParryTooltip = "누르고 있는 동안 정면에서 오는 팔을 사용한 공격을 막는다.\n막으면 상대를 0.5초 스턴한다.\n떼면 돌려차기.";
         public const string PalletDrop = "판자 내리기";
-        public const string PalletDropDesc = "판자 옆에서 · 깔린 감시자는 경직";
+        public const string Jump = "점프";
+        public const string PalletDropDesc = "판자 근처에서는 점프를 하지 않으며 판자를 내립니다, 맞은 감시자는 기절";
         // 평타 설명(마우스를 올리면). 생존자는 주먹, 감시자는 무기. 맹인은 지팡이.
         public const string SurvivorAttackTooltip = "주먹으로 공격한다.\n달리며 점프하면 발차기.";
         public const string HunterAttackTooltip = "무기로 공격한다.\n달리며 점프하면 내려치기.";

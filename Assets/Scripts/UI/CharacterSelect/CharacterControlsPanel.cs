@@ -5,7 +5,7 @@ namespace Project1.UI
 {
     /// <summary>
     /// 캐릭터 선택 화면 오른쪽 정보 칸: 고른 캐릭터의 조작만 키 그림과 함께 짧게 보여 준다(CharacterControlsText).
-    /// 감시자: 좌클릭 평타 / 좌클릭 꾹(차징) / E 스킬. 생존자: 여기에 스페이스바 판자 내리기, 차징은 패링(마우스를 올리면 설명).
+    /// 감시자: 좌클릭 평타 / 좌클릭 꾹(차징) / E 스킬 / 스페이스바 점프. 생존자: 여기에 막대 + 판자 내리기(판자 근처의 스페이스바), 차징은 패링(마우스를 올리면 설명).
     /// </summary>
     public class CharacterControlsPanel
     {
@@ -74,7 +74,23 @@ namespace Project1.UI
             else Row(Mouse(true), "차징", c.Charge, c.ChargeTip);
             string skillName = entry.skill != null && !string.IsNullOrEmpty(entry.skill.displayName) ? entry.skill.displayName : "스킬";
             Row(Key("E", 56f), skillName, c.Skill, c.SkillTip);
-            if (survivor) Row(Key("SPACE", 116f), CharacterControlsText.PalletDrop, CharacterControlsText.PalletDropDesc, null);
+            Row(Key("SPACE", 116f), CharacterControlsText.Jump, null, null);
+            if (survivor)
+            {
+                Separator();
+                Row(new VisualElement { pickingMode = PickingMode.Ignore }, CharacterControlsText.PalletDrop, CharacterControlsText.PalletDropDesc, null); // 판자 근처의 스페이스바
+            }
+        }
+
+        /// <summary>줄 사이 가로 막대(역할 색, 반투명).</summary>
+        private void Separator()
+        {
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+            bar.style.height = 2f;
+            bar.style.marginTop = -6f;
+            bar.style.marginBottom = 18f;
+            bar.style.backgroundColor = new Color(accent.r, accent.g, accent.b, 0.55f);
+            list.Add(bar);
         }
 
         public void ShowEmpty()
