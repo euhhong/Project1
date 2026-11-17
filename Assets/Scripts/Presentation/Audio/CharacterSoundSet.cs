@@ -62,7 +62,7 @@ namespace Project1.Presentation
 
         private TraversalAction lastAction;
         private string lastSkillState;
-        private int lastPhase = -1, palletCount, swapCount, butterflyCount;
+        private int lastPhase = -1, palletCount, swapCount, throwCount, butterflyCount;
         private float lastNotePlace = -1f, stepDistance, lastLand;
         private bool notePlacing;
         private Vector3 lastPos;
@@ -149,6 +149,7 @@ namespace Project1.Presentation
             HitEvents.HitOccurred += OnHit;
             WallBounceEvents.Struck += OnWallStruck;
             ProjectileEvents.Ended += OnProjectileEnded;
+            ProjectileEvents.Launched += OnProjectileLaunched;
             CloneEvents.Spawned += OnCloneSpawned;
             ChargeSkill.Rammed += OnRammed;
         }
@@ -166,6 +167,7 @@ namespace Project1.Presentation
             HitEvents.HitOccurred -= OnHit;
             WallBounceEvents.Struck -= OnWallStruck;
             ProjectileEvents.Ended -= OnProjectileEnded;
+            ProjectileEvents.Launched -= OnProjectileLaunched;
             CloneEvents.Spawned -= OnCloneSpawned;
             ChargeSkill.Rammed -= OnRammed;
             StopLoop();
@@ -193,7 +195,7 @@ namespace Project1.Presentation
             if (skill == null) TryGetComponent(out skill);
             if (traversal == null) traversal = GetComponent<ICharacterTraversalState>();
             if (pallet == null && (pallet = GetComponent<IPalletUser>()) != null) palletCount = pallet.DropCount;
-            if (doll == null && TryGetComponent(out doll)) swapCount = doll.SwapCount;
+            if (doll == null && TryGetComponent(out doll)) { swapCount = doll.SwapCount; throwCount = doll.ThrowCount; }
             if (butterflies == null && TryGetComponent(out butterflies)) butterflyCount = butterflies.PlacedCount;
             if (notes == null && TryGetComponent(out notes)) lastNotePlace = notes.LastPlaceTime;
             if (tentacleField == null) TryGetComponent(out tentacleField);
@@ -294,6 +296,7 @@ namespace Project1.Presentation
         {
             if (pallet != null && pallet.DropCount != palletCount) { palletCount = pallet.DropCount; Play("PalletDrop", Body, VaultVolume, 0.03f); }
             if (doll != null && doll.SwapCount != swapCount) { swapCount = doll.SwapCount; Play("Shadow", Body, SkillVolume, 0.04f); }
+            if (doll != null && doll.ThrowCount != throwCount) { throwCount = doll.ThrowCount; Play("DollThrow", Body, SkillVolume, 0.04f); } // 떼서 던진 순간(겨누는 동안은 소리 없음)
             if (butterflies != null && butterflies.PlacedCount != butterflyCount) { butterflyCount = butterflies.PlacedCount; Play("ButterflyThrow", Body, SkillVolume, 0.05f); }
             if (notes != null)
             {
@@ -368,6 +371,13 @@ namespace Project1.Presentation
         {
             if (identity == null || p.OwnerId != identity.Id || p.Kind != "Flare" || !p.EndedOnCharacter) return;
             Play("FlareGun_Hit", p.EndPoint, SkillVolume, 0.03f);
+        }
+
+        /// <summary>리퍼 안개 칼날을 날림(평타 2칸·E 1칸 모두): 칼날이 휘감겨 나가는 쉬익 소리(리퍼 녹화 — 어두운 칼날이 뻗는 휘두르기).</summary>
+        private void OnProjectileLaunched(IProjectile p)
+        {
+            if (identity == null || p.OwnerId != identity.Id || p.Kind != MistCharge.BladeKind) return;
+            Play("MistBlade", p.Position, SkillVolume, 0.05f);
         }
 
         private void OnCloneSpawned(GameObject clone, CharacterIdentity summoner)
