@@ -51,6 +51,9 @@ namespace Project1.Systems
         /// </summary>
         public virtual bool CanStartWhileCooling(GameObject owner) => false;
 
+        /// <summary>시전 중 지금 매달리기·턱 오르기를 막을지(예: 용병 아대 — 벽 옆을 달리며 점프하면 매달리기 대신 아대 도약). CharacterTraversal이 본다. 기본 false.</summary>
+        public virtual bool SuppressesLedgeGrab(CharacterSkill ctx) => false;
+
         /// <summary>시전에 시간 제한이 없는지(castTime이 지나도 끝나지 않음 — Tick이 끝낼 때·기절·죽음까지, 예: 광대 로켓 돌진). 기본 false.</summary>
         public virtual bool NoTimeLimit => false;
 

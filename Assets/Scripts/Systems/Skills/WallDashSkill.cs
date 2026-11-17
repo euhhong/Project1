@@ -113,7 +113,16 @@ namespace Project1.Systems
                         // 재사용 대기 중·창틀 넘은 직후(PhaseTime < afterTraversalGrace)에는 준비 안 됨
                         // 걸을 때는 발동하지 않는다 — 달리는 중(달리기 키 + 이동, 지치지 않음)에 벽에 닿아야 준비
                         bool running = input.Run && moving && !(ctx.TryGetComponent(out ICharacterStamina st) && st.IsExhausted);
-                        if (touching && running && DashCooldownRemaining(ctx) <= 0f && ctx.PhaseTime >= afterTraversalGrace) { ctx.SetPhase(Armed); ctx.Direction = dir; }
+                        bool ready = DashCooldownRemaining(ctx) <= 0f && ctx.PhaseTime >= afterTraversalGrace;
+                        // 벽 쪽을 달리며 점프: 매달리기보다 아대 먼저 — 그 자리에서 벽을 차고 달리던 방향으로(벽에서 살짝 떨어지게) 도약
+                        if (running && ready && input.Jump && WallBeside(ctx, out Vector3 wallNormal))
+                        {
+                            Quaternion body = Quaternion.Euler(0f, ctx.transform.eulerAngles.y, 0f);
+                            Vector3 world = (body * dir + wallNormal * jumpKickAway).normalized;
+                            StartDash(ctx, Quaternion.Inverse(body) * world);
+                            break;
+                        }
+                        if (touching && running && ready) { ctx.SetPhase(Armed); ctx.Direction = dir; }
                         break;
                     }
                     if (ctx.PhaseTime >= autoDashDelay)
@@ -247,6 +256,44 @@ namespace Project1.Systems
             ctx.Phase == Armed && ctx.PhaseTime < wallPoseTime ? id + "_Wall" : ctx.Phase == Dashing ? id + "_Dash" : string.Empty;
 
         public override void Complete(GameObject owner) { }
+
+        [Header("벽 옆을 달리며 점프 = 아대 먼저")]
+        [Tooltip("몸 옆·앞 이 거리(m, 몸 둘레에서) 안에 벽이 있으면 '벽 쪽'으로 본다.")]
+        [Min(0.05f)] public float wallBesideReach = 0.7f;
+        [Tooltip("벽을 차고 나갈 때 벽 바깥쪽으로 섞는 정도(0 = 달리던 방향 그대로).")]
+        [Range(0f, 1f)] public float jumpKickAway = 0.35f;
+
+        /// <summary>
+        /// 아대가 켜져 있고 도약 준비가 됐고(재사용 대기 끝) 벽 쪽을 달리는 중이면 매달리기·턱 오르기를 하지 않는다 — 점프가 아대 도약이 되게(CharacterTraversal이 본다).
+        /// 걸을 때는 해당 없음(달리기 속도로 움직일 때만).
+        /// </summary>
+        public override bool SuppressesLedgeGrab(CharacterSkill ctx)
+        {
+            if (ctx.Phase != Active && ctx.Phase != Armed) return false;
+            if (DashCooldownRemaining(ctx) > 0f || !ctx.TryGetComponent(out CharacterController cc) || !ctx.TryGetComponent(out ICharacterState state)) return false;
+            Vector3 v = cc.velocity; v.y = 0f;
+            if (v.magnitude < state.WalkSpeed + 0.4f) return false; // 걷는 중
+            return WallBeside(ctx, out _);
+        }
+
+        /// <summary>몸 옆(좌우)·앞(대각선 포함)에 서 있는 벽이 wallBesideReach 안에 있는지. normal = 그 벽의 바깥쪽(수평).</summary>
+        private bool WallBeside(CharacterSkill ctx, out Vector3 normal)
+        {
+            normal = Vector3.zero;
+            if (!ctx.TryGetComponent(out CharacterController cc)) return false;
+            Transform t = ctx.transform;
+            Vector3 chest = t.position + Vector3.up * (cc.height * 0.55f);
+            float reach = cc.radius + wallBesideReach, best = float.MaxValue;
+            Vector3 f = Vector3.ProjectOnPlane(t.forward, Vector3.up).normalized, r = Vector3.Cross(Vector3.up, f);
+            foreach (var d in new[] { r, -r, f, (f + r).normalized, (f - r).normalized })
+            {
+                if (!Physics.Raycast(chest, d, out var hit, reach, ~0, QueryTriggerInteraction.Ignore)) continue;
+                if (Mathf.Abs(hit.normal.y) > 0.5f || !IsWall(ctx, hit.collider) || hit.distance >= best) continue;
+                best = hit.distance;
+                normal = Vector3.ProjectOnPlane(hit.normal, Vector3.up).normalized;
+            }
+            return best < float.MaxValue;
+        }
 
         private static bool IsWall(CharacterSkill ctx, Collider hit)
         {

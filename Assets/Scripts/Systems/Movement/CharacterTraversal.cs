@@ -314,11 +314,12 @@ namespace Project1.Systems
             if (!grounded && (action == TraversalAction.None || action == TraversalAction.Fall) && TryStartLadderInAir(dir)) return;
             if (dir == Vector3.zero) return;
             if ((action == TraversalAction.None || action == TraversalAction.Fall || IsLanding(action)) && TryStartLadder(dir, grounded)) return;
+            bool noLedge = TryGetComponent(out ILedgeGrabSuppress ls) && ls.SuppressLedgeGrab; // 예: 용병 아대 — 벽 옆을 달리며 점프하면 매달리기 대신 아대 도약
             if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))
             {
-                if (TryStartPalletVault(dir) || TryStartWindow(dir) || TryStartClimbUp(dir)) return;
+                if (TryStartPalletVault(dir) || TryStartWindow(dir) || (!noLedge && TryStartClimbUp(dir))) return;
             }
-            if (!grounded && regrab <= 0f && (action == TraversalAction.None || action == TraversalAction.Fall)) TryStartHang(dir);
+            if (!noLedge && !grounded && regrab <= 0f && (action == TraversalAction.None || action == TraversalAction.Fall)) TryStartHang(dir);
         }
 
         /// <summary>공중에서 날아가는 수평 방향(빠르면 속도 방향, 아니면 방향키).</summary>

@@ -14,7 +14,7 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveSpeedScale, IAttackImmunity, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride, ICooldownGauge
+    public class CharacterSkill : MonoBehaviour, ICharacterSkillState, IMoveSpeedLimit, IMoveSpeedScale, IAttackImmunity, IMoveOverride, IFacingOverride, IAirAttackOverride, IVelocityOverride, ICooldownGauge, ILedgeGrabSuppress
     {
         [SerializeField] private SkillDefinition skill;
 
@@ -96,6 +96,9 @@ namespace Project1.Systems
         }
 
         public bool AllowsTraversal => State == SkillState.Casting && skill != null && skill.AllowsTraversal(this);
+
+        /// <summary>지금 매달리기·턱 오르기를 막을지(시전 중인 스킬이 정함 — 예: 용병 아대 벽 옆 달리기).</summary>
+        public bool SuppressLedgeGrab => State == SkillState.Casting && skill != null && skill.SuppressesLedgeGrab(this);
 
         public bool LocksActions =>
             State == SkillState.Recovering || (State == SkillState.Casting && skill != null && skill.LocksActions);
