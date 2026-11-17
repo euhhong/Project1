@@ -82,6 +82,13 @@ namespace Project1.Systems
         public bool lassoPallets = true;
         [Tooltip("판자를 물었을 때 판자에서 이 거리(m, 줄 방향) 안쪽에 잡을 상대가 있으면 상대를 먼저 잡는다(비슷한 자리면 캐릭터 우선).")]
         [Min(0f)] public float palletCharacterMargin = 1.5f;
+        [Tooltip("판자를 물고 끌려간 시전의 재사용 대기(초) — 그 밖에는 cooldown.")]
+        [Min(0f)] public float palletGrabCooldown = 5f;
+
+        // 이번 시전이 판자를 물었는지(카우보이) — 끝날 때 재사용 대기를 palletGrabCooldown으로
+        private static readonly System.Collections.Generic.HashSet<CharacterSkill> palletGrabs = new();
+
+        public override float CooldownFor(CharacterSkill ctx) => palletGrabs.Remove(ctx) ? palletGrabCooldown : cooldown;
         [Tooltip("뛰어넘는 높이(m, 가장 낮을 때). 거리가 멀면 vaultHeightPerMeter만큼 더 높이(최대 vaultMaxHeight).")]
         [Min(0.5f)] public float vaultHeight = 2.6f;
         [Min(0f)] public float vaultHeightPerMeter = 0.1f;
@@ -145,6 +152,7 @@ namespace Project1.Systems
         {
             ctx.SetPhase(Windup);
             ctx.Reach = 0f;
+            palletGrabs.Remove(ctx); // 새 시전
             ctx.AreaRadius = 0f; // 끌기 시작한 길이(0 = 끌지 않음)
             ctx.AreaCenter = Vector3.zero; // 조준하며 걷는 입력(준비 중) / 벽에 박힌 자리(끌려가는 중)
             ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 몸 = 시야 방향
@@ -286,6 +294,7 @@ namespace Project1.Systems
                             ctx.AreaCenter = ctx.ReachOrigin + ctx.Direction * dist; // 올가미 머리는 판자에 걸린 채
                             ctx.AreaRadius = dist;
                             ctx.SetPhase(Towing);
+                            palletGrabs.Add(ctx); // 판자를 문 시전 = 짧은 재사용 대기(palletGrabCooldown)
                             return false;
                         }
                         if (wallFirst) { ctx.Reach = stopAt; ctx.SetPhase(Retracting); }

@@ -15,7 +15,7 @@ MonoBehaviour:
   id: Cowboy_Lasso
   displayName: "\uC62C\uAC00\uBBF8"
   castTime: 60
-  cooldown: 0
+  cooldown: 10
   castMoveSpeed: 0
   windup: 0.3
   followThrough: 0.6

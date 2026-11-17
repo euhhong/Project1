@@ -71,7 +71,9 @@ namespace Project1.Systems
             if (state == null) return;
 
             bool dead = health != null && health.IsDead;
-            bool skillMoving = skill != null && skill.State == SkillState.Casting; // 스킬 이동(돌진 등)은 달리기가 아니다
+            // 스킬이 몸을 옮기는 동안(돌진·도약 — 이동을 스킬이 정함)은 달리기가 아니다. 켜 두고 평소처럼 다니는 스킬(용병 아대)은 달리면 줄어든다.
+            bool skillMoving = skill != null && skill.State == SkillState.Casting
+                               && ((skill is IMoveOverride mo && mo.TryGetMoveOverride(out _, out _, out _)) || (skill is IVelocityOverride vo && vo.TryGetVelocity(out _, out _)));
             CharacterInputFrame frame = input != null ? input.ReadInput() : default;
             bool running = !dead && !skillMoving && frame.Run && frame.Move.sqrMagnitude > 0.0001f
                            && state.MoveState == CharacterMoveState.Run;

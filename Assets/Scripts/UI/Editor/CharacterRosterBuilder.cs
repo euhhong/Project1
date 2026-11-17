@@ -28,7 +28,7 @@ namespace Project1.UI.EditorTools
             {
                 var src = AssetDatabase.LoadAssetAtPath<Project1.Systems.GrabShotSkill>($"{SkillsFolder}/Gamekeeper_Grab.asset");
                 var s = src != null ? Object.Instantiate(src) : ScriptableObject.CreateInstance<Project1.Systems.GrabShotSkill>();
-                s.id = "Cowboy_Lasso"; s.displayName = "올가미"; s.castTime = src != null ? src.castTime : 3f; s.cooldown = 0f;
+                s.id = "Cowboy_Lasso"; s.displayName = "올가미"; s.castTime = src != null ? src.castTime : 3f; s.cooldown = 10f;
                 s.towToWalls = false; s.vaultOverVictim = true;
                 s.vaultSpeedScale = 2.2f; s.vaultLandTime = 0.3f; // 빠르게 뛰어넘기
                 return s;
