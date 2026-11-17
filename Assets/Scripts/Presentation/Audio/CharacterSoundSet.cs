@@ -25,6 +25,7 @@ namespace Project1.Presentation
         };
 
         // 스킬 단계 번호(각 스킬 클래스의 Phase 상수와 같아야 한다)
+        private const int LeapSlamming = 1, LeapDropping = 2; // LeapSkill(재앙의 도마뱀 도약)
         private const int GrabWindup = 0, GrabExtending = 1, GrabRetracting = 2, GrabDragging = 4, GrabTowing = 5; // GrabShotSkill
         private const int FlareFired = 1;                                                      // FlareShotSkill
         private const int RocketCharging = 1;                                                  // RocketChargeSkill
@@ -256,6 +257,10 @@ namespace Project1.Presentation
 
             switch (id)
             {
+                case "Luchino_Leap":
+                    // 떨어지는 커맨드(좌클릭 = 내려찍기 Slamming, E = 빨리 떨어지기 Dropping)를 누른 그 프레임에 '헛하' 기합 — 공중에서 바로 시작한 경우도(started)
+                    if (phaseChanged && (phase == LeapSlamming || phase == LeapDropping)) Play("DropGrunt", Body, 1f, 0.03f);
+                    break;
                 case "Gamekeeper_Grab":
                     // 그랩 소리 세 가지(노루.mp4 녹화) — 셋 다 같은 '뻗는' 소리로 시작하므로, 뻗는 동안 Hook_Extend를 내다가
                     // 물면 같은 재생 위치에서 그 결과의 음원으로 바꿔 이어 간다(끊김 없이).
