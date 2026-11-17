@@ -11,8 +11,16 @@ namespace Project1.Systems
     /// </summary>
     public class AiBotInput : MonoBehaviour, ICharacterInputSource, ILedgeGrabSuppress
     {
-        /// <summary>AI는 벽을 붙잡거나(매달리기) 턱에 오르지 않는다 — 창틀·판자 넘기·사다리는 그대로(CharacterTraversal이 본다).</summary>
-        public bool SuppressLedgeGrab => isActiveAndEnabled;
+        /// <summary>
+        /// 상대가 가까우면(ClimbNearRange 안) 벽을 붙잡거나(매달리기) 턱에 오르지 않는다 — 싸우다 벽에 매달리지 않게. 상대가 멀면 허용
+        /// (무너진 잔해처럼 올라서거나 붙잡고 넘어야 하는 지형을 지나 쫓아가게). 창틀·판자 넘기·사다리는 늘 된다(CharacterTraversal이 본다).
+        /// </summary>
+        public bool SuppressLedgeGrab => isActiveAndEnabled && !ClimbAllowed;
+
+        public const float ClimbNearRange = 6f;
+
+        /// <summary>지금 벽 붙잡기·턱 오르기를 해도 되는지(상대가 ClimbNearRange보다 멀거나 없음) — 길 찾기(AiRouteFinder)도 본다.</summary>
+        public bool ClimbAllowed => target == null || (target.position - transform.position).sqrMagnitude > ClimbNearRange * ClimbNearRange;
         [SerializeField] private Transform target;
         [SerializeField] private AiMeleeSettings settings = new();
         [Tooltip("화면 왼쪽 위에 지금 동작·고른 동작 수를 보여 준다(조절할 때).")]

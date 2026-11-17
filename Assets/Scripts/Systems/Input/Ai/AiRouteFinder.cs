@@ -83,6 +83,36 @@ namespace Project1.Systems
             return false;
         }
 
+        /// <summary>오를 턱(낮은 담·상자·잔해)에 올라서거나 붙잡아도 되는지 — 상대가 멀 때(AiBotInput.ClimbAllowed). 봇이 아니면 늘.</summary>
+        private bool ClimbAllowed => !tr.TryGetComponent(out AiBotInput bot) || bot.ClimbAllowed;
+
+        // ── 무너진 잔해 지형(이름이 Collapse_Rubble인 묶음): 둘레 RubbleMargin m까지 ──
+        private const float RubbleMargin = 2f;
+        private static System.Collections.Generic.List<Bounds> rubble;
+
+        private static bool InRubble(Vector3 p)
+        {
+            if (rubble == null)
+            {
+                rubble = new System.Collections.Generic.List<Bounds>();
+                foreach (var t in Object.FindObjectsByType<Transform>())
+                {
+                    if (t.name != "Collapse_Rubble") continue;
+                    var cols = t.GetComponentsInChildren<Collider>();
+                    if (cols.Length == 0) continue;
+                    Bounds b = cols[0].bounds;
+                    foreach (var c in cols) b.Encapsulate(c.bounds);
+                    b.Expand(RubbleMargin * 2f);
+                    rubble.Add(b);
+                }
+            }
+            foreach (var b in rubble) if (b.Contains(p + Vector3.up * 0.5f)) return true;
+            return false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRubble() => rubble = null;
+
         private static bool Near(Vector3 a, Vector3 b, float r) => Mathf.Abs(a.y - b.y) < 1.5f && Flat(a - b).sqrMagnitude < r * r;
 
         /// <summary>곧장 가지 않고 돌아가거나 비켜 가는 중(창틀 쪽·NavMesh 길·비켜 가기·턱 마주 보기) — 이때는 가는 쪽을 본다.</summary>
@@ -180,7 +210,9 @@ namespace Project1.Systems
             }
 
             // 4) 앞의 턱(창틀·걸친 판자·낮은 담·상자): 면을 똑바로 보고 밀고 들어가며 점프 — CharacterTraversal이 넘기·올라서기를 한다.
-            if (grounded && moving && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && hz.Vault) // 넘는 턱(창틀·판자)만 — AI는 벽·상자에 오르지 않는다
+            // 넘는 턱(창틀·판자)은 늘, 오를 턱(낮은 담·상자·무너진 잔해)은 상대가 멀 때만(가까우면 싸우다 벽에 오르지 않게 비켜 감)
+            bool climbOk = ClimbAllowed;
+            if (grounded && moving && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && (hz.Vault || climbOk))
             {
                 Vector3 push = -hz.Normal;
                 if (Vector3.Angle(dir, push) < 70f)
@@ -190,6 +222,9 @@ namespace Project1.Systems
                     if (face <= r + JumpReach) { jump = true; lastJumpAt = hz.Collider; if (hz.Vault && now - lastJump >= 0.6f) NoteVault(hz.Point, now); }
                 }
             }
+
+            // 5) 무너진 잔해 지형 안: 앞이 막히면 자주 점프해 올라서거나 넘는다(울퉁불퉁한 잔해에 걸려 서 있지 않게)
+            if (!jump && grounded && moving && InRubble(pos) && (TouchingWall || BodyCast(pos, dir, 1.0f, h, r, out _))) jump = true;
 
             if (jump)
             {
@@ -268,16 +303,20 @@ namespace Project1.Systems
                 }
             }
 
-            if (grounded && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && hz.Vault)
+            // 넘는 턱(창틀·판자)은 늘, 오를 턱(낮은 담·상자·무너진 잔해)은 상대가 멀 때만
+            if (grounded && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && (hz.Vault || ClimbAllowed))
             {
                 Vector3 push = -hz.Normal;
                 if (Vector3.Angle(dir, push) < 70f)
                 {
                     dir = push;
                     float face = Vector3.Dot(Flat(hz.Point - pos), push);
-                    if (face <= r + JumpReach && now - lastJump >= 0.6f) { vault = true; lastJump = now; lastJumpAt = hz.Collider; NoteVault(hz.Point, now); }
+                    if (face <= r + JumpReach && now - lastJump >= 0.6f) { vault = true; lastJump = now; lastJumpAt = hz.Collider; if (hz.Vault) NoteVault(hz.Point, now); }
                 }
             }
+            // 무너진 잔해 지형 안: 앞이 막히면 자주 점프(올라서거나 넘기)
+            if (!vault && grounded && InRubble(pos) && now - lastJump >= 0.6f && (TouchingWall || BodyCast(pos, dir, 1.0f, h, r, out _)))
+            { vault = true; lastJump = now; }
             return dir;
         }
 
@@ -322,8 +361,8 @@ namespace Project1.Systems
         {
             if (!BodyCast(pos, dir, look, h, r, out var hit)) { avoidSide = 0f; return dir; }
             bool hurdle = ProbeHurdle(pos, dir, h, hit.distance + r + 0.4f, now, out var hz);
-            if (hurdle && hz.Vault) return dir;
-            float limit = maxAngle; // 오를 턱(낮은 담·상자)도 벽처럼 비켜 간다 — AI는 오르지 않는다
+            if (hurdle && (hz.Vault || ClimbAllowed)) return dir; // 넘거나(늘) 오를(상대가 멀 때) 턱이면 비키지 않는다
+            float limit = maxAngle; // 상대가 가까우면 오를 턱(낮은 담·상자)도 벽처럼 비켜 간다
 
             // 먼저 해 볼 쪽: 지난번 비킨 쪽, 아니면 장애물 반대쪽
             float side = avoidSide;
