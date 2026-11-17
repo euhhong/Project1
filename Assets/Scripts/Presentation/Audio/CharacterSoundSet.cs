@@ -346,6 +346,8 @@ namespace Project1.Presentation
 
         private void OnAttack(CharacterAttackState s)
         {
+            // 휘두를 때 기합 목소리(있는 캐릭터만 — 의사: 창틀 넘기 녹화 앞의 짧은 여자 목소리 '핫', Doctor_AttackVoice)
+            if (s != CharacterAttackState.None) Play("AttackVoice", Body, 0.7f, 0.04f);
             // 휘두를 때는 일반 휘두르기 소리(swing, CharacterSfx)만 — 캐릭터 전용 Attack 파일에는 맞는 소리가 섞여 있어 허공에서도 타격음처럼 들렸다. 타격음은 벽·캐릭터에 맞을 때만(SfxPlayer).
         }
 

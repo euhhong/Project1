@@ -101,9 +101,10 @@ namespace Project1.Presentation
         }
 
         // 벽 치기 소리: 두 음절로 길고 청량한 "뽀-익" — 짧고 낮게 "뽀"(40ms) 뒤 밝고 길게 "이익"(400ms)인 사냥터지기 소리(제5인격 녹화). 벽에 부딪혔을 때만 난다.
-        public const string WallHitSound = "Characters/Gamekeeper/Gamekeeper_WallPunch_01"; // 사냥터지기가 벽을 친 소리(노루.mp4 10.2초)
-        // 캐릭터 피격음: 높고 길게 울리는 타격음 — 예전 안토니오 평타 맞힘 소리(Antonio_Attack_Hit_01, 제5인격 녹화 1.16초). 누가 맞든 이것 하나
-        public const string CharacterHitSound = "Characters/Antonio/Antonio_Attack_Hit_01";
+        // → 사람 몸을 치는 소리처럼 들려 바꿈: 돌벽에 부딪히는 둔탁한 소리(VARCO wall)
+        public const string WallHitSound = "wall";
+        // 캐릭터 피격음: 높게 울리는 타격음 — 안토니오 평타 맞힘 소리(Antonio_Attack_Hit_01)의 앞 0.56초만(hit_char). 뒤에 남자 목소리가 섞여 있어 잘라 냄. 누가 맞든 이것 하나
+        public const string CharacterHitSound = "hit_char";
 
         private static void OnHit(HitResult hit)
         {
