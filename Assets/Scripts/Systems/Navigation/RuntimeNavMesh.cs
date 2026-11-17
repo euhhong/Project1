@@ -23,6 +23,8 @@ namespace Project1.Systems
         private static NavMeshDataInstance instance;
         private static bool built;
         private static Scene builtScene;
+        private const float RetryDelay = 2f;
+        private static float retryAt;
         private static readonly List<NavMeshBuildSource> sources = new();
         private static readonly List<NavMeshBuildMarkup> noMarkups = new();
 
@@ -34,10 +36,15 @@ namespace Project1.Systems
         public static bool Ensure()
         {
             Scene scene = SceneManager.GetActiveScene();
-            if (built && builtScene == scene && instance.valid) return true;
+            if (built && builtScene == scene)
+            {
+                if (instance.valid) return true;
+                if (Time.realtimeSinceStartup < retryAt) return false; // 굽기 실패: 매 틱 다시 굽지 않고 잠깐 뒤에(맵이 나중에 생길 수 있다)
+            }
             Clear();
-            built = true; // 실패해도 매 틱 다시 굽지 않는다(Invalidate로 다시)
+            built = true;
             builtScene = scene;
+            retryAt = Time.realtimeSinceStartup + RetryDelay;
 
             var bigBounds = new Bounds(Vector3.zero, Vector3.one * 20000f);
             NavMeshBuilder.CollectSources(bigBounds, ~0, NavMeshCollectGeometry.PhysicsColliders, 0, noMarkups, sources);
@@ -102,6 +109,7 @@ namespace Project1.Systems
             instance = default; // 도메인 리로드 없이 플레이할 때: 지난 플레이의 인스턴스는 이미 사라졌다
             built = false;
             builtScene = default;
+            retryAt = 0f;
             SceneManager.activeSceneChanged -= OnSceneChanged;
             SceneManager.activeSceneChanged += OnSceneChanged;
         }

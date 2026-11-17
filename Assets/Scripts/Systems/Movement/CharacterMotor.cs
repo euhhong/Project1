@@ -113,12 +113,25 @@ namespace Project1.Systems
             velocityOverrides = GetComponents<IVelocityOverride>();
         }
 
+        private bool cachesStale;
+
+        /// <summary>
+        /// 꺼진 컴포넌트는 건너뛴다. 지워진 컴포넌트도 건너뛰고 다음 틱에 다시 모은다 —
+        /// 캐릭터를 입힐 때(CharacterLoadout) Destroy한 컴포넌트는 프레임 끝까지 살아 있어 RefreshSpeedLimits에 모였다가 사라진다.
+        /// 지워진 것에 isActiveAndEnabled를 물으면 MissingReferenceException이 나 이동이 매 틱 멈춘다(복제된 AI 봇이 제자리에 서 있던 원인).
+        /// </summary>
+        private bool Skip(object component)
+        {
+            if (component is UnityEngine.Object u && u == null) { cachesStale = true; return true; }
+            return component is Behaviour { isActiveAndEnabled: false };
+        }
+
         private bool TryGetVelocityOverride(out Vector3 velocity, out bool passThrough)
         {
             velocityOverrides ??= GetComponents<IVelocityOverride>();
             foreach (IVelocityOverride o in velocityOverrides)
             {
-                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (Skip(o)) continue;
                 if (o.TryGetVelocity(out velocity, out passThrough)) return true;
             }
             velocity = Vector3.zero; passThrough = false;
@@ -159,7 +172,7 @@ namespace Project1.Systems
             moveOverrides ??= GetComponents<IMoveOverride>();
             foreach (IMoveOverride o in moveOverrides)
             {
-                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (Skip(o)) continue;
                 if (o.TryGetMoveOverride(out move, out speed, out allowJump)) return true;
             }
             move = Vector2.zero; speed = 0f; allowJump = true;
@@ -171,7 +184,7 @@ namespace Project1.Systems
             facingOverrides ??= GetComponents<IFacingOverride>();
             foreach (IFacingOverride o in facingOverrides)
             {
-                if (o is Behaviour { isActiveAndEnabled: false }) continue;
+                if (Skip(o)) continue;
                 if (o.TryGetFacingYaw(out yaw)) return true;
             }
             yaw = 0f;
@@ -186,7 +199,7 @@ namespace Project1.Systems
             GetComponents(boostBuffer);
             foreach (var b in boostBuffer)
             {
-                if (b is Behaviour { isActiveAndEnabled: false }) continue;
+                if (Skip(b)) continue;
                 if (b.TryGetSpeedBoost(out float m) && m > multiplier) { multiplier = m; any = true; }
             }
             return any;
@@ -200,7 +213,7 @@ namespace Project1.Systems
             GetComponents(scaleBuffer);
             foreach (var s in scaleBuffer)
             {
-                if (s is Behaviour { isActiveAndEnabled: false }) continue;
+                if (Skip(s)) continue;
                 if (s.TryGetSpeedScale(out float m)) multiplier *= Mathf.Clamp01(m);
             }
             return multiplier;
@@ -214,7 +227,7 @@ namespace Project1.Systems
             speedLimits ??= GetComponents<IMoveSpeedLimit>();
             foreach (IMoveSpeedLimit limit in speedLimits)
             {
-                if (limit is Behaviour { isActiveAndEnabled: false })
+                if (Skip(limit))
                 {
                     continue;
                 }
@@ -233,6 +246,7 @@ namespace Project1.Systems
             {
                 Awake(); // Play 중 재컴파일로 참조가 비었을 때 복구
             }
+            if (cachesStale) { cachesStale = false; RefreshSpeedLimits(); } // 지워진 컴포넌트를 모은 목록에서 뺀다
 
             CharacterInputFrame input = inputSource != null ? inputSource.ReadInput() : default;
             if (inputSource != null)
