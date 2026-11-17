@@ -60,11 +60,11 @@ namespace Project1.Systems
         [Header("벽 치기(튕겨 나옴)")]
         // 평타 벽 치기는 잘 맞게(넉넉하게) — 예전 이름(wallMaxDistance 1.0·wallMinPenetration 0.12·wallMaxAngle 35)은 씬에 저장돼 있어 새 이름으로 바꿈
         [Tooltip("벽으로 칠 판정: 몸 가운데에서 이 거리(m) 안에 벽 면이 있어야 한다.")]
-        [SerializeField, Min(0.1f)] private float wallReach = 1.4f;
+        [SerializeField, Min(0.1f)] private float wallReach = 1.9f;
         [Tooltip("판정(무기·손·발 가운데)이 벽 면에 이 거리(m)까지 못 미쳐도 벽에 대고 친 것으로 본다(+ = 덜 닿아도 됨).")]
-        [SerializeField, Min(0f)] private float wallShortfall = 0.2f;
+        [SerializeField, Min(0f)] private float wallShortfall = 0.4f;
         [Tooltip("벽이 몸 정면에서 이 각도(도) 안에 있어야 한다(옆으로 스치는 건 아님).")]
-        [SerializeField, Range(0f, 90f)] private float wallFacing = 55f;
+        [SerializeField, Range(0f, 90f)] private float wallFacing = 70f;
         private bool wallStruckThisAttack;
         private static readonly RaycastHit[] wallHits = new RaycastHit[8];
 
@@ -233,7 +233,7 @@ namespace Project1.Systems
 
         /// <summary>
         /// 확실히 벽에 대고 쳤는지: 켜진 판정마다 몸 가운데 → 판정 가운데로 쏴서, 그 사이에 벽(세운 면, 캐릭터·트리거·판정 아님)이 있고
-        /// - 벽 면이 몸에서 wallReach(1.4m) 안, - 벽이 몸 정면 wallFacing(55도) 안을 마주 보고, - 판정 가운데가 벽 면에 닿았거나 wallShortfall(0.2m)까지 못 미쳤으면.
+        /// - 벽 면이 몸에서 wallReach(1.9m) 안, - 벽이 몸 정면 wallFacing(70도) 안을 마주 보고, - 판정 가운데가 벽 면에 닿았거나 wallShortfall(0.4m)까지 못 미쳤으면(빗나간 평타가 벽에 잘 맞게 넉넉히).
         /// 바닥·천장·스치기는 아니다.
         /// </summary>
         private bool TryFindWallStrike(out Vector3 point, out Vector3 normal)

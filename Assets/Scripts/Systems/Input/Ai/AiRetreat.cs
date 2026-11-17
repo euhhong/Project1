@@ -71,6 +71,8 @@ namespace Project1.Systems
                 return;
             }
 
+            if (AiSkillYield.Now(self, hunterDist)) return; // 도주 중에도 스킬각(재사용 대기 끝 + 가까움)이면 근접 AI가 스킬을 쓰게 맡긴다
+
             // 길을 따라 지칠 때까지 달린다(창틀·판자도 넘음)
             bool grounded = state == null || state.IsGrounded;
             Vector3 dir = route.Steer(destination, now, true, grounded, out bool jump);

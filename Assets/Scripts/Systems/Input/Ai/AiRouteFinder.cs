@@ -180,7 +180,7 @@ namespace Project1.Systems
             }
 
             // 4) 앞의 턱(창틀·걸친 판자·낮은 담·상자): 면을 똑바로 보고 밀고 들어가며 점프 — CharacterTraversal이 넘기·올라서기를 한다.
-            if (grounded && moving && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz))
+            if (grounded && moving && ProbeHurdle(pos, dir, h, r + AlignReach, now, out var hz) && hz.Vault) // 넘는 턱(창틀·판자)만 — AI는 벽·상자에 오르지 않는다
             {
                 Vector3 push = -hz.Normal;
                 if (Vector3.Angle(dir, push) < 70f)
@@ -323,7 +323,7 @@ namespace Project1.Systems
             if (!BodyCast(pos, dir, look, h, r, out var hit)) { avoidSide = 0f; return dir; }
             bool hurdle = ProbeHurdle(pos, dir, h, hit.distance + r + 0.4f, now, out var hz);
             if (hurdle && hz.Vault) return dir;
-            float limit = hurdle ? 36f : maxAngle;
+            float limit = maxAngle; // 오를 턱(낮은 담·상자)도 벽처럼 비켜 간다 — AI는 오르지 않는다
 
             // 먼저 해 볼 쪽: 지난번 비킨 쪽, 아니면 장애물 반대쪽
             float side = avoidSide;

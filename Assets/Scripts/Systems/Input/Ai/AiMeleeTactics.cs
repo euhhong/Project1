@@ -142,7 +142,19 @@ namespace Project1.Systems
         private bool CanRun => stamina == null || (!stamina.IsExhausted && stamina.Current > 8f);
         private AiSkillProfile Profile => skill != null ? AiSkillProfile.For(skill.SkillId) : AiSkillProfile.Default;
         private bool SkillReady => skill != null && !string.IsNullOrEmpty(skill.SkillId) && skill.State == SkillState.Ready && skill.CanUse;
-        private bool CanAttack(float now) => attack != null && attack.AttackState == CharacterAttackState.None && !keys.AttackBusy && now - lastOwnAttack > ReattackGap;
+        private bool CanAttack(float now) => attack != null && attack.AttackState == CharacterAttackState.None && !keys.AttackBusy && now - lastOwnAttack > ReattackGap && !WallInSwing();
+
+        /// <summary>상대 쪽으로 휘두르면 상대보다 먼저 벽·물건을 칠지(그러면 휘두르지 않는다 — AI가 벽을 때리는 일이 거의 없게).</summary>
+        private bool WallInSwing()
+        {
+            Vector3 to = view.Latest.Valid ? view.Latest.Position - tr.position : tr.forward;
+            to.y = 0f;
+            float dist = to.magnitude;
+            if (dist < 0.05f) return false;
+            float look = Mathf.Min(dist, MyReach + 0.6f);
+            return Physics.SphereCast(tr.position + Vector3.up * 1.1f, 0.22f, to / dist, out var hit, look, ~(CombatLayers.HurtboxMask | LayerMask.GetMask(CombatLayers.HitboxName)), QueryTriggerInteraction.Ignore)
+                   && hit.collider.GetComponentInParent<CharacterIdentity>() == null;
+        }
 
         /// <summary>이번 틱 입력을 만든다(틱마다 한 번).</summary>
         public CharacterInputFrame Tick(float now, float dt)
@@ -443,8 +455,10 @@ namespace Project1.Systems
             }
 
             // 재사용 대기가 끝났으면 스킬부터 써 본다(닿는 거리면 대부분 — 돌진형은 유인 뒤 돌진)
-            if (skillInRange && Random.value < SkillFirstChance) { Begin(now, Maneuver.Skill, 0.3f); return; }
-            if (prof.Charge && skillReady && dist >= 1.2f && dist < 12f && Random.value < SkillFirstChance) { Begin(now, Maneuver.Bait, Random.Range(1f, 2.5f)); return; }
+            // 가까우면(AiSkillYield.CloseRange) 반드시, 아니면 SkillFirstChance
+            bool close = dist < AiSkillYield.CloseRange;
+            if (skillInRange && (close || Random.value < SkillFirstChance)) { Begin(now, Maneuver.Skill, 0.3f); return; }
+            if (prof.Charge && skillReady && dist >= 1.2f && dist < 12f && (dist < 8f || Random.value < SkillFirstChance)) { Begin(now, Maneuver.Bait, Random.Range(1f, 2.5f)); return; }
 
             if (dist > cfg.engageRadius)
             {

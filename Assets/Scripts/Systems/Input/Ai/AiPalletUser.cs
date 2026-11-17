@@ -29,7 +29,22 @@ namespace Project1.Systems
         private Pallet pallet;
         private float seekStart, holdUntil, nextSeek;
 
+        private AiRouteFinder route;
+        private ICharacterState state;
+
         public AiPalletUser(Transform self) { this.self = self; }
+
+        /// <summary>길 찾기(NavMesh·창틀 넘기)를 따라 target으로 달린다 — 벽을 돌아 판자 통로 입구까지.</summary>
+        private void RouteSteer(ref CharacterInputFrame f, float now, Vector3 target)
+        {
+            route ??= new AiRouteFinder(self.gameObject);
+            if (state == null) self.TryGetComponent(out state);
+            Vector3 dir = route.Steer(target, now, true, state == null || state.IsGrounded, out bool jump);
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-4f) dir = target - self.position;
+            Steer(ref f, dir, run: true);
+            f.Jump = jump;
+        }
 
         /// <summary>근접 AI가 만든 이번 틱 입력 f 위에 판자 쓰기를 덮는다. hunter = 상대 루트.</summary>
         public void Apply(ref CharacterInputFrame f, float now, Transform hunter, bool fleeing = false)
@@ -42,6 +57,7 @@ namespace Project1.Systems
             if (TrySnapDrop(ref f, me, opp, now)) return; // 무엇을 하던 중이든: 감시자가 판자가 넘어지는 자리에 들어오면 바로 내린다
             if (fleeing) { pallet = null; return; } // 도주 중(AiRetreat)에는 판자를 찾거나 끼고 버티지 않는다(바로 내리기만)
             float hunterDist = Flat(opp - me).magnitude;
+            if (AiSkillYield.Now(self, hunterDist)) return; // 가는 길에 스킬각(재사용 대기 끝 + 가까움): 근접 AI가 스킬을 쓰게 맡긴다
 
             if (pallet == null || pallet.State == Pallet.PalletState.Falling)
             {
@@ -74,11 +90,19 @@ namespace Project1.Systems
                     return;
                 }
                 if (now - seekStart > SeekTimeout || hunterDist > EngageRange + 4f) { Give(now); return; }
-                // 1) 판자로: 틈을 지나 감시자 반대편 통로 끝으로 달린다(이미 지났으면 그 자리에서 감시자를 기다림)
+                // 1) 판자로: 최종 목표 = 감시자 반대편 통로 끝. 통로 밖이면 먼저 내 쪽 통로 입구로(길 찾기로 벽을 돌아) 가서, 통로에 들어서면 곧게 틈을 지난다
+                //    (감시자 쪽에서 와도 판자 면에 붙어 서지 않고 반드시 틈을 지나 반대편으로)
                 Vector3 goal = center - lane * hunterSide * (pallet.Width * 0.5f + 0.9f);
                 if (pastGap && Flat(goal - me).magnitude < 0.6f) { Face(ref f, opp - me); f.Move = Sway(now); ClearAttack(ref f); return; } // 감시자를 기다리며 좌우로 살짝(서 있지 않게)
-                Steer(ref f, goal - me, run: true);
+                Vector3 local = p.InverseTransformPoint(me);
+                bool inLane = local.z >= -0.4f && local.z <= pallet.Gap + 0.4f && Mathf.Abs(local.x) <= pallet.Width * 0.5f + 2.2f; // 통로 띠 안
+                Vector3 target = goal;
+                if (!inLane && !pastGap) target = center + lane * Mathf.Sign(mySide == 0f ? hunterSide : mySide) * (pallet.Width * 0.5f + 1.8f); // 내 쪽 입구
+                if (inLane) Steer(ref f, target - me, run: true);
+                else RouteSteer(ref f, now, target);
                 ClearAttack(ref f);
+                // 판자 내리기 범위에서 길 찾기 점프가 판자를 엉뚱하게 내리지 않게
+                if (f.Jump && Pallet.TryFind(me, Quaternion.Euler(0f, f.LookYaw, 0f) * Vector3.forward, out _, out _)) f.Jump = false;
                 return;
             }
 

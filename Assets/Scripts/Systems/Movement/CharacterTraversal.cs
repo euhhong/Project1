@@ -202,6 +202,7 @@ namespace Project1.Systems
 
         [Tooltip("점프 중 창틀에서 매달리기(재앙의 도마뱀): 점프 중 날아가는 앞에 창틀이 있어도 앞(W)을 누르고 있고 손이 닿는 턱이 있으면 짚고 넘지 않고 매달린다. 앞을 안 누르면 평소처럼 짚고 넘는다. 캐릭터를 고를 때 SetWindowJumpHang으로 정한다.")]
         [SerializeField] private bool windowJumpHang;
+        private readonly System.Collections.Generic.List<ILedgeGrabSuppress> ledgeSuppressors = new();
 
         /// <summary>점프 중 창틀에서 앞(W)을 누르면 매달릴지 정한다(캐릭터를 고를 때, 재앙의 도마뱀).</summary>
         public void SetWindowJumpHang(bool on) => windowJumpHang = on;
@@ -314,7 +315,10 @@ namespace Project1.Systems
             if (!grounded && (action == TraversalAction.None || action == TraversalAction.Fall) && TryStartLadderInAir(dir)) return;
             if (dir == Vector3.zero) return;
             if ((action == TraversalAction.None || action == TraversalAction.Fall || IsLanding(action)) && TryStartLadder(dir, grounded)) return;
-            bool noLedge = TryGetComponent(out ILedgeGrabSuppress ls) && ls.SuppressLedgeGrab; // 예: 용병 아대 — 벽 옆을 달리며 점프하면 매달리기 대신 아대 도약
+            // 예: 용병 아대 — 벽 옆을 달리며 점프하면 매달리기 대신 아대 도약 / AI 봇 — 벽을 붙잡거나 오르지 않음
+            GetComponents(ledgeSuppressors);
+            bool noLedge = false;
+            foreach (var ls in ledgeSuppressors) if (!(ls is Behaviour { isActiveAndEnabled: false }) && ls.SuppressLedgeGrab) { noLedge = true; break; }
             if (grounded && input.Jump && (action == TraversalAction.None || IsLanding(action)))
             {
                 if (TryStartPalletVault(dir) || TryStartWindow(dir) || (!noLedge && TryStartClimbUp(dir))) return;

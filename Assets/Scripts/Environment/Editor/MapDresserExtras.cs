@@ -28,11 +28,13 @@ namespace Project1.Map.EditorTools
         {
             (29.5f, -21.0f, 4.0f), (35.25f, -21.0f, 3.5f),   // 틈 x 31.5 ~ 33.5
             (29.0f, -26.0f, 3.0f), (34.5f, -26.0f, 4.0f),    // 틈 x 30.5 ~ 32.5
-            // 야외 구석 판자 구역 4곳(가운데 x, z) — 두 줄(z −2.5 / +2.5), 틈 x −1~+1 / −2~0(엇갈림). 판자는 PalletPlacer
-            (13.25f, 29.5f, 3.5f), (18.5f, 29.5f, 3.0f), (12.75f, 34.5f, 2.5f), (18.0f, 34.5f, 4.0f),          // 북동 (16, 32)
-            (29.25f, -44.5f, 3.5f), (34.5f, -44.5f, 3.0f), (28.75f, -39.5f, 2.5f), (34.0f, -39.5f, 4.0f),      // 남동 담장 구석 (32, −42)
-            (-14.75f, 37.5f, 3.5f), (-9.5f, 37.5f, 3.0f), (-15.25f, 42.5f, 2.5f), (-10.0f, 42.5f, 4.0f),       // 북서 (−12, 40)
-            (-34.75f, -6.5f, 3.5f), (-29.5f, -6.5f, 3.0f), (-35.25f, -1.5f, 2.5f), (-30.0f, -1.5f, 4.0f),      // 서쪽 가장자리 (−32, −4)
+            // 야외 구석 ㄱ자 판자 구역 4곳(가운데 cx, cz): x로 긴 벽(cx−4 ~ cx+1, z = cz) + 모서리 틈 2m + z로 긴 벽(ZoneWallsZ) — 판자는 PalletPlacer
+            (14.5f, 32f, 5f), (30.5f, -42f, 5f), (-13.5f, 40f, 5f), (-33.5f, -4f, 5f),
+        };
+        /// <summary>z로 긴(90도 돌린) 판자 구역 벽(가운데 x, 가운데 z, 길이) — ㄱ자의 세로 벽: x = cx+3, z = cz ~ cz+4(남동 담장 구석은 cz−4 ~ cz).</summary>
+        private static readonly (float x, float z, float len)[] ZoneWallsZ =
+        {
+            (19f, 34f, 4f), (35f, -44f, 4f), (-9f, 42f, 4f), (-29f, -2f, 4f),
         };
         private const float ZoneWallHeight = 2.0f, ZoneWallThick = 0.7f;
 
@@ -336,10 +338,13 @@ namespace Project1.Map.EditorTools
         {
             var zone = new GameObject($"{ModelPrefix}PalletZone").transform;
             zone.SetParent(g, false);
-            foreach (var w in ZoneWalls)
+            var walls = new List<(float x, float z, float len, Quaternion rot)>();
+            foreach (var w in ZoneWalls) walls.Add((w.x, w.z, w.len, Quaternion.identity));
+            foreach (var w in ZoneWallsZ) walls.Add((w.x, w.z, w.len, Quaternion.Euler(0f, 90f, 0f))); // ㄱ자의 세로 벽
+            foreach (var w in walls)
             {
                 var p = Ground(new Vector3(w.x, 0f, w.z));
-                var go = Place("RuinWall", zone, Quaternion.identity, zone.InverseTransformPoint(p), new Vector3(w.len, ZoneWallHeight, ZoneWallThick), false, false, $"{ModelPrefix}RuinWall_{w.x:0.#}_{w.z:0.#}");
+                var go = Place("RuinWall", zone, w.rot, zone.InverseTransformPoint(p), new Vector3(w.len, ZoneWallHeight, ZoneWallThick), false, false, $"{ModelPrefix}RuinWall_{w.x:0.#}_{w.z:0.#}");
                 if (go == null) continue;
                 var col = go.AddComponent<BoxCollider>(); // 막는 판정 = 벽 자리 상자 그대로(모델 모양과 상관없이 고르게)
                 var s = go.transform.lossyScale;

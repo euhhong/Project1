@@ -9,8 +9,10 @@ namespace Project1.Systems
     /// 손 = AiKeyPresser(꾹 누르기·짧게 누르기). 여기는 목표를 받아 이어 주기만 한다. 노란옷의 왕은 촉수 쓰기(AiTentacleUser), 생존자는 판자 쓰기(AiPalletUser)를 그 위에 덮는다.
     /// 조절 값은 인스펙터의 Settings(AiMeleeSettings). 목표가 없거나 꺼져 있으면 가만히 있는다.
     /// </summary>
-    public class AiBotInput : MonoBehaviour, ICharacterInputSource
+    public class AiBotInput : MonoBehaviour, ICharacterInputSource, ILedgeGrabSuppress
     {
+        /// <summary>AI는 벽을 붙잡거나(매달리기) 턱에 오르지 않는다 — 창틀·판자 넘기·사다리는 그대로(CharacterTraversal이 본다).</summary>
+        public bool SuppressLedgeGrab => isActiveAndEnabled;
         [SerializeField] private Transform target;
         [SerializeField] private AiMeleeSettings settings = new();
         [Tooltip("화면 왼쪽 위에 지금 동작·고른 동작 수를 보여 준다(조절할 때).")]
