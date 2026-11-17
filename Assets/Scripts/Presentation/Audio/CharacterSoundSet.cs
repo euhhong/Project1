@@ -75,21 +75,49 @@ namespace Project1.Presentation
             lastPick.Clear();
             StopLoop();
             if (folder == null) return;
-            foreach (var clip in Resources.LoadAll<AudioClip>($"Sfx/Characters/{folder}"))
-            {
-                string kind = KindOf(clip.name);
-                if (kind == null) continue;
-                if (!clips.TryGetValue(kind, out var list)) clips[kind] = list = new List<string>();
-                list.Add($"Characters/{folder}/{clip.name}");
-            }
+            LoadFolder(folder, null);
+            // 자기 소리가 없는 종류는 비슷한 캐릭터 것을 빌려 쓴다.
+            if (Borrowed.TryGetValue(folder, out var borrow))
+                foreach (var (kind, donor) in borrow)
+                    if (!clips.ContainsKey(kind)) LoadFolder(donor, kind);
             foreach (var list in clips.Values) list.Sort();
+        }
+
+        /// <summary>
+        /// 빌려 쓰는 소리: 캐릭터 폴더 → (종류, 빌려 올 캐릭터 폴더). 자기 폴더에 그 종류가 생기면 자기 것을 쓴다.
+        /// 발소리 — 감시자는 체격이 비슷한 감시자, 생존자는 생존자. 판자 내리기 — 생존자는 의사·용병. 평타 — 무기를 휘두르는 감시자끼리.
+        /// </summary>
+        private static readonly Dictionary<string, (string Kind, string Donor)[]> Borrowed = new()
+        {
+            ["Doctor"] = new[] { ("Footstep", "Coordinator") },
+            ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
+            ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary") },
+            ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
+            ["Thief"] = new[] { ("Footstep", "Forward"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
+            ["Antonio"] = new[] { ("Footstep", "Ripper") },
+            ["Gamekeeper"] = new[] { ("Attack", "Leo") },          // 닻 ↔ 망치: 무겁게 휘두르는 무기
+            ["Joker"] = new[] { ("Footstep", "Leo") },             // 덩치 큰 감시자
+            ["Michiko"] = new[] { ("Footstep", "Ripper") },
+            ["Hastur"] = new[] { ("Footstep", "Luchino"), ("Vault", "Luchino"), ("Attack", "Ripper") }, // 촉수 다리 = 괴물 발소리, 두 손 내려찍기 = 손톱
+        };
+
+        private void LoadFolder(string from, string onlyKind)
+        {
+            foreach (var clip in Resources.LoadAll<AudioClip>($"Sfx/Characters/{from}"))
+            {
+                string kind = KindOf(from, clip.name);
+                if (kind == null || (onlyKind != null && kind != onlyKind)) continue;
+                if (!clips.TryGetValue(kind, out var list)) clips[kind] = list = new List<string>();
+                list.Add($"Characters/{from}/{clip.name}");
+            }
         }
 
         /// <summary>이 종류 소리가 있는지(CharacterSfx가 일반 소리를 대신할지 정한다).</summary>
         public bool Has(string kind) => clips.ContainsKey(kind);
 
         /// <summary>"Joker_Vault_01_WithTail" → "Vault_WithTail", "Cowboy_LassoSpin_Loop" → "LassoSpin_Loop".</summary>
-        private string KindOf(string clipName)
+        private static string KindOf(string folder, string clipName)
         {
             if (!clipName.StartsWith(folder + "_")) return null;
             var parts = clipName.Substring(folder.Length + 1).Split('_');
