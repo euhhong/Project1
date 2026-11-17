@@ -51,6 +51,8 @@ namespace Project1.Presentation
         private DollThrow doll;
         private ButterflyField butterflies;
         private NoteField notes;
+        private TentacleField tentacleField;
+        private readonly Dictionary<int, TentacleState> tentacleStates = new();
 
         private TraversalAction lastAction;
         private string lastSkillState;
@@ -99,7 +101,7 @@ namespace Project1.Presentation
             ["Gamekeeper"] = new[] { ("Attack", "Leo") },          // 닻 ↔ 망치: 무겁게 휘두르는 무기
             ["Joker"] = new[] { ("Footstep", "Leo") },             // 덩치 큰 감시자
             ["Michiko"] = new[] { ("Footstep", "Ripper") },
-            ["Hastur"] = new[] { ("Footstep", "Luchino"), ("Vault", "Luchino"), ("Attack", "Ripper") }, // 촉수 다리 = 괴물 발소리, 두 손 내려찍기 = 손톱
+            ["Hastur"] = new[] { ("Footstep", "Luchino"), ("Vault", "Luchino") }, // 촉수 다리 = 괴물 발소리
         };
 
         private void LoadFolder(string from, string onlyKind)
@@ -170,11 +172,13 @@ namespace Project1.Presentation
             if (doll == null && TryGetComponent(out doll)) swapCount = doll.SwapCount;
             if (butterflies == null && TryGetComponent(out butterflies)) butterflyCount = butterflies.PlacedCount;
             if (notes == null && TryGetComponent(out notes)) lastNotePlace = notes.LastPlaceTime;
+            if (tentacleField == null) TryGetComponent(out tentacleField);
 
             UpdateFootsteps();
             UpdateTraversal();
             UpdateSkill();
             UpdateFields();
+            UpdateTentacles();
             if (loopSource != null && loopSource.isPlaying) loopSource.volume = SkillVolume * AudioVolume.Sfx;
         }
 
@@ -266,6 +270,33 @@ namespace Project1.Presentation
                     lastNotePlace = notes.LastPlaceTime;
                 }
                 notePlacing = notes.Placing;
+            }
+        }
+
+        // ── 노란옷의 왕 촉수: 솟아오를 때 Tentacle_Rise, 내리칠 때 Tentacle_Slam(그 촉수 자리에서) ──
+        private void UpdateTentacles()
+        {
+            if (tentacleField == null) { tentacleStates.Clear(); return; }
+            var list = tentacleField.Tentacles;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var t = list[i];
+                bool known = tentacleStates.TryGetValue(t.Id, out var before);
+                if (!known || before != t.State)
+                {
+                    Vector3 at = t.Position + Vector3.up * 1.5f;
+                    if (t.State == TentacleState.Rising) Play("Tentacle_Rise", at, SkillVolume, 0.05f);
+                    else if (t.State == TentacleState.SlamActive) Play("Tentacle_Slam", at, 1f, 0.04f);
+                }
+                tentacleStates[t.Id] = t.State;
+            }
+            if (tentacleStates.Count > 32) // 사라진 촉수 정리
+            {
+                var alive = new HashSet<int>();
+                for (int i = 0; i < list.Count; i++) alive.Add(list[i].Id);
+                var gone = new List<int>();
+                foreach (var id in tentacleStates.Keys) if (!alive.Contains(id)) gone.Add(id);
+                foreach (var id in gone) tentacleStates.Remove(id);
             }
         }
 
