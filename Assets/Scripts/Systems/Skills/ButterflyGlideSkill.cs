@@ -55,6 +55,8 @@ namespace Project1.Systems
             ctx.ShowArea = false;
             ctx.SetPhase(0);
             ctx.Direction = Vector3.ProjectOnPlane(ctx.transform.forward, Vector3.up).normalized; // 몸은 시작할 때 각도를 지킨다(TryGetFacingYaw)
+            ctx.Turned = (ctx.AreaCenter - ctx.transform.position).magnitude; // 지금까지 가장 가까웠던 거리(제자리 걸림 판정 — Stalled)
+            ctx.SteerSide = 0;                                                // 가까워지지 않은 틱 수
         }
 
         private static Vector3 FlatTo(CharacterSkill ctx)
@@ -326,20 +328,41 @@ namespace Project1.Systems
                 TimedCombatBuff.Give(ctx.gameObject, 1f, arrivalDamageTakenScale, arrivalGuardTime); // 도착 후 잠깐 방어력 증가(받는 피해 줄임)
                 return true;
             }
+            var motor = ctx.GetComponent<CharacterMotor>();
+            // 위로 가다 천장·윗층 바닥 밑면에 막힘(옆 부딪힘으로 잡히지 않아 3초 내내 천장 밑을 비비던 원인), 또는 더 가까워지지 않음(바닥·경사에 걸려 제자리) → 바로 끝내고 떨어진다.
+            bool ceiling = motor != null && motor.HitCeiling && to3.y > 0.1f && elapsed > 0.04f;
+            if (ceiling || Stalled(ctx, to3.magnitude, elapsed)) return EndBlocked(ctx, out recovery);
             if (to.magnitude > 0.05f) PassWindowSills(ctx, to.normalized); // 창틀 아랫부분은 뚫고 간다
             PassSkillObstacles(ctx); // 촉수 기둥·공장장 분신은 뚫고 간다
             PassEdges(ctx, to3);     // 다른 높이로 갈 때 바닥 끝 모서리는 뚫고 간다
             Vector3 flatDir = to.magnitude > 0.05f ? to.normalized : Vector3.zero;
             float lift = flatDir == Vector3.zero ? 0f : LowClutterLift(ctx, flatDir, to.magnitude);
             SteerVertical(ctx, to3, lift); // 나비까지 일직선(높낮이 포함) — 앞의 낮은 잡동사니는 그 위로 타고 넘는다
-            var motor = ctx.GetComponent<CharacterMotor>();
             if (motor != null && motor.HitObstacle && elapsed > 0.04f && !TryPassBumpedClutter(ctx, motor, flatDir))
-            {
-                recovery = bumpRecovery; // 장애물 → 멈추고 툭 떨어짐
-                if (ctx.TryGetComponent(out ColliderPassThrough bumpPass)) bumpPass.RestoreClear();
-                return true;
-            }
+                return EndBlocked(ctx, out recovery); // 장애물 → 멈추고 툭 떨어짐
             return false;
+        }
+
+        [Header("제자리 걸림")]
+        [Tooltip("한 틱에 나비 쪽으로 이만큼(m)도 가까워지지 않으면 걸린 것으로 센다.")]
+        [Min(0.01f)] public float stallProgress = 0.08f;
+        [Tooltip("걸린 틱이 이만큼 이어지면 끝내고 떨어진다(1틱 = 0.02초).")]
+        [Min(1)] public int stallTicks = 4;
+
+        /// <summary>나비까지 거리(remain)가 줄지 않는 틱이 stallTicks 이어졌는지(바닥·경사·물건에 걸려 옆 부딪힘 없이 제자리에서 비빔).</summary>
+        private bool Stalled(CharacterSkill ctx, float remain, float elapsed)
+        {
+            if (remain < ctx.Turned - stallProgress) { ctx.Turned = remain; ctx.SteerSide = 0; return false; }
+            if (elapsed > 0.04f) ctx.SteerSide++;
+            return ctx.SteerSide >= stallTicks;
+        }
+
+        /// <summary>막혀서 끝: 잠깐 못 움직이고(bumpRecovery) 뚫던 것은 다시 막는다. 위로 가던 속도는 Complete가 없애 바로 떨어진다.</summary>
+        private bool EndBlocked(CharacterSkill ctx, out float recovery)
+        {
+            recovery = bumpRecovery;
+            if (ctx.TryGetComponent(out ColliderPassThrough pass)) pass.RestoreClear();
+            return true;
         }
 
         /// <summary>날아가는 동안 촉수 기둥(SkillObstacles.Tentacles)·공장장 분신 몸(Summoner가 있는 캐릭터)을 뚫고 간다(ColliderPassThrough). 인형은 원래 걸어서도 지나간다.</summary>

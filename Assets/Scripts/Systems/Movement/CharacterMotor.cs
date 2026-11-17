@@ -59,6 +59,9 @@ namespace Project1.Systems
         /// <summary>지난 틱 이동에서 옆으로 무언가(벽·장애물·다른 캐릭터)에 부딪혔다.</summary>
         public bool HitObstacle { get; private set; }
 
+        /// <summary>지난 틱 이동에서 머리 위(천장·윗층 바닥 밑면)에 부딪혔다(예: 붉은나비 나비에게가 윗층 바닥 밑에 막힘).</summary>
+        public bool HitCeiling { get; private set; }
+
         /// <summary>HitObstacle일 때 옆으로 부딪힌 Collider(다른 캐릭터인지 구분할 때 쓴다). 없으면 null.</summary>
         public Collider LastObstacle { get; private set; }
 
@@ -146,6 +149,7 @@ namespace Project1.Systems
         {
             LastObstacle = null;
             HitObstacle = false;
+            HitCeiling = false;
             if (passThrough)
             {
                 controller.enabled = false;
@@ -156,6 +160,7 @@ namespace Project1.Systems
             {
                 CollisionFlags flags = controller.Move(velocity * dt);
                 HitObstacle = (flags & CollisionFlags.Sides) != 0;
+                HitCeiling = (flags & CollisionFlags.Above) != 0;
                 if (!HitObstacle) LastObstacle = null;
             }
             bool wasGrounded = IsGrounded;
@@ -315,6 +320,7 @@ namespace Project1.Systems
             LastObstacle = null;
             CollisionFlags flags = controller.Move((worldPlanar + Vector3.up * vertical) * dt); // 부딪히면 OnControllerColliderHit이 LastObstacle을 채운다
             HitObstacle = (flags & CollisionFlags.Sides) != 0;
+            HitCeiling = (flags & CollisionFlags.Above) != 0;
             if (!HitObstacle) LastObstacle = null;
             Vector3 moveVelocity = controller.velocity; // 땅에 붙이는 두 번째 Move가 덮어쓰기 전
 
