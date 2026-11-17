@@ -317,6 +317,7 @@ namespace Project1.Systems
         {
             label = SkillName; fill = 0f; draining = false;
             if (skill == null) return false;
+            if (skill.TryGetCooldownGauge(this, out string own, out float ownFill)) { label = own ?? SkillName; fill = ownFill; return true; } // 스킬이 따로 정한 게이지(예: 아대 도약 재사용 대기 — 켜 둔 채로 돈다)
             if (State == SkillState.Cooldown && CooldownDuration > 0f) { fill = 1f - CooldownRemaining / CooldownDuration; return true; }
             if (State == SkillState.Ready && FreeRecastLeft > 0f) { label = SkillName + " 다시"; fill = FreeRecastLeft / Mathf.Max(freeRecastDuration, 0.01f); draining = true; return true; }
             return false;

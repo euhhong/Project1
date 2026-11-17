@@ -72,6 +72,9 @@ namespace Project1.Systems
         /// <summary>시전 중 HUD 막대: NaN = 기본(시전 진행도), 0~1 = 이 값으로 채움, 음수 = 막대 없음. 예: 용병 아대 = 도약 재사용 대기.</summary>
         public virtual float StatusBarFill(CharacterSkill ctx) => -1f; // 기본은 막대 없음(최대 시간까지의 진행은 쓸모없음) — 진행이 뜻 있는 스킬만 NaN(시전 진행)이나 0~1을 준다
 
+        /// <summary>HUD 오른쪽 아래 게이지를 스킬이 따로 정할 때(시전 중에도 도는 재사용 대기 등, 예: 용병 아대 도약). 없으면 false.</summary>
+        public virtual bool TryGetCooldownGauge(CharacterSkill ctx, out string label, out float fill) { label = null; fill = 0f; return false; }
+
         /// <summary>스킬 모션을 시전 진행도에 맞출지(true, 예: 주사기 꽂기) / 그냥 재생할지(false, 예: 돌진·도약).</summary>
         public virtual bool SyncAnimationToCast => true;
 

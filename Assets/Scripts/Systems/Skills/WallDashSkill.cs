@@ -15,7 +15,7 @@ namespace Project1.Systems
     /// - 도약이 끝나도 꺼지지 않는다(켜진 채 그대로, E로만 끈다). 대신 한 번 도약하면 dashCooldown(5초) 동안 재사용 대기 —
     ///   그동안은 벽에 닿아도 도약 준비가 되지 않는다. 대기는 캐릭터마다 따로 재고, E로 껐다 켜도 이어진다.
     /// 켜져 있어도 걷기·달리기·공격·창틀 넘기·턱 오르기는 평소대로 한다(모션 그대로, 공격해도 꺼지지 않는다). 창틀 넘기·오르기·매달리기·착지 중에는
-    /// 아대가 쉰다(도약 준비 안 함, E도 무시) — 끝나고 afterTraversalGrace(0.35초) 동안도 넘은 창틀에 튕기지 않는다. 상태 글자·막대는 도약 재사용 대기만 보여 준다.
+    /// 아대가 쉰다(도약 준비 안 함, E도 무시) — 끝나고 afterTraversalGrace(0.35초) 동안도 넘은 창틀에 튕기지 않는다. HUD: 켜져 있는 동안 가운데 아래 칸에 "E 아대 끄기", 도약 재사용 대기는 오른쪽 아래 원 게이지("도약"). 연습 모드(쿨타임 끔)에서도 도약 뒤 practiceDashCooldown(1초)은 쉰다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Wall Dash")]
     public class WallDashSkill : SkillDefinition
@@ -36,9 +36,15 @@ namespace Project1.Systems
         [Min(0f)] public float wallPoseTime = 0.1f;
         [Tooltip("한 번 도약한 뒤 다음 도약까지 재사용 대기(초). 그동안 벽에 닿아도 도약 준비가 안 된다. 아대는 켜진 채 그대로.")]
         [Min(0f)] public float dashCooldown = 5f;
+        [Tooltip("연습 모드(쿨타임 끔 — SkillCooldowns.Disabled)에서의 도약 재사용 대기(초). 연습에서도 도약 한 번에 잠깐은 쉰다.")]
+        [Min(0f)] public float practiceDashCooldown = 1f;
 
         // 캐릭터(CharacterSkill)마다 다음 도약이 가능한 시각. 껐다 켜도 남는다.
         private static readonly Dictionary<CharacterSkill, float> ReadyAt = new();
+        // 그 재사용 대기의 전체 길이(게이지용 — 연습 모드면 1초)
+        private static readonly Dictionary<CharacterSkill, float> CooldownLength = new();
+
+        private float CurrentDashCooldown => SkillCooldowns.Disabled ? practiceDashCooldown : dashCooldown;
 
         /// <summary>이 캐릭터의 도약 재사용 대기 남은 시간(초).</summary>
         public float DashCooldownRemaining(CharacterSkill ctx) => ctx != null && ReadyAt.TryGetValue(ctx, out float t) ? Mathf.Max(0f, t - Time.time) : 0f;
@@ -127,7 +133,8 @@ namespace Project1.Systems
                     if (ctx.PhaseTime >= dashTime)
                     {
                         // 도약 끝: 꺼지지 않고 켜진 채로 돌아가고, 재사용 대기 시작
-                        ReadyAt[ctx] = Time.time + SkillCooldowns.Scale(dashCooldown);
+                        ReadyAt[ctx] = Time.time + CurrentDashCooldown; // 연습 모드도 practiceDashCooldown(1초)만큼 쉰다
+                        CooldownLength[ctx] = CurrentDashCooldown;
                         ctx.SetPhase(Active);
                         ctx.Direction = Vector3.zero;
                     }
@@ -203,14 +210,21 @@ namespace Project1.Systems
 
         public override bool Afterimage(CharacterSkill ctx) => ctx.Phase == Dashing;
 
-        // 상태 글자: 도약 재사용 대기 남은 시간만(설명은 없음). 준비되면 빈칸.
-        public override string StatusText(CharacterSkill ctx) => string.Empty; // 도약 재사용 대기는 막대로만(초는 쓰지 않음)
+        // HUD 가운데 아래 칸: 켜져 있는 동안 끄는 방법을 띄운다.
+        public override string StatusText(CharacterSkill ctx) => "E  아대 끄기";
 
-        // HUD 막대: 재사용 대기 중이면 차오르는 막대, 준비되면 없음.
-        public override float StatusBarFill(CharacterSkill ctx)
+        // 가운데 칸에는 막대 없음 — 도약 재사용 대기는 오른쪽 아래 원 게이지로(TryGetCooldownGauge).
+        public override float StatusBarFill(CharacterSkill ctx) => -1f;
+
+        /// <summary>HUD 오른쪽 아래: 도약 재사용 대기(아대를 켜 둔 채로도, 꺼도 돈다).</summary>
+        public override bool TryGetCooldownGauge(CharacterSkill ctx, out string label, out float fill)
         {
+            label = "도약"; fill = 0f;
             float r = DashCooldownRemaining(ctx);
-            return r > 0f && dashCooldown > 0f ? 1f - r / dashCooldown : -1f;
+            if (r <= 0f) return false;
+            float len = CooldownLength.TryGetValue(ctx, out float l) && l > 0f ? l : CurrentDashCooldown;
+            fill = 1f - r / Mathf.Max(len, 0.01f);
+            return true;
         }
 
         /// <summary>아대가 쉬는 동작: 창틀 넘기·턱 오르기·매달리기·착지(낙하 중 공중에서 벽 튕기기는 그대로).</summary>
