@@ -20,6 +20,8 @@ namespace Project1.Systems
 
         // 돌진형(포워드·광대): 상대 반대쪽을 보고 돌진을 시작해(ChargeAwayAngle) 잠깐 곧게 나간 뒤 크게 꺾어 돌아온다
         private const float ChargeAwayAngle = 150f, ChargeStraightTime = 0.2f, ChargeCurveRate = 240f;
+        private const float StunEndingWindow = 0.5f; // 상대 기절이 이만큼(초) 남으면 몰아치기를 그만두고 천천히 물러난다
+        private bool rushing;
         private bool fireAway, awayHold;
         private float awayYaw, fireAwayUntil, awayHoldFrom;
 
@@ -195,6 +197,12 @@ namespace Project1.Systems
 
             React(now, dist, seen, prof);
 
+            // 상대가 기절했다(실제 모습으로 바로 안다): 옆걸음·페인트·기다리기 등은 그만두고 바로 몰아치기를 고른다
+            var latest = view.Latest;
+            if (latest.Valid && latest.Stunned && latest.StunEndsAt - now > StunEndingWindow
+                && maneuver is Maneuver.Strafe or Maneuver.BackOff or Maneuver.Feint or Maneuver.Hold or Maneuver.Bait or Maneuver.Dodge
+                && !(maneuver == Maneuver.BackOff && mFlag)) { End(now); nextDecision = now; }
+
             if (maneuver == Maneuver.None && now >= nextDecision) Choose(now, dist, seen, prof);
 
             Vector2 move = Vector2.zero; bool run = false;
@@ -229,7 +237,9 @@ namespace Project1.Systems
                 if (jump) keys.Jump();
             }
             f.Move = Vector2.ClampMagnitude(move, 1f);
-            f.Run = run && CanRun && f.Move.y > 0.3f;
+            // 몰아치기 중에는 스태미나가 바닥날 때까지 달린다(평소에는 조금 남겨 둠)
+            f.Run = run && (rushing ? stamina == null || !stamina.IsExhausted : CanRun) && f.Move.y > 0.3f;
+            rushing = false;
             keys.Apply(ref f, now);
             return f;
         }
@@ -378,6 +388,33 @@ namespace Project1.Systems
                 return;
             }
 
+            // 상대 기절: 할 수 있는 모든 방법(스태미나를 다 써서 달리기·달리기 점프 공격)으로 바짝 붙어 때린다. 기절이 끝나 갈 때는 천천히 물러난다.
+            var lt = view.Latest;
+            if (lt.Valid && lt.Stunned)
+            {
+                float stunLeft = lt.StunEndsAt - now;
+                if (stunLeft <= StunEndingWindow)
+                {
+                    Begin(now, Maneuver.BackOff, Random.Range(0.7f, 1.0f)); mDir = Random.Range(-0.4f, 0.4f); mFlag = true; // 천천히(걸어서) 거리 벌리기
+                    return;
+                }
+                bool staminaOk = stamina == null || !stamina.IsExhausted;
+                if (canAttack && dist <= reach + 0.3f)
+                {
+                    bool heavy = SelfHunter && stunLeft > 1.2f; // 감시자는 시간이 넉넉하면 센 공격
+                    Begin(now, heavy ? Maneuver.Heavy : Maneuver.Light, heavy ? 2f : 0.9f);
+                    if (heavy) mValue = Random.Range(0.5f, 0.8f);
+                    return;
+                }
+                if (canAttack && Grounded && staminaOk && dist >= 2.6f && dist <= 5.5f)
+                {
+                    Begin(now, Maneuver.RunJump, 2.6f); mValue = Random.Range(2.4f, 3.2f); mFlag = !SelfHunter && Random.value < 0.55f;
+                    return;
+                }
+                Begin(now, Maneuver.Approach, 0.6f); mDir = 0f; mFlag = true; // 달려가 붙기(스태미나가 바닥날 때까지 달림)
+                return;
+            }
+
             // 재사용 대기가 끝났으면 스킬부터 써 본다(닿는 거리면 대부분 — 돌진형은 유인 뒤 돌진)
             if (skillInRange && Random.value < SkillFirstChance) { Begin(now, Maneuver.Skill, 0.3f); return; }
             if (prof.Charge && skillReady && dist >= 1.2f && dist < 12f && Random.value < SkillFirstChance) { Begin(now, Maneuver.Bait, Random.Range(1f, 2.5f)); return; }
@@ -450,6 +487,7 @@ namespace Project1.Systems
             if (maneuver == Maneuver.Dodge) lastDodgeEnd = now;
             maneuver = Maneuver.None;
             nextDecision = now + Random.Range(cfg.decisionGapMin, Mathf.Max(cfg.decisionGapMin, cfg.decisionGapMax));
+            if (view.Latest.Valid && view.Latest.Stunned) nextDecision = now; // 상대 기절 중: 쉬지 않고 바로 다음 몰아치기
         }
 
         private void StartDodge(float now, float side, bool jump)
@@ -471,7 +509,8 @@ namespace Project1.Systems
 
                 case Maneuver.Approach:
                     move = new Vector2(dist < cfg.runDistance ? mDir : 0f, 1f);
-                    run = dist > cfg.runDistance;
+                    run = dist > cfg.runDistance || mFlag; // mFlag = 기절한 상대에게 몰아치기(가까워도 달림)
+                    rushing = mFlag;
                     if (dist <= reach * 0.95f || now >= mUntil) End(now);
                     break;
 
@@ -481,7 +520,7 @@ namespace Project1.Systems
                     break;
 
                 case Maneuver.BackOff:
-                    move = new Vector2(mDir, -1f);
+                    move = mFlag ? new Vector2(mDir, -0.55f) : new Vector2(mDir, -1f); // mFlag = 기절이 끝나 가서 천천히 물러남
                     if (now >= mUntil) End(now);
                     break;
 

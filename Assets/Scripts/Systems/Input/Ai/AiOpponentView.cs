@@ -18,6 +18,8 @@ namespace Project1.Systems
         public bool RunJumpAttack;
         public bool Parrying;
         public bool Stunned;
+        /// <summary>기절이 풀리는 시각(Time.time, 기절 아니면 0) — 반응 지연이 든 모습이라도 남은 시간은 이 시각으로 잰다.</summary>
+        public float StunEndsAt;
         public bool Dead;
         public bool Grounded;
         public bool IsHunter;
@@ -99,6 +101,7 @@ namespace Project1.Systems
                 RunJumpAttack = attack != null && attack.IsRunJumpAttack,
                 Parrying = parry != null && parry.IsParrying,
                 Stunned = stun != null && stun.IsStunned,
+                StunEndsAt = stun != null && stun.IsStunned ? now + stun.StunRemaining : 0f,
                 Dead = health != null && health.IsDead,
                 Grounded = state == null || state.IsGrounded,
                 IsHunter = traversal != null && traversal.HunterStyle,
