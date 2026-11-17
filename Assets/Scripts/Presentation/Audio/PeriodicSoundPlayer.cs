@@ -65,7 +65,7 @@ namespace Project1.Presentation
             while (true)
             {
                 PlayOnce();
-                while (source.isPlaying) yield return null;
+                while (source.isPlaying) { if (InGameBgm.Suppressed) source.Stop(); yield return null; } // 종료 음악이 시작되면 하던 소리도 끊는다
                 yield return new WaitForSeconds(Mathf.Max(0.05f, interval + Random.Range(-intervalJitter, intervalJitter)));
             }
         }
@@ -74,6 +74,7 @@ namespace Project1.Presentation
         public void PlayOnce()
         {
             if (clips == null || clips.Length == 0) return;
+            if (InGameBgm.Suppressed) { source.Stop(); return; } // 게임 종료 음악이 나오는 동안은 내지 않는다(겹침)
             int i = Random.Range(0, clips.Length);
             if (clips.Length > 1 && i == lastIndex) i = (i + 1) % clips.Length;
             lastIndex = i;

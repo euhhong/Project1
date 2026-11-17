@@ -45,6 +45,7 @@ namespace Project1.Presentation
         {
             if (violin == null && !TryGetComponent(out violin)) { Destroy(this); return; }
             if (source.clip == null) return;
+            if (InGameBgm.Suppressed) { if (source.isPlaying) { source.Pause(); silentSince = Time.time; } return; } // 게임 종료 음악이 나오는 동안은 바이올린 소리를 내지 않는다(겹침)
 
             float w = violin.Playing01;
             source.volume = w * Volume * AudioVolume.Sfx;

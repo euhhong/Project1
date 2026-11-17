@@ -46,7 +46,7 @@ namespace Project1.Presentation
         {
             if (source.clip == null) return;
             if (stun == null && !TryGetComponent(out stun)) return; // 기절은 처음 맞을 때 붙는다
-            bool on = stun.IsStunned && stun.StunDuration >= MinStun;
+            bool on = stun.IsStunned && stun.StunDuration >= MinStun && !InGameBgm.Suppressed; // 게임 종료 음악 중에는 내지 않음
             if (on)
             {
                 source.volume = Volume * AudioVolume.Sfx;
