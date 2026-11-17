@@ -39,6 +39,7 @@ namespace Project1.Systems
             // 판자 내리기 범위 안의 스페이스바 = 판자 내리기(PalletUser) — 근접 AI의 점프(달리기 점프 공격·깡충)로 엉뚱하게 내리지 않게 막는다.
             // 판자는 아래 '내리기'에서 정한 때에만 내린다.
             if (f.Jump && Pallet.TryFind(me, Quaternion.Euler(0f, f.LookYaw, 0f) * Vector3.forward, out _, out _)) f.Jump = false;
+            if (TrySnapDrop(ref f, me, opp, now)) return; // 무엇을 하던 중이든: 감시자가 판자가 넘어지는 자리에 들어오면 바로 내린다
             float hunterDist = Flat(opp - me).magnitude;
 
             if (pallet == null || pallet.State == Pallet.PalletState.Falling)
@@ -112,6 +113,35 @@ namespace Project1.Systems
             Vector3 hold = center - lane * hunterSide * HoldDistance;
             if (Flat(hold - me).magnitude < 0.5f) { Face(ref f, opp - me); f.Move = Sway(now); return; } // 판자 너머 감시자를 보며 좌우로 살짝(심리전, 서 있지 않게)
             Steer(ref f, hold - me, run: false, faceTarget: opp - me);
+        }
+
+        /// <summary>
+        /// 바로 내리기: 내가 내릴 수 있는 세워진 판자(판자 쪽으로 돌아서면 앞 반원)가 있고, 감시자가 그 판자가 넘어지는 자리(틈) 안에 있거나
+        /// 내 반대편 통로에서 막 들어오려 하면 — 판자 쪽을 보고 스페이스바. 판자를 찾던 중이 아니어도(가까이서 싸우던 중이어도) 한다.
+        /// </summary>
+        private bool TrySnapDrop(ref CharacterInputFrame f, Vector3 me, Vector3 opp, float now)
+        {
+            foreach (var p in Pallet.All)
+            {
+                if (p == null || p.State != Pallet.PalletState.Up) continue;
+                Vector3 toPallet = Flat(p.transform.position - me);
+                if (toPallet.sqrMagnitude > 16f) continue; // 4m 밖
+                if (!Pallet.TryFind(me, toPallet, out Pallet near, out _) || near != p) continue;
+                Vector3 hl = p.transform.InverseTransformPoint(opp), ml = p.transform.InverseTransformPoint(me);
+                if (Mathf.Abs(hl.y) > 3f) continue; // 다른 층
+                float halfW = p.Width * 0.5f;
+                bool inGap = Mathf.Abs(hl.x) <= halfW + 0.35f && hl.z >= -0.3f && hl.z <= p.Gap + 0.3f;              // 깔리는 자리
+                bool coming = Mathf.Abs(hl.x) <= halfW + 1.6f && hl.z >= -0.3f && hl.z <= p.Gap + 0.3f              // 통로로 막 들어옴
+                              && hl.x * ml.x < 0f && Mathf.Abs(ml.x) > halfW * 0.5f;                                  // 내가 반대편
+                if (!inGap && !coming) continue;
+                Face(ref f, toPallet);
+                f.Move = Vector2.zero;
+                f.Jump = true;
+                ClearAttack(ref f);
+                pallet = p; holdUntil = now + HoldTime; seekStart = now;
+                return true;
+            }
+            return false;
         }
 
         /// <summary>감시자보다 내가 더 가깝고, 벽에 가리지 않은 가장 가까운 세워진 판자.</summary>
