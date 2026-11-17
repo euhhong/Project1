@@ -320,13 +320,11 @@ namespace Project1.Presentation
 
         private void OnAttack(CharacterAttackState s)
         {
-            if (s == CharacterAttackState.HeavyCharge || s == CharacterAttackState.None) return;
-            string kind = Has("Attack") ? "Attack" : CharacterId == "Survivor_MindsEye" ? "Cane" : null; // 맹인: 지팡이 휘두르기
-            if (kind != null) Play(kind, Body, AttackVolume, 0.05f, s == CharacterAttackState.Heavy ? 0.93f : 1f);
+            // 휘두를 때는 일반 휘두르기 소리(swing, CharacterSfx)만 — 캐릭터 전용 Attack 파일에는 맞는 소리가 섞여 있어 허공에서도 타격음처럼 들렸다. 타격음은 벽·캐릭터에 맞을 때만(SfxPlayer).
         }
 
         /// <summary>평타 휘두르기 소리를 이 캐릭터가 따로 갖는지(CharacterSfx가 일반 swing을 뺀다).</summary>
-        public bool OverridesSwing => Has("Attack") || (CharacterId == "Survivor_MindsEye" && Has("Cane"));
+        public bool OverridesSwing => false; // 모든 캐릭터가 일반 휘두르기 소리(swing)를 쓴다
 
         private void OnJump() => Play("Jump", transform.position, 0.6f, 0.05f);
 
