@@ -493,6 +493,7 @@ namespace Project1.Systems
 
         private void StartAttack(CharacterAttackState state)
         {
+            AimAtVaultingOpponent(); // 창틀·판자를 넘는 중인 상대가 가까우면 그쪽으로 시점·몸을 돌려 친다
             chargedHit = false; // 새 공격: 맞혔는지 다시 센다
             IsRunJumpAttack = IsAirAttack && IsRunningForward();
             if (IsRunJumpAttack) runJumpAirborne = true;
@@ -503,6 +504,34 @@ namespace Project1.Systems
             PhaseProgress = 0f;
             AttackStarted?.Invoke(state);
             AdvancePhase(0f); // 길이 0인 구간은 바로 넘긴다
+        }
+
+        private const float VaultAimRange = 5f, VaultAimTrack = 0.4f;
+
+        /// <summary>
+        /// 공격을 시작할 때 VaultAimRange(m) 안(같은 층쯤)에 창틀·판자를 넘는 중인 상대가 있으면(DamageRules.IsVaulting — 넘는 중엔 피해 2배)
+        /// 붉은나비 도착처럼 그 상대 쪽으로 시점을 바로 돌리고(ILookSnap — 카메라도) 잠깐 따라가며, 몸도 바로 그쪽을 본다.
+        /// </summary>
+        private void AimAtVaultingOpponent()
+        {
+            var self = GetComponent<CharacterIdentity>();
+            Vector3 me = transform.position;
+            CharacterIdentity best = null; float bestD = VaultAimRange * VaultAimRange;
+            foreach (var c in FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == null || c == self || (self != null && !self.CanHit(c)) || !DamageRules.IsVaulting(c.gameObject)) continue;
+                Vector3 to = c.transform.position - me;
+                if (Mathf.Abs(to.y) > 2.5f) continue;
+                to.y = 0f;
+                float d = to.sqrMagnitude;
+                if (d < 1e-4f || d > bestD) continue;
+                bestD = d; best = c;
+            }
+            if (best == null) return;
+            Vector3 dir = best.transform.position - me; dir.y = 0f;
+            float yaw = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            if (TryGetComponent(out ILookSnap look)) { look.SnapLook(yaw); look.TrackLook(best.transform, VaultAimTrack); }
         }
 
         private void AdvancePhase(float dt)
