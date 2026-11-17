@@ -28,19 +28,19 @@ MonoBehaviour:
   forwardOffset: 0.8
   slot: 16
   dragSpeed: 20
-  dragReleaseStun: 0.4
-  dragSlowTime: 2
-  dragSlowRatio: 0.35
+  dragReleaseStun: 0.6
+  dragSlowTime: 4
+  dragSlowRatio: 0.2
   towSpeed: 20
   wallProbeRadius: 0.12
   wallMaxNormalY: 0.6
   towStopReach: 0.1
   wallShockRadius: 6
-  wallShockSlowTime: 1.5
-  wallShockSlowRatio: 0.4
+  wallShockSlowTime: 4
+  wallShockSlowRatio: 0.2
   grabDealsDamage: 0
-  followUpTime: 1
-  followUpDamageScale: 1.5
+  followUpTime: 4.6
+  followUpDamageScale: 2
   towToWalls: 1
   vaultOverVictim: 0
   vaultHeight: 2.6
