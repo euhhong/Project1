@@ -213,7 +213,7 @@ namespace Project1.Presentation
             for (int k = 0; k < 4; k++) meshes[k] = Extract(mesh, Part, k);
 
             // 꼬리는 그랩 자리에 그대로, 몸통 기준점(fish)은 자르는 곳. 턱 두 쪽은 경첩 기준.
-            var mats = g.sharedMaterials;
+            var mats = CameraBlockedBodyFade.Unfaded(g.sharedMaterials); // 몸이 반투명인 동안 쪼개도 원본 머티리얼로(사본은 곧 지워져 분홍색이 된다)
             g.enabled = false;
             fish = new GameObject("Grab_Fish").transform;
             fish.SetParent(grab, false); fish.localPosition = cut;
@@ -310,7 +310,7 @@ namespace Project1.Presentation
                 go.transform.localScale = Vector3.one * worldScale;
                 go.AddComponent<MeshFilter>().sharedMesh = chainSource.sharedMesh;
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterials = mr.sharedMaterials;
+                r.sharedMaterials = CameraBlockedBodyFade.Unfaded(mr.sharedMaterials);
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 links.Add(go.transform);
             }

@@ -42,7 +42,7 @@ namespace Project1.Systems
         [Tooltip("내려찍기 공격 판정이 나는 자리 표시용(HitResult.Slot).")]
         public HitboxSlot slamSlot = HitboxSlot.Weapon;
         [Tooltip("내려찍기에 맞은 상대가 경직(기절, CharacterStun)되는 시간(초). 0이면 경직 없음.")]
-        [Min(0f)] public float slamStun = 1f;
+        [Min(0f)] public float slamStun = 2f; // 1초 + 1초 추가(2026-11-18)
         [Tooltip("땅에서 뛰어오른 뒤 이 시간(초) 동안은 공격 키를 눌러도 내려찍기가 나가지 않는다(바로 찍기 막기).")]
         [Min(0f)] public float slamLockAfterLeap = 0.5f;
 

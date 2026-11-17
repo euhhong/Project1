@@ -26,6 +26,19 @@ namespace Project1.Presentation
         private class Part { public Renderer r; public Material[] originals, faded; }
         private readonly List<Part> parts = new();
         private readonly List<Renderer> copies = new();
+        // 반투명 사본 → 원본 머티리얼(다른 연출이 흐린 동안 머티리얼을 복사해 가도 원본을 찾을 수 있게 — Unfaded)
+        private static readonly Dictionary<Material, Material> FadedToOriginal = new();
+
+        /// <summary>m이 몸 반투명 사본이면 그 원본, 아니면 m 그대로. 모델 머티리얼을 복사해 새 렌더러를 만드는 연출(GrabShotVisual)이 쓴다.</summary>
+        public static Material Unfaded(Material m) => m != null && FadedToOriginal.TryGetValue(m, out var o) && o != null ? o : m;
+
+        /// <summary>머티리얼 배열을 Unfaded로 바꾼 새 배열.</summary>
+        public static Material[] Unfaded(Material[] mats)
+        {
+            var r = new Material[mats.Length];
+            for (int i = 0; i < mats.Length; i++) r[i] = Unfaded(mats[i]);
+            return r;
+        }
         private ThirdPersonCamera cam;
         private int builtFor;
         private float rebuildAt, amount;
@@ -36,7 +49,7 @@ namespace Project1.Presentation
         private void OnDestroy()
         {
             Restore();
-            foreach (var p in parts) if (p.faded != null) foreach (var m in p.faded) if (m != null) Destroy(m);
+            foreach (var p in parts) if (p.faded != null) foreach (var m in p.faded) if (m != null) { FadedToOriginal.Remove(m); Destroy(m); }
             parts.Clear();
         }
 
@@ -92,7 +105,16 @@ namespace Project1.Presentation
         private void Rebuild(int sig)
         {
             Restore();
-            foreach (var p in parts) if (p.faded != null) foreach (var m in p.faded) if (m != null) Destroy(m);
+            // 흐린 동안 다른 연출이 반투명 사본을 복사해 간 렌더러(예: 사냥터지기 그랩을 쪼갠 물고기 조각)도 원본으로 돌려놓고 나서 지운다 — 지운 머티리얼을 끼고 있으면 분홍색이 된다
+            foreach (var r in GetComponentsInChildren<Renderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                    if (mats[i] != null && FadedToOriginal.TryGetValue(mats[i], out var orig)) { mats[i] = orig; changed = true; }
+                if (changed) r.sharedMaterials = mats;
+            }
+            foreach (var p in parts) if (p.faded != null) foreach (var m in p.faded) if (m != null) { FadedToOriginal.Remove(m); Destroy(m); }
             parts.Clear();
             builtFor = sig;
             foreach (var r in GetComponentsInChildren<Renderer>(true))
@@ -122,6 +144,7 @@ namespace Project1.Presentation
                 m.DisableKeyword("_ALPHATEST_ON");
                 m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
                 p.faded[i] = m;
+                FadedToOriginal[m] = src;
             }
             return p.faded;
         }
