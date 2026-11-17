@@ -100,17 +100,19 @@ namespace Project1.Presentation
             return c;
         }
 
-        // 캐릭터 피격음: 두 음절로 길고 청량한 "뽀-익" — 짧고 낮게 "뽀"(40ms) 뒤 밝고 길게 "이익"(400ms)인 사냥터지기 소리(제5인격 녹화)
-        public const string CharacterHitSound = "Characters/Gamekeeper/Gamekeeper_Hook_07";
+        // 벽 치기 소리: 두 음절로 길고 청량한 "뽀-익" — 짧고 낮게 "뽀"(40ms) 뒤 밝고 길게 "이익"(400ms)인 사냥터지기 소리(제5인격 녹화). 벽에 부딪혔을 때만 난다.
+        public const string WallHitSound = "Characters/Gamekeeper/Gamekeeper_Hook_07";
+        // 캐릭터 피격음: 경쾌한 '뻐억'(hit_heavy)
+        public const string CharacterHitSound = "hit_heavy";
 
         private static void OnHit(HitResult hit)
         {
             bool heavy = hit.Knockdown || hit.PowerScale > 1.25f || hit.Charge > 0.5f; // 쓰러뜨림·센 공격·모아 친 공격
-            Play(CharacterHitSound, hit.Point, heavy ? 1f : 0.85f, 0.05f, heavy ? 0.95f : 1.03f); // 센 공격은 조금 크고 낮게
+            Play(CharacterHitSound, hit.Point, heavy ? 1f : 0.8f, 0.05f, heavy ? 0.95f : 1.03f); // 센 공격은 조금 크고 낮게
         }
 
         private static void OnBlocked(HitResult hit) => Play("block", hit.Point, 0.9f, 0.05f);
-        private static void OnWall(GameObject attacker, Vector3 point, Vector3 normal) { } // 벽 치기 소리는 뺌(파란 리본만)
+        private static void OnWall(GameObject attacker, Vector3 point, Vector3 normal) => Play(WallHitSound, point, 1f, 0.05f); // 벽에 부딪혔을 때만 "뽀-익"
         private static void OnShockwave(GameObject source, Vector3 center, float radius) => Play("shockwave", center, 1f, 0.04f);
     }
 }
