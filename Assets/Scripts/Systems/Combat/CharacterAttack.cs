@@ -142,6 +142,11 @@ namespace Project1.Systems
                 maxSpeed = 0f; // 모은 강공격 후딜레이(예: 사냥터지기): 제자리
                 return true;
             }
+            if (WallBounced && AttackState != CharacterAttackState.None && AttackPhase == AttackPhase.Recovery)
+            {
+                maxSpeed = 0f; // 벽을 때려 튕겨 나온 경직: 모션뿐 아니라 이동도 멈춘다(공중이면 점프 궤적은 그대로 — 수평만)
+                return true;
+            }
             if (heavyRoots && AttackState == CharacterAttackState.Heavy && !IsAirAttack)
             {
                 maxSpeed = 0f; // 땅 강공격(생존자 돌려차기) 동안은 멈춰 서서 찬다

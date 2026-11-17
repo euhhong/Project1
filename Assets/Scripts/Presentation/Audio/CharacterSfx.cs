@@ -63,7 +63,8 @@ namespace Project1.Presentation
         {
             if (s == CharacterAttackState.HeavyCharge || s == CharacterAttackState.None) return; // 모으기 시작은 소리 없음(휘두를 때만)
             if (TryGetComponent(out CharacterSoundSet own) && own.OverridesSwing) return; // 캐릭터 전용 휘두르기 소리가 있으면 그것만
-            SfxPlayer.Play("swing", Body, 0.55f, 0.1f, s == CharacterAttackState.Heavy ? 0.85f : 1f);
+            // 휘두르기(헛스윙) 소리 = 피격음(hit_char) 앞의 '휙'만 잘라 낸 것(swing_attack — 뒤의 맞는 부분은 뺌)
+            SfxPlayer.Play("swing_attack", Body, 0.7f, 0.08f, s == CharacterAttackState.Heavy ? 0.85f : 1f);
         }
         private void OnJump() { if (!Overrides("Jump")) SfxPlayer.Play("jump", transform.position, 0.35f, 0.12f); }
         private void OnLand()
