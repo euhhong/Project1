@@ -25,6 +25,27 @@ namespace Project1.Systems
         private bool fireAway, awayHold;
         private float awayYaw, fireAwayUntil, awayHoldFrom;
 
+        private const float ChargeWallLook = 4f, ChargeDriveRate = 360f; // 돌진 중 앞 이 거리(m) 안이 벽이면 길을 따라 초당 이 각도로 꺾는다
+        private NavPathFollower nav;
+
+        /// <summary>yaw 방향 가슴 높이로 distance(m) 안에 벽(캐릭터 아님)이 있는지.</summary>
+        private bool WallAhead(float yaw, float distance)
+        {
+            Vector3 d = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            return Physics.SphereCast(tr.position + Vector3.up * 1f, 0.3f, d, out var hit, distance, ~0, QueryTriggerInteraction.Ignore)
+                   && hit.collider.GetComponentInParent<CharacterIdentity>() == null && Mathf.Abs(hit.normal.y) < 0.6f;
+        }
+
+        /// <summary>NavMesh 길을 따라 target으로 가는 지금 방향(수평). 길이 없으면 false.</summary>
+        private bool NavDir(Vector3 target, out Vector3 dir)
+        {
+            dir = default;
+            if (nav == null && !tr.TryGetComponent(out nav)) nav = tr.gameObject.AddComponent<NavPathFollower>();
+            if (!nav.Steer(target, true, out dir)) return false;
+            dir.y = 0f;
+            return dir.sqrMagnitude > 1e-4f;
+        }
+
         /// <summary>상대 쪽(toYaw)에서 ±ChargeAwayAngle 돌린 두 방향 중 앞이 더 트인 쪽(벽에 바로 박지 않게).</summary>
         private float OpenAwayYaw(float toYaw)
         {
@@ -157,8 +178,13 @@ namespace Project1.Systems
                 float leadYaw = Mathf.Atan2(lead.x, lead.z) * Mathf.Rad2Deg;
                 // 뒤로 돌진을 시작했으면: 잠깐 곧게 나간 뒤 크게 꺾어 상대 쪽으로 돌아온다(그다음은 사람 손 빠르기로 따라감)
                 float sinceCharge = selfSkillStart >= 0f ? now - selfSkillStart : 99f;
+                // 운전: 상대까지 곧게 막혔거나 바로 앞이 벽이면 길 찾기(NavMesh) 길을 따라 꺾어 간다 — 벽에 박지 않고 돌아서 위협
+                if (sinceCharge >= ChargeStraightTime && (route.ObstacleBetween(me.Position) || WallAhead(yaw, ChargeWallLook))
+                    && NavDir(me.Position, out Vector3 navDir))
+                    leadYaw = Mathf.Atan2(navDir.x, navDir.z) * Mathf.Rad2Deg;
                 float off = Mathf.Abs(Mathf.DeltaAngle(yaw, leadYaw));
                 if (sinceCharge < ChargeStraightTime) { }
+                else if (WallAhead(yaw, ChargeWallLook)) yaw = Mathf.MoveTowardsAngle(yaw, leadYaw, ChargeDriveRate * dt); // 벽이 가까우면 빠르게 핸들
                 else if (off > 50f) yaw = Mathf.MoveTowardsAngle(yaw, leadYaw, ChargeCurveRate * dt);
                 else yaw = baiter.SteerYaw(yaw, leadYaw, dt);
             }
@@ -265,7 +291,8 @@ namespace Project1.Systems
             if (chargeActive)
             {
                 float off = Mathf.Abs(Mathf.DeltaAngle(yaw, targetYaw));
-                if (!chargeCancelSent && baiter.ShouldCancel(elapsed, off, dist)) { keys.TapSkill(); chargeCancelSent = true; }
+                bool driving = route.ObstacleBetween(view.Latest.Position); // 벽을 돌아 길을 따라 운전 중이면 상대가 옆·뒤여도 멈추지 않는다
+                if (!chargeCancelSent && !driving && elapsed > ChargeStraightTime + 0.6f && baiter.ShouldCancel(elapsed, off, dist)) { keys.TapSkill(); chargeCancelSent = true; }
                 return;
             }
             if (prof.Charge) // 로켓을 들고 다니는 중: 목표 쪽으로 걷는다(떼면 돌진)
