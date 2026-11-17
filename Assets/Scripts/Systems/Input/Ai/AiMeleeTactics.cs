@@ -40,7 +40,7 @@ namespace Project1.Systems
         private float mStart, mUntil, mDir, mValue, mTime;
         private int mStep;
         private bool mFlag;
-        private float nextDecision, reaction = 0.2f, yaw;
+        private float nextDecision, reaction = 0.2f, yaw, wallRubFor;
         private bool yawInit;
         private float lastOwnAttack = -9f, lastSkillUse = -9f, lastDodgeEnd = -9f;
         private float selfSkillStart = -1f;
@@ -161,9 +161,12 @@ namespace Project1.Systems
 
             Vector2 move = Vector2.zero; bool run = false;
             Execute(now, dist, seen, prof, ref move, ref run);
+            AvoidWallRub(now, dt);
 
             // 길: 상대에게 다가가는 동안 벽이 가로막으면 창틀 쪽(없으면 NavMesh 길)으로 돌고, 앞에 창틀·낮은 턱이 있으면 점프해 넘는다(플레이어와 같은 입력).
-            bool pursuing = maneuver is Maneuver.Approach or Maneuver.None && move.y > 0.3f && dist > MyReach + 0.5f
+            // 닿을 듯 말 듯한 거리라도 사이에 턱·벽이 있으면 계속 길을 따라간다(창틀 바로 앞에서 멈춰 서지 않고 넘는다).
+            bool pursuing = maneuver is Maneuver.Approach or Maneuver.None && move.y > 0.3f
+                            && (dist > MyReach + 0.5f || (dist > MyReach * 0.9f && route.ObstacleBetween(me.Position)))
                             && !(traversal != null && traversal.LocksActions);
             if (pursuing)
             {
@@ -317,6 +320,14 @@ namespace Project1.Systems
             bool skillInRange = skillReady && !prof.Charge && prof.Weight > 0f && dist >= prof.MinRange && dist <= prof.MaxRange;
             bool canAttack = CanAttack(now);
             float reach = MyReach;
+
+            // 사이에 창틀·판자·상자·벽이 있고 아직 안 닿으면: 그 자리에서 옆걸음·페인트하지 않고 쫓아간다(길 찾기가 넘거나 돌아감).
+            if (dist > reach + 0.3f && route.ObstacleBetween(seen.Valid ? seen.Position : view.Latest.Position))
+            {
+                Begin(now, Maneuver.Approach, Random.Range(0.6f, 1.1f));
+                mDir = 0f;
+                return;
+            }
 
             if (dist > cfg.engageRadius)
             {
@@ -537,6 +548,17 @@ namespace Project1.Systems
                     if (now >= mUntil) End(now); // 다음 고르기에서 다시 유도할 수도(기다린 시간은 이어 감)
                     break;
             }
+        }
+
+        /// <summary>옆걸음·뒤로 빠지기·페인트 중 벽·상자에 비비면(0.25초) 옆걸음은 반대쪽으로 한 번 바꾸고, 그래도 비비거나 다른 동작이면 그만두고 다시 고른다.</summary>
+        private void AvoidWallRub(float now, float dt)
+        {
+            if (maneuver is not (Maneuver.Strafe or Maneuver.BackOff or Maneuver.Feint) || !route.TouchingWall) { wallRubFor = 0f; return; }
+            wallRubFor += dt;
+            if (wallRubFor < 0.25f) return;
+            wallRubFor = 0f;
+            if (maneuver == Maneuver.Strafe && !mFlag) { mDir = -mDir; mFlag = true; }
+            else End(now);
         }
 
         /// <summary>나 → 목표 사이(가슴 높이)가 벽에 막히지 않았는지.</summary>
