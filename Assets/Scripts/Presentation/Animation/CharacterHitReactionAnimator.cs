@@ -7,7 +7,7 @@ namespace Project1.Presentation
     /// <summary>
     /// 이 캐릭터가 맞으면(HitEvents, BE) Animator "HitReact" 레이어(상체)에 피격 모션을 한 번 재생한다.
     /// - 머리: 세기별 — 작은 데미지 Hit_Head_Light(Light Hit To Head), 약공격 Hit_Head_Medium(Medium Hit To Head), 강공격·점프 공격·스킬 Hit_Head / Hit_Head2(Head Hit 두 판, 번갈아)
-    /// - 큰 데미지(피해 bigDamage 45 이상 — 감시자 강공격, 창틀 넘기 중 ×2 등): Hit_Head_Big(Big Hit To Head). 머리는 방향 상관없이, 몸통·팔·다리는 앞·옆에서 맞았을 때
+    /// - 큰 데미지(감시자 히트이고 피해가 감시자 강공격 피해 이상 — 감시자 강공격, 창틀 넘기 중 ×2 등): Hit_Head_Big(Big Hit To Head). 머리는 방향 상관없이, 몸통·팔·다리는 앞·옆에서 맞았을 때
     /// - 몸통: 맞은 위치가 몸 앞(약 ±60°)이면 Hit_Body_Front(Standing React Large From Front), 옆이면 Hit_Body_Side(Big Side Hit)
     /// - 팔·다리: Hit_Limb(Side Hit). 몸통·팔·다리를 등 쪽에서 맞으면 Hit_Body_Back(Standing React Large From Left)
     /// - 작은 데미지(세기 0.75 미만, 예: 리퍼 E): 부위·방향과 상관없이 Hit_Small(Standing React Small From Headshot)
@@ -30,8 +30,6 @@ namespace Project1.Presentation
         private bool headAlt;
         // 큰 데미지: 크게 꺾였다 젖혀짐(Big Hit To Head). 피해는 BE 규칙 표(DamageRules.Damage)로 계산한다.
         private static readonly int BigId = Animator.StringToHash("Hit_Head_Big");
-        [Tooltip("이 피해 이상이면 큰 피격 모션(Hit_Head_Big). 45 = 감시자 강공격 몸통, 약공격 머리를 등 뒤에서, 창틀 넘기 중(×2) 약공격 등.")]
-        [SerializeField, Min(0f)] private float bigDamage = 45f;
         private static readonly int BodyFrontId = Animator.StringToHash("Hit_Body_Front");
         private const float FrontDot = 0.5f; // 몸 앞쪽 약 ±60° 안에서 맞으면 앞에서 맞은 것
         private static readonly int SmallId = Animator.StringToHash("Hit_Small");
@@ -137,12 +135,16 @@ namespace Project1.Presentation
             playing = true;
         }
 
-        /// <summary>이 히트의 피해(DamageRules — 부위·세기·등 뒤·창틀 넘기 배율 포함)가 bigDamage 이상인지.</summary>
+        /// <summary>
+        /// 감시자의 히트이고 피해(DamageRules — 부위·세기·등 뒤·창틀 넘기 배율 포함)가 감시자 강공격 피해(DamageRules.HunterHeavyDamage) 이상인지.
+        /// 감시자 평타를 낮춰(생존자의 1.5배) 예전 고정값(bigDamage 45)은 쓰지 않는다 — 감시자 강공격·창틀 넘기 중 ×2 같은 '큰 한 방'만.
+        /// </summary>
         private bool IsBig(HitResult hit)
         {
             if (hit.NoDamage || !animator.HasState(layer, BigId)) return false;
             var attacker = DamageRules.Find(hit.AttackerId);
-            return DamageRules.Damage(hit, attacker != null ? attacker.gameObject : null, gameObject) >= bigDamage;
+            if (attacker == null || !DamageRules.IsHunter(attacker.gameObject)) return false;
+            return DamageRules.Damage(hit, attacker.gameObject, gameObject) >= DamageRules.HunterHeavyDamage - 0.01f;
         }
 
         /// <summary>
