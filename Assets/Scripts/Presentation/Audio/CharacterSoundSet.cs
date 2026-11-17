@@ -32,6 +32,12 @@ namespace Project1.Presentation
 
         private const float FootVolume = 0.4f, VaultVolume = 0.8f, AttackVolume = 0.75f, SkillVolume = 0.85f;
 
+        /// <summary>
+        /// 계속·반복해서 나는 소리(발소리, 올가미 돌리기·로켓 돌진 반복음)를 낼지. 끔 — 게임 중에는 BGM이 깔리고, 이름만 보고 붙인 반복음이 다른 소리(뛰는 소리·칙칙·꾸왁)로 계속 들려서.
+        /// 동작 한 번에 한 번 나는 소리(평타·창틀·스킬·판자)만 낸다.
+        /// </summary>
+        private static readonly bool PlayRepeating = false;
+
         public static readonly List<CharacterSoundSet> All = new();
 
         /// <summary>감시자인지(심장 소리 SurvivorHeartbeat가 쓴다).</summary>
@@ -183,7 +189,7 @@ namespace Project1.Presentation
             if (notes == null && TryGetComponent(out notes)) lastNotePlace = notes.LastPlaceTime;
             if (tentacleField == null) TryGetComponent(out tentacleField);
 
-            UpdateFootsteps();
+            if (PlayRepeating) UpdateFootsteps(); else lastPos = transform.position; // 발소리는 끔(PlayRepeating)
             UpdateTraversal();
             UpdateSkill();
             UpdateFields();
@@ -244,14 +250,14 @@ namespace Project1.Presentation
                     if (phaseChanged && (phase == GrabDragging || phase == GrabTowing)) Play("Hook_Hit", Body, SkillVolume, 0.03f);
                     break;
                 case "Cowboy_Lasso":
-                    if (phase == GrabWindup) StartLoop("LassoSpin", "LassoSpin_Loop"); else StopLoop();
+                    StopLoop(); // 조준 중 반복 소리는 끔(PlayRepeating)
                     if (phaseChanged && phase == GrabExtending) Play("Lasso", Body, SkillVolume, 0.05f);
                     break;
                 case "Coordinator_Flare":
                     if (phaseChanged && phase == FlareFired) Play("FlareGun", Body + transform.forward * 0.5f, SkillVolume, 0.04f);
                     break;
                 case "SmileyFace_RocketCharge":
-                    if (phase == RocketCharging) StartLoop("Dash", "Dash_Loop"); else StopLoop();
+                    StopLoop(); // 돌진 중 반복 소리는 끔(PlayRepeating)
                     break;
                 case "Mercenary_Guard":
                     if (phaseChanged && phase == WallDashing) Play("ElbowPad", Body, SkillVolume, 0.04f);

@@ -135,7 +135,7 @@ namespace Project1.UI
             SetProp<SunBurnVisual>(player, true);      // 그 연출: 연기·불티·따뜻한 빛 일렁임(FE)
             Ensure<CharacterSoundSet>(player).Configure(entry.id, entry.role == CharacterRole.Hunter); // 캐릭터 전용 효과음(발소리·창틀·평타·스킬 — Resources/Sfx/Characters/{캐릭터})(FE)
             SetProp<SurvivorHeartbeat>(player, false); // 심장 소리는 쓰지 않음 — 대전 시작부터 계속 쿵쿵(뛰는 소리처럼) 들려서 뺌(FE)
-            SetProp<PeriodicSoundPlayer>(player, entry.id == "Survivor_Thief"); // 도둑: 일정 시간마다 도발 소리(FE)
+            SetProp<PeriodicSoundPlayer>(player, false); // 도둑 도발 소리를 일정 시간마다 내던 것 — 상시음이라 끔(FE)
             if (player.TryGetComponent(out CharacterMotor palletMotor)) palletMotor.RefreshSpeedLimits(); // 판자 내리는 동안 제자리(IMoveOverride)를 이동에 알린다
             SetProp<CartoonPunch>(player, entry.role == CharacterRole.Survivor);
             if (player.TryGetComponent(out CartoonPunch punch))
