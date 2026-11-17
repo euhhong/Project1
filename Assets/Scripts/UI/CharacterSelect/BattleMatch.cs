@@ -78,20 +78,25 @@ namespace Project1.UI
         {
             if (result == null)
             {
-                if (botHealth != null && botHealth.Current <= 0f) End("승리!");
-                else if (playerHealth != null && playerHealth.Current <= 0f) End("패배...");
+                if (botHealth != null && botHealth.Current <= 0f) End("승리");
+                else if (playerHealth != null && playerHealth.Current <= 0f) End("패배");
             }
             var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (result != null && kb != null && kb.rKey.wasPressedThisFrame)
-            {
-                BattleDamage.Disable();
-                if (!ScreenFade.Busy) ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName); // 끝나면 R = 캐릭터 선택 화면으로(페이드)
-            }
+            if (result == null || kb == null || ScreenFade.Busy) return;
+            // 결과가 뜬 뒤: R = 같은 캐릭터로 다시(게임 씬을 다시 연다 — 고른 캐릭터·모드는 CharacterPick에 남아 있음), ESC = 캐릭터 선택 화면으로
+            if (kb.rKey.wasPressedThisFrame) { BattleDamage.Disable(); ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.GameSceneName), CharacterSelectScreen.GameSceneName); }
+            else if (kb.escapeKey.wasPressedThisFrame) { BattleDamage.Disable(); ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName); }
         }
+
+        /// <summary>승패 결과가 떠 있는지 — 그동안 ESC는 PAUSE 창 대신 나가기(InGameMenu가 본다).</summary>
+        public static bool ResultShown { get; private set; }
+        private void OnEnable() => ResultShown = false;
+        private void OnDisable() => ResultShown = false;
 
         private void End(string text)
         {
             result = text;
+            ResultShown = true;
             InGameBgm.Suppressed = true; // 게임 종료 창 음악(게임 중 음악은 쉼)
             BgmPlayer.Play("Win", loop: false);
             if (bot != null && bot.TryGetComponent(out AiBotInput ai)) ai.enabled = false;
@@ -120,6 +125,7 @@ namespace Project1.UI
             {
                 GUI.Label(new Rect(0, Screen.height * 0.35f, w, 120f * u), result, big);
                 GUI.Label(new Rect(0, Screen.height * 0.35f + 120f * u, w, 40f * u), "R  다시 하기", small);
+                GUI.Label(new Rect(0, Screen.height * 0.35f + 160f * u, w, 40f * u), "ESC  나가기", small);
             }
         }
     }

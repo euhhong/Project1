@@ -72,6 +72,7 @@ namespace Project1.UI
         private void Toggle()
         {
             if (leaving || dialog == null) return;
+            if (BattleMatch.ResultShown) return; // 승패가 뜬 뒤엔 PAUSE 창 없음(ESC = 나가기는 BattleMatch가)
             if (practice) { Leave(CharacterSelectScreen.SceneName); return; } // 연습 모드: 창 없이 바로 캐릭터 선택으로
             if (dialog.IsOpen) Resume(); else Pause();
         }
