@@ -31,7 +31,7 @@ namespace Project1.UI
             panel.Root.pickingMode = PickingMode.Ignore;
 
             // 오른쪽 위 버튼
-            var holder = new VisualElement { pickingMode = PickingMode.Ignore };
+            holder = new VisualElement { pickingMode = PickingMode.Ignore };
             holder.style.position = Position.Absolute;
             holder.style.right = 44f; holder.style.top = 30f;
             panel.Root.Add(holder);
@@ -50,10 +50,41 @@ namespace Project1.UI
             dialog.DefaultAction = Resume;
         }
 
-        private void AddButton(string text, System.Action onClick, bool primary)
+        private void AddButton(string text, System.Action onClick, bool primary) => AddButton(dialog, text, onClick, primary);
+
+        private static void AddButton(TitleDialog d, string text, System.Action onClick, bool primary)
         {
-            var b = TitleDialog.MakeSlantedButton(dialog.Box, text, onClick, primary, width: 280f, height: 70f);
+            var b = TitleDialog.MakeSlantedButton(d.Box, text, onClick, primary, width: 280f, height: 70f);
             b.Root.style.marginTop = 22f;
+        }
+
+        // ───────── 승패 결과 창 ─────────
+        private VisualElement holder;   // 오른쪽 위 'ESC 메뉴' 버튼 자리
+        private TitleDialog resultDialog;
+
+        /// <summary>
+        /// 승패가 났을 때(BattleMatch): 오른쪽 위 버튼을 숨기고, PAUSE 창과 같은 기운 창에 결과(승리·패배)와 'R 다시하기'·'ESC 나가기' 버튼을 띄운다.
+        /// R·ESC 키는 BattleMatch가 받는다(같은 동작).
+        /// </summary>
+        public static void ShowResult(string text, System.Action retry, System.Action exit)
+        {
+            var m = FindAnyObjectByType<InGameMenu>();
+            if (m != null) m.OpenResult(text, retry, exit);
+        }
+
+        private void OpenResult(string text, System.Action retry, System.Action exit)
+        {
+            if (panel == null || resultDialog != null) return;
+            if (dialog != null && dialog.IsOpen) Resume();
+            if (holder != null) holder.style.display = DisplayStyle.None;
+            resultDialog = new TitleDialog(panel.Root, Resources.Load<Font>("Fonts/GowunDodum-Regular"), 460f, slanted: true);
+            var title = TitleDialog.SlantedText(resultDialog.Box, text, 110);
+            title.style.marginBottom = 6f;
+            AddButton(resultDialog, "R  다시하기", retry, primary: true);
+            AddButton(resultDialog, "ESC  나가기", exit, primary: false);
+            resultDialog.CancelAction = null;   // ESC는 BattleMatch가(나가기)
+            resultDialog.DefaultAction = retry; // Enter = 다시하기
+            resultDialog.Open();
         }
 
         private void Update()
@@ -61,8 +92,10 @@ namespace Project1.UI
             if (leaving) return;
             var kb = Keyboard.current;
             if (kb == null) return;
+            bool enter = kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame;
+            if (resultDialog != null) { if (enter) resultDialog.DefaultAction?.Invoke(); return; } // 결과 창: Enter = 다시하기(R·ESC는 BattleMatch)
             if (kb.escapeKey.wasPressedThisFrame) Toggle();
-            else if (dialog != null && dialog.IsOpen && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame)) dialog.DefaultAction?.Invoke();
+            else if (dialog != null && dialog.IsOpen && enter) dialog.DefaultAction?.Invoke();
         }
 
         private void Toggle()

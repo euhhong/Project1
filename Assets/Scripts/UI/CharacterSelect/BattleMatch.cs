@@ -83,9 +83,25 @@ namespace Project1.UI
             }
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (result == null || kb == null || ScreenFade.Busy) return;
-            // 결과가 뜬 뒤: R = 같은 캐릭터로 다시(게임 씬을 다시 연다 — 고른 캐릭터·모드는 CharacterPick에 남아 있음), ESC = 캐릭터 선택 화면으로
-            if (kb.rKey.wasPressedThisFrame) { BattleDamage.Disable(); ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.GameSceneName), CharacterSelectScreen.GameSceneName); }
-            else if (kb.escapeKey.wasPressedThisFrame) { BattleDamage.Disable(); ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName); }
+            // 결과가 뜬 뒤: R = 다시하기, ESC = 나가기(결과 창의 버튼과 같음)
+            if (kb.rKey.wasPressedThisFrame) Retry();
+            else if (kb.escapeKey.wasPressedThisFrame) Exit();
+        }
+
+        /// <summary>같은 캐릭터·모드로 다시(게임 씬을 다시 연다 — 고른 캐릭터·모드는 CharacterPick에 남아 있음).</summary>
+        private void Retry()
+        {
+            if (ScreenFade.Busy) return;
+            BattleDamage.Disable();
+            ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.GameSceneName), CharacterSelectScreen.GameSceneName);
+        }
+
+        /// <summary>캐릭터 선택 화면으로(쓰던 캐릭터가 골라진 채).</summary>
+        private void Exit()
+        {
+            if (ScreenFade.Busy) return;
+            BattleDamage.Disable();
+            ScreenFade.Out(() => SceneManager.LoadScene(CharacterSelectScreen.SceneName), CharacterSelectScreen.SceneName);
         }
 
         /// <summary>승패 결과가 떠 있는지 — 그동안 ESC는 PAUSE 창 대신 나가기(InGameMenu가 본다).</summary>
@@ -101,6 +117,7 @@ namespace Project1.UI
             BgmPlayer.Play("Win", loop: false);
             if (bot != null && bot.TryGetComponent(out AiBotInput ai)) ai.enabled = false;
             if (bot != null && bot.TryGetComponent(out AiBotInput a2)) a2.SetTarget(null);
+            InGameMenu.ShowResult(text, Retry, Exit); // 오른쪽 위 버튼을 숨기고 결과 창(승리·패배 + 다시하기·나가기)
         }
 
         private void OnDestroy() => BattleDamage.Disable();
@@ -121,12 +138,7 @@ namespace Project1.UI
                 GUI.color = new Color(0.9f, 0.2f, 0.2f); GUI.DrawTexture(new Rect(x, y, bw * Mathf.Clamp01(botHealth.Current / botHealth.Max), bh), Texture2D.whiteTexture);
                 GUI.color = Color.white;
             }
-            if (result != null)
-            {
-                GUI.Label(new Rect(0, Screen.height * 0.35f, w, 120f * u), result, big);
-                GUI.Label(new Rect(0, Screen.height * 0.35f + 120f * u, w, 40f * u), "R  다시 하기", small);
-                GUI.Label(new Rect(0, Screen.height * 0.35f + 160f * u, w, 40f * u), "ESC  나가기", small);
-            }
+            // 승패 결과는 InGameMenu의 결과 창이 보여 준다(ShowResult)
         }
     }
 }
