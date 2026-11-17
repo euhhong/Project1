@@ -18447,6 +18447,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &110045226
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19905,6 +19906,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &118004332
 GameObject:
   m_ObjectHideFlags: 0
@@ -23420,6 +23422,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &141494896
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -37564,75 +37567,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 228931969}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &229228198
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 229228199}
-  - component: {fileID: 229228201}
-  - component: {fileID: 229228200}
-  m_Layer: 0
-  m_Name: "Pallet_11 (\uC0AC\uBB3C\uD568 \uC0AC\uC774)"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &229228199
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229228198}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 16.98, y: 0.15, z: -14}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 700804923}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &229228200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229228198}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4bec22b81d6b5a44f8042c454c19e99f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Presentation.PalletVisual
---- !u!114 &229228201
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 229228198}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f0cc5ad61a471874f94e7effe6fb43ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Project1.Systems.Pallet
-  height: 2.1023796
-  width: 1.5
-  thickness: 0.3
-  dropDelay: 0.3
-  fallTime: 0.32
-  bounceAngle: 6
-  bounceTime: 0.18
-  restHeight: 0.9
-  gap: 1.9
-  hitHeight: 3.5
-  blockHeight: 1
-  useRange: 1.6
 --- !u!1 &229852209
 GameObject:
   m_ObjectHideFlags: 0
@@ -58943,6 +58877,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &371669974
 GameObject:
   m_ObjectHideFlags: 0
@@ -59329,6 +59264,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &374862130
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88792,6 +88728,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &558356165
 GameObject:
   m_ObjectHideFlags: 0
@@ -93036,6 +92973,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &587629422
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -93171,6 +93109,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &588118445
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -110957,7 +110896,6 @@ Transform:
   - {fileID: 109934639}
   - {fileID: 1680184854}
   - {fileID: 1870003088}
-  - {fileID: 229228199}
   - {fileID: 374247576}
   - {fileID: 558191584}
   - {fileID: 141384311}
@@ -113112,6 +113050,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &712369179
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -184393,6 +184332,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1001 &1175660585
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -204232,6 +204172,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1303344726
 GameObject:
   m_ObjectHideFlags: 0
@@ -205771,6 +205712,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1311955988
 GameObject:
   m_ObjectHideFlags: 0
@@ -220323,6 +220265,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1409082031
 GameObject:
   m_ObjectHideFlags: 0
@@ -229153,6 +229096,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1474139543
 GameObject:
   m_ObjectHideFlags: 0
@@ -262016,6 +261960,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1681173056
 GameObject:
   m_ObjectHideFlags: 0
@@ -270662,6 +270607,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1745655305
 GameObject:
   m_ObjectHideFlags: 0
@@ -281118,6 +281064,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1816233568
 GameObject:
   m_ObjectHideFlags: 0
@@ -285843,9 +285790,9 @@ MonoBehaviour:
   moveLeadTime: 0.25
   hunterReachBonus: 0.5
   unarmed: 0
-  wallMaxDistance: 1
-  wallMinPenetration: 0.12
-  wallMaxAngle: 35
+  wallReach: 1.4
+  wallShortfall: 0.2
+  wallFacing: 55
 --- !u!114 &1846143984
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287751,6 +287698,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1856053395
 GameObject:
   m_ObjectHideFlags: 0
@@ -290288,6 +290236,7 @@ MonoBehaviour:
   hitHeight: 3.5
   blockHeight: 1
   useRange: 1.6
+  sideRange: 2.4
 --- !u!1 &1870352041
 GameObject:
   m_ObjectHideFlags: 0
