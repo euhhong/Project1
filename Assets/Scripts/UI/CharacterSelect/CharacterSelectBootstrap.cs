@@ -5,7 +5,7 @@ namespace Project1.UI
 {
     /// <summary>
     /// 게임 씬(SampleScene 등 — 로컬 플레이어 LocalPlayerInput이 있는 씬)이 열리면, 캐릭터 선택 씬에서 고른 캐릭터(CharacterPick)를 입힌다:
-    /// 모델 교체(CharacterLoadout.Apply), 연습 모드 = 쿨타임 없음 + ESC 나가기(PracticeExit), 게임 시작 = AI 봇과 전투(BattleMatch).
+    /// 모델 교체(CharacterLoadout.Apply), 연습 모드 = 쿨타임 없음, 두 모드 모두 ESC 메뉴(InGameMenu), 게임 시작 = AI 봇과 전투(BattleMatch).
     /// 고른 게 없으면(에디터에서 SampleScene을 바로 Play) 캐릭터 선택 씬으로 넘어간다. 씬에 아무것도 붙일 필요가 없다.
     /// 끄려면 Assets/UI/Resources/CharacterRoster의 Show On Start를 끈다(씬의 플레이어 그대로 시작).
     /// </summary>
@@ -53,7 +53,7 @@ namespace Project1.UI
             Project1.Systems.SkillCooldowns.Disabled = !battle; // 연습 모드 = 쿨타임 없이 스킬, 게임 시작 = 쿨타임 그대로
             Project1.Presentation.InGameBgm.FixedTrack = battle ? null : "Practice"; // 연습 모드 = 배경음악 한 곡 고정
             if (battle) BattleMatch.Begin(roster, player.gameObject, entry);
-            else PracticeExit.Begin(); // 연습 모드: ESC·오른쪽 위 버튼으로 선택 화면으로 돌아가기
+            InGameMenu.Begin(); // ESC·오른쪽 위 버튼 = 게임 중 메뉴(계속하기·캐릭터 선택·메인 메뉴로)
             if (!battle && entry.id == "Survivor_Doctor") player.gameObject.AddComponent<PracticeHealthLoop>(); // 연습 모드 의사: 체력 50에서 시작, 가득 차면 깜빡이다 다시 50(자가 치료 연습)
             Debug.Log($"[UI] {entry.displayName}({(entry.role == CharacterRole.Hunter ? "감시자" : "생존자")})로 {(battle ? "게임(AI 봇과 전투)" : "연습 모드")}를 시작합니다.");
         }
