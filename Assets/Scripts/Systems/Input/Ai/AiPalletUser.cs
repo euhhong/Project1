@@ -23,6 +23,7 @@ namespace Project1.Systems
         private const float RetryDelay = 3f;        // 포기한 뒤 다시 찾기까지
         private const float VaultBackMinRange = 1.2f; // 감시자가 같은 편이어도 이보다 가까우면(넘다 맞음) 근접 AI에 맡긴다
         private const float VaultReach = 1.1f;      // 판자 가장자리에서 이 거리 안이면 스페이스바(넘기)
+        private const float PunishMinStun = 0.6f;   // 감시자 기절이 이만큼(초) 넘게 남았으면 판자를 넘어가 때린다
 
         private readonly Transform self;
         private Pallet pallet;
@@ -83,6 +84,18 @@ namespace Project1.Systems
             if (now > holdUntil || hunterDist > EngageRange + 4f) { Give(now); return; }
             float mySideNow = Vector3.Dot(me - center, lane);
             bool sameSide = mySideNow * hunterSide > 0f;
+            // 감시자가 기절(판자에 깔림 등): 판자를 넘어 건너가 붙어서 때린다 — 같은 편이 되면 근접 AI(기절한 상대 몰아치기)에 맡긴다
+            if (hunter.TryGetComponent(out ICharacterStun hs) && hs.IsStunned && hs.StunRemaining > PunishMinStun)
+            {
+                holdUntil = Mathf.Max(holdUntil, now + 3f);
+                if (sameSide) return;
+                Vector3 overDir = -lane * Mathf.Sign(mySideNow == 0f ? -hunterSide : mySideNow); // 판자를 가로질러 감시자 쪽으로
+                Vector3 toward = (overDir * 1.2f + Flat(opp - me).normalized * 0.5f).normalized;
+                Steer(ref f, toward, run: true);
+                ClearAttack(ref f);
+                if (Mathf.Abs(mySideNow) < pallet.Width * 0.5f + VaultReach) f.Jump = true; // 쓰러진 판자 넘기(또는 올라섬)
+                return;
+            }
             if (sameSide && hunterDist > VaultBackMinRange)
             {
                 // 판자 쪽으로 곧장 달려가 넘는다(스페이스바 — 쓰러진 판자 넘기, CharacterTraversal)
