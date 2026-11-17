@@ -104,7 +104,7 @@ namespace Project1.Presentation
             ["Doctor"] = new[] { ("Footstep", "Coordinator") },
             ["Coordinator"] = new[] { ("PalletDrop", "Doctor") },
             ["Cowboy"] = new[] { ("PalletDrop", "Mercenary") },
-            ["Forward"] = new[] { ("PalletDrop", "Mercenary"), ("ElbowPad", "Mercenary") }, // 럭비공 박치기 = 용병 아대 몸통 부딪힘 소리
+            ["Forward"] = new[] { ("PalletDrop", "Mercenary") },
             ["MindsEye"] = new[] { ("PalletDrop", "Doctor") },
             ["Thief"] = new[] { ("Footstep", "Forward"), ("Vault", "Forward"), ("PalletDrop", "Mercenary") },
             ["Antonio"] = new[] { ("Footstep", "Ripper") },
@@ -155,12 +155,8 @@ namespace Project1.Presentation
             ChargeSkill.Rammed += OnRammed;
         }
 
-        /// <summary>럭비공 돌진이 상대를 박음: 몸통 부딪히는 소리(포워드 — 용병 아대 소리를 빌려 씀).</summary>
-        private void OnRammed(GameObject owner, Vector3 point)
-        {
-            if (owner != gameObject) return;
-            Play("ElbowPad", point, 1f, 0.05f);
-        }
+        /// <summary>럭비공 돌진이 상대를 박음: 따로 소리 없음(예전엔 용병 아대 소리를 빌려 냈으나 어울리지 않아 뺌).</summary>
+        private void OnRammed(GameObject owner, Vector3 point) { }
 
         private void OnDisable()
         {
