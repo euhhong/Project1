@@ -352,12 +352,12 @@ namespace Project1.Presentation
         private void OnHit(HitResult hit)
         {
             if (identity == null || hit.AttackerId != identity.Id || hit.Kind == AttackKind.Skill) return;
-            // 캐릭터 전용 평타 맞힘 소리는 내지 않음 — 피격음은 SfxPlayer의 "뻐억"(hit_heavy) 하나로 고정
+            // 캐릭터 전용 평타 맞힘 소리는 내지 않음 — 피격음은 SfxPlayer.CharacterHitSound("뽀-익") 하나로 고정
         }
 
         private void OnWallStruck(GameObject attacker, Vector3 point, Vector3 normal)
         {
-            // 캐릭터 전용 벽 치기 소리는 내지 않음 — 벽 치기는 SfxPlayer의 "턱"(hit_light) 하나로 고정
+            // 캐릭터 전용 벽 치기 소리는 내지 않음 — 벽 치기는 소리 없음(파란 리본만)
         }
 
         private void OnProjectileEnded(IProjectile p)
