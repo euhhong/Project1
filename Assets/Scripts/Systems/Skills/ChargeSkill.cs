@@ -6,7 +6,8 @@ namespace Project1.Systems
     /// <summary>
     /// 돌진(포워드 럭비공): 쓰면 바라보는 방향으로 계속 달려 나간다.
     /// - 방향 키·달리기 키와 상관없이 앞으로 chargeSpeed로 달린다(달리기 모션). 점프·공격은 못 한다.
-    /// - 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
+    /// - 시작 후 wallRubTime(3초) 동안은 벽·물건에 박아도 멈추지 않고 비비며 계속 달린다.
+    /// - 그 뒤 옆으로 벽·장애물에 닿으면 멈추고 일반 기절(CharacterStun — 기절 모션, 넘어지지 않음)에 걸린다:
     ///   기절 시간은 달린 거리에 따라 박치기 넉백과 같은 곡선(knockCurve, fullKnockRun): 거의 안 달림 minCrashStun 0.2초 ~ 45m 이상 crashRecovery 1.8초.
     /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 따라 곡선으로 확 달라지는 거리만큼 밀려나고(짧게 달리면 0.5m ~ 45m 넘게 달리면 16m, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
@@ -25,6 +26,9 @@ namespace Project1.Systems
 
         [Tooltip("시작 직후 이 시간(초) 동안은 장애물에 닿아도 멈추지 않는다(벽에 붙어 시작할 때 바로 끝나지 않게).")]
         [Min(0f)] public float obstacleGrace = 0.1f;
+
+        [Tooltip("돌진을 시작한 뒤 이 시간(초) 동안은 벽·물건에 박아도 멈추지 않고 비비며 계속 달린다(캐릭터 박치기는 그대로). 벽 기절 페널티가 없는 돌진(광대 로켓)은 해당 없음.")]
+        [Min(0f)] public float wallRubTime = 3f;
 
         [Tooltip("벽·장애물에 부딪혀 걸리는 기절 시간(초, 일반 기절 모션) — 멀리(fullKnockRun 이상) 달려 부딪혔을 때.")]
         [Min(0f)] public float crashRecovery = 1.8f;
@@ -109,6 +113,7 @@ namespace Project1.Systems
                     victim = touched;
                 }
                 else if (Grazing(owner, motor)) return false; // 벽·물건을 비스듬히 스침 → 멈추지 않고 미끄러지며 계속
+                else if (CrashPenalty && elapsed < wallRubTime) return false; // 시작 후 wallRubTime초 동안은 벽·물건에 박아도 멈추지 않고 비비며 계속 달린다
             }
 
             // 박치기: 돌진한 거리만큼 세게 밀어내고(기절 없음, 벽에 박혀야 기절), 나는 경직 없이 바로 움직인다(recovery 0).
