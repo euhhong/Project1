@@ -24,6 +24,7 @@ namespace Project1.Systems
         private ITentacleField tentacleField;
         private AiTentacleUser tentacles;
         private AiPalletUser pallets;
+        private AiRetreat retreat;
 
         public AiMeleeTactics Tactics => tactics ??= new AiMeleeTactics(gameObject, settings, view);
         public AiMeleeSettings Settings => settings;
@@ -61,7 +62,13 @@ namespace Project1.Systems
             }
             if (tentacles != null && tentacleField is Behaviour { isActiveAndEnabled: true }) tentacles.Apply(ref cachedFrame, now, target);
             // 생존자(판자를 내릴 수 있는 캐릭터): 쫓기면 판자로 달려가 내리고, 내린 판자를 끼고 싸운다
-            if (TryGetComponent(out PalletUser pu) && pu.isActiveAndEnabled) (pallets ??= new AiPalletUser(transform)).Apply(ref cachedFrame, now, target);
+            if (TryGetComponent(out PalletUser pu) && pu.isActiveAndEnabled)
+            {
+                // 불리하면(크게 다침·주변 판자 다 씀·스킬 열세) 다른 층·다른 판자 구간으로 도주 — 도주 중에도 감시자가 판자 자리에 들어오면 바로 내린다
+                retreat ??= new AiRetreat(gameObject);
+                retreat.Apply(ref cachedFrame, now, target);
+                (pallets ??= new AiPalletUser(transform)).Apply(ref cachedFrame, now, target, retreat.Fleeing);
+            }
             return cachedFrame;
         }
 

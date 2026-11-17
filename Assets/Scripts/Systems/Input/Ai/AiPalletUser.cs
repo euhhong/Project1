@@ -32,7 +32,7 @@ namespace Project1.Systems
         public AiPalletUser(Transform self) { this.self = self; }
 
         /// <summary>근접 AI가 만든 이번 틱 입력 f 위에 판자 쓰기를 덮는다. hunter = 상대 루트.</summary>
-        public void Apply(ref CharacterInputFrame f, float now, Transform hunter)
+        public void Apply(ref CharacterInputFrame f, float now, Transform hunter, bool fleeing = false)
         {
             if (hunter == null) { pallet = null; return; }
             Vector3 me = self.position, opp = hunter.position;
@@ -40,6 +40,7 @@ namespace Project1.Systems
             // 판자는 아래 '내리기'에서 정한 때에만 내린다.
             if (f.Jump && Pallet.TryFind(me, Quaternion.Euler(0f, f.LookYaw, 0f) * Vector3.forward, out _, out _)) f.Jump = false;
             if (TrySnapDrop(ref f, me, opp, now)) return; // 무엇을 하던 중이든: 감시자가 판자가 넘어지는 자리에 들어오면 바로 내린다
+            if (fleeing) { pallet = null; return; } // 도주 중(AiRetreat)에는 판자를 찾거나 끼고 버티지 않는다(바로 내리기만)
             float hunterDist = Flat(opp - me).magnitude;
 
             if (pallet == null || pallet.State == Pallet.PalletState.Falling)
