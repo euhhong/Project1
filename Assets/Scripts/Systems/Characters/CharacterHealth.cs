@@ -34,6 +34,9 @@ namespace Project1.Systems
 
         public void ResetToFull() => Set(maxHealth);
 
+        /// <summary>체력을 바로 이 값으로(0~최대). 예: 연습 모드 의사는 50에서 시작하고, 가득 차면 다시 50.</summary>
+        public void SetCurrent(float value) => Set(value);
+
         /// <summary>최대 체력을 바꾸고 가득 채운다(캐릭터를 고를 때 — 감시자 150, 생존자 100, DamageRules).</summary>
         public void SetMax(float max)
         {
