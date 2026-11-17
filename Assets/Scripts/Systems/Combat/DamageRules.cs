@@ -5,7 +5,7 @@ namespace Project1.Systems
 {
     /// <summary>
     /// 데미지·경직·넉백 규칙 표(BE). Docs/DamageSystem.md(2026-11-14 사용자 확정, 감시자 피해 조금 낮춤)의 값을 한곳에 둔다.
-    /// - 감시자 평타 = 같은 종류 생존자 평타 피해의 1.5배(약 4.5 · 강 4.5~5.4 · 달리기 점프 7.5 — HunterBasicScale), 짧은 경직, 작은 넉백.
+    /// - 감시자 평타 = 한 방 12(약·강·달리기 점프 같음, 강공격을 다 모으면 14.4 — HunterBasicDamage), 짧은 경직, 작은 넉백.
     /// - 생존자 평타 = 모기 딜(3~5) + 경직·넉백 위주(넉백으로 벽에 박으면 벽꿍 피해·추가 경직).
     /// - 피해 = 기본 피해 × 부위 배율 × 공격 세기(Power) × 등 뒤 배율 × 창틀 넘기 배율. 스킬은 HitResult.BaseDamage(직접 정함) 또는 분류별 기본값.
     /// 쓰는 곳: BattleDamage(피해), DefaultHitKnockback(넉백), HitStunRules(경직·패링 반격), CharacterLoadout(최대 체력).
@@ -27,20 +27,20 @@ namespace Project1.Systems
         // ── 평타 표 (넉백 거리 ≈ 속도 × 시간 ÷ 2)
         // 생존자 평타 피해
         private const float SurvivorLightDamage = 3f, SurvivorRunJumpDamage = 5f, SurvivorFollowUpDamage = 4f;
-        /// <summary>감시자 평타 한 방 = 같은 종류 생존자 평타 피해 × 이 배율(예전: 약 30 · 강 45 · 달리기 점프 36 → 낮춤).</summary>
-        public const float HunterBasicScale = 1.5f;
+        /// <summary>감시자 평타 한 방 피해(약·강·달리기 점프 모두 같음 — 예전: 약 30 · 강 45 · 달리기 점프 36 → 낮춤).</summary>
+        public const float HunterBasicDamage = 12f;
         /// <summary>감시자 강공격(모으기 전) 피해 — 맞는 쪽 '큰 한 방' 모션 기준(CharacterHitReactionAnimator).</summary>
-        public const float HunterHeavyDamage = SurvivorLightDamage * HunterBasicScale;
-        private static readonly Spec HunterLight = new(SurvivorLightDamage * HunterBasicScale, 0.25f, 6f, 0.25f, false);       // 4.5 — 약 0.75 m
-        private static readonly Spec HunterHeavy = new(SurvivorLightDamage * HunterBasicScale, 0.45f, 10f, 0.3f, false);       // 4.5 — 약 1.5 m, 모으면 +HeavyChargeBonus
-        private static readonly Spec HunterRunJump = new(SurvivorRunJumpDamage * HunterBasicScale, 0.35f, 8f, 0.3f, false);   // 7.5 — 약 1.2 m
+        public const float HunterHeavyDamage = HunterBasicDamage;
+        private static readonly Spec HunterLight = new(HunterBasicDamage, 0.25f, 6f, 0.25f, false);       // 약 0.75 m
+        private static readonly Spec HunterHeavy = new(HunterBasicDamage, 0.45f, 10f, 0.3f, false);       // 약 1.5 m, 모으면 +HeavyChargeBonus
+        private static readonly Spec HunterRunJump = new(HunterBasicDamage, 0.35f, 8f, 0.3f, false);     // 약 1.2 m
         private static readonly Spec SurvivorLight = new(SurvivorLightDamage, 0.4f, 8f, 0.3f, true);      // 약 1.2 m
         private static readonly Spec SurvivorHeavy = new(SurvivorLightDamage, 0.4f, 8f, 0.3f, true);      // (생존자 좌클릭 꾹은 주먹 패링 — 강공격이 나가면 약공격과 같게)
         private static readonly Spec SurvivorRunJump = new(SurvivorRunJumpDamage, 0.5f, 12f, 0.4f, true);   // 약 2.4 m — 벽꿍 주 수단
         private static readonly Spec SurvivorFollowUp = new(SurvivorFollowUpDamage, 0.8f, 10f, 0.3f, true);  // 약 1.5 m (경직 0.8은 FollowUpKickStun과 같음)
 
         /// <summary>강공격 모으기: 이 시간(초)을 다 모으면 피해 +HeavyChargeBonus(강공격 피해의 20% — 예전 45 + 9와 같은 비율).</summary>
-        public const float HeavyFullCharge = 1f, HeavyChargeBonus = SurvivorLightDamage * HunterBasicScale * 0.2f;
+        public const float HeavyFullCharge = 1f, HeavyChargeBonus = HunterBasicDamage * 0.2f;
 
         // ── 스킬(직접 정하지 않은 것)의 기본 피해, 기본 넉백
         public const float HunterSkillDamage = 22f, SurvivorSkillDamage = 5f;
