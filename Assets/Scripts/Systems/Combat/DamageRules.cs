@@ -47,6 +47,8 @@ namespace Project1.Systems
         public const float SkillKnockSpeed = 6f, SkillKnockTime = 0.25f;
         // 스킬이 직접 정하는 피해(HitResult.BaseDamage)
         public const float LeapSlamDamage = 27f, NoteWireDamage = 8f, GrabDamage = 10f;
+        /// <summary>광대 로켓 돌진에 맞음(창틀·판자 넘는 중이면 VaultScale ×2에 로켓의 vaultHitPower ×1.5까지 — 45).</summary>
+        public const float RocketChargeDamage = 15f;
         /// <summary>판자(생존자가 내림)에 깔린 감시자: 피해, 경직(초).</summary>
         public const float PalletDamage = 30f, PalletStun = 5f; // 판자에 깔린 감시자: 5초 기절
 

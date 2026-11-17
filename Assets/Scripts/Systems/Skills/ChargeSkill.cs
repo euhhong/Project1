@@ -99,6 +99,7 @@ namespace Project1.Systems
 
             // 박치기 판정: 앞으로는 몸이 닿는 거리 그대로, 옆으로만 ramSideExtra만큼 넓게 본 범위 안의 상대.
             var victim = UsesRamZone ? FindRamVictim(owner, self) : null; // 옛 판정(광대 로켓)은 몸이 실제로 닿아야
+            if (victim == null) victim = FindBonusVictim(owner, self); // 광대 로켓: 창틀·판자를 넘는 중인 상대는 조금 멀어도 맞음
             // 멈춘 공장장 인형: 걸어서는 지나가지만 돌진은 막힌다(벽에 박은 것과 같음).
             bool dollHit = victim == null && elapsed >= obstacleGrace && owner.TryGetComponent(out CharacterController bodyCc)
                            && SkillObstacles.TouchingDoll(owner.transform.position, Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized, bodyCc.radius, bodyCc.height);
@@ -240,6 +241,9 @@ namespace Project1.Systems
 
         /// <summary>몸이 상대에 닿았을 때 다르게 처리할지(광대 로켓 옛 판정: 넉백 없이 바로 기절). 처리했으면 true(넉백 박치기를 하지 않음).</summary>
         protected virtual bool ContactHit(GameObject owner, CharacterIdentity victim, float elapsed) => false;
+
+        /// <summary>몸이 닿지 않아도 박치기로 칠 상대(기본 없음 — 광대 로켓: 창틀·판자를 넘는 중인 상대).</summary>
+        protected virtual CharacterIdentity FindBonusVictim(GameObject owner, CharacterIdentity self) => null;
 
         public override void Complete(GameObject owner) { }
     }

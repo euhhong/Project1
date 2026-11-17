@@ -9,7 +9,7 @@ namespace Project1.Systems
     /// 1) E를 꾹 누르는 동안: 로켓을 두 손으로 머리 위로 치켜든 채 걸어 다닌다(castMoveSpeed, 점프 가능).
     ///    이때 좌클릭(공격)을 누르면 돌진하지 않고 끝난다(취소).
     /// 2) E를 떼면(한 번만 눌러도 바로) 로켓 머리를 앞으로 한 채 chargeSpeed로 돌진한다 — 벽에 부딪히면 기절 페널티 없이 그냥 멈추고(CrashPenalty 끔),
-    ///    캐릭터에 몸이 닿으면 옛 판정: 넉백 없이 그 자리에서 돌진 거리만큼 기절(stunPerMeter, min~max — 포워드의 넓힌 판정·넉백 박치기와 다름). 돌진 중 E를 한 번 더 누르면 멈춘다.
+    ///    캐릭터에 몸이 닿으면 옛 판정: 피해(RocketChargeDamage) + 넉백 없이 그 자리에서 돌진 거리만큼 기절. 창틀·판자를 넘는 중인 상대는 앞 vaultMagnetReach m 안이면 닿지 않아도 맞고 피해가 크다(stunPerMeter, min~max — 포워드의 넓힌 판정·넉백 박치기와 다름). 돌진 중 E를 한 번 더 누르면 멈춘다.
     /// 동작 구간: 들고 다님 = Windup, 돌진 = Active(TryGetMotionPhase) — FE가 로켓 쥐는 법을 바꾼다.
     /// </summary>
     [CreateAssetMenu(menuName = "Project1/Skills/Rocket Charge")]
@@ -86,12 +86,59 @@ namespace Project1.Systems
 
         protected override bool UsesRamZone => false; // 넓힌 판정 없이 몸이 실제로 닿아야
 
-        /// <summary>옛 판정: 몸이 닿은 상대를 넉백 없이 그 자리에서 돌진 거리만큼 기절시키고 멈춘다(뒤에서 들이받으면 휘청이며 쓰러지는 모션).</summary>
+        [Header("창틀·판자 넘는 상대 — 멀어도 맞음, 크게 아픔")]
+        [Tooltip("돌진 중 창틀·판자를 넘는 중인 상대는 몸이 닿지 않아도 이 거리(m, 수평) 안·앞 이 각도(도, 양쪽) 안이면 맞힌다.")]
+        [Min(0f)] public float vaultMagnetReach = 4f;
+        [Range(0f, 90f)] public float vaultMagnetAngle = 70f;
+        [Tooltip("넘는 중에 맞으면 피해 배율(창틀 넘기 배율 ×2에 더해 곱함).")]
+        [Min(1f)] public float vaultHitPower = 1.5f;
+
+        /// <summary>옛 판정: 몸이 닿은 상대에게 피해(DamageRules.RocketChargeDamage)를 주고, 넉백 없이 그 자리에서 돌진 거리만큼 기절시키고 멈춘다(뒤에서 들이받으면 휘청이며 쓰러지는 모션).
+        /// 창틀·판자를 넘는 중이면 피해가 크다(창틀 넘기 ×2 × vaultHitPower).</summary>
         protected override bool ContactHit(GameObject owner, CharacterIdentity victim, float elapsed)
         {
+            bool vaulting = DamageRules.IsVaulting(victim.gameObject);
+            var self = owner.GetComponent<CharacterIdentity>();
+            owner.TryGetComponent(out CharacterSkill cs);
+            HitEvents.Raise(new HitResult
+            {
+                AttackerId = self != null ? self.Id : 0,
+                VictimId = victim.Id,
+                Part = BodyPart.Body,
+                Slot = HitboxSlot.Weapon,
+                AttackId = cs != null ? -cs.UseCount : 0, // 일반 공격 번호와 겹치지 않게 음수
+                Tick = SimulationTick.Current,
+                Point = victim.transform.position + Vector3.up * 1.1f,
+                BaseDamage = DamageRules.RocketChargeDamage,
+                Power = vaulting ? vaultHitPower : 1f,
+                NoKnockback = true, // 그 자리에서 기절
+            });
             float seconds = Mathf.Clamp(elapsed * chargeSpeed * stunPerMeter, minStun, maxStun);
             CharacterStun.Apply(victim.gameObject, seconds, victim.transform.position - owner.transform.position);
             return true;
+        }
+
+        /// <summary>돌진 중: 앞(vaultMagnetAngle 안) vaultMagnetReach m 안에서 창틀·판자를 넘는 중인 상대(벽에 가리지 않은)를 몸이 닿지 않아도 맞힌다.</summary>
+        protected override CharacterIdentity FindBonusVictim(GameObject owner, CharacterIdentity self)
+        {
+            if (vaultMagnetReach <= 0f) return null;
+            Vector3 fwd = Vector3.ProjectOnPlane(owner.transform.forward, Vector3.up).normalized;
+            float cos = Mathf.Cos(vaultMagnetAngle * Mathf.Deg2Rad);
+            CharacterIdentity best = null;
+            float bestDist = float.MaxValue;
+            foreach (var c in Object.FindObjectsByType<CharacterIdentity>())
+            {
+                if (c == null || c == self || (self != null && !self.CanHit(c)) || !DamageRules.IsVaulting(c.gameObject)) continue;
+                Vector3 to = c.transform.position - owner.transform.position;
+                if (Mathf.Abs(to.y) > 2f) continue;
+                to.y = 0f;
+                float d = to.magnitude;
+                if (d > vaultMagnetReach || d >= bestDist) continue;
+                if (d > 0.01f && Vector3.Dot(fwd, to / d) < cos) continue;
+                if (!CombatLineOfSight.Clear(owner, c.gameObject, c.transform.position + Vector3.up * 1.1f)) continue;
+                best = c; bestDist = d;
+            }
+            return best;
         }
 
         [Header("시작 제한 — 상대를 바라보고 있으면 E로 시작하지 못함")]
