@@ -84,6 +84,8 @@ namespace Project1.Systems
         [Min(0f)] public float palletCharacterMargin = 1.5f;
         [Tooltip("판자를 물고 끌려간 시전의 재사용 대기(초) — 그 밖에는 cooldown.")]
         [Min(0f)] public float palletGrabCooldown = 5f;
+        [Tooltip("판자로 끌려간 뒤 빨라지는 시간(초, 배율은 뛰어넘기와 같은 vaultSpeedBoost).")]
+        [Min(0f)] public float palletBoostTime = 1f;
 
         // 이번 시전이 판자를 물었는지(카우보이) — 끝날 때 재사용 대기를 palletGrabCooldown으로
         private static readonly System.Collections.Generic.HashSet<CharacterSkill> palletGrabs = new();
@@ -388,7 +390,11 @@ namespace Project1.Systems
                     bool blocked = ctx.PhaseTime > 0.05f && ctx.TryGetComponent(out CharacterMotor motor) && motor.HitObstacle; // 가는 길에 다른 것에 막힘
                     bool timeout = ctx.PhaseTime > ctx.AreaRadius / towSpeed + 0.3f;
                     if (arrived && !vaultOverVictim) WallShock(ctx); // 벽에 도착: 주변에 충격파(카우보이가 판자에 끌려간 것은 충격파 없음)
-                    if (arrived || blocked || timeout) { ctx.Reach = 0f; ctx.SetPhase(FollowThrough); }
+                    if (arrived || blocked || timeout)
+                    {
+                        ctx.Reach = 0f; ctx.SetPhase(FollowThrough);
+                        if (vaultOverVictim) TimedSpeedBoost.Give(ctx.gameObject, vaultSpeedBoost, palletBoostTime); // 카우보이: 판자로 끌려간 뒤 잠깐 빠르게(뛰어넘기와 같은 배율)
+                    }
                     return false;
                 }
 

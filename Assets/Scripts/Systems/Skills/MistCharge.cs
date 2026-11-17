@@ -17,8 +17,21 @@ namespace Project1.Systems
     /// 캐릭터 루트에 붙인다(CharacterLoadout, 리퍼만). 그리기는 FE(MistClawVisual, MistBladeTrail). 체력·데미지는 다루지 않는다(세기 배율만 HitResult.Power로 알린다).
     /// </summary>
     [DisallowMultipleComponent]
-    public class MistCharge : MonoBehaviour, IMistCharge, ICooldownGauge
+    public class MistCharge : MonoBehaviour, IMistCharge, ICooldownGauge, IHitDamageScale
     {
+        [Tooltip("안개 칼날을 날리는 평타(2칸)를 바짝 붙어 써서 팔(무기) 판정으로 맞혔을 때 그 피해 배율 — 칼날은 막기도 뚫는 대신 붙어서 쓰면 손해. 칼날 자체 피해는 그대로.")]
+        [SerializeField, Range(0f, 1f)] private float bladeSwingMeleeScale = 0.3f;
+        private bool bladeSwing; // 지금 평타가 칼날을 날린 평타인지(끝나면 풀림)
+
+        /// <summary>칼날을 날린 평타의 팔(무기) 판정 히트(평타 종류 — 투사체·스킬은 Kind = Skill)만 크게 줄인다.</summary>
+        public float DamageScaleFor(in HitResult hit)
+        {
+            if (hit.Kind == AttackKind.Skill) return 1f;
+            // 같은 틱에 판정이 먼저 났어도(칼날이 나가기 직전) 다 찬 상태의 평타면 칼날 평타로 본다
+            bool aboutToLaunch = attack != null && attack.AttackState != CharacterAttackState.None && Charges >= maxCharges;
+            return bladeSwing || aboutToLaunch ? bladeSwingMeleeScale : 1f;
+        }
+
         public const string BladeKind = "MistBlade";
 
         [Tooltip("안개 한 칸이 모이는 시간(초) — 다 차 있지 않으면 무엇을 하든 멈추지 않고 계속 모인다.")]
@@ -121,7 +134,9 @@ namespace Project1.Systems
                 Charges = 0;
                 KeepOneInPractice();
                 LaunchBlade(false);
+                bladeSwing = true; // 이 평타가 끝날 때까지: 팔(무기) 판정으로 맞히면 피해 크게 줄임
             }
+            if (!attacking) bladeSwing = false;
             lastPhase = phase;
 
             // 다 차 있지 않으면 무엇을 하든(평타·스킬·칼날) 멈추지 않고 계속 모인다

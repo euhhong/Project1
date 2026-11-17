@@ -115,8 +115,16 @@ namespace Project1.Systems
             if (FromBehind(attacker != null ? attacker.transform : null, victim != null ? victim.transform : null)) damage *= BehindScale;
             if (IsVaulting(victim)) damage *= VaultScale;
             damage *= TimedCombatBuff.Outgoing(attacker); // 때린 쪽 주는 피해 배율(IDamageScale, 예: 카우보이 뛰어넘기 직후) — 받는 쪽 배율은 CharacterHealth가 곱한다
+            if (attacker != null)
+            {
+                // 히트마다 다른 배율(IHitDamageScale, 예: 리퍼가 칼날 평타를 바짝 붙어 팔로 맞힘)
+                attacker.GetComponents(hitScales);
+                foreach (var s in hitScales) if (!(s is Behaviour { isActiveAndEnabled: false })) damage *= Mathf.Max(0f, s.DamageScaleFor(hit));
+            }
             return damage;
         }
+
+        private static readonly System.Collections.Generic.List<IHitDamageScale> hitScales = new();
 
         /// <summary>id로 캐릭터를 찾는다(없으면 null).</summary>
         public static CharacterIdentity Find(int id)
