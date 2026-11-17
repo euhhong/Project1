@@ -11,6 +11,7 @@ namespace Project1.Systems
     /// - 다른 캐릭터에 닿으면(박치기 — 판정은 앞으로는 몸 그대로, 옆으로만 ramSideExtra만큼 넓음, 상대 몸은 상대 앞뒤로 ramDepthExtra만큼 두껍게) 상대는 돌진하던 방향(내 앞)으로, 돌진한 거리에 따라 곡선으로 확 달라지는 거리만큼 밀려나고(짧게 달리면 0.5m ~ 45m 넘게 달리면 16m, 기절 없음 — 밀리는 동안 움직일 수 있음),
     ///   나는 멈추지 않고(딜레이 없이) 바로 평소처럼 움직인다.
     ///   상대가 밀려나다 벽에 박혀야만(벽 바로 앞 ramWallMargin 안에 들어와도) 기절: 달린 거리에 따라 같은 곡선으로 wallStunMin 0.5초 ~ wallStunMax 5.5초.
+    ///   이때 그 상대가 직전 wallRollback(1초) 안에 받은 피해는 되돌린다(CharacterHealth.RollBackRecent).
     ///   오래 닿지 않으면 castTime(최대 시간)에 그냥 멈춘다.
     /// - 시야(마우스 우클릭)로 방향은 틀 수 있다(몸이 시야 방향을 보기 때문).
     /// - 돌진 중 E를 한 번 더 누르면 그 자리에서 멈춘다(넘어지지 않음, cancelGrace 뒤부터).
@@ -125,7 +126,8 @@ namespace Project1.Systems
                 float knockTime = Mathf.Lerp(minKnockTime, maxKnockTime, t);
                 float speed = 2f * pushDist / knockTime; // 넉백은 처음 속도에서 0까지 줄어든다 → 거리 = 속도 × 시간 ÷ 2
                 float wallStun = Mathf.Lerp(wallStunMin, wallStunMax, Mathf.Pow(t, knockCurve)); // 벽에 박히면: 5m 달림 ≈ 0.7초, 16m ≈ 1.5초, 32m ≈ 3.4초, 45m 이상 = 5.5초
-                Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin);
+                Knockback.Push(victim.gameObject, dir * speed, knockTime, stun: false, impactDamage: false, impactStun: wallStun, impactStunWallOnly: true, wallMargin: ramWallMargin,
+                    onWall: wallStun > 0f && wallRollback > 0f ? RollBackOnWall : null); // 벽에 박혀 기절 → 직전 wallRollback초 안에 받은 피해를 되돌림
                 Rammed?.Invoke(owner, Vector3.Lerp(owner.transform.position, victim.transform.position, 0.5f) + Vector3.up * 1.1f); // 박치기 소리·연출
                 return true;
             }
@@ -137,6 +139,14 @@ namespace Project1.Systems
             CharacterStun.ApplyBreakable(owner, stunTime); // 방향 없음 = 앞으로 숙이는 일반 기절. 깨지는 기절: 맞거나 밀리거나 충격파·다른 기절이 걸리면 바로 풀림
             recovery = 0f; // 넘어짐(Recovering + Fall_1)은 쓰지 않는다
             return true;
+        }
+
+        [Tooltip("박치기로 밀려난 상대가 벽에 박혀 기절하면, 그 상대가 직전 이 시간(초) 안에 받은 피해를 되돌린다(회복). 0이면 안 함.")]
+        [Min(0f)] public float wallRollback = 1f;
+
+        private void RollBackOnWall(GameObject victim)
+        {
+            if (victim != null && victim.TryGetComponent(out CharacterHealth hp)) hp.RollBackRecent(wallRollback);
         }
 
         [Header("벽·물건에 부딪혀 멈추는 판정")]

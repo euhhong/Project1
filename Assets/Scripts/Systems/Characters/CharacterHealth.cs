@@ -30,7 +30,36 @@ namespace Project1.Systems
         public void Heal(float amount) => Set(Current + Mathf.Max(0f, amount));
 
         /// <summary>피해를 받는다. 받는 피해 배율(IDamageScale, 예: 카우보이 뛰어넘기 직후 방어)을 곱한다.</summary>
-        public void Damage(float amount) => Set(Current - Mathf.Max(0f, amount) * TimedCombatBuff.Incoming(gameObject));
+        public void Damage(float amount)
+        {
+            float before = Current;
+            Set(before - Mathf.Max(0f, amount) * TimedCombatBuff.Incoming(gameObject));
+            float lost = before - Current;
+            if (lost > 0f) recent.Add((Time.time, lost));
+            while (recent.Count > 0 && Time.time - recent[0].time > HistorySeconds) recent.RemoveAt(0);
+        }
+
+        // 최근에 받은 피해(시각, 양) — 되돌리기(RollBackRecent)용, 오래된 것은 버린다
+        private const float HistorySeconds = 3f;
+        private readonly System.Collections.Generic.List<(float time, float amount)> recent = new();
+
+        /// <summary>
+        /// 직전 seconds초 안에 받은 피해를 되돌린다(그만큼 회복, 되돌린 피해는 다시 되돌리지 않음). 쓰러졌으면 하지 않는다. 되돌린 양을 돌려준다.
+        /// 예: 포워드 박치기로 벽에 박혀 기절하면 그 상대가 직전 1초 안에 받은 피해를 되돌림.
+        /// </summary>
+        public float RollBackRecent(float seconds)
+        {
+            if (IsDead) return 0f;
+            float sum = 0f, now = Time.time;
+            for (int i = recent.Count - 1; i >= 0; i--)
+            {
+                if (now - recent[i].time > seconds) continue;
+                sum += recent[i].amount;
+                recent.RemoveAt(i);
+            }
+            if (sum > 0f) Heal(sum);
+            return sum;
+        }
 
         public void ResetToFull() => Set(maxHealth);
 
