@@ -56,8 +56,7 @@ namespace Project1.UI
                 var r = new Rect(40 * u, Screen.height - 90 * u, 420 * u, 30 * u);
                 GUI.Label(new Rect(r.x, r.y - 40 * u, r.width, 36 * u), characterName, label);
                 // 연습 모드 의사: 가득 차면 깜빡이다 50으로 돌아감(PracticeHealthLoop)
-                bool blink = target != null && target.TryGetComponent(out PracticeHealthLoop loop) && loop.Blinking;
-                bool lit = !blink || Mathf.Repeat(Time.unscaledTime * 6f, 1f) < 0.5f;
+                bool lit = !(target != null && target.TryGetComponent(out PracticeHealthLoop loop) && loop.BlinkOff); // 깜빡 깜빡 두 번
                 Bar(r, health.Current / Mathf.Max(health.Max, 1f), lit ? new Color(0.85f, 0.2f, 0.2f) : new Color(1f, 0.85f, 0.85f));
                 small.normal.textColor = Color.white;
                 GUI.Label(r, $"{Mathf.CeilToInt(health.Current)} / {Mathf.CeilToInt(health.Max)}", small);
