@@ -83,7 +83,7 @@ namespace Project1.Presentation
             for (int i = 0; i < originals.Length; i++)
             {
                 if (originals[i] == null) continue;
-                var m = new Material(originals[i]) { name = originals[i].name + " (Fade)" };
+                var m = new Material(originals[i]) { name = originals[i].name + OutlineMeshCopy.FadeSuffix };
                 if (m.HasProperty("_Surface")) m.SetFloat("_Surface", 1f); // Transparent
                 if (m.HasProperty("_Blend")) m.SetFloat("_Blend", 0f);     // Alpha
                 m.SetOverrideTag("RenderType", "Transparent");

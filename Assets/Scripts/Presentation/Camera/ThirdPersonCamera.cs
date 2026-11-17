@@ -15,6 +15,10 @@ namespace Project1.Presentation
     {
         [Tooltip("따라갈 캐릭터 루트. 비워 두면 자동으로 찾는다.")]
         [SerializeField] private Transform target;
+        /// <summary>따라가는 캐릭터.</summary>
+        public Transform Target => target;
+        /// <summary>뒤가 벽·천장에 막혀 카메라가 캐릭터 쪽으로 당겨진 정도(0 = 원래 거리, 1 = 캐릭터에 붙음).</summary>
+        public float Blocked01 { get; private set; }
 
         [Header("자리")]
         [Tooltip("캐릭터 발에서 바라볼 지점(어깨~머리)까지의 높이(m).")]
@@ -156,6 +160,7 @@ namespace Project1.Presentation
 
             transform.SetPositionAndRotation(pivot + back * currentDistance, rotation);
             float blocked = wantDistance > 0.01f ? Mathf.Clamp01(1f - currentDistance / wantDistance) : 0f;
+            Blocked01 = blocked;
             ApplyFov(indoor, blocked, snapFov);
             snapFov = false;
         }

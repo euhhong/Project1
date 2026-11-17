@@ -9,12 +9,14 @@ namespace Project1.Presentation
     /// </summary>
     public static class OutlineMeshCopy
     {
+        /// <summary>잠깐 끼우는 반투명 머티리얼 사본 이름 끝(CameraBlockedBodyFade·HellEmberWeaponFade).</summary>
+        public const string FadeSuffix = " (Fade)";
         /// <summary>윤곽선을 붙일 모델 렌더러인지: 모델(Animator 아래)의 메시 렌더러, 복사본("~")과 다 투명한 것(손전등 빛·연기 같은 연출)은 뺀다.</summary>
         public static bool IsModelRenderer(Renderer r)
         {
             if (!(r is SkinnedMeshRenderer || r is MeshRenderer) || r.gameObject.name.StartsWith("~") || r.GetComponentInParent<Animator>() == null) return false;
             if (r is MeshRenderer && r.GetComponent<MeshFilter>() == null) return false;
-            foreach (var m in r.sharedMaterials) if (m != null && m.renderQueue < 3000) return true;
+            foreach (var m in r.sharedMaterials) if (m != null && (m.renderQueue < 3000 || m.name.EndsWith(FadeSuffix))) return true; // 잠깐 반투명 사본을 낀 몸·무기도 그대로 모델로 친다(윤곽선이 다시 만들어지지 않게)
             return false;
         }
 
